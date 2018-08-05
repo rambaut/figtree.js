@@ -64,3 +64,7 @@ typings/
 .ipr
 .iws
 package-lock.json
+
+figtree.js.iml
+figtree.js.ipr
+figtree.js.iws
