@@ -29,9 +29,6 @@ console.log(`Decreasing: ${tree.toNewick()}`);
 tree.reroot(tree.externalNodes[0]);
 console.log(`Rerooted: ${tree.toNewick()}`);
 
-const tree2 = Tree.parseNewick("(((tip1:0.1,tip2:0.2)x:0.3,tip3:0.4)y:0.5,(tip4:0.6,tip5:0.7)z:0.8)r;");
-console.log(`OriginL: ${tree2.toNewick()}`);
+console.log("Root node key: ", tree.rootNode.key, tree.getNode(tree.rootNode.key));
 
-tree2.reroot(tree2.externalNodes[0]);
-console.log(`Rerooted: ${tree2.toNewick()}`);
-
+console.log("RTT: " + tree.rootToTipLengths());

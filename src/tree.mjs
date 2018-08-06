@@ -16,6 +16,10 @@ export class Tree {
         this.root = rootNode;
 
         this.nodeList = [...this.preorder()];
+        this.nodeList.forEach( (node, index) => node.key = Symbol(`node ${index}`) );
+        this.nodeMap = new Map(
+            this.nodeList.map( (node) => [node.key, node] )
+        );
     };
 
     /**
@@ -53,6 +57,17 @@ export class Tree {
     get internalNodes() {
         return this.nodes.filter((node) => node.children );
     };
+
+    /**
+     * Returns a node from its key (a unique Symbol) stored in
+     * the node as poperty 'key'.
+     *
+     * @param key
+     * @returns {*}
+     */
+    getNode(key) {
+        return this.nodeMap.get(key);
+    }
 
     /**
      * A generator function that returns the nodes in a pre-order traversal.
@@ -140,9 +155,9 @@ export class Tree {
         rootChild2.length = rootChild1.length = rootChild1.length * 0.5;
 
         // connect all the children to their parents
-        this.internalNodes.forEach((node) => {
-            node.children.forEach( (child) => child.parent = node );
-        })
+        this.internalNodes.forEach( (node) => {
+            node.children.forEach( (child) => child.parent = node )
+        } );
     };
 
     /**
