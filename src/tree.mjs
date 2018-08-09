@@ -76,12 +76,12 @@ export class Tree {
      */
     *preorder() {
         const traverse = function *(node) {
+            yield node;
             if (node.children) {
                 for (const child of node.children) {
                     yield* traverse(child);
                 }
             }
-            yield node;
         };
 
         yield* traverse(this.root);
@@ -94,12 +94,12 @@ export class Tree {
      */
     *postorder() {
         const traverse = function *(node) {
-            yield node;
             if (node.children) {
                 for (const child of node.children) {
                     yield* traverse(child);
                 }
             }
+            yield node;
         };
 
         yield* traverse(this.root);

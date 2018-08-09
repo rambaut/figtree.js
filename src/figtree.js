@@ -30,5 +30,6 @@ tree.reroot(tree.externalNodes[0]);
 console.log(`Rerooted: ${tree.toNewick()}`);
 
 console.log("Root node key: ", tree.rootNode.key, tree.getNode(tree.rootNode.key));
+console.log("Root parent: ", tree.rootNode.parent);
 
 console.log("RTT: " + tree.rootToTipLengths());
