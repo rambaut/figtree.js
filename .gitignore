@@ -65,6 +65,6 @@ typings/
 .iws
 package-lock.json
 
-test_figtree.js.iml
-test_figtree.js.ipr
-test_figtree.js.iws
+figtree.js.iml
+figtree.js.ipr
+figtree.js.iws
