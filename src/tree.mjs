@@ -106,6 +106,18 @@ export class Tree {
     }
 
     /**
+     * A generator function that returns the nodes in a path to the root
+     *
+     * @returns {IterableIterator<IterableIterator<*|*>>}
+     */
+    *pathToRoot(node) {
+        while (node) {
+            yield node;
+            node = node.parent;
+        }
+    }
+
+    /**
      * An instance method to return a Newick format string for the Tree. Can be called without a parameter to
      * start at the root node. Providing another node will generate a subtree. Labels and branch lengths are
      * included if available.
@@ -203,6 +215,20 @@ export class Tree {
         return count;
     };
 
+    lastCommonAncestor(node1, node2) {
+       // path1 = [...pathToRoot(node1)];
+       // path2 = [...pathToRoot(node2)];
+    }
+
+    pathLength(node1, node2) {
+        let sum = 0;
+
+       // path1 = [...pathToRoot(node1)];
+       // path2 = [...pathToRoot(node2)];
+
+        return sum;
+    }
+
     /**
      * Gives the distance from the root to a given tip (external node).
      * @param tip - the external node
@@ -210,12 +236,13 @@ export class Tree {
      */
     rootToTipLength(tip) {
         let length = 0.0;
-        let node = tip;
-        while (node.parent) {
-            length += node.length;
-            node = node.parent;
+        for (const node of this.pathToRoot(tip)) {
+            if (node.length) {
+                length += node.length;
+            }
         }
         return length;
+
     }
 
     /**
