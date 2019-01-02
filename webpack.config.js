@@ -5,7 +5,7 @@ module.exports = {
     entry: path.resolve(__dirname, 'src', 'tree.mjs'),
     output: {
         path: path.resolve(__dirname, 'js'),
-        filename: 'figtree.mjs'
+        filename: 'figtree.js'
     },
     externals: [
         'd3'
