@@ -1,2 +1,2 @@
-# test_figtree.js
+# figtree.js
 Phylogenetic tree library for JavaScript/Node.js
