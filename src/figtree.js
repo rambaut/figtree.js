@@ -6,39 +6,35 @@ import {Tree} from './tree.js';
  * @param tree
  * @param scales
  */
-function update(svgSelection,tree,scales) {
-    // update edges
+function update(svgSelection, tree, scales) {
 
     // get new positions
-    positionNodes(tree)
+    positionNodes(tree);
+
     const makeLinePath = d3.line()
         .x(d => scales.x(d.height))
         .y(d => scales.y(d.width))
         .curve(d3.curveStepBefore);
 
+    // update edges
     svgSelection.selectAll('.branch')
         .data(tree.nodes.filter(n=>n.parent).map(n=> {
                 return( {target:n,values:[{height:n.parent.height,width:n.parent.width},
                             {height:n.height,width:n.width}
                         ]}
                 )}),
-            n =>n.target.id)
+            n => n.target.id)
         .transition()
         .duration(500)
         .attr("d", edge => makeLinePath(edge.values))
 
     //update nodes
-
-    svgSelection.selectAll('circle')
-        .data(tree.nodes,node =>{
-            return node.id})
+    svgSelection.selectAll('g')
+        .data(tree.nodes, node => node.id)
         .transition()
         .duration(500)
-        .attr('cx', d => {
-            return scales.x(d.height);
-        })
-        .attr('cy', (d) => {
-            return scales.y(d.width);
+        .attr("transform", d => {
+            return `translate(${scales.x(d.height)}, ${scales.y(d.width)})`;
         });
 }
 
@@ -49,13 +45,15 @@ function update(svgSelection,tree,scales) {
 function positionNodes(tree){
     //adding string id so we can id the nodes and branches and keep them consistent during transitions
     tree.nodeList.forEach( (node, index) => node.id = `node ${index}`)
+
     // external nodes get assigned height in 0-1.
     // external nodes are taken from the nodelist which is preorder traversal
-    const numberOfExternalNodes = tree.externalNodes.length
+    const externalNodeCount = tree.externalNodes.length
     const maxRootToTip = d3.max([...tree.rootToTipLengths()]);
-    //tree.externalNodes relies on the nodeList which is set when the object is constructed and does not update with modifications
+
+    // tree.externalNodes relies on the nodeList which is set when the object is constructed and does not update with modifications
     // Here we get the order based on a current traversal
-    const externalNodes= tree.externalNodes.sort( (a,b)=>{
+    const externalNodes= tree.externalNodes.sort( (a,b)=> {
         let postOrder = [...tree.postorder()];
         return postOrder.indexOf(a) - postOrder.indexOf(b)
     });
@@ -63,12 +61,13 @@ function positionNodes(tree){
     for(const [i,node] of externalNodes.entries()){
         //  x and y are in [0,1]
         node.height = tree.rootToTipLength(node)/maxRootToTip; //Node height
-        node.width = i/numberOfExternalNodes; // Other axis width?
+        node.width = i/externalNodeCount; // Other axis width?
     }
-    // internal nodes get the mean height of their childern
+
+    // internal nodes get the mean height of their children
     for(const node of [...tree.postorder()]){
         if(node.children){
-            node.height = tree.rootToTipLength(node)/maxRootToTip;
+            node.height = tree.rootToTipLength(node) / maxRootToTip;
             node.width = d3.mean(node.children, kid => kid.width);
         }
     }
@@ -80,25 +79,29 @@ function positionNodes(tree){
  * @param tree
  * @param scales
  */
-function addNodes(svgSelection,tree,scales) {
-    svgSelection.selectAll('circle')
-        .data(tree.nodes, node =>{
-            return node.id}) // assign the key for continuity during transitions
-        .enter()
-        .append("circle")
-        .attr("cx", d => {
-            return scales.x(d.height);
-        })
-        .attr('cy', (d) => {
-            return scales.y(d.width);
-        })
+function addNodes(svgSelection, tree, scales) {
+    var node = svgSelection.selectAll('g')
+        .data(tree.nodes, node => node.id ) // assign the key for continuity during transitions
+        .enter().append("g")
+        .attr("id", d => d.id )
+        .attr("transform", d => {
+            return `translate(${scales.x(d.height)}, ${scales.y(d.width)})`;
+        });
+
+    node.append("circle")
+        .attr("cx", 0)
+        .attr("cy", 0)
         .attr("r", 6)
-        .attr("id",d =>{
-            return(d.id)
-        })
-        .attr('class', d => { // assign classes for styling later
+        .attr("class", d => { // assign classes for styling later
             return !d.children ? ' node external-node' : ' node internal-node';
         });
+
+    node.append("text")
+        .attr("class", "node-label")
+        .attr("text-anchor", "left")
+        .attr("dx", 0)
+        .attr("dy", 0)
+        .text(d => d.name );
 }
 
 /**
@@ -107,7 +110,7 @@ function addNodes(svgSelection,tree,scales) {
  * @param tree
  * @param scales
  */
-function addBranches(svgSelection,tree,scales){
+function addBranches(svgSelection, tree, scales){
     const makeLinePath = d3.line()
         .x(d => scales.x(d.height))
         .y(d => scales.y(d.width))
@@ -166,7 +169,7 @@ export function hilightInternalNode(svgSelection){
  * @param tree
  * @param scales
  */
-export function reRootOnBranch(svgSelection,tree,scales){
+export function reRootOnBranch(svgSelection, tree, scales){
     svgSelection.selectAll('.branch').on('click', (selectedBranch)=> {
         tree.reroot(selectedBranch.target)
         update(svgSelection,tree,scales);
@@ -179,7 +182,7 @@ export function reRootOnBranch(svgSelection,tree,scales){
  * @param tree
  * @param scales
  */
-export function rotateAtNode(svgSelection,tree,scales){
+export function rotateAtNode(svgSelection, tree,scales){
     svgSelection.selectAll('.internal-node').on('click', (selectedNode)=> {
         tree.rotate(selectedNode)
         update(svgSelection,tree,scales);
@@ -222,5 +225,4 @@ export function drawTree(svg, newickString, margins, ...callBacks) {
     for(const callback of [...callBacks]){
         callback(svgSelection,tree,scales)
     }
-    //addLabels();
 }
