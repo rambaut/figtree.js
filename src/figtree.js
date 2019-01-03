@@ -98,9 +98,10 @@ function addNodes(svgSelection, tree, scales) {
 
     node.append("text")
         .attr("class", "node-label")
-        .attr("text-anchor", "left")
-        .attr("dx", 0)
-        .attr("dy", 0)
+        .attr("text-anchor", "right")
+        .attr("alignment-baseline", "middle")
+        .attr("dx", "12")
+        .attr("dy", "0")
         .text(d => d.name );
 }
 
