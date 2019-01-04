@@ -190,8 +190,7 @@ export function rotateAtNode(svgSelection, tree,scales){
     })
 }
 
-export function drawTree(svg, newickString, margins, ...callBacks) {
-    const tree = Tree.parseNewick(newickString);
+export function drawTree(svg, tree, margins, ...callBacks) {
 
     // get the size of the svg we are drawing on
     const width = svg.getBoundingClientRect().width;
@@ -199,14 +198,17 @@ export function drawTree(svg, newickString, margins, ...callBacks) {
 
     //Assign the node positions on a scale of 0-1
     positionNodes(tree);
-    //remove the tree if it is there already
 
-    d3.select(svg).select('g').remove()
-    // add a group which will containt the new tree
+    //remove the tree if it is there already
+    d3.select(svg).select('g').remove();
+
+    // add a group which will contain the new tree
     d3.select(svg).append('g')
         .attr('transform',`translate(${margins.left},${margins.top})`);
+
     //to save on writing later
-    const svgSelection = d3.select(svg).select('g')
+    const svgSelection = d3.select(svg).select('g');
+
     // create the scales
     const xScale = d3.scaleLinear()
         .domain([0, 1])
@@ -215,6 +217,7 @@ export function drawTree(svg, newickString, margins, ...callBacks) {
     const yScale = d3.scaleLinear()
         .domain([0, 1])
         .range([margins.bottom, height-margins.top]);
+
     //create otherstuff
     const scales ={x:xScale,y:yScale};
 

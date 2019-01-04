@@ -20,6 +20,8 @@ export class Tree {
         this.nodeMap = new Map(
             this.nodeList.map( (node) => [node.key, node] )
         );
+
+        this.callback = () => {};
     };
 
     /**
@@ -170,6 +172,10 @@ export class Tree {
         this.internalNodes.forEach( (node) => {
             node.children.forEach( (child) => child.parent = node )
         } );
+
+        if (this.callback) {
+            this.callback();
+        }
     };
 
     /**
@@ -261,7 +267,7 @@ export class Tree {
      * @param newickString - the Newick format tree as a string
      * @returns {Tree} - an instance of the Tree class
      */
-    static parseNewick(newickString) {
+    static parseNewick(newickString, datePrefix = undefined ) {
         const tokens = newickString.split(/\s*('[^']+'|"[^"]+"|;|\(|\)|,|:)\s*/);
 
         let level = 0;
@@ -344,6 +350,7 @@ export class Tree {
                     }
 
                     let name = token;
+
                     // remove any quoting and then trim whitespace
                     if (name.startsWith("\"") || name.startsWith("'")) {
                         name = name.substr(1);
@@ -351,9 +358,20 @@ export class Tree {
                     if (name.endsWith("\"") || name.endsWith("'")) {
                         name = name.substr(0, name.length - 1);
                     }
+                    name = name.trim();
+
+                    let date = undefined;
+                    if (datePrefix) {
+                        const parts = name.split(datePrefix);
+                        if (parts.length == 0) {
+                            throw new Error(`the tip, ${name}, doesn't have a date separated by the prefix, '${datePrefix}'`);
+                        }
+                        date = parseFloat(parts[parts.length - 1]);
+                    }
 
                     const externalNode = {
-                        name: name.trim(),
+                        name: name,
+                        date: date,
                         parent: currentNode
                     };
 
