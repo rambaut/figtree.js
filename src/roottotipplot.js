@@ -208,14 +208,14 @@ export function drawPlot(svg, tree, margins) {
         .style("text-anchor", "left")
         .attr("alignment-baseline", "hanging")
         .attr("dy", "0")
-        .text(`Slope: `);
+        .text(`Slope: -`);
     svgSelection.append("text")
         .attr("id", "statistics-r2")
         .attr("transform", `translate(${margins.left + 20},${margins.top})`)
         .style("text-anchor", "left")
         .attr("alignment-baseline", "hanging")
-        .attr("dy", "2em")
-        .text(`R^2: `);
+        .attr("dy", "1.5em")
+        .text(`R^2: -`);
 
 
     update(svgSelection, tree, scales);

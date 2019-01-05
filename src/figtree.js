@@ -149,6 +149,35 @@ function addBranches(svgSelection, tree, scales){
 }
 
 /**
+ * Add axis
+ * @param svgSelection
+ * @param tree
+ * @param scales
+ */
+function addAxis(svgSelection, tree, scales, margins) {
+    const xAxis = d3.axisBottom(scales.x)
+        .tickArguments([5, "d"]);
+
+    const xAxisWidth = scales.width - margins.left - margins.right;
+
+    svgSelection.append("g")
+        .attr("id", "x-axis")
+        .attr("class", "axis")
+        .attr("transform", `translate(0, ${scales.height - margins.bottom + 5})`)
+        .call(xAxis);
+
+    svgSelection.append("g")
+        .attr("id", "x-axis-label")
+        .attr("class", "axis-label")
+        .attr("transform", `translate(${margins.left}, ${scales.height - margins.bottom})`)
+        .append("text")
+        .attr("transform", `translate(${xAxisWidth / 2}, 35)`)
+        .attr("alignment-baseline", "hanging")
+        .style("text-anchor", "middle")
+        .text("Divergence");
+}
+
+/**
  * Callback for mouseover highlighting of branches
  * @param svgSelection
  */
@@ -174,8 +203,6 @@ export function hilightInternalNode(svgSelection){
         d3.select(this).attr('class', 'node-shape');
         d3.select(this).attr('r', '6');
     });
-
-
 }
 
 /**
@@ -241,35 +268,16 @@ export function drawTree(svg, tree, margins, ...callBacks) {
         .range([margins.top + 20, height - margins.bottom - 20]);
 
     //create otherstuff
-    const scales ={x:xScale,y:yScale};
+    const scales ={x:xScale, y:yScale, width, height};
 
-    addBranches(svgSelection,tree,scales);
+    addBranches(svgSelection, tree, scales);
 
-    addNodes(svgSelection,tree,scales);
+    addNodes(svgSelection, tree, scales);
 
-    const xAxis = d3.axisBottom(scales.x)
-        .tickArguments([5, "d"]);
-
-    const xAxisWidth = width - margins.left - margins.right;
-
-    svgSelection.append("g")
-        .attr("id", "x-axis")
-        .attr("class", "axis")
-        .attr("transform", `translate(0, ${height - margins.bottom + 5})`)
-        .call(xAxis);
-
-    svgSelection.append("g")
-        .attr("id", "x-axis-label")
-        .attr("class", "axis-label")
-        .attr("transform", `translate(${margins.left}, ${height - margins.bottom})`)
-        .append("text")
-        .attr("transform", `translate(${xAxisWidth / 2}, 35)`)
-        .attr("alignment-baseline", "hanging")
-        .style("text-anchor", "middle")
-        .text("Divergence");
+    addAxis(svgSelection, tree, scales, margins);
 
     // extra parameters are ignored if not required by the callback
     for(const callback of [...callBacks]){
-        callback(svgSelection,tree,scales)
+        callback(svgSelection, tree, scales)
     }
 }
