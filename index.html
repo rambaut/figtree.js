@@ -11,6 +11,16 @@
             font-weight: 300;
         }
 
+        .branch {
+            fill: none;
+            stroke: rgb(0, 0, 0);
+            stroke-width: 2;
+        }
+
+        .branch.hovered {
+            stroke-width: 4;
+        }
+
         .external-node .node-shape {
             fill: rgb(238, 77, 77);
             stroke: rgb(255, 255, 255);
@@ -87,7 +97,7 @@
 
     const tree = Tree.parseNewick(timeTreeString, "_");
 
-    drawTree(document.getElementById('tree-1-svg'), tree, { top: 10, bottom: 10, left: 10, right: 150}, hilightBranch, hilightInternalNode, reRootOnBranch, rotateAtNode);
+    drawTree(document.getElementById('tree-1-svg'), tree, { top: 10, bottom: 60, left: 10, right: 150}, hilightBranch, hilightInternalNode, reRootOnBranch, rotateAtNode);
 
     drawPlot(document.getElementById('rrt-1-svg'), tree, { top: 10, bottom: 60, left: 60, right: 100});
 

@@ -11,6 +11,21 @@ function update(svgSelection, tree, scales) {
     // get new positions
     positionNodes(tree);
 
+    const externalNodeCount = tree.externalNodes.length
+    const maxRootToTip = d3.max([...tree.rootToTipLengths()]);
+
+    // update the scales' domains
+    scales.x.domain([0, maxRootToTip]);
+    scales.y.domain([0, externalNodeCount - 1]);
+
+    const xAxis = d3.axisBottom(scales.x)
+        .tickArguments([5, "d"]);
+
+    svgSelection.select("#x-axis")
+        .transition()
+        .duration(500)
+        .call(xAxis);
+
     const makeLinePath = d3.line()
         .x(d => scales.x(d.height))
         .y(d => scales.y(d.width))
@@ -56,11 +71,6 @@ function positionNodes(tree){
     //adding string id so we can id the nodes and branches and keep them consistent during transitions
     tree.nodeList.forEach( (node, index) => node.id = `node ${index}`)
 
-    // external nodes get assigned height in 0-1.
-    // external nodes are taken from the nodelist which is preorder traversal
-    const externalNodeCount = tree.externalNodes.length
-    const maxRootToTip = d3.max([...tree.rootToTipLengths()]);
-
     // tree.externalNodes relies on the nodeList which is set when the object is constructed and does not update with modifications
     // Here we get the order based on a current traversal
     const externalNodes= tree.externalNodes.sort( (a,b)=> {
@@ -70,14 +80,14 @@ function positionNodes(tree){
 
     for(const [i,node] of externalNodes.entries()){
         //  x and y are in [0,1]
-        node.height = tree.rootToTipLength(node)/maxRootToTip; //Node height
-        node.width = i/externalNodeCount; // Other axis width?
+        node.height = tree.rootToTipLength(node); //Node height
+        node.width = i;
     }
 
     // internal nodes get the mean height of their children
     for(const node of [...tree.postorder()]){
         if(node.children){
-            node.height = tree.rootToTipLength(node) / maxRootToTip;
+            node.height = tree.rootToTipLength(node);
             node.width = d3.mean(node.children, kid => kid.width);
         }
     }
@@ -136,10 +146,7 @@ function addBranches(svgSelection, tree, scales){
             n => n.target.id)
         .enter()
         .append('path')
-        .attr('class', 'line branch')
-        .attr('fill', 'none')
-        .attr('stroke', 'black')
-        .attr('stroke-width',2)
+        .attr('class', 'branch')
         .attr('id',edge=>edge.target.id)
         .attr("d", edge => makeLinePath(edge.values));
 
@@ -151,10 +158,10 @@ function addBranches(svgSelection, tree, scales){
  */
 export function hilightBranch(svgSelection){
     svgSelection.selectAll('.branch').on("mouseover", function(d,i){
-        d3.select(this).attr('stroke-width', 5);
+        d3.select(this).attr('class', 'branch hovered');
     })
     svgSelection.selectAll('.branch').on("mouseout", function(d,i){
-        d3.select(this).attr('stroke-width', 2);
+        d3.select(this).attr('class', 'branch');
     });
 }
 
@@ -225,14 +232,17 @@ export function drawTree(svg, tree, margins, ...callBacks) {
     //to save on writing later
     const svgSelection = d3.select(svg).select('g');
 
+    const externalNodeCount = tree.externalNodes.length
+    const maxRootToTip = d3.max([...tree.rootToTipLengths()]);
+
     // create the scales
     const xScale = d3.scaleLinear()
-        .domain([0, 1])
-        .range([margins.left, width-margins.right]);
+        .domain([0, maxRootToTip])
+        .range([margins.left, width - margins.right]);
 
     const yScale = d3.scaleLinear()
-        .domain([0, 1])
-        .range([margins.bottom, height-margins.top]);
+        .domain([0, externalNodeCount - 1])
+        .range([margins.top + 20, height - margins.bottom - 20]);
 
     //create otherstuff
     const scales ={x:xScale,y:yScale};
@@ -240,6 +250,27 @@ export function drawTree(svg, tree, margins, ...callBacks) {
     addBranches(svgSelection,tree,scales);
 
     addNodes(svgSelection,tree,scales);
+
+    const xAxis = d3.axisBottom(scales.x)
+        .tickArguments([5, "d"]);
+
+    const xAxisWidth = width - margins.left - margins.right;
+
+    svgSelection.append("g")
+        .attr("id", "x-axis")
+        .attr("class", "axis")
+        .attr("transform", `translate(0, ${height - margins.bottom + 5})`)
+        .call(xAxis);
+
+    svgSelection.append("g")
+        .attr("id", "x-axis-label")
+        .attr("class", "axis-label")
+        .attr("transform", `translate(${margins.left}, ${height - margins.bottom})`)
+        .append("text")
+        .attr("transform", `translate(${xAxisWidth / 2}, 35)`)
+        .attr("alignment-baseline", "hanging")
+        .style("text-anchor", "middle")
+        .text("Divergence");
 
     // extra parameters are ignored if not required by the callback
     for(const callback of [...callBacks]){

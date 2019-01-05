@@ -263,7 +263,7 @@ export class Tree {
      * @param tip - the external node
      * @returns {number}
      */
-    rootToTipLength(tip) {
+    rootToTipLength(tip = this.rootNode) {
         let length = 0.0;
         for (const node of this.pathToRoot(tip)) {
             if (node.length) {
