@@ -52,7 +52,7 @@ function update(svgSelection, tree, scales) {
         .attr("d", edge => makeLinePath(edge.values))
 
     //update nodes
-    svgSelection.selectAll('g')
+    svgSelection.selectAll('.node')
         .data(tree.nodes, node => node.id)
         .transition()
         .duration(500)
