@@ -5,18 +5,37 @@
     <title>FigTree Demo</title>
     <script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
     <style>
-        .external-node {
+        text {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 14pt;
+            font-weight: 300;
+        }
+
+        .external-node .node-shape {
             fill: rgb(238, 77, 77);
             stroke: rgb(255, 255, 255);
             stroke-width: 1;
-            color: rgb(238, 77, 77);
         }
 
-        .internal-node {
+        .external-node .node-shape.hovered {
+            stroke: rgb(0,0,0);
+        }
+        .external-node .node-shape.unselected {
+            fill: rgb(238, 77, 77);
+            stroke: rgb(255, 255, 255);
+        }
+        .external-node .node-shape.selected {
+            fill: rgb(238, 238, 77);
+            stroke: rgb(0,0,0);
+        }
+
+        .internal-node .node-shape {
             fill: rgb(76, 179, 230);
             stroke: rgb(255, 255, 255);
             stroke-width: 1;
-            color: rgb(76, 179, 230);
+        }
+        .internal-node .node-shape.hovered {
+            stroke: rgb(0,0,0);
         }
 
         .node-label {
@@ -25,16 +44,10 @@
             font-weight: 300;
         }
 
-        .tip-point {
-            fill: rgb(238, 77, 77);
-            stroke: rgb(255, 255, 255);
-            stroke-width: 1;
-        }
-
         .trend-line {
             stroke: rgb(0,0,0);
             stroke-width: 2;
-
+            stroke-linecap: round;
         }
 
         .axis text {
@@ -43,7 +56,9 @@
             font-weight: 300;
         }
 
-        .axis .axis-label {
+        .axis-label text {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 12pt;
             font-weight: bold;
         }
 
@@ -58,7 +73,7 @@
 <script type="module">
     import { Tree } from "./src/tree.js";
     import { drawTree, hilightBranch, hilightInternalNode, reRootOnBranch, rotateAtNode } from "./src/figtree.js";
-    import { drawPlot } from "./src/roottotipplot.js";
+    import { drawPlot, linkPlots } from "./src/roottotipplot.js";
 
     // const newickString =
     //     '((((((virus1:0.1 ,virus2:0.12):0.08,(virus3:0.011,virus4:0.0087):0.15):0.03,virus5:0.21):0.2,(virus6:0.45,virus7:0.4):0.02):0.1,virus8:0.4):0.1,(virus9:0.04,virus10:0.03):0.6);'
@@ -74,7 +89,9 @@
 
     drawTree(document.getElementById('tree-1-svg'), tree, { top: 10, bottom: 10, left: 10, right: 150}, hilightBranch, hilightInternalNode, reRootOnBranch, rotateAtNode);
 
-    drawPlot(document.getElementById('rrt-1-svg'), tree, { top: 10, bottom: 40, left: 40, right: 100});
+    drawPlot(document.getElementById('rrt-1-svg'), tree, { top: 10, bottom: 60, left: 60, right: 100});
+
+    linkPlots(document.getElementById('tree-1-svg'), document.getElementById('rrt-1-svg'));
 
 </script>
 

@@ -60,6 +60,17 @@ export class Tree {
         return this.nodes.filter((node) => node.children );
     };
 
+    getSibling(node) {
+        if (node.parent) {
+            if (node.parent.children[0] == node) {
+                return node.parent.children[1];
+            } else {
+                return node.parent.children[0];
+            }
+        }
+        return null;
+    }
+
     /**
      * Returns a node from its key (a unique Symbol) stored in
      * the node as poperty 'key'.
@@ -135,43 +146,55 @@ export class Tree {
      * Re-roots the tree at the midway point on the branch above the given node.
      *
      * @param {object} node - The node to be rooted on.
+     * @param proportion - proportion along the branch to place the root (default 0.5)
      */
-    reroot(node) {
-        if (!node.parent || !node.parent.parent) {
+    reroot(node, proportion = 0.5) {
+        if (!node.parent /* || !node.parent.parent */) {
             // the node is the root or a child of the root - nothing to do
             return;
         }
 
         const rootLength = this.rootNode.children[0].length + this.rootNode.children[1].length;
 
-        let parent = node.parent;
-        let ancestor = node;
+        if (node.parent != this.rootNode) {
+            // the node is not a child of the existing root so the root is actually changing
 
-        const rootChild1 = node;
-        const rootChild2 = parent;
+            let parent = node.parent;
+            let ancestor = node;
 
-        while (parent.parent) {
-            parent.children = parent.children.filter((child) => child !== ancestor);
-            if (parent.parent === this.rootNode) {
-                const sibling = parent.parent.children.find((child) => child !== parent);
-                parent.children.push(sibling);
-                sibling.length = rootLength;
-            } else {
-                [parent.length, parent.parent.length] = [parent.parent.length, parent.length];
-                parent.children.push(parent.parent);
+            const rootChild1 = node;
+            const rootChild2 = parent;
+
+            while (parent.parent) {
+                parent.children = parent.children.filter((child) => child !== ancestor);
+                if (parent.parent === this.rootNode) {
+                    const sibling = parent.parent.children.find((child) => child !== parent);
+                    parent.children.push(sibling);
+                    sibling.length = rootLength;
+                } else {
+                    [parent.length, parent.parent.length] = [parent.parent.length, parent.length];
+                    parent.children.push(parent.parent);
+                }
+                ancestor = parent;
+                parent = parent.parent;
             }
-            ancestor = parent;
-            parent = parent.parent;
+
+            // reuse the root node as root
+            this.rootNode.children = [rootChild1, rootChild2];
+            const l = rootChild1.length * proportion;
+            rootChild2.length = l;
+            rootChild1.length = rootChild1.length - l;
+
+            // connect all the children to their parents
+            this.internalNodes.forEach((node) => {
+                node.children.forEach((child) => child.parent = node)
+            });
+        } else {
+            // the root is staying the same, just the position of the root changing
+            const l = node.length * (1.0 - proportion);
+            node.length = l;
+            this.getSibling(node).length = rootLength - l;
         }
-
-        // reuse the root node as root
-        this.rootNode.children = [rootChild1, rootChild2];
-        rootChild2.length = rootChild1.length = rootChild1.length * 0.5;
-
-        // connect all the children to their parents
-        this.internalNodes.forEach( (node) => {
-            node.children.forEach( (child) => child.parent = node )
-        } );
 
         if (this.callback) {
             this.callback();

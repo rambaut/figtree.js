@@ -18,12 +18,20 @@ function update(svgSelection, tree, scales) {
 
     // update edges
     svgSelection.selectAll('.branch')
-        .data(tree.nodes.filter(n=>n.parent).map(n=> {
-                return( {target:n,values:[{height:n.parent.height,width:n.parent.width},
-                            {height:n.height,width:n.width}
-                        ]}
-                )}),
-            n => n.target.id)
+        .data(tree.nodes
+                .filter(n => n.parent)
+                .map(n => {
+                    return {
+                        target:n,
+                        values:[{
+                            height:n.parent.height,
+                            width:n.parent.width
+                        }, {
+                            height:n.height,
+                            width:n.width
+                        }]
+                    };
+                }), n => n.target.id)
         .transition()
         .duration(500)
         .attr("d", edge => makeLinePath(edge.values))
@@ -34,6 +42,8 @@ function update(svgSelection, tree, scales) {
         .transition()
         .duration(500)
         .attr("transform", d => {
+            d.x = scales.x(d.height);
+            d.y = scales.y(d.width);
             return `translate(${scales.x(d.height)}, ${scales.y(d.width)})`;
         });
 }
@@ -83,7 +93,8 @@ function addNodes(svgSelection, tree, scales) {
     var node = svgSelection.selectAll('g')
         .data(tree.nodes, node => node.id ) // assign the key for continuity during transitions
         .enter().append("g")
-        .attr("id", d => d.id )
+        .attr("id", d => (d.name ? d.name : d.id) )
+        .attr("class", d => `node ${!d.children ? ' external-node' : ' internal-node'}`)
         .attr("transform", d => {
             return `translate(${scales.x(d.height)}, ${scales.y(d.width)})`;
         });
@@ -92,9 +103,7 @@ function addNodes(svgSelection, tree, scales) {
         .attr("cx", 0)
         .attr("cy", 0)
         .attr("r", 6)
-        .attr("class", d => { // assign classes for styling later
-            return !d.children ? ' node external-node' : ' node internal-node';
-        });
+        .attr("class", d => 'node-shape unselected');
 
     node.append("text")
         .attr("class", "node-label")
@@ -154,10 +163,12 @@ export function hilightBranch(svgSelection){
  * @param svgSelection
  */
 export function hilightInternalNode(svgSelection){
-    svgSelection.selectAll('.internal-node').on("mouseover", function(d,i) {
+    svgSelection.selectAll('.internal-node').selectAll('.node-shape').on("mouseover", function(d,i) {
+        d3.select(this).attr('class', 'node-shape hovered');
         d3.select(this).attr('r', '8');
     })
-    svgSelection.selectAll('.internal-node').on("mouseout", function(d,i) {
+    svgSelection.selectAll('.internal-node').selectAll('.node-shape').on("mouseout", function(d,i) {
+        d3.select(this).attr('class', 'node-shape');
         d3.select(this).attr('r', '6');
     });
 
@@ -171,8 +182,13 @@ export function hilightInternalNode(svgSelection){
  * @param scales
  */
 export function reRootOnBranch(svgSelection, tree, scales){
-    svgSelection.selectAll('.branch').on('click', (selectedBranch)=> {
-        tree.reroot(selectedBranch.target)
+    svgSelection.selectAll('.branch').on('click', function(selectedBranch) {
+        const node = selectedBranch.target;
+        const x1 = scales.x(selectedBranch.target.height);
+        const x2 = scales.x(selectedBranch.target.parent.height);
+        const mx = d3.mouse(this)[0];
+        const proportion = Math.max(0.0, Math.min(1.0, (mx - x2) / (x1 - x2)));
+        tree.reroot(selectedBranch.target, proportion);
         update(svgSelection,tree,scales);
     })
 }
