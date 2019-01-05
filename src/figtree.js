@@ -34,19 +34,19 @@ function update(svgSelection, tree, scales) {
     // update edges
     svgSelection.selectAll('.branch')
         .data(tree.nodes
-                .filter(n => n.parent)
-                .map(n => {
-                    return {
-                        target:n,
-                        values:[{
-                            height:n.parent.height,
-                            width:n.parent.width
-                        }, {
-                            height:n.height,
-                            width:n.width
-                        }]
-                    };
-                }), n => n.target.id)
+            .filter(n => n.parent)
+            .map(n => {
+                return {
+                    target:n,
+                    values:[{
+                        height:n.parent.height,
+                        width:n.parent.width
+                    }, {
+                        height:n.height,
+                        width:n.width
+                    }]
+                };
+            }), n => n.target.id)
         .transition()
         .duration(500)
         .attr("d", edge => makeLinePath(edge.values))
@@ -156,7 +156,7 @@ function addBranches(svgSelection, tree, scales){
  */
 function addAxis(svgSelection, tree, scales, margins) {
     const xAxis = d3.axisBottom(scales.x)
-        .tickArguments([5, "d"]);
+        .tickArguments([5, "f"]);
 
     const xAxisWidth = scales.width - margins.left - margins.right;
 
@@ -229,11 +229,26 @@ export function reRootOnBranch(svgSelection, tree, scales){
  * @param tree
  * @param scales
  */
-export function rotateAtNode(svgSelection, tree,scales){
+export function rotateAtNode(svgSelection, tree, scales){
     svgSelection.selectAll('.internal-node').on('click', (selectedNode)=> {
         tree.rotate(selectedNode)
-        update(svgSelection,tree,scales);
+        update(svgSelection, tree, scales);
     })
+}
+
+export function addLabels(svg, selection, text ) {
+    d3.select(svg).selectAll(selection).on("mouseover", function() {
+            let tooltip = document.getElementById("tooltip");
+            tooltip.innerHTML = text;
+            tooltip.style.display = "block";
+            tooltip.style.left = d3.event.pageX + 10 + 'px';
+            tooltip.style.top = d3.event.pageY + 10 + 'px';
+        }
+    );
+    d3.select(svg).selectAll(selection).on("mouseout", function() {
+        var tooltip = document.getElementById("tooltip");
+        tooltip.style.display = "none";
+    });
 }
 
 export function drawTree(svg, tree, margins, ...callBacks) {
@@ -280,4 +295,11 @@ export function drawTree(svg, tree, margins, ...callBacks) {
     for(const callback of [...callBacks]){
         callback(svgSelection, tree, scales)
     }
+
+    // const internal_node_text="This is an internal node - it is a putitive<br>common ancestor of the viruses to the right";
+    // const external_node_text="This is an external or leaf node - it represents<br>a sampled, sequenced virus";
+    // const branch_text="This is a branch - it represents an<br>evolutionary lineage joining two nodes";
+    // const root_text="The root node - represents the most recent<br>common ancestor of the whole tree";
+    //
+    // addLabels(svgSelection, '.internal-node .node-shape', internal_node_text )
 }
