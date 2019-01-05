@@ -68,29 +68,25 @@ function update(svgSelection, tree, scales) {
  * @param tree
  */
 function positionNodes(tree){
-    //adding string id so we can id the nodes and branches and keep them consistent during transitions
-    tree.nodeList.forEach( (node, index) => node.id = `node ${index}`)
 
-    // tree.externalNodes relies on the nodeList which is set when the object is constructed and does not update with modifications
-    // Here we get the order based on a current traversal
-    const externalNodes= tree.externalNodes.sort( (a,b)=> {
-        let postOrder = [...tree.postorder()];
-        return postOrder.indexOf(a) - postOrder.indexOf(b)
+    // get the nodes in post-order
+    const nodes = [...tree.postorder()];
+
+    // first set the 'width' of the external nodes
+    nodes.filter( n => !n.children).forEach( (node, index) => {
+        node.width = index;
     });
 
-    for(const [i,node] of externalNodes.entries()){
-        //  x and y are in [0,1]
+    nodes.forEach( (node, index) => {
+        //adding string id so we can id the nodes and branches and keep them consistent during transitions
+        node.id = `node_${index}`;
         node.height = tree.rootToTipLength(node); //Node height
-        node.width = i;
-    }
 
-    // internal nodes get the mean height of their children
-    for(const node of [...tree.postorder()]){
-        if(node.children){
-            node.height = tree.rootToTipLength(node);
-            node.width = d3.mean(node.children, kid => kid.width);
+        // internal nodes get the mean width of their children
+        if (node.children) {
+            node.width = d3.mean(node.children, child => child.width);
         }
-    }
+    });
 }
 
 /**
