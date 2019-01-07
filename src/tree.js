@@ -60,15 +60,17 @@ export class Tree {
         return this.nodes.filter((node) => node.children );
     };
 
+    /**
+     * Returns the sibling of a node (i.e., the first other child of the parent)
+     *
+     * @param node
+     * @returns {*}
+     */
     getSibling(node) {
-        if (node.parent) {
-            if (node.parent.children[0] == node) {
-                return node.parent.children[1];
-            } else {
-                return node.parent.children[0];
-            }
+        if (!node.parent) {
+            return null;
         }
-        return null;
+        return node.parent.children.find((child) => child !== parent);
     }
 
     /**
@@ -149,8 +151,8 @@ export class Tree {
      * @param proportion - proportion along the branch to place the root (default 0.5)
      */
     reroot(node, proportion = 0.5) {
-        if (!node.parent /* || !node.parent.parent */) {
-            // the node is the root or a child of the root - nothing to do
+        if (!node.parent) {
+            // the node is the root - nothing to do
             return;
         }
 
@@ -161,6 +163,9 @@ export class Tree {
 
             let parent = node.parent;
             let ancestor = node;
+
+            // was the node the first child in the parent's children?
+            const nodeAtTop = parent.children[0] === node;
 
             const rootChild1 = node;
             const rootChild2 = parent;
@@ -179,8 +184,12 @@ export class Tree {
                 parent = parent.parent;
             }
 
-            // reuse the root node as root
-            this.rootNode.children = [rootChild1, rootChild2];
+            // Reuse the root node as root...
+
+            // Set the order of the children to be the same as for the original parent of the node.
+            // This makes for a more visually consistent rerooting graphically.
+            this.rootNode.children = nodeAtTop ? [rootChild1, rootChild2] : [rootChild2, rootChild1];
+
             const l = rootChild1.length * proportion;
             rootChild2.length = l;
             rootChild1.length = rootChild1.length - l;

@@ -113,11 +113,29 @@ function addNodes(svgSelection, tree, scales) {
 
     node.append("text")
         .attr("class", "node-label")
-        .attr("text-anchor", "right")
+        .attr("text-anchor", "start")
         .attr("alignment-baseline", "middle")
         .attr("dx", "12")
         .attr("dy", "0")
         .text(d => d.name );
+
+    node.append("text")
+        .attr("class", "node-label")
+        .attr("text-anchor", "end")
+        .attr("dx", "-6")
+        .attr("dy", d => {
+            if (d.parent && d.parent.children[0] === d)
+                return "-8";
+            else
+                return "8";
+        })
+        .attr("alignment-baseline", d => {
+            if (d.parent && d.parent.children[0] === d)
+                return "bottom";
+            else
+                return "hanging";
+        })
+        .text(d => d.label );
 }
 
 /**

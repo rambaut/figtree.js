@@ -103,16 +103,38 @@
     import { drawTree, addLabels } from "./src/figtree.js";
 
     const newickString =
-        '((((((virus1:0.1 ,virus2:0.12):0.08,(virus3:0.011,virus4:0.0087):0.15):0.03,virus5:0.21):0.2,(virus6:0.45,virus7:0.4):0.02):0.1,virus8:0.4):0.1,(virus9:0.04,virus10:0.03):0.6);'
+        '((((((virus1:0.1,virus2:0.12)0.95:0.08,(virus3:0.011,virus4:0.0087)1.0:0.15)0.65:0.03,virus5:0.21)1.0:0.2,(virus6:0.45,virus7:0.4)0.51:0.02)1.0:0.1,virus8:0.4)1.0:0.1,(virus9:0.04,virus10:0.03)1.0:0.6);'
 
     const tree = Tree.parseNewick(newickString);
 
     drawTree(document.getElementById('phylogram_1a'), tree, { top: 10, bottom: 60, left: 10, right: 150});
 
     addLabels(document.getElementById('phylogram_1a'), '.internal-node .node-shape', "This is an internal node - it is a putitive<br>common ancestor of the viruses to the right" );
+    addLabels(document.getElementById('phylogram_1a'), '.internal-node .node-label', "This is a support value - it gives the degree<br>of statistical support that the viruses to the<br>right cluster together");
     addLabels(document.getElementById('phylogram_1a'), '.external-node .node-shape', "This is an external or leaf node - it represents<br>a sampled, sequenced virus");
+    addLabels(document.getElementById('phylogram_1a'), '.external-node .node-label', "This is an external or leaf node - it represents<br>a sampled, sequenced virus");
     addLabels(document.getElementById('phylogram_1a'), '.branch', "This is a branch - it represents an<br>evolutionary lineage joining two nodes");
     addLabels(document.getElementById('phylogram_1a'), '.internal-node #node_0', "The root node - represents the most recent<br>common ancestor of the whole tree");
+</script>
+
+<div>
+    <figure>
+        <svg id="phylogram_2"  width="600" height="500"></svg>
+    </figure>
+</div>
+
+<script type="module">
+    import { Tree } from "./src/tree.js";
+    import { drawTree, addLabels, reRootOnBranch } from "./src/figtree.js";
+
+    const newickString =
+        '((virus1:0.1,virus2:0.12):0.08,((virus3:0.011,virus4:0.0087):0.15,(virus5:0.21,((virus6:0.45,virus7:0.4):0.02,(virus8:0.4,((virus9:0.04,virus10:0.03):0.6)root:0.1):0.1):0.2):0.03):0.04);'
+
+    const tree = Tree.parseNewick(newickString);
+
+    drawTree(document.getElementById('phylogram_2'), tree, { top: 10, bottom: 60, left: 10, right: 150}, reRootOnBranch);
+
+    addLabels(document.getElementById('phylogram_2'), '.internal-node #node_0', "This is the position of the root node<br>in the rooted trees, above.<br><br>Click on it to root the tree\n");
 </script>
 
 <div>
