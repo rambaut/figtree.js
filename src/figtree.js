@@ -31,26 +31,11 @@ function update(svgSelection, tree, scales) {
         .y(d => scales.y(d.width))
         .curve(d3.curveStepBefore);
 
-    // update edges
-    tree.nodes
-        .filter(n => n.parent)
-        .map(n => {
-            return {
-                target: n,
-                values:[{
-                    height: n.parent.height,
-                    width: n.parent.width
-                }, {
-                    height: n.height,
-                    width: n.width
-                }]
-            };
-        });
 
     svgSelection.selectAll('.branch')
         .transition()
         .duration(500)
-        .attr("d", edge => makeLinePath(edge.values))
+        .attr("d", edge => makeLinePath(edge.location))
 
     //update nodes
     svgSelection.selectAll('.node')
@@ -63,8 +48,7 @@ function update(svgSelection, tree, scales) {
         });
 
     //update labels
-    svgSelection.selectAll('.node-label')
-        // .select('.node-label')
+    svgSelection.selectAll('.support')
         .transition()
         .duration(500)
         .attr("dy", d => {
@@ -105,6 +89,17 @@ function positionNodes(tree){
             node.width = d3.mean(node.children, child => child.width);
         }
     });
+
+    nodes.filter(n => n.parent)
+        .forEach(n => {
+            n.location = [{
+                    height: n.parent.height,
+                    width: n.parent.width
+                }, {
+                    height: n.height,
+                    width: n.width
+                }]
+        });
 }
 
 /**
@@ -138,7 +133,7 @@ function addNodes(svgSelection, tree, scales) {
         .text(d => d.name );
 
     node.append("text")
-        .attr("class", "node-label")
+        .attr("class", "node-label support")
         .attr("text-anchor", "end")
         .attr("dx", "-6")
         .attr("dy", d => {
@@ -168,28 +163,15 @@ function addBranches(svgSelection, tree, scales){
         .y(d => scales.y(d.width))
         .curve(d3.curveStepBefore);
 
-    const edges = tree.nodes
-        .filter(n => n.parent)
-        .map(n => {
-            return {
-                target: n,
-                values:[{
-                    height: n.parent.height,
-                    width: n.parent.width
-                }, {
-                    height: n.height,
-                    width: n.width
-                }]
-            };
-        });
+    const edges = tree.nodes.filter(n => n.location)
 
     svgSelection.selectAll('.line')
-        .data(edges, n => n.target.id)
+        .data(edges, n => n.id)
         .enter()
         .append('path')
         .attr('class', 'branch')
-        .attr('id', edge => edge.target.id)
-        .attr("d", edge => makeLinePath(edge.values));
+        .attr('id', edge => edge.id)
+        .attr("d", edge => makeLinePath(edge.location));
 
 }
 
