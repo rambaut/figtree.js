@@ -32,34 +32,52 @@ function update(svgSelection, tree, scales) {
         .curve(d3.curveStepBefore);
 
     // update edges
+    tree.nodes
+        .filter(n => n.parent)
+        .map(n => {
+            return {
+                target: n,
+                values:[{
+                    height: n.parent.height,
+                    width: n.parent.width
+                }, {
+                    height: n.height,
+                    width: n.width
+                }]
+            };
+        });
+
     svgSelection.selectAll('.branch')
-        .data(tree.nodes
-            .filter(n => n.parent)
-            .map(n => {
-                return {
-                    target:n,
-                    values:[{
-                        height:n.parent.height,
-                        width:n.parent.width
-                    }, {
-                        height:n.height,
-                        width:n.width
-                    }]
-                };
-            }), n => n.target.id)
         .transition()
         .duration(500)
         .attr("d", edge => makeLinePath(edge.values))
 
     //update nodes
     svgSelection.selectAll('.node')
-        .data(tree.nodes, node => node.id)
         .transition()
         .duration(500)
         .attr("transform", d => {
             d.x = scales.x(d.height);
             d.y = scales.y(d.width);
             return `translate(${scales.x(d.height)}, ${scales.y(d.width)})`;
+        });
+
+    //update labels
+    svgSelection.selectAll('.node-label')
+        // .select('.node-label')
+        .transition()
+        .duration(500)
+        .attr("dy", d => {
+            if (d.parent && d.parent.children[0] === d)
+                return "-8";
+            else
+                return "8";
+        })
+        .attr("alignment-baseline", d => {
+            if (d.parent && d.parent.children[0] === d)
+                return "bottom";
+            else
+                return "hanging";
         });
 }
 
@@ -150,18 +168,27 @@ function addBranches(svgSelection, tree, scales){
         .y(d => scales.y(d.width))
         .curve(d3.curveStepBefore);
 
+    const edges = tree.nodes
+        .filter(n => n.parent)
+        .map(n => {
+            return {
+                target: n,
+                values:[{
+                    height: n.parent.height,
+                    width: n.parent.width
+                }, {
+                    height: n.height,
+                    width: n.width
+                }]
+            };
+        });
+
     svgSelection.selectAll('.line')
-        .data(tree.nodes.filter(n=>n.parent).map(n=> {
-                return( {target:n,values:[{height:n.parent.height,width:n.parent.width},
-                            {height:n.height,width:n.width}
-                        ]}
-                );
-            }),
-            n => n.target.id)
+        .data(edges, n => n.target.id)
         .enter()
         .append('path')
         .attr('class', 'branch')
-        .attr('id',edge=>edge.target.id)
+        .attr('id', edge => edge.target.id)
         .attr("d", edge => makeLinePath(edge.values));
 
 }
