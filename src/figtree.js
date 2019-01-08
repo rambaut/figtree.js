@@ -50,13 +50,14 @@ function update(svgSelection, tree, scales) {
     //update labels
     svgSelection.selectAll('.support')
         .transition()
-        .duration(500)
+        .duration(250)
         .attr("dy", d => {
             if (d.parent && d.parent.children[0] === d)
                 return "-8";
             else
                 return "8";
         })
+        .delay(250)
         .attr("alignment-baseline", d => {
             if (d.parent && d.parent.children[0] === d)
                 return "bottom";
@@ -75,9 +76,7 @@ function positionNodes(tree){
     const nodes = [...tree.postorder()];
 
     // first set the 'width' of the external nodes
-    nodes.filter( n => !n.children).forEach( (node, index) => {
-        node.width = index;
-    });
+    nodes.filter(n => !n.children).forEach( (node, index) => (node.width = index) );
 
     nodes.forEach( (node, index) => {
         //adding string id so we can id the nodes and branches and keep them consistent during transitions
