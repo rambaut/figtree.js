@@ -239,13 +239,12 @@ export function hilightInternalNode(svgSelection){
  * @param scales
  */
 export function reRootOnBranch(svgSelection, tree, scales){
-    svgSelection.selectAll('.branch').on('click', function(selectedBranch) {
-        const node = selectedBranch.target;
-        const x1 = scales.x(selectedBranch.target.height);
-        const x2 = scales.x(selectedBranch.target.parent.height);
+    svgSelection.selectAll('.branch').on('click', function (selectedBranchTarget) {
+        const x1 = scales.x(selectedBranchTarget.height);
+        const x2 = scales.x(selectedBranchTarget.parent.height);
         const mx = d3.mouse(this)[0];
         const proportion = Math.max(0.0, Math.min(1.0, (mx - x2) / (x1 - x2)));
-        tree.reroot(selectedBranch.target, proportion);
+        tree.reroot(selectedBranchTarget, proportion);
         update(svgSelection,tree,scales);
     })
 }
