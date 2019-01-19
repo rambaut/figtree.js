@@ -125,7 +125,7 @@ export class Tree {
      *
      * @returns {IterableIterator<IterableIterator<*|*>>}
      */
-    *pathToRoot(node) {
+    static* pathToRoot(node) {
         while (node) {
             yield node;
             node = node.parent;
@@ -158,7 +158,7 @@ export class Tree {
 
         const rootLength = this.rootNode.children[0].length + this.rootNode.children[1].length;
 
-        if (node.parent != this.rootNode) {
+        if (node.parent !== this.rootNode) {
             // the node is not a child of the existing root so the root is actually changing
 
             let parent = node.parent;
@@ -258,7 +258,7 @@ export class Tree {
        // path2 = [...pathToRoot(node2)];
     }
 
-    pathLength(node1, node2) {
+    static pathLength(node1, node2) {
         let sum = 0;
 
        // path1 = [...pathToRoot(node1)];
@@ -274,7 +274,7 @@ export class Tree {
      */
     rootToTipLength(tip = this.rootNode) {
         let length = 0.0;
-        for (const node of this.pathToRoot(tip)) {
+        for (const node of Tree.pathToRoot(tip)) {
             if (node.length) {
                 length += node.length;
             }
@@ -297,6 +297,7 @@ export class Tree {
      * or any of the tree definitition characters '(),:;' - the quotes (and any whitespace immediately within)
      * will be removed.
      * @param newickString - the Newick format tree as a string
+     * @param datePrefix
      * @returns {Tree} - an instance of the Tree class
      */
     static parseNewick(newickString, datePrefix = undefined ) {
@@ -395,7 +396,7 @@ export class Tree {
                     let date = undefined;
                     if (datePrefix) {
                         const parts = name.split(datePrefix);
-                        if (parts.length == 0) {
+                        if (parts.length === 0) {
                             throw new Error(`the tip, ${name}, doesn't have a date separated by the prefix, '${datePrefix}'`);
                         }
                         date = parseFloat(parts[parts.length - 1]);
