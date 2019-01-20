@@ -71,7 +71,7 @@ export class Tree {
         if (!node.parent) {
             return null;
         }
-        return node.parent.children.find((child) => child !== parent);
+        return node.parent.children.find((child) => child !== node);
     }
 
     /**
@@ -174,7 +174,7 @@ export class Tree {
             while (parent.parent) {
                 parent.children = parent.children.filter((child) => child !== ancestor);
                 if (parent.parent === this.rootNode) {
-                    const sibling = parent.parent.children.find((child) => child !== parent);
+                    const sibling = this.getSibling(parent);
                     parent.children.push(sibling);
                     sibling.length = rootLength;
                 } else {

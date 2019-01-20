@@ -56,6 +56,8 @@ export class FigTree {
 
         this.curve = d3.curveStepBefore;
 
+        this.lengthFormat = d3.format(".2f");
+
         // call the private methods to create the components of the diagram
         addBranches.call(this);
         addNodes.call(this);
@@ -116,7 +118,8 @@ export class FigTree {
                     return "hanging";
                 else
                     return "bottom";
-            });
+            })
+            .text(d => this.lengthFormat(d.length));
 
         //update nodes
         this.svgSelection.selectAll('.node')
@@ -414,7 +417,7 @@ function addBranches() {
             else
                 return "bottom";
         })
-        .text(d => d.length);
+        .text(d => this.lengthFormat(d.length));
 }
 
 /**

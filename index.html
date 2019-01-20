@@ -188,7 +188,10 @@
     import { RootToTipPlot } from "./src/roottotipplot.js";
 
     const timeTreeString =
-        '((((virusA_1975:20.0,virusB_1965:10.0):10.0,virusC_1985:40.0):15.0,(virusD_1970:35.0,virusE_1955:20.0):5.0):25.0,(virusF_2000:55.0,virusG_1960:15.0):40.0);';
+        "((virusA_1975:20.0,virusB_1965:10.0):10.0,virusC_1985:40.0);";
+
+    // const timeTreeString =
+    //     '((((virusA_1975:20.0,virusB_1965:10.0):10.0,virusC_1985:40.0):15.0,(virusD_1970:35.0,virusE_1955:20.0):5.0):25.0,(virusF_2000:55.0,virusG_1960:15.0):40.0);';
 
     const tree = Tree.parseNewick(timeTreeString, "_");
     const treeSVG = document.getElementById('tree-2-svg');
@@ -200,9 +203,9 @@
     figTree.hilightInternalNodes();
     figTree.onClickNode(FigTree.rotate)
 
-    const rrtp = new RootToTipPlot(document.getElementById('rrt-2-svg'), tree, { top: 10, bottom: 60, left: 60, right: 100});
-
-    rrtp.linkWithTree(treeSVG);
+    // const rrtp = new RootToTipPlot(document.getElementById('rrt-2-svg'), tree, { top: 10, bottom: 60, left: 60, right: 100});
+    //
+    // rrtp.linkWithTree(treeSVG);
 
 </script>
 
@@ -227,6 +230,27 @@
     figTree.hilightInternalNodes();
     figTree.onClickNode(FigTree.rotate)
 </script>
+
+<div>
+    <svg id="tree-3-svg"  width="400" height="300"></svg>
+</div>
+
+<script type="module">
+    import { Tree } from "./src/tree.js";
+    import { FigTree } from "./src/figtree.js";
+
+    const timeTreeString =
+        "((virusA_1975:20.0,virusB_1965:10.0):10.0,virusC_1985:40.0);";
+
+    const tree = Tree.parseNewick(timeTreeString, "_");
+    const treeSVG = document.getElementById('tree-3-svg');
+
+    const figTree = new FigTree(treeSVG, tree, { top: 10, bottom: 60, left: 10, right: 150});
+
+    figTree.hilightBranches();
+    figTree.onClickBranch(FigTree.reroot)
+</script>
+
 
 </body>
 
