@@ -301,7 +301,7 @@ export class FigTree {
             const x2 = self.scales.x(selectedBranch.parent.height);
             const mx = d3.mouse(this)[0];
             const proportion = Math.max(0.0, Math.min(1.0, (mx - x2) / (x1 - x2)));
-            action(self.tree, selectedBranchTarget, proportion);
+            action(self.tree, selectedBranch, proportion);
             self.update();
         })
     }
