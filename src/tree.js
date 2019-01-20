@@ -253,18 +253,21 @@ export class Tree {
         return count;
     };
 
-    lastCommonAncestor(node1, node2) {
-       // path1 = [...pathToRoot(node1)];
-       // path2 = [...pathToRoot(node2)];
+    static lastCommonAncestor(node1, node2) {
+        throw new Error("method 'lastCommonAncestor' is not implemented yet");
+
+        // path1 = [...pathToRoot(node1)];
+        // path2 = [...pathToRoot(node2)];
     }
 
     static pathLength(node1, node2) {
-        let sum = 0;
+        throw new Error("method 'pathLength' is not implemented yet");
 
-       // path1 = [...pathToRoot(node1)];
-       // path2 = [...pathToRoot(node2)];
+        // let sum = 0;
+        // path1 = [...pathToRoot(node1)];
+        // path2 = [...pathToRoot(node2)];
 
-        return sum;
+        // return sum;
     }
 
     /**
@@ -272,7 +275,7 @@ export class Tree {
      * @param tip - the external node
      * @returns {number}
      */
-    rootToTipLength(tip = this.rootNode) {
+    static rootToTipLength(tip) {
         let length = 0.0;
         for (const node of Tree.pathToRoot(tip)) {
             if (node.length) {

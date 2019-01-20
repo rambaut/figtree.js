@@ -136,7 +136,6 @@ export class RootToTipPlot {
             .attr("dy", "1.5em")
             .text(`R^2: -`);
 
-
         this.update();
 
         this.tree.callback = () => this.update();

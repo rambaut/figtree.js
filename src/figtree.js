@@ -54,23 +54,10 @@ export class FigTree {
 
         this.scales ={x:xScale, y:yScale, width, height};
 
-        this.addBranches();
-
-        this.addNodes();
-
-        this.addAxis(margins);
-
-        // extra parameters are ignored if not required by the callback
-        // for(const callback of [...callBacks]){
-        //     callback(svgSelection, tree, this.scales)
-        // }
-
-        // const internal_node_text="This is an internal node - it is a putitive<br>common ancestor of the viruses to the right";
-        // const external_node_text="This is an external or leaf node - it represents<br>a sampled, sequenced virus";
-        // const branch_text="This is a branch - it represents an<br>evolutionary lineage joining two nodes";
-        // const root_text="The root node - represents the most recent<br>common ancestor of the whole tree";
-        //
-        // addLabels(svgSelection, '.internal-node .node-shape', internal_node_text )
+        // call the private methods to create the components of the diagram
+        addBranches.call(this);
+        addNodes.call(this);
+        addAxis.call(this, margins);
     }
 
     /**
@@ -134,107 +121,6 @@ export class FigTree {
                 else
                     return "hanging";
             });
-    }
-
-    /**
-     * Adds node circles
-     */
-    addNodes() {
-        var node = this.svgSelection.selectAll('g')
-            .data(this.tree.nodes, node => node.id) // assign the key for continuity during transitions
-            .enter().append("g")
-            .attr("id", d => {
-                if (d.label && d.label.startsWith("#")) {
-                    return d.label.substr(1);
-                } else {
-                    return (d.name ? d.name : (d === this.tree.rootNode ? 'root' : d.id));
-                }
-            })
-            .attr("class", d => `node ${!d.children ? ' external-node' : ' internal-node'}`)
-            .attr("transform", d => {
-                return `translate(${this.scales.x(d.height)}, ${this.scales.y(d.width)})`;
-            });
-
-        node.append("circle")
-            .attr("cx", 0)
-            .attr("cy", 0)
-            .attr("r", 6)
-            .attr("class", d => 'node-shape unselected')
-
-        node.append("text")
-            .attr("class", "node-label")
-            .attr("text-anchor", "start")
-            .attr("alignment-baseline", "middle")
-            .attr("dx", "12")
-            .attr("dy", "0")
-            .text(d => d.name);
-
-        node.append("text")
-            .attr("class", "node-label support")
-            .attr("text-anchor", "end")
-            .attr("dx", "-6")
-            .attr("dy", d => {
-                if (d.parent && d.parent.children[0] === d)
-                    return "-8";
-                else
-                    return "8";
-            })
-            .attr("alignment-baseline", d => {
-                if (d.parent && d.parent.children[0] === d)
-                    return "bottom";
-                else
-                    return "hanging";
-            })
-            .text(d => {
-                return (d.label && d.label.startsWith("#")? "" : d.label);
-            });
-    }
-
-    /**
-     * Adds branch lines
-     */
-    addBranches() {
-        const makeLinePath = d3.line()
-            .x(d => this.scales.x(d.height))
-            .y(d => this.scales.y(d.width))
-            .curve(d3.curveStepBefore);
-
-        const edges = this.tree.nodes.filter(n => n.location)
-
-        this.svgSelection.selectAll('.line')
-            .data(edges, n => n.id)
-            .enter()
-            .append('path')
-            .attr('class', 'branch')
-            .attr('id', edge => edge.id)
-            .attr("d", edge => makeLinePath(edge.location));
-
-    }
-
-    /**
-     * Add axis
-     */
-    addAxis(margins) {
-        const xAxis = d3.axisBottom(this.scales.x)
-            .tickArguments([5, "f"]);
-
-        const xAxisWidth = this.scales.width - margins.left - margins.right;
-
-        this.svgSelection.append("g")
-            .attr("id", "x-axis")
-            .attr("class", "axis")
-            .attr("transform", `translate(0, ${this.scales.height - margins.bottom + 5})`)
-            .call(xAxis);
-
-        this.svgSelection.append("g")
-            .attr("id", "x-axis-label")
-            .attr("class", "axis-label")
-            .attr("transform", `translate(${margins.left}, ${this.scales.height - margins.bottom})`)
-            .append("text")
-            .attr("transform", `translate(${xAxisWidth / 2}, 35)`)
-            .attr("alignment-baseline", "hanging")
-            .style("text-anchor", "middle")
-            .text("Divergence");
     }
 
     /**
@@ -383,4 +269,109 @@ export class FigTree {
     static reroot(tree, branch, position) {
         tree.reroot(branch, position);
     }
+}
+
+/*
+ * Private methods, called by the class using the <function>.call(this) function.
+ */
+
+/**
+ * Adds internal and external nodes with shapes and labels
+ */
+function addNodes() {
+    var node = this.svgSelection.selectAll('g')
+        .data(this.tree.nodes, node => node.id) // assign the key for continuity during transitions
+        .enter().append("g")
+        .attr("id", d => {
+            if (d.label && d.label.startsWith("#")) {
+                return d.label.substr(1);
+            } else {
+                return (d.name ? d.name : (d === this.tree.rootNode ? 'root' : d.id));
+            }
+        })
+        .attr("class", d => `node ${!d.children ? ' external-node' : ' internal-node'}`)
+        .attr("transform", d => {
+            return `translate(${this.scales.x(d.height)}, ${this.scales.y(d.width)})`;
+        });
+
+    node.append("circle")
+        .attr("cx", 0)
+        .attr("cy", 0)
+        .attr("r", 6)
+        .attr("class", d => 'node-shape unselected')
+
+    node.append("text")
+        .attr("class", "node-label")
+        .attr("text-anchor", "start")
+        .attr("alignment-baseline", "middle")
+        .attr("dx", "12")
+        .attr("dy", "0")
+        .text(d => d.name);
+
+    node.append("text")
+        .attr("class", "node-label support")
+        .attr("text-anchor", "end")
+        .attr("dx", "-6")
+        .attr("dy", d => {
+            if (d.parent && d.parent.children[0] === d)
+                return "-8";
+            else
+                return "8";
+        })
+        .attr("alignment-baseline", d => {
+            if (d.parent && d.parent.children[0] === d)
+                return "bottom";
+            else
+                return "hanging";
+        })
+        .text(d => {
+            return (d.label && d.label.startsWith("#")? "" : d.label);
+        });
+}
+
+/**
+ * Adds branch lines
+ */
+function addBranches() {
+    const makeLinePath = d3.line()
+        .x(d => this.scales.x(d.height))
+        .y(d => this.scales.y(d.width))
+        .curve(d3.curveStepBefore);
+
+    const edges = this.tree.nodes.filter(n => n.location)
+
+    this.svgSelection.selectAll('.line')
+        .data(edges, n => n.id)
+        .enter()
+        .append('path')
+        .attr('class', 'branch')
+        .attr('id', edge => edge.id)
+        .attr("d", edge => makeLinePath(edge.location));
+
+}
+
+/**
+ * Add axis
+ */
+function addAxis(margins) {
+    const xAxis = d3.axisBottom(this.scales.x)
+        .tickArguments([5, "f"]);
+
+    const xAxisWidth = this.scales.width - margins.left - margins.right;
+
+    this.svgSelection.append("g")
+        .attr("id", "x-axis")
+        .attr("class", "axis")
+        .attr("transform", `translate(0, ${this.scales.height - margins.bottom + 5})`)
+        .call(xAxis);
+
+    this.svgSelection.append("g")
+        .attr("id", "x-axis-label")
+        .attr("class", "axis-label")
+        .attr("transform", `translate(${margins.left}, ${this.scales.height - margins.bottom})`)
+        .append("text")
+        .attr("transform", `translate(${xAxisWidth / 2}, 35)`)
+        .attr("alignment-baseline", "hanging")
+        .style("text-anchor", "middle")
+        .text("Divergence");
 }
