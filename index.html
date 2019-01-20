@@ -100,6 +100,8 @@
     <figure>
         <svg id="phylogram_1a"  width="600" height="500"></svg>
     </figure>
+    <button id="sort_button_up">Sort ascending</button>
+    <button id="sort_button_down">Sort descending</button>
 </div>
 
 <script type="module">
@@ -114,14 +116,23 @@
 
     const figTree = new FigTree(treeSVG, tree, { top: 10, bottom: 60, left: 10, right: 150});
     figTree.hilightInternalNodes();
-    figTree.onClickNode(FigTree.rotate)
+    figTree.onClickNode(FigTree.orderDecreasing)
 
     figTree.addLabels('#root', "The root node - represents the most recent<br>common ancestor of the whole tree");
-    figTree.addLabels('.internal-node .node-shape', "This is an internal node - it is a putitive<br>common ancestor of the viruses to the right" );
+    figTree.addLabels('.internal-node .node-shape', "This is an internal node - it is the most recent<br>common ancestor of the viruses to the right" );
     figTree.addLabels('.internal-node .node-label', "This is a support value - it gives the degree<br>of statistical support that the viruses to the<br>right cluster together");
-    figTree.addLabels('.external-node', "This is an external or leaf node - it represents<br>a sampled, sequenced virus");
+    figTree.addLabels('.external-node', "This is an external, leaf, or tip node - it represents<br>a sampled, sequenced virus");
     figTree.addLabels('.branch', "This is a branch - it represents an<br>evolutionary lineage joining two nodes");
+
+    document.getElementById('sort_button_up').onclick = function() {
+            tree.order(tree.rootNode, false);
+        };
+    document.getElementById('sort_button_down').onclick = function() {
+        tree.order(tree.rootNode, true);
+    };
+
 </script>
+
 
 <div>
     <figure>
@@ -145,6 +156,7 @@
     figTree.onClickNode((tree, node) => { tree.reroot(node, 1.0) }, "#root");
 
     figTree.addLabels('#root', "This is the position of the root node<br>in the rooted trees, above.<br><br>Click on it to root the tree\n");
+
 </script>
 
 <div>

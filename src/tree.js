@@ -21,7 +21,8 @@ export class Tree {
             this.nodeList.map( (node) => [node.key, node] )
         );
 
-        this.callback = () => {};
+        // a callback function that is called whenever the tree is changed
+        this.treeUpdateCallback = () => {};
     };
 
     /**
@@ -205,9 +206,7 @@ export class Tree {
             this.getSibling(node).length = rootLength - l;
         }
 
-        if (this.callback) {
-            this.callback();
-        }
+        this.treeUpdateCallback();
     };
 
     /**
@@ -226,41 +225,32 @@ export class Tree {
             }
             node.children.reverse();
         }
+
+        this.treeUpdateCallback();
     };
 
     /**
      * Sorts the child branches of each node in order of increasing or decreasing number
-     * of tips. This operates recursively from the node give.
+     * of tips. This operates recursively from the node given.
      *
      * @param node - the node to start sorting from
      * @param {boolean} increasing - sorting in increasing node order or decreasing?
      * @returns {number} - the number of tips below this node
      */
-    order(node, increasing = true) {
-        const factor = increasing ? 1 : -1;
-        let count = 0;
-        if (node.children) {
-            const counts = new Map();
-            for (const child of node.children) {
-                const value = this.order(child, increasing);
-                counts.set(child, value);
-                count += value;
-            }
-            node.children.sort((a, b) => (counts.get(a) - counts.get(b) * factor));
-        } else {
-            count = 1
-        }
-        return count;
-    };
+    order(node = this.rootNode, increasing = true) {
+        // orderNodes.call(this, node, increasing, this.treeUpdateCallback);
+        orderNodes.call(this, node, increasing);
+        this.treeUpdateCallback();
+    }
 
-    static lastCommonAncestor(node1, node2) {
+    lastCommonAncestor(node1, node2) {
         throw new Error("method 'lastCommonAncestor' is not implemented yet");
 
         // path1 = [...pathToRoot(node1)];
         // path2 = [...pathToRoot(node2)];
     }
 
-    static pathLength(node1, node2) {
+    pathLength(node1, node2) {
         throw new Error("method 'pathLength' is not implemented yet");
 
         // let sum = 0;
@@ -275,7 +265,7 @@ export class Tree {
      * @param tip - the external node
      * @returns {number}
      */
-    static rootToTipLength(tip) {
+    rootToTipLength(tip) {
         let length = 0.0;
         for (const node of Tree.pathToRoot(tip)) {
             if (node.length) {
@@ -426,3 +416,36 @@ export class Tree {
         return new Tree(currentNode);
     };
 }
+
+/*
+ * Private methods, called by the class using the <function>.call(this) function.
+ */
+
+/**
+ * A private recursive function that rotates nodes to give an ordering.
+ * @param node
+ * @param increasing
+ * @param callback an optional callback that is called each rotate
+ * @returns {number}
+ */
+function orderNodes(node, increasing, callback = null) {
+    const factor = increasing ? 1 : -1;
+    let count = 0;
+    if (node.children) {
+        const counts = new Map();
+        for (const child of node.children) {
+            const value = orderNodes(child, increasing, callback);
+            counts.set(child, value);
+            count += value;
+        }
+        node.children.sort((a, b) => {
+            return (counts.get(a) - counts.get(b)) * factor
+        });
+
+        if (callback) callback();
+    } else {
+        count = 1
+    }
+    return count;
+}
+

@@ -27,9 +27,6 @@ export class FigTree {
 
         this.layout = layout;
 
-        //Assign the node positions on a scale of 0-1
-        this.layout(tree);
-
         //remove the tree if it is there already
         d3.select(svg).select('g').remove();
 
@@ -52,12 +49,19 @@ export class FigTree {
             .domain([0, externalNodeCount - 1])
             .range([margins.top + 20, height - margins.bottom - 20]);
 
-        this.scales ={x:xScale, y:yScale, width, height};
+        this.scales = {x:xScale, y:yScale, width, height};
+
+        // layout the nodes using the provided layout function
+        this.layout(tree);
 
         // call the private methods to create the components of the diagram
         addBranches.call(this);
         addNodes.call(this);
         addAxis.call(this, margins);
+
+        this.tree.treeUpdateCallback = () => {
+            this.update();
+        }
     }
 
     /**
@@ -76,7 +80,7 @@ export class FigTree {
         this.scales.y.domain([0, externalNodeCount - 1]);
 
         const xAxis = d3.axisBottom(this.scales.x)
-            .tickArguments([5, "d"]);
+            .tickArguments([5, "f"]);
 
         this.svgSelection.select("#x-axis")
             .transition()
@@ -99,8 +103,8 @@ export class FigTree {
             .transition()
             .duration(500)
             .attr("transform", d => {
-                d.x = this.scales.x(d.height);
-                d.y = this.scales.y(d.width);
+                // d.x = this.scales.x(d.height);
+                // d.y = this.scales.y(d.width);
                 return `translate(${this.scales.x(d.height)}, ${this.scales.y(d.width)})`;
             });
 
@@ -258,6 +262,24 @@ export class FigTree {
      */
     static rotate(tree, node) {
         tree.rotate(node);
+    }
+
+    /**
+     * A utility function for ordering a subtree with increasing tip density
+     * @param tree the tree
+     * @param node the node
+     */
+    static orderIncreasing(tree, node) {
+        tree.order(node, true);
+    }
+
+    /**
+     * A utility function for ordering a subtree with decreasing tip density
+     * @param tree the tree
+     * @param node the node
+     */
+    static orderDecreasing(tree, node) {
+        tree.order(node, false);
     }
 
     /**

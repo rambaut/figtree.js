@@ -138,7 +138,7 @@ export class RootToTipPlot {
 
         this.update();
 
-        this.tree.callback = () => this.update();
+        this.tree.treeUpdateCallback = () => this.update();
     };
 
     /**
