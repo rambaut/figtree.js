@@ -80,6 +80,15 @@
             font-weight: bold;
         }
 
+        .node-label.support {
+            font-size: 10pt;
+        }
+
+
+        .branch-label.length {
+            font-size: 8pt;
+        }
+
         #tooltip {
             background: #F6EECA;
             border: 1px solid #005C68;
@@ -100,8 +109,10 @@
     <figure>
         <svg id="phylogram_1a"  width="600" height="500"></svg>
     </figure>
-    <button id="sort_button_up">Sort ascending</button>
-    <button id="sort_button_down">Sort descending</button>
+    <button id="sort_up_button">Sort ascending</button>
+    <button id="sort_down_button">Sort descending</button>
+    <button id="rectangular_button">Draw rectangular</button>
+    <button id="triangular_button">Draw triangular</button>
 </div>
 
 <script type="module">
@@ -116,7 +127,7 @@
 
     const figTree = new FigTree(treeSVG, tree, { top: 10, bottom: 60, left: 10, right: 150});
     figTree.hilightInternalNodes();
-    figTree.onClickNode(FigTree.orderDecreasing)
+    figTree.onClickNode(FigTree.rotate)
 
     figTree.addLabels('#root', "The root node - represents the most recent<br>common ancestor of the whole tree");
     figTree.addLabels('.internal-node .node-shape', "This is an internal node - it is the most recent<br>common ancestor of the viruses to the right" );
@@ -124,11 +135,18 @@
     figTree.addLabels('.external-node', "This is an external, leaf, or tip node - it represents<br>a sampled, sequenced virus");
     figTree.addLabels('.branch', "This is a branch - it represents an<br>evolutionary lineage joining two nodes");
 
-    document.getElementById('sort_button_up').onclick = function() {
+    document.getElementById('sort_up_button').onclick = function() {
             tree.order(tree.rootNode, false);
         };
-    document.getElementById('sort_button_down').onclick = function() {
+    document.getElementById('sort_down_button').onclick = function() {
         tree.order(tree.rootNode, true);
+    };
+
+    document.getElementById('rectangular_button').onclick = function() {
+        figTree.branchCurve = d3.curveStepBefore;
+    };
+    document.getElementById('triangular_button').onclick = function() {
+        figTree.branchCurve = d3.curveNatural;
     };
 
 </script>

@@ -54,6 +54,8 @@ export class FigTree {
         // layout the nodes using the provided layout function
         this.layout(tree);
 
+        this.curve = d3.curveStepBefore;
+
         // call the private methods to create the components of the diagram
         addBranches.call(this);
         addNodes.call(this);
@@ -72,7 +74,7 @@ export class FigTree {
         // get new positions
         this.layout(this.tree);
 
-        const externalNodeCount = this.tree.externalNodes.length
+        const externalNodeCount = this.tree.externalNodes.length;
         const maxRootToTip = d3.max([...this.tree.rootToTipLengths()]);
 
         // update the scales' domains
@@ -87,16 +89,34 @@ export class FigTree {
             .duration(500)
             .call(xAxis);
 
-        const makeLinePath = d3.line()
+        const branchPath = d3.line()
             .x(d => this.scales.x(d.height))
             .y(d => this.scales.y(d.width))
-            .curve(d3.curveStepBefore);
+            .curve(this.curve);
 
-
+        // update branches
         this.svgSelection.selectAll('.branch')
             .transition()
             .duration(500)
-            .attr("d", edge => makeLinePath(edge.location))
+            .attr("d", edge => branchPath(edge.location))
+
+        // update branch labels
+        this.svgSelection.selectAll('.length')
+            .transition()
+            .duration(500)
+            .attr("dx", d => this.scales.x((d.parent.height + d.height) / 2))
+            .attr("dy", d => {
+                if (d.children && d.parent && d.parent.children[0] === d)
+                    return this.scales.y(d.width) + 6;
+                else
+                    return this.scales.y(d.width) - 6;
+            })
+            .attr("alignment-baseline", d => {
+                if (d.children && d.parent && d.parent.children[0] === d)
+                    return "hanging";
+                else
+                    return "bottom";
+            });
 
         //update nodes
         this.svgSelection.selectAll('.node')
@@ -255,6 +275,11 @@ export class FigTree {
         });
     }
 
+    set branchCurve(curve) {
+        this.curve = curve;
+        this.update();
+    }
+
     /**
      * A utility function for rotating a node
      * @param tree the tree
@@ -355,21 +380,41 @@ function addNodes() {
  * Adds branch lines
  */
 function addBranches() {
-    const makeLinePath = d3.line()
+    const branchPath = d3.line()
         .x(d => this.scales.x(d.height))
         .y(d => this.scales.y(d.width))
-        .curve(d3.curveStepBefore);
+        .curve(this.curve);
 
-    const edges = this.tree.nodes.filter(n => n.location)
+    const edges = this.tree.nodes.filter(n => n.location);
 
-    this.svgSelection.selectAll('.line')
+    this.svgSelection.selectAll('path')
         .data(edges, n => n.id)
         .enter()
         .append('path')
         .attr('class', 'branch')
         .attr('id', edge => edge.id)
-        .attr("d", edge => makeLinePath(edge.location));
+        .attr("d", edge => branchPath(edge.location));
 
+    this.svgSelection.selectAll('text')
+        .data(edges, n => n.id)
+        .enter()
+        .append("text")
+        .attr("class", "branch-label length")
+        .attr("dx", d => this.scales.x((d.parent.height + d.height) / 2))
+        .attr("dy", d => {
+            if (d.children && d.parent && d.parent.children[0] === d)
+                return this.scales.y(d.width) + 6;
+            else
+                return this.scales.y(d.width) - 6;
+        })
+        .attr("text-anchor", "middle")
+        .attr("alignment-baseline", d => {
+            if (d.children && d.parent && d.parent.children[0] === d)
+                return "hanging";
+            else
+                return "bottom";
+        })
+        .text(d => d.length);
 }
 
 /**
