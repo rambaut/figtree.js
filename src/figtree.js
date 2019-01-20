@@ -1,9 +1,13 @@
 /** @module figtree */
 
-import {Tree} from './tree.js';
+import { rectangularLayout } from './layouts.js';
 
 /**
  * The FigTree class
+ *
+ * A class that takes a tree and draws it into the the given SVG root element. Has a range of methods
+ * for adding interactivity to the tree (e.g., mouse-over labels, rotating nodes and rerooting on branches).
+ * The tree is updated with animated transitions.
  */
 export class FigTree {
 
@@ -13,7 +17,7 @@ export class FigTree {
      * @param tree
      * @param margins
      */
-    constructor(svg, tree, margins) {
+    constructor(svg, tree, margins, layout = rectangularLayout) {
         this.svg = svg;
         this.tree = tree;
 
@@ -21,8 +25,10 @@ export class FigTree {
         const width = svg.getBoundingClientRect().width;
         const height = svg.getBoundingClientRect().height;
 
+        this.layout = layout;
+
         //Assign the node positions on a scale of 0-1
-        this.positionNodes(tree);
+        this.layout(tree);
 
         //remove the tree if it is there already
         d3.select(svg).select('g').remove();
@@ -73,7 +79,7 @@ export class FigTree {
     update() {
 
         // get new positions
-        this.positionNodes(this.tree);
+        this.layout(this.tree);
 
         const externalNodeCount = this.tree.externalNodes.length
         const maxRootToTip = d3.max([...this.tree.rootToTipLengths()]);
@@ -131,47 +137,19 @@ export class FigTree {
     }
 
     /**
-     * Lays out the tree
-     */
-    positionNodes() {
-
-        // get the nodes in post-order
-        const nodes = [...this.tree.postorder()];
-
-        // first set the 'width' of the external nodes
-        nodes.filter(n => !n.children).forEach((node, index) => (node.width = index));
-
-        nodes.forEach((node, index) => {
-            //adding string id so we can id the nodes and branches and keep them consistent during transitions
-            node.id = `node_${index}`;
-            node.height = this.tree.rootToTipLength(node); //Node height
-
-            // internal nodes get the mean width of their children
-            if (node.children) {
-                node.width = d3.mean(node.children, child => child.width);
-            }
-        });
-
-        nodes.filter(n => n.parent)
-            .forEach(n => {
-                n.location = [{
-                    height: n.parent.height,
-                    width: n.parent.width
-                }, {
-                    height: n.height,
-                    width: n.width
-                }]
-            });
-    }
-
-    /**
      * Adds node circles
      */
     addNodes() {
         var node = this.svgSelection.selectAll('g')
             .data(this.tree.nodes, node => node.id) // assign the key for continuity during transitions
             .enter().append("g")
-            .attr("id", d => (d.name ? d.name : d.id))
+            .attr("id", d => {
+                if (d.label && d.label.startsWith("#")) {
+                    return d.label.substr(1);
+                } else {
+                    return (d.name ? d.name : (d === this.tree.rootNode ? 'root' : d.id));
+                }
+            })
             .attr("class", d => `node ${!d.children ? ' external-node' : ' internal-node'}`)
             .attr("transform", d => {
                 return `translate(${this.scales.x(d.height)}, ${this.scales.y(d.width)})`;
@@ -181,7 +159,7 @@ export class FigTree {
             .attr("cx", 0)
             .attr("cy", 0)
             .attr("r", 6)
-            .attr("class", d => 'node-shape unselected');
+            .attr("class", d => 'node-shape unselected')
 
         node.append("text")
             .attr("class", "node-label")
@@ -207,7 +185,9 @@ export class FigTree {
                 else
                     return "hanging";
             })
-            .text(d => d.label);
+            .text(d => {
+                return (d.label && d.label.startsWith("#")? "" : d.label);
+            });
     }
 
     /**
@@ -273,65 +253,103 @@ export class FigTree {
      * Set mouseover highlighting of internal nodes
      */
     hilightInternalNodes() {
-        this.svgSelection.selectAll('.internal-node').selectAll('.node-shape').on("mouseover", function (d, i) {
+        this.hilightNodes('.internal-node');
+    }
+
+    /**
+     * Set mouseover highlighting of internal nodes
+     */
+    hilightExternalNodes() {
+        this.hilightNodes('.external-node');
+    }
+
+    /**
+     * Set mouseover highlighting of nodes
+     */
+    hilightNodes(selection) {
+        const selected = this.svgSelection.selectAll(selection).selectAll('.node-shape');
+        selected.on("mouseover", function (d, i) {
             d3.select(this).attr('class', 'node-shape hovered');
             d3.select(this).attr('r', '8');
         })
-        this.svgSelection.selectAll('.internal-node').selectAll('.node-shape').on("mouseout", function (d, i) {
+        selected.on("mouseout", function (d, i) {
             d3.select(this).attr('class', 'node-shape');
             d3.select(this).attr('r', '6');
         });
     }
 
-/*
-    /!**
-     * Callback to reroot tree on a click of a branch
-     * @param svgSelection
-     * @param tree
-     * @param scales
-     *!/
-    static reRootOnBranch(svgSelection, tree, scales) {
-        svgSelection.selectAll('.branch').on('click', function (selectedBranchTarget) {
-            const x1 = scales.x(selectedBranchTarget.height);
-            const x2 = scales.x(selectedBranchTarget.parent.height);
+    /**
+     * Registers action function to be called when a branch is clicked on. The function should
+     * take the tree, the node for the branch that was clicked on and the position of the click
+     * as a proportion of the length of the branch.
+     *
+     * Optionally a selection string can be provided - i.e., to select a particular branch by its id.
+     *
+     * A static method - Tree.reroot() is available for rerooting the tree on the clicked branch.
+     *
+     * @param action
+     * @param selection
+     */
+    onClickBranch(action, selection = null) {
+        // We need to use the 'function' keyword here (rather than an arrow) so that 'this'
+        // points to the actual SVG element (so we can use d3.mouse(this)). We therefore need
+        // to store a reference to the object in 'self'.
+        const self = this;
+        const selected = this.svgSelection.selectAll(`${selection ? selection : ".branch"}`);
+        selected.on('click', function (selectedBranch) {
+            const x1 = self.scales.x(selectedBranch.height);
+            const x2 = self.scales.x(selectedBranch.parent.height);
             const mx = d3.mouse(this)[0];
             const proportion = Math.max(0.0, Math.min(1.0, (mx - x2) / (x1 - x2)));
-            tree.reroot(selectedBranchTarget, proportion);
-            update();
+            action(self.tree, selectedBranchTarget, proportion);
+            self.update();
         })
     }
 
-    /!**
-     * Callback to rotate on a click of a node
-     * @param svgSelection
-     * @param tree
-     * @param scales
-     *!/
-    static rotateAtNode(svgSelection, tree, scales) {
-        svgSelection.selectAll('.internal-node').on('click', (selectedNode) => {
-            tree.rotate(selectedNode)
-            update(svgSelection, tree, scales);
-        })
+    /**
+     * Registers action function to be called when an internal node is clicked on. The function should
+     * take the tree and the node that was clicked on.
+     *
+     * A static method - Tree.rotate() is available for rotating the node order at the clicked node.
+     *
+     * @param action
+     */
+    onClickInternalNode(action) {
+        onClickNode(action, '.internal-node');
     }
-*/
 
-    onClickOnBranch(action) {
-        this.svgSelection.selectAll('.branch').on('click', (selectedBranchTarget) => {
-            const x1 = this.scales.x(selectedBranchTarget.height);
-            const x2 = this.scales.x(selectedBranchTarget.parent.height);
-            const mx = d3.xmouse(this)[0];
-            const proportion = Math.max(0.0, Math.min(1.0, (mx - x2) / (x1 - x2)));
-            action(this.tree, selectedBranchTarget, proportion)
+    /**
+     * Registers action function to be called when an external node is clicked on. The function should
+     * take the tree and the node that was clicked on.
+     *
+     * @param action
+     */
+    onClickExternalNode(action) {
+        onClickNode(action, '.external-node');
+    }
+
+    /**
+     * Registers action function to be called when a node is clicked on. The function should
+     * take the tree and the node that was clicked on.
+     *
+     * Optionally a selection string can be provided - i.e., to select a particular node by its id.
+     * @param action
+     * @param selection
+     */
+    onClickNode(action, selection = null) {
+        const selected = this.svgSelection.selectAll(`${selection ? selection : ".node"}`).selectAll('.node-shape');
+        selected.on('click', (selectedNode) => {
+            action(this.tree, selectedNode);
             this.update();
         })
     }
-    onClickOnNode(action) {
-        this.svgSelection.selectAll('.internal-node').on('click', (selectedNode) => {
-            action(this.tree, selectedNode)
-            this.update();
-        })
-    }
 
+    /**
+     * Registers some text to appear in a popup box when the mouse hovers over the selection.
+     *
+     * @param selection
+     * @param text
+     */
     addLabels(selection, text) {
         this.svgSelection.selectAll(selection).on("mouseover", function () {
                 let tooltip = document.getElementById("tooltip");
