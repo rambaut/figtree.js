@@ -37,7 +37,7 @@ export class Tree {
     /**
      * Gets an array containing all the node objects
      *
-     * @returns {*[]}
+     * @returns {*}
      */
     get nodes() {
         return [...this.nodeList];
@@ -162,8 +162,10 @@ export class Tree {
         if (node.parent !== this.rootNode) {
             // the node is not a child of the existing root so the root is actually changing
 
+            let node0 = node;
             let parent = node.parent;
-            let ancestor = node;
+
+            let lineage = [ ];
 
             // was the node the first child in the parent's children?
             const nodeAtTop = parent.children[0] === node;
@@ -172,16 +174,18 @@ export class Tree {
             const rootChild2 = parent;
 
             while (parent.parent) {
-                parent.children = parent.children.filter((child) => child !== ancestor);
+                lineage = [parent, ...lineage];
+
+                parent.children = parent.children.filter((child) => child !== node0);
                 if (parent.parent === this.rootNode) {
                     const sibling = this.getSibling(parent);
                     parent.children.push(sibling);
                     sibling.length = rootLength;
                 } else {
-                    [parent.length, parent.parent.length] = [parent.parent.length, parent.length];
+                    // parent.parent.length = parent.length;
                     parent.children.push(parent.parent);
                 }
-                ancestor = parent;
+                node0 = parent;
                 parent = parent.parent;
             }
 
@@ -196,9 +200,21 @@ export class Tree {
             rootChild1.length = rootChild1.length - l;
 
             // connect all the children to their parents
-            this.internalNodes.forEach((node) => {
-                node.children.forEach((child) => child.parent = node)
-            });
+            // lineage.forEach((node) => {
+            //     node.children.forEach((child) => {
+            //         if (child.parent !== node) {
+            //             child.length = node.length;
+            //             child.parent = node;
+            //         }
+            //     })
+            // });
+
+            this.internalNodes
+                .forEach((node) => {
+                    node.children.forEach((child) => {
+                        child.parent = node;
+                    })
+                });
         } else {
             // the root is staying the same, just the position of the root changing
             const l = node.length * (1.0 - proportion);
