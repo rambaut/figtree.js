@@ -16,7 +16,7 @@ export class Tree {
         this.root = rootNode;
 
         this.nodeList = [...this.preorder()];
-        this.nodeList.forEach( (node, index) => node.key = Symbol(`node ${index}`) );
+        this.nodeList.forEach( (node, index) => node.key = Symbol(`node_${index}`) );
         this.nodeMap = new Map(
             this.nodeList.map( (node) => [node.key, node] )
         );
@@ -152,7 +152,7 @@ export class Tree {
      * @param proportion - proportion along the branch to place the root (default 0.5)
      */
     reroot(node, proportion = 0.5) {
-        if (!node.parent) {
+        if (node === this.rootNode) {
             // the node is the root - nothing to do
             return;
         }
@@ -173,18 +173,26 @@ export class Tree {
             const rootChild1 = node;
             const rootChild2 = parent;
 
-            while (parent.parent) {
-                lineage = [parent, ...lineage];
+            let oldLength = parent.length;
 
+            while (parent.parent) {
+
+                // remove the node that will becoming the parent from the children
                 parent.children = parent.children.filter((child) => child !== node0);
+
                 if (parent.parent === this.rootNode) {
                     const sibling = this.getSibling(parent);
                     parent.children.push(sibling);
                     sibling.length = rootLength;
                 } else {
-                    // parent.parent.length = parent.length;
+                    [parent.parent.length, oldLength] = [oldLength, parent.parent.length];
+
+                    // add the new child
                     parent.children.push(parent.parent);
                 }
+
+                lineage = [parent, ...lineage];
+
                 node0 = parent;
                 parent = parent.parent;
             }
@@ -195,26 +203,18 @@ export class Tree {
             // This makes for a more visually consistent rerooting graphically.
             this.rootNode.children = nodeAtTop ? [rootChild1, rootChild2] : [rootChild2, rootChild1];
 
-            const l = rootChild1.length * proportion;
-            rootChild2.length = l;
-            rootChild1.length = rootChild1.length - l;
-
             // connect all the children to their parents
-            // lineage.forEach((node) => {
-            //     node.children.forEach((child) => {
-            //         if (child.parent !== node) {
-            //             child.length = node.length;
-            //             child.parent = node;
-            //         }
-            //     })
-            // });
-
             this.internalNodes
                 .forEach((node) => {
                     node.children.forEach((child) => {
                         child.parent = node;
                     })
                 });
+
+            const l = rootChild1.length * proportion;
+            rootChild2.length = l;
+            rootChild1.length = rootChild1.length - l;
+
         } else {
             // the root is staying the same, just the position of the root changing
             const l = node.length * (1.0 - proportion);
