@@ -185,6 +185,7 @@ export class Tree {
                     parent.children.push(sibling);
                     sibling.length = rootLength;
                 } else {
+                    // swap the parent and parent's parent's length around
                     [parent.parent.length, oldLength] = [oldLength, parent.parent.length];
 
                     // add the new child
