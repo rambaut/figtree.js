@@ -15,18 +15,18 @@ export class RootToTipPlot {
         this.svg = svg;
         this.tree = tree;
 
-        const data = tree.externalNodes
-            .filter((tip) => !tip.isSelected)
+        this.points = tree.externalNodes
             .map((tip) => {
                 return {
                     name: tip.name,
+                    tip: tip,
                     x: tip.date,
                     y: tree.rootToTipLength(tip)
                 };
             });
 
-        data.xLabel = "Time";
-        data.yLabel = "Divergence";
+        this.xLabel = "Time";
+        this.yLabel = "Divergence";
 
         // get the size of the svg we are drawing on
         const width = svg.getBoundingClientRect().width;
@@ -42,11 +42,11 @@ export class RootToTipPlot {
         this.svgSelection = d3.select(svg).select('g');
 
         // least squares regression
-        const regression = this.leastSquares(data);
+        const regression = this.leastSquares(this.points);
         const x1 = regression.xIntercept;
         const y1 = 0.0;
-        const x2 = d3.max(data, d => d.x);
-        const y2 = d3.max([regression.y(x2), d3.max(data, d => d.y)]);
+        const x2 = d3.max(this.points, d => d.x);
+        const y2 = d3.max([regression.y(x2), d3.max(this.points, d => d.y)]);
 
         this.scales = {
             x: d3.scaleLinear()
@@ -109,7 +109,7 @@ export class RootToTipPlot {
 
         this.svgSelection.append("g")
             .selectAll("circle")
-            .data(data, point => point.name)
+            .data(this.points, point => point.name)
             .enter()
             .append("g")
             .attr("id", d => d.name)
@@ -184,26 +184,33 @@ export class RootToTipPlot {
     update() {
 
         // get new positions
-        const data = this.tree.externalNodes
-            .filter((tip) => !tip.isSelected)
-            .map((tip) => {
-                return {
-                    name: tip.name,
-                    x: tip.date,
-                    y: this.tree.rootToTipLength(tip)
-                };
-            });
+        // const data = this.tree.externalNodes
+        //     .map((tip) => {
+        //         return {
+        //             tip: tip,
+        //             name: tip.name,
+        //             x: tip.date,
+        //             y: this.tree.rootToTipLength(tip)
+        //         };
+        //     });
+
+        this.points.forEach((point) => {
+            point.y = this.tree.rootToTipLength(point.tip);
+        });
+
+        let x1 = d3.min(this.points, d => d.x);
+        let x2 = d3.max(this.points, d => d.x);
+        let y1 = 0.0;
+        let y2 = d3.max(this.points, d => d.y);
 
         // least squares regression
-        const regression = this.leastSquares(data);
-        let x1 = regression.xIntercept;
-        let x2 = d3.max(data, d => d.x);
-        if (regression.slope < 0.0) {
-            x1 = d3.min(data, d => d.x);
-            x2 = d3.max(data, d => d.x);
+        const selectedPoints = this.points.filter((point) => !point.tip.isSelected);
+
+        const regression = this.leastSquares(selectedPoints);
+        if (selectedPoints.length > 1 && regression.slope > 0.0) {
+            x1 = regression.xIntercept;
+            y2 = d3.max([regression.y(x2), y2]);
         }
-        let y1 = 0.0;
-        let y2 = d3.max([regression.y(x2), d3.max(data, d => d.y)]);
 
         // update the scales for the plot
         this.scales.x.domain([x1, x2]).nice();
@@ -226,22 +233,40 @@ export class RootToTipPlot {
 
         // update trend line
         const line = this.svgSelection.select('#regression');
-        line
-            .transition()
-            .duration(500)
-            .attr("x1", this.scales.x(x1))
-            .attr("y1", this.scales.y(regression.y(x1)))
-            .attr("x2", this.scales.x(x2))
-            .attr("y2", this.scales.y(regression.y(x2)));
+        if (selectedPoints.length > 1) {
 
-        this.svgSelection.select("#statistics-slope")
-            .text(`Slope: ${d3.format(",.2f")(regression.slope)}`);
-        this.svgSelection.select("#statistics-r2")
-            .text(`R^2: ${d3.format(",.2f")(regression.rSquare) }`);
+            line
+                .transition()
+                .duration(500)
+                .attr("x1", this.scales.x(x1))
+                .attr("y1", this.scales.y(regression.y(x1)))
+                .attr("x2", this.scales.x(x2))
+                .attr("y2", this.scales.y(regression.y(x2)));
+
+            this.svgSelection.select("#statistics-slope")
+                .text(`Slope: ${d3.format(",.2f")(regression.slope)}`);
+            this.svgSelection.select("#statistics-r2")
+                .text(`R^2: ${d3.format(",.2f")(regression.rSquare) }`);
+
+        } else {
+            line
+                .transition()
+                .duration(500)
+                .attr("x1", this.scales.x(0))
+                .attr("y1", this.scales.y(regression.y(0)))
+                .attr("x2", this.scales.x(0))
+                .attr("y2", this.scales.y(regression.y(0)));
+
+            this.svgSelection.select("#statistics-slope")
+                .text(`Slope: n/a`);
+            this.svgSelection.select("#statistics-r2")
+                .text(`R^2: n/a`);
+
+        }
 
         //update points
         this.svgSelection.selectAll('.external-node')
-            .data(data, node => node.name)
+        // .data(data, node => node.tip.name)
             .transition()
             .duration(500)
             .attr("transform", d => {
@@ -253,22 +278,26 @@ export class RootToTipPlot {
     linkWithTree(treeSVG) {
         const self = this;
 
-        const mouseover = function (d) {
-            d3.select(this.svg).select(`#${d.name}`).select(`.node-shape`).attr('r', 9);
+        const mouseover = function(d) {
+            d3.select(self.svg).select(`#${d.name}`).select(`.node-shape`).attr('r', 9);
             d3.select(treeSVG).select(`#${d.name}`).select(`.node-shape`).attr('r', 9);
         };
-        const mouseout = function (d) {
-            d3.select(this.svg).select(`#${d.name}`).select(`.node-shape`).attr('r', 6);
+        const mouseout = function(d) {
+            d3.select(self.svg).select(`#${d.name}`).select(`.node-shape`).attr('r', 6);
             d3.select(treeSVG).select(`#${d.name}`).select(`.node-shape`).attr('r', 6);
         };
-        const clicked = function (d) {
+        const clicked = function(d) {
             // toggle isSelected
-            d.isSelected = !d.isSelected;
+            let tip = d;
+            if (d.tip) {
+                tip = d.tip;
+            }
+            tip.isSelected = !tip.isSelected;
 
-            const node1 = d3.select(this.svg).select(`#${d.name}`).select(`.node-shape`);
+            const node1 = d3.select(self.svg).select(`#${d.name}`).select(`.node-shape`);
             const node2 = d3.select(treeSVG).select(`#${d.name}`).select(`.node-shape`);
 
-            if (d.isSelected) {
+            if (tip.isSelected) {
                 node1.attr('class', 'node-shape selected');
                 node2.attr('class', 'node-shape selected');
             } else {
