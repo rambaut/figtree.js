@@ -194,17 +194,6 @@ export class RootToTipPlot {
      */
     update() {
 
-        // get new positions
-        // const data = this.tree.externalNodes
-        //     .map((tip) => {
-        //         return {
-        //             tip: tip,
-        //             name: tip.name,
-        //             x: tip.date,
-        //             y: this.tree.rootToTipLength(tip)
-        //         };
-        //     });
-
         this.points.forEach((point) => {
             point.y = this.tree.rootToTipLength(point.tip);
         });
