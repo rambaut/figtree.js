@@ -5,15 +5,29 @@ import {Tree} from './tree.js';
  */
 export class RootToTipPlot {
 
+    static DEFAULT_SETTINGS() {
+        return {
+            xAxisTickArguments: [5, "d"],
+            xAxisTitle: "Time",
+            yAxisTickArguments: [5, "f"],
+            yAxisTitle: "Divergence",
+            nodeRadius: 6,
+            hoverNodeRadius: 8,
+        };
+    }
+
     /**
      * The constructor.
      * @param svg
      * @param tree
      * @param margins
      */
-    constructor(svg, tree, margins) {
+    constructor(svg, tree, margins, settings = {}) {
         this.svg = svg;
         this.tree = tree;
+
+        // merge the default settings with the supplied settings
+        this.settings = {...RootToTipPlot.DEFAULT_SETTINGS(), ...settings};
 
         this.points = tree.externalNodes
             .map((tip) => {
@@ -24,9 +38,6 @@ export class RootToTipPlot {
                     y: tree.rootToTipLength(tip)
                 };
             });
-
-        this.xLabel = "Time";
-        this.yLabel = "Divergence";
 
         // get the size of the svg we are drawing on
         const width = svg.getBoundingClientRect().width;
@@ -58,9 +69,9 @@ export class RootToTipPlot {
         };
 
         const xAxis = d3.axisBottom(this.scales.x)
-            .tickArguments([5, "d"]);
+            .tickArguments(this.settings.xAxisTickArguments);
         const yAxis = d3.axisLeft(this.scales.y)
-            .tickArguments([5, "s"]);
+            .tickArguments(this.settings.yAxisTickArguments);
 
         const xAxisWidth = width - margins.left - margins.right;
         const yAxisHeight = height - margins.bottom - margins.top;
@@ -79,7 +90,7 @@ export class RootToTipPlot {
             .attr("transform", `translate(${xAxisWidth / 2}, 35)`)
             .attr("alignment-baseline", "hanging")
             .style("text-anchor", "middle")
-            .text("Time");
+            .text(this.settings.xAxisTitle);
 
         this.svgSelection.append("g")
             .attr("id", "y-axis")
@@ -97,7 +108,7 @@ export class RootToTipPlot {
             .attr("x", 0 - (yAxisHeight / 2))
             .attr("dy", "1em")
             .style("text-anchor", "middle")
-            .text("Divergence");
+            .text(this.settings.yAxisTitle);
 
         this.svgSelection.append("line")
             .attr("id", "regression")
@@ -119,7 +130,7 @@ export class RootToTipPlot {
             .attr("class", "node-shape unselected")
             .attr("cx", 0)
             .attr("cy", 0)
-            .attr("r", 6);
+            .attr("r", this.settings.nodeRadius);
 
         this.svgSelection.append("text")
             .attr("id", "statistics-slope")
@@ -217,9 +228,9 @@ export class RootToTipPlot {
         this.scales.y.domain([y1, y2]).nice();
 
         const xAxis = d3.axisBottom(this.scales.x)
-            .tickArguments([5, "d"]);
+            .tickArguments(this.settings.xAxisTickArguments);
         const yAxis = d3.axisLeft(this.scales.y)
-            .tickArguments([5, "s"]);
+            .tickArguments(this.settings.yAxisTickArguments);
 
         this.svgSelection.select("#x-axis")
             .transition()
@@ -279,12 +290,12 @@ export class RootToTipPlot {
         const self = this;
 
         const mouseover = function(d) {
-            d3.select(self.svg).select(`#${d.name}`).select(`.node-shape`).attr('r', 9);
-            d3.select(treeSVG).select(`#${d.name}`).select(`.node-shape`).attr('r', 9);
+            d3.select(self.svg).select(`#${d.name}`).select(`.node-shape`).attr('r', self.settings.hoverNodeRadius);
+            d3.select(treeSVG).select(`#${d.name}`).select(`.node-shape`).attr('r', self.settings.hoverNodeRadius);
         };
         const mouseout = function(d) {
-            d3.select(self.svg).select(`#${d.name}`).select(`.node-shape`).attr('r', 6);
-            d3.select(treeSVG).select(`#${d.name}`).select(`.node-shape`).attr('r', 6);
+            d3.select(self.svg).select(`#${d.name}`).select(`.node-shape`).attr('r', self.settings.nodeRadius);
+            d3.select(treeSVG).select(`#${d.name}`).select(`.node-shape`).attr('r', self.settings.nodeRadius);
         };
         const clicked = function(d) {
             // toggle isSelected

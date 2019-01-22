@@ -11,21 +11,36 @@ import { rectangularLayout } from './layouts.js';
  */
 export class FigTree {
 
+    static DEFAULT_SETTINGS() {
+        return {
+            xAxisTickArguments: [5, "f"],
+            xAxisTitle: "Divergence",
+            nodeRadius: 6,
+            hoverNodeRadius: 8,
+            lengthFormat: d3.format(".2f"),
+            branchCurve: d3.curveStepBefore
+        };
+    }
+
     /**
      * The constructor.
      * @param svg
      * @param tree
      * @param margins
+     * @param settings
      */
-    constructor(svg, tree, margins, layout = rectangularLayout) {
-        this.svg = svg;
+    constructor(svg, tree, margins, settings = {}) {
         this.tree = tree;
+        this.margins = margins;
+
+        // merge the default settings with the supplied settings
+        this.settings = {...FigTree.DEFAULT_SETTINGS(), ...settings};
 
         // get the size of the svg we are drawing on
         const width = svg.getBoundingClientRect().width;
         const height = svg.getBoundingClientRect().height;
 
-        this.layout = layout;
+        this.layout = rectangularLayout;
 
         //remove the tree if it is there already
         d3.select(svg).select('g').remove();
@@ -37,7 +52,7 @@ export class FigTree {
         //to save on writing later
         this.svgSelection = d3.select(svg).select('g');
 
-        const externalNodeCount = tree.externalNodes.length
+        const externalNodeCount = tree.externalNodes.length;
         const maxRootToTip = d3.max([...tree.rootToTipLengths()]);
 
         // create the scales
@@ -53,10 +68,6 @@ export class FigTree {
 
         // layout the nodes using the provided layout function
         this.layout(tree);
-
-        this.curve = d3.curveStepBefore;
-
-        this.lengthFormat = d3.format(".2f");
 
         // call the private methods to create the components of the diagram
         addBranches.call(this);
@@ -84,7 +95,7 @@ export class FigTree {
         this.scales.y.domain([0, externalNodeCount - 1]);
 
         const xAxis = d3.axisBottom(this.scales.x)
-            .tickArguments([5, "f"]);
+            .tickArguments(this.settings.xAxisTickArguments);
 
         this.svgSelection.select("#x-axis")
             .transition()
@@ -94,13 +105,13 @@ export class FigTree {
         const branchPath = d3.line()
             .x(d => this.scales.x(d.height))
             .y(d => this.scales.y(d.width))
-            .curve(this.curve);
+            .curve(this.settings.branchCurve);
 
         // update branches
         this.svgSelection.selectAll('.branch')
             .transition()
             .duration(500)
-            .attr("d", edge => branchPath(edge.location))
+            .attr("d", edge => branchPath(edge.location));
 
         // update branch labels
         this.svgSelection.selectAll('.length')
@@ -119,7 +130,7 @@ export class FigTree {
                 else
                     return "bottom";
             })
-            .text(d => this.lengthFormat(d.length));
+            .text(d => this.settings.lengthFormat(d.length));
 
         //update nodes
         this.svgSelection.selectAll('.node')
@@ -156,7 +167,7 @@ export class FigTree {
     hilightBranches() {
         this.svgSelection.selectAll('.branch').on("mouseover", function (d, i) {
             d3.select(this).attr('class', 'branch hovered');
-        })
+        });
         this.svgSelection.selectAll('.branch').on("mouseout", function (d, i) {
             d3.select(this).attr('class', 'branch');
         });
@@ -183,11 +194,11 @@ export class FigTree {
         const selected = this.svgSelection.selectAll(selection).selectAll('.node-shape');
         selected.on("mouseover", function (d, i) {
             d3.select(this).attr('class', 'node-shape hovered');
-            d3.select(this).attr('r', '8');
-        })
+            d3.select(this).attr('r', this.settings.hoverNodeRadius);
+        });
         selected.on("mouseout", function (d, i) {
             d3.select(this).attr('class', 'node-shape');
-            d3.select(this).attr('r', '6');
+            d3.select(this).attr('r', this.settings.nodeRadius);
         });
     }
 
@@ -273,9 +284,14 @@ export class FigTree {
             }
         );
         this.svgSelection.selectAll(selection).on("mouseout", function () {
-            var tooltip = document.getElementById("tooltip");
+            let tooltip = document.getElementById("tooltip");
             tooltip.style.display = "none";
         });
+    }
+
+    set treeLayout(layout) {
+        this.layout = layout;
+        this.update();
     }
 
     set branchCurve(curve) {
@@ -329,7 +345,7 @@ export class FigTree {
  * Adds internal and external nodes with shapes and labels
  */
 function addNodes() {
-    var node = this.svgSelection.selectAll('g')
+    let node = this.svgSelection.selectAll('g')
         .data(this.tree.nodes, node => node.id) // assign the key for continuity during transitions
         .enter().append("g")
         .attr("id", d => {
@@ -347,8 +363,8 @@ function addNodes() {
     node.append("circle")
         .attr("cx", 0)
         .attr("cy", 0)
-        .attr("r", 6)
-        .attr("class", d => 'node-shape unselected')
+        .attr("r", this.settings.nodeRadius)
+        .attr("class", d => 'node-shape unselected');
 
     node.append("text")
         .attr("class", "node-label")
@@ -386,7 +402,7 @@ function addBranches() {
     const branchPath = d3.line()
         .x(d => this.scales.x(d.height))
         .y(d => this.scales.y(d.width))
-        .curve(this.curve);
+        .curve(this.settings.branchCurve);
 
     const edges = this.tree.nodes.filter(n => n.location);
 
@@ -417,31 +433,31 @@ function addBranches() {
             else
                 return "bottom";
         })
-        .text(d => this.lengthFormat(d.length));
+        .text(d => this.settings.lengthFormat(d.length));
 }
 
 /**
  * Add axis
  */
-function addAxis(margins) {
+function addAxis() {
     const xAxis = d3.axisBottom(this.scales.x)
-        .tickArguments([5, "f"]);
+        .tickArguments(this.settings.xAxisTickArguments);
 
-    const xAxisWidth = this.scales.width - margins.left - margins.right;
+    const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
 
     this.svgSelection.append("g")
         .attr("id", "x-axis")
         .attr("class", "axis")
-        .attr("transform", `translate(0, ${this.scales.height - margins.bottom + 5})`)
+        .attr("transform", `translate(0, ${this.scales.height - this.margins.bottom + 5})`)
         .call(xAxis);
 
     this.svgSelection.append("g")
         .attr("id", "x-axis-label")
         .attr("class", "axis-label")
-        .attr("transform", `translate(${margins.left}, ${this.scales.height - margins.bottom})`)
+        .attr("transform", `translate(${this.margins.left}, ${this.scales.height - this.margins.bottom})`)
         .append("text")
         .attr("transform", `translate(${xAxisWidth / 2}, 35)`)
         .attr("alignment-baseline", "hanging")
         .style("text-anchor", "middle")
-        .text("Divergence");
+        .text(this.settings.xAxisTitle);
 }
