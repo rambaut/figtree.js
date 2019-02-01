@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FigTree Demo</title>
+    <script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
+    <style>
+        text {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 10pt;
+            font-weight: 300;
+        }
+
+        .branch {
+            fill: none;
+            stroke: #541753;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .branch.hovered {
+            stroke-width: 4;
+        }
+
+        .external-node .node-shape {
+            fill: #22b680;
+            stroke: rgb(255, 255, 255);
+            stroke-width: 1;
+        }
+
+        .external-node .node-shape.hovered {
+            stroke: rgb(0,0,0);
+        }
+        .external-node .node-shape.unselected {
+            fill: #22b680;
+            stroke: rgb(255, 255, 255);
+        }
+        .external-node .node-shape.selected {
+            fill: #edb23b;
+            stroke: rgb(0,0,0);
+        }
+
+        .internal-node .node-shape {
+            fill: #29c5ef;
+            stroke: rgb(255, 255, 255);
+            stroke-width: 1;
+            display: none;
+        }
+        .internal-node .node-shape.hovered {
+            stroke: rgb(0,0,0);
+        }
+
+        #root .node-shape {
+            fill: #e31e58;
+            stroke: rgb(255, 255, 255);
+            stroke-width: 1;
+            display: none;
+        }
+
+        .node-label {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 8pt;
+            font-weight: 300;
+        }
+
+        .trend-line {
+            stroke: rgb(0,0,0);
+            stroke-width: 2;
+            stroke-linecap: round;
+        }
+
+        .axis text {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 10pt;
+            font-weight: 300;
+        }
+
+        .axis-label text {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 10pt;
+            font-weight: bold;
+        }
+
+        .node-label.support {
+            font-size: 10pt;
+        }
+
+        .branch-label.length {
+            display: none;
+            font-size: 8pt;
+        }
+
+        #tooltip {
+            background: #F6EECA;
+            border: 1px solid #005C68;
+            color: #005C68;
+            border-radius: 5px;
+            padding: 5px;
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 12pt;
+            font-weight: 300;
+        }
+    </style>
+</head>
+
+<body>
+<div id="tooltip" display="none" style="position: absolute; display: none;"></div>
+
+<div>
+    <svg id="tree-2-svg"  width="500" height="400"></svg>
+    <svg id="rrt-2-svg"  width="500" height="400"></svg>
+</div>
+
+<script type="module">
+    import { Tree } from "./src/tree.js";
+    import { FigTree } from "./src/figtree.js";
+    import { RootToTipPlot } from "./src/roottotipplot.js";
+
+    const timeTreeString =
+        '((KC242791_Bonduni_DRC_1977-06:5.3E-5,KR063671_Yambuku-Mayinga_DRC_1976-10-01:2.0E-6):0.002186,((\'MH613311_Muembe1_DRC_2017-05\':0.007975,MK007330_18FHV090-Beni_DRC_2018-07-28:0.00898):0.002026,(((KC242800_Ilembe_Gabon_2002-02-23:0.001437,KF113529_Kelle_2_COG_2003-10:0.001852):0.01144,(KJ660347_Makona-C07_Guinea_2014-03-20:0.020514,(HQ613402_034-KS_DRC_2008-12-31:5.43E-4,HQ613403_M-M_DRC_2007-08-31:4.5E-5):0.009434):2.05E-4):0.005346,(KU182905_Kikwit-9510621_DRC_1995-05-04:0.003643,((KP271018_Lomela-Lokolia16_DRC_2014-08-20:0.002216,MH733477_BIK009-Bikoro_DRC_2018-05-10:0.002896):0.001998,(KC242794_2Nza_Gabon_1996-10-27:0.002238,(KC242792_Gabon_Gabon_1994-12-27:7.94E-4,KC242793_1Eko_Gabon_1996-02:0.00106):6.25E-4):0.004065):5.18E-4):0.003691):2.81E-4):0.002186);';
+
+    const tree = Tree.parseNewick(timeTreeString, "_");
+    const treeSVG = document.getElementById('tree-2-svg');
+
+    const figTree = new FigTree(treeSVG, tree, { top: 10, bottom: 60, left: 10, right: 240});
+
+    figTree.hilightBranches();
+    figTree.onClickBranch(FigTree.reroot);
+    figTree.hilightInternalNodes();
+    figTree.onClickNode(FigTree.rotate);
+
+    const rrtp = new RootToTipPlot(document.getElementById('rrt-2-svg'), tree, { top: 10, bottom: 60, left: 70, right: 100});
+
+    rrtp.linkWithTree(treeSVG);
+
+</script>
+
+</body>
+
+</html>
