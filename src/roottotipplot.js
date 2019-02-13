@@ -244,7 +244,7 @@ export class RootToTipPlot {
                 .attr("y2", this.scales.y(regression.y(x2)));
 
             this.svgSelection.select("#statistics-slope")
-                .text(`Slope: ${d3.format(",.2f")(regression.slope)}`);
+                .text(`Slope: ${d3.format(",.4f")(regression.slope)}`);
             this.svgSelection.select("#statistics-r2")
                 .text(`R^2: ${d3.format(",.2f")(regression.rSquare) }`);
 
