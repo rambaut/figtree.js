@@ -128,7 +128,7 @@
     const tree = Tree.parseNewick(timeTreeString, "_");
     const treeSVG = document.getElementById('tree-2-svg');
 
-    const figTree = new FigTree(treeSVG, tree, { top: 10, bottom: 60, left: 10, right: 150});
+    const figTree = new FigTree(treeSVG, tree, { top: 10, bottom: 60, left: 70, right: 150});
 
     figTree.hilightBranches();
     figTree.onClickBranch(FigTree.reroot);
