@@ -128,14 +128,14 @@
     const tree = Tree.parseNewick(timeTreeString, "_");
     const treeSVG = document.getElementById('tree-2-svg');
 
-    const figTree = new FigTree(treeSVG, tree, { top: 10, bottom: 60, left: 70, right: 150});
+    const figTree = new FigTree(treeSVG, tree, { top: 10, bottom: 60, left: 10, right: 150});
 
     figTree.hilightBranches();
     figTree.onClickBranch(FigTree.reroot);
     figTree.hilightInternalNodes();
     figTree.onClickNode(FigTree.rotate);
 
-    const rrtp = new RootToTipPlot(document.getElementById('rrt-2-svg'), tree, { top: 10, bottom: 60, left: 10, right: 100});
+    const rrtp = new RootToTipPlot(document.getElementById('rrt-2-svg'), tree, { top: 10, bottom: 60, left: 70, right: 100});
 
     rrtp.linkWithTree(treeSVG);
 
