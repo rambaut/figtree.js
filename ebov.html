@@ -113,7 +113,7 @@
     Click on a node to include/exclude it from the regression. Click on a branch to reroot the tree at that position.
     </div>
     -->
-    <svg id="tree-2-svg"  width="500" height="400"></svg>
+    <svg id="tree-2-svg"  width="450" height="400"></svg>
     <svg id="rrt-2-svg"  width="400" height="400"></svg>
 </div>
 
@@ -123,21 +123,24 @@
     import { RootToTipPlot } from "./src/roottotipplot.js";
 
     const timeTreeString =
-        '((Bonduni_DRC_1977-06:5.3E-5,Yambuku-Mayinga_DRC_1976-10-01:2.0E-6):0.002186,((\'Muembe1_DRC_2017-05\':0.007975,18FHV090-Beni_DRC_2018-07-28:0.00898):0.002026,(((Ilembe_Gabon_2002-02-23:0.001437,Kelle_2_COG_2003-10:0.001852):0.01144,(Makona-C07_Guinea_2014-03-20:0.020514,(034-KS_DRC_2008-12-31:5.43E-4,M-M_DRC_2007-08-31:4.5E-5):0.009434):2.05E-4):0.005346,(Kikwit-9510621_DRC_1995-05-04:0.003643,((Lomela-Lokolia16_DRC_2014-08-20:0.002216,BIK009-Bikoro_DRC_2018-05-10:0.002896):0.001998,(2Nza_Gabon_1996-10-27:0.002238,(Gabon_Gabon_1994-12-27:7.94E-4,1Eko_Gabon_1996-02:0.00106):6.25E-4):0.004065):5.18E-4):0.003691):2.81E-4):0.002186);';
+        '((Bonduni_DRC_1977-06:5.3E-5,Yambuku-Mayinga_DRC_1976-10-01:2.0E-6):0.002186,((Muembe1_DRC_2017-05:0.007975,Beni-18FHV090_DRC_2018-07-28:0.00898):0.002026,(((Ilembe_Gabon_2002-02-23:0.001437,Kelle_2_COG_2003-10:0.001852):0.01144,(Makona-C07_Guinea_2014-03-20:0.020514,(034-KS_DRC_2008-12-31:5.43E-4,M-M_DRC_2007-08-31:4.5E-5):0.009434):2.05E-4):0.005346,(Kikwit-9510621_DRC_1995-05-04:0.003643,((Lomela-Lokolia16_DRC_2014-08-20:0.002216,BIK009-Bikoro_DRC_2018-05-10:0.002896):0.001998,(2Nza_Gabon_1996-10-27:0.002238,(Gabon_Gabon_1994-12-27:7.94E-4,1Eko_Gabon_1996-02:0.00106):6.25E-4):0.004065):5.18E-4):0.003691):2.81E-4):0.002186);';
 
     const tree = Tree.parseNewick(timeTreeString, "_");
     const treeSVG = document.getElementById('tree-2-svg');
 
-    const figTree = new FigTree(treeSVG, tree, { top: 10, bottom: 60, left: 10, right: 100});
+    const figTree = new FigTree(treeSVG, tree, { top: 10, bottom: 60, left: 20, right: 190});
 
     figTree.hilightBranches();
     figTree.onClickBranch(FigTree.reroot);
     figTree.hilightInternalNodes();
     figTree.onClickNode(FigTree.rotate);
 
-    const rrtp = new RootToTipPlot(document.getElementById('rrt-2-svg'), tree, { top: 10, bottom: 60, left: 60, right: 75});
+    const rrtp = new RootToTipPlot(document.getElementById('rrt-2-svg'), tree, { top: 10, bottom: 60, left: 60, right: 20},
+        { slopeFormat: ",.5f" });
 
     rrtp.linkWithTree(treeSVG);
+
+    rrtp.selectTips(treeSVG, ["Muembe1_DRC_2017-05", "Beni-18FHV090_DRC_2018-07-28", "Lomela-Lokolia16_DRC_2014-08-20", "BIK009-Bikoro_DRC_2018-05-10"]);
 
 </script>
 

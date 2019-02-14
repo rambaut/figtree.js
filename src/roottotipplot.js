@@ -13,6 +13,8 @@ export class RootToTipPlot {
             yAxisTitle: "Divergence",
             nodeRadius: 6,
             hoverNodeRadius: 8,
+            slopeFormat: ",.2f",
+            r2Format: ",.2f"
         };
     }
 
@@ -21,6 +23,7 @@ export class RootToTipPlot {
      * @param svg
      * @param tree
      * @param margins
+     * @param settings
      */
     constructor(svg, tree, margins, settings = {}) {
         this.svg = svg;
@@ -46,8 +49,8 @@ export class RootToTipPlot {
         d3.select(svg).select('g').remove();
 
         // add a group which will containt the new tree
-        d3.select(svg).append('g')
-            .attr('transform', `translate(${margins.left},${margins.top})`);
+        d3.select(svg).append('g');
+            //.attr('transform', `translate(${margins.left},${margins.top})`);
 
         //to save on writing later
         this.svgSelection = d3.select(svg).select('g');
@@ -244,9 +247,9 @@ export class RootToTipPlot {
                 .attr("y2", this.scales.y(regression.y(x2)));
 
             this.svgSelection.select("#statistics-slope")
-                .text(`Slope: ${d3.format(",.4f")(regression.slope)}`);
+                .text(`Slope: ${d3.format(this.settings.slopeFormat)(regression.slope)}`);
             this.svgSelection.select("#statistics-r2")
-                .text(`R^2: ${d3.format(",.2f")(regression.rSquare) }`);
+                .text(`R^2: ${d3.format(this.settings.r2Format)(regression.rSquare) }`);
 
         } else {
             line
@@ -274,6 +277,19 @@ export class RootToTipPlot {
             });
     }
 
+    selectTips(treeSVG, tips) {
+        const self = this;
+        tips.forEach(tip => {
+            const node1 = d3.select(self.svg).select(`#${tip}`).select(`.node-shape`);
+            const node2 = d3.select(treeSVG).select(`#${tip}`).select(`.node-shape`);
+            node1.attr('class', 'node-shape selected');
+            node2.attr('class', 'node-shape selected');
+            const node = this.tree.externalNodes.filter(d => d.name === tip)[0];
+            node.isSelected = true;
+
+        })
+        self.update();
+    }
 
     linkWithTree(treeSVG) {
         const self = this;

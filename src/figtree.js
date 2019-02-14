@@ -46,8 +46,8 @@ export class FigTree {
         d3.select(svg).select('g').remove();
 
         // add a group which will contain the new tree
-        d3.select(svg).append('g')
-            .attr('transform',`translate(${margins.left},${margins.top})`);
+        d3.select(svg).append('g');
+            //.attr('transform',`translate(${margins.left},${margins.top})`);
 
         //to save on writing later
         this.svgSelection = d3.select(svg).select('g');
