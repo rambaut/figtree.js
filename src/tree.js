@@ -2,7 +2,7 @@
 
 /** @module tree */
 
-const _type = {
+export const Type = {
     DISCRETE : Symbol("DISCRETE"),
     BOOLEAN : Symbol("BOOLEAN"),
     INTEGER : Symbol("INTEGER"),
@@ -425,7 +425,7 @@ export class Tree {
 
             if (Array.isArray(addValues)) {
                 // is a set of discrete values
-                const type = _type.DISCRETE;
+                const type = Type.DISCRETE;
 
                 if (annotation.type && annotation.type !== type) {
                     throw Error(`existing values of the annotation, ${key}, in the tree is not of the same type`);
@@ -445,9 +445,9 @@ export class Tree {
                     if (typeof value === typeof 1.0) {
                         // This is a vector of probabilities of different states
                         if (!type) {
-                            type = _type.PROBABILITIES;
+                            type = Type.PROBABILITIES;
                         }
-                        if (type === _type.DISCRETE) {
+                        if (type === Type.DISCRETE) {
                             throw Error(`the values of annotation, ${key}, should be all boolean or all floats`);
                         }
                         sum += value;
@@ -456,9 +456,9 @@ export class Tree {
                         }
                     } else if (typeof value === typeof true) {
                         if (!type) {
-                            type = _type.DISCRETE;
+                            type = Type.DISCRETE;
                         }
-                        if (type === _type.PROBABILITIES) {
+                        if (type === Type.PROBABILITIES) {
                             throw Error(`the values of annotation, ${key}, should be all boolean or all floats`);
                         }
                     } else {
@@ -478,27 +478,27 @@ export class Tree {
                 annotation.values.add(addValues);
 
             } else {
-                let type = _type.DISCRETE;
+                let type = Type.DISCRETE;
 
                 if (typeof variable === typeof true) {
-                    type = _type.BOOLEAN;
+                    type = Type.BOOLEAN;
                 } else if (typeof variable === typeof 1) {
-                    type = _type.INTEGER;
+                    type = Type.INTEGER;
                 } else if (typeof variable === typeof 1.0) {
-                    type = _type.FLOAT;
+                    type = Type.FLOAT;
                 }
 
                 if (annotation.type && annotation.type !== type) {
-                    if ((type === _type.INTEGER && annotation.type === _type.FLOAT) ||
-                        (type === _type.FLOAT && annotation.type === _type.INTEGER)) {
+                    if ((type === Type.INTEGER && annotation.type === Type.FLOAT) ||
+                        (type === Type.FLOAT && annotation.type === Type.INTEGER)) {
                         // upgrade to float
-                        type = _type.FLOAT;
+                        type = Type.FLOAT;
                     } else {
                         throw Error(`existing values of the annotation, ${key}, in the tree is not of the same type`);
                     }
                 }
 
-                if (type === _type.DISCRETE) {
+                if (type === Type.DISCRETE) {
                     if (!annotation.values) {
                         annotation.values = new Set();
                     }

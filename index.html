@@ -295,6 +295,25 @@
     </figure>
 </div>
 
+<style>
+    .host-camel .node-shape {
+        fill: #e58d48;
+    }
+    .host-human .node-shape {
+        fill: #366c9d;
+    }
+    .host-bat .node-shape {
+        fill: #235a64;
+    }
+    .host-whale .node-shape {
+        fill: #541753;
+    }
+    .internal-node .node-shape {
+        fill: #8c969c;
+        display: none;
+    }
+</style>
+
 <script type="module">
     import { Tree } from "./src/tree.js";
     import { FigTree } from "./src/figtree.js";
@@ -304,14 +323,24 @@
 
     const tree = Tree.parseNewick(newickString);
     const treeSVG = document.getElementById('phylogram_3');
-    const figTree = new FigTree(treeSVG, tree, { top: 10, bottom: 60, left: 10, right: 150});
+    const figTree = new FigTree(treeSVG, tree, { top: 10, bottom: 60, left: 10, right: 150}, { nodeRadius: 10 });
 
     tree.annotateTips({
         "virus1": { host: "camel" },
         "virus2": { host: "camel" },
         "virus3": { host: "human" },
         "virus4": { host: "human" },
+        "virus5": { host: "bat" },
+        "virus6": { host: "bat" },
+        "virus7": { host: "bat" },
+        "virus8": { host: "bat" },
+        "virus9": { host: "whale" },
+        "virus10": { host: "whale" }
     });
+
+    figTree.addLabels('.external-node', FigTree.nodeInfo);
+
+    figTree.update();
 
 </script>
 

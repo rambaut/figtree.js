@@ -2,6 +2,7 @@
 
 /** @module figtree */
 
+import { Tree, Type } from "./tree.js";
 import { rectangularLayout } from "./layouts.js";
 
 /**
@@ -138,6 +139,23 @@ export class FigTree {
         this.svgSelection.selectAll(".node")
             .transition()
             .duration(500)
+            .attr("class", (d) => {
+                let classes = ["node",
+                    (!d.children ? "external-node" : "internal-node"),
+                    (d.isSelected ? "selected" : "unselected")];
+                if (d.annotations) {
+                    classes = [
+                        ...classes,
+                        ...Object.entries(d.annotations)
+                            .filter(([key]) => {
+                                return this.tree.annotations[key].type === Type.DISCRETE ||
+                                    this.tree.annotations[key].type === Type.BOOLEAN ||
+                                    this.tree.annotations[key].type === Type.INTEGER;
+                            } )
+                            .map(([key, value]) => `${key}-${value}`)];
+                }
+                return classes.join(" ");
+            })
             .attr("transform", d => {
                 // d.x = this.scales.x(d.height);
                 // d.y = this.scales.y(d.width);
@@ -377,8 +395,10 @@ function addNodes() {
                 return (d.name ? d.name : (d === this.tree.rootNode ? "root" : d.id));
             }
         })
-        .attr("class", d => `node ${!d.children ? " external-node" : " internal-node"}`)
-        .attr("transform", d => {
+        .attr("class", (d) => ["node",
+            (!d.children ? "external-node" : "internal-node"),
+            (d.isSelected ? "selected" : "unselected")].join(" "))
+        .attr("transform", (d) => {
             return `translate(${this.scales.x(d.height)}, ${this.scales.y(d.width)})`;
         });
 
@@ -386,7 +406,7 @@ function addNodes() {
         .attr("cx", 0)
         .attr("cy", 0)
         .attr("r", this.settings.nodeRadius)
-        .attr("class", d => "node-shape unselected");
+        .attr("class", d => "node-shape");
 
     node.append("text")
         .attr("class", "node-label")
