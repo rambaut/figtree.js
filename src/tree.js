@@ -1,10 +1,17 @@
 /** @module tree */
 
+const _type = {
+    DISCRETE : Symbol('DISCRETE'),
+    BOOLEAN : Symbol('BOOLEAN'),
+    INTEGER : Symbol('INTEGER'),
+    FLOAT: Symbol('FLOAT'),
+    PROBABILITIES: Symbol('PROBABILITIES')
+};
+
 /**
  * The Tree class
  */
 export class Tree {
-
     /**
      * The constructor takes an object for the root node. The tree structure is
      * defined as nested node objects.
@@ -20,6 +27,13 @@ export class Tree {
         this.nodeMap = new Map(
             this.nodeList.map( (node) => [node.key, node] )
         );
+        this.tipMap = new Map(
+            this.externalNodes.map( (tip) => {
+                return [tip.name, tip];
+            } )
+        );
+
+        this.annotations = {};
 
         // a callback function that is called whenever the tree is changed
         this.treeUpdateCallback = () => {};
@@ -83,6 +97,16 @@ export class Tree {
      */
     getNode(key) {
         return this.nodeMap.get(key);
+    }
+
+    /**
+     * Returns an external node (tip) from its label.
+     *
+     * @param label
+     * @returns {*}
+     */
+    getExternalNode(label) {
+        return this.tipMap.get(label);
     }
 
     /**
@@ -299,6 +323,216 @@ export class Tree {
      */
     rootToTipLengths() {
         return this.externalNodes.map((tip) => this.rootToTipLength(tip));
+    }
+
+    /**
+     * Set one or more annotations for the tips.
+     *
+     * See annotateNode for a description of the annotation structure.
+     *
+     * @param annotations a dictionary of annotations keyed by tip label
+     */
+    annotateTips(annotations) {
+        for (let [key, values] of Object.entries(annotations)) {
+            const tip = this.getExternalNode(key);
+            if (!tip) {
+                throw new Error(`tip with label ${key} not found in tree`);
+            }
+
+            this.annotateNode(tip, values);
+        }
+    }
+
+    /**
+     * This is similar to annotateTips but the annotation objects are keyed by node
+     * keys (Symbols).
+     *
+     * @param annotations a dictionary of annotations keyed by node key
+     */
+    annotateNodes(annotations) {
+        for (let [key, values] of Object.entries(annotations)) {
+            const node = this.getNode(key);
+            if (!node) {
+                throw new Error(`tip with key ${key} not found in tree`);
+            }
+
+            this.annotateNode(node, values);
+        }
+    }
+
+    /**
+     * Adds the given annotations to a particular node object.
+     *
+     * The annotations is an object with properties keyed by external node labels each
+     * of which is an object with key value pairs for the annotations. The
+     * key value pairs will be added to a property called 'annotations' in the node.
+     *
+     * Boolean or Numerical traits are given as a single value.
+     * Sets of values with probabilities should be given as an object.
+     * Discrete values should be given as an array (even if containing only one value)
+     * or an object with booleans to give the full set of possible trait values.
+     *
+     * For example:
+     *
+     * {
+     *     'tip_1': {
+     *         'trait_1' : true,
+     *         'trait_4' : 3.141592,
+     *         'trait_2' : [1, 2], // discrete trait
+     *         'trait_3' : ["London", "Paris", "New York"], // discrete trait
+     *         'trait_3' : {"London" : true, "Paris" : false, "New York": false], // discrete trait with full set of values
+     *         'trait_4' : {"London" : 0.75, "Paris" : 0.20, "New York": 0.05} // probability set
+     *     },
+     *     'tip_2': {...}
+     * }
+     *
+     * The annotation labels, type and possible values are also added to the tree in a property called 'annotations'.
+     *
+     * A reconstruction method such as annotateNodesFromTips can then be used to provide reconstructed values
+     * for internal nodes. Or annotateNodes can provide annotations for any node in the tree.
+     *
+     * @param node
+     * @param annotations a dictionary of annotations keyed by the annotation name.
+     */
+    annotateNode(node, annotations) {
+        this.addAnnotations(annotations);
+
+        // add the annotations to the existing annotations object for the node object
+        if (!node.annotations) {
+            node.annotations = {};
+        }
+        node.annotations = {...node.annotations, ...annotations};
+    }
+
+    /**
+     * Adds the annotation information to the tree. This stores the type and possible values
+     * for each annotation seen in the nodes of the tree.
+     *
+     * This methods also checks the values are correct and conform to previous annotations
+     * in type.
+     *
+     * @param annotations
+     */
+    addAnnotations(annotations) {
+        for (let [key, addValues] of Object.entries(annotations)) {
+            let annotation = this.annotations[key];
+            if (!annotation) {
+                annotation = {};
+                this.annotations[key] = annotation;
+            }
+
+            if (Array.isArray(addValues)) {
+                // is a set of discrete values
+                const type = _type.DISCRETE;
+
+                if (annotation.type && annotation.type !== type) {
+                    throw Error(`existing values of the annotation, ${key}, in the tree is not of the same type`);
+                }
+                annotation.type = type;
+                annotation.values = [...annotation.values, ...addValues];
+            } else if (Object.isExtensible(addValues)) {
+                // is a set of properties with values
+                let type = null;
+
+                let sum = 0.0;
+                let keys = [];
+                for (let [key, value] of Object.entries(addValues)) {
+                    if (keys.includes(key)) {
+                        throw Error(`the states of annotation, ${key}, should be unique`);
+                    }
+                    if (typeof value === typeof 1.0) {
+                        // This is a vector of probabilities of different states
+                        if (!type) {
+                            type = _type.PROBABILITIES;
+                        }
+                        if (type === _type.DISCRETE) {
+                            throw Error(`the values of annotation, ${key}, should be all boolean or all floats`);
+                        }
+                        sum += value;
+                        if (sum > 1.0) {
+                            throw Error(`the values of annotation, ${key}, should be probabilities of states and add to 1.0`);
+                        }
+                    } else if (typeof value === typeof true) {
+                        if (!type) {
+                            type = _type.DISCRETE;
+                        }
+                        if (type === _type.PROBABILITIES) {
+                            throw Error(`the values of annotation, ${key}, should be all boolean or all floats`);
+                        }
+                    } else {
+                        throw Error(`the values of annotation, ${key}, should be all boolean or all floats`);
+                    }
+                    keys.append(key);
+                }
+
+                if (annotation.type && annotation.type !== type) {
+                    throw Error(`existing values of the annotation, ${key}, in the tree is not of the same type`);
+                }
+
+                annotation.type = type;
+                if (!annotation.values) {
+                    annotation.values = new Set();
+                }
+                annotation.values.add(addValues);
+
+            } else {
+                let type = _type.DISCRETE;
+
+                if (typeof variable === typeof true) {
+                    type = _type.BOOLEAN;
+                } else if (typeof variable === typeof 1) {
+                    type = _type.INTEGER;
+                } else if (typeof variable === typeof 1.0) {
+                    type = _type.FLOAT;
+                }
+
+                if (annotation.type && annotation.type !== type) {
+                    if ((type === _type.INTEGER && annotation.type === _type.FLOAT) ||
+                        (type === _type.FLOAT && annotation.type === _type.INTEGER)) {
+                        // upgrade to float
+                        type = _type.FLOAT;
+                    } else {
+                        throw Error(`existing values of the annotation, ${key}, in the tree is not of the same type`);
+                    }
+                }
+
+                if (type === _type.DISCRETE) {
+                    if (!annotation.values) {
+                        annotation.values = new Set();
+                    }
+                    annotation.values.add(addValues);
+                }
+
+                annotation.type = type;
+            }
+
+            // overwrite the existing annotation property
+            this.annotations[key] = annotation;
+        }
+    }
+
+    /**
+     * Uses parsimony to label internal nodes to reconstruct the internal node states
+     * for the annotation 'name'.
+     *
+     * @param name
+     * @param acctrans Use acctrans reconstruction if true, deltrans otherwise
+     * @param node
+     */
+    annotateNodesFromTips(name, acctrans = true, node = this.rootNode) {
+
+        if (node.children){
+            node.children.map( (child) => {
+                if (child[name]) {
+                    return [...child[name]]
+                }
+                child[name]
+            })
+        }
+        // return (node.children ? node.children.map((child) => {
+        //     this.annotateNodesFromTips(name, acctrans, child)
+        // }) : {...node[name] = true});
+
     }
 
     /**
