@@ -1,11 +1,13 @@
+"use strict";
+
 /** @module tree */
 
 const _type = {
-    DISCRETE : Symbol('DISCRETE'),
-    BOOLEAN : Symbol('BOOLEAN'),
-    INTEGER : Symbol('INTEGER'),
-    FLOAT: Symbol('FLOAT'),
-    PROBABILITIES: Symbol('PROBABILITIES')
+    DISCRETE : Symbol("DISCRETE"),
+    BOOLEAN : Symbol("BOOLEAN"),
+    INTEGER : Symbol("INTEGER"),
+    FLOAT: Symbol("FLOAT"),
+    PROBABILITIES: Symbol("PROBABILITIES")
 };
 
 /**
@@ -555,7 +557,7 @@ export class Tree {
 
         for (const token of tokens.filter(token => token.length > 0)) {
             // console.log(`Token ${i}: ${token}, level: ${level}`);
-            if (token === '(') {
+            if (token === "(") {
                 // an internal node
 
                 if (labelNext) {
@@ -575,7 +577,7 @@ export class Tree {
                 }
                 currentNode = node;
 
-            } else if (token === ',') {
+            } else if (token === ",") {
                 // another branch in an internal node
 
                 labelNext = false; // labels are optional
@@ -587,7 +589,7 @@ export class Tree {
                 parent.children.push(currentNode);
 
                 currentNode = parent;
-            } else if (token === ')') {
+            } else if (token === ")") {
                 // finished an internal node
 
                 labelNext = false; // labels are optional
@@ -603,10 +605,10 @@ export class Tree {
                 currentNode = parent;
 
                 labelNext = true;
-            } else if (token === ':') {
+            } else if (token === ":") {
                 labelNext = false; // labels are optional
                 lengthNext = true;
-            } else if (token === ';') {
+            } else if (token === ";") {
                 // end of the tree, check that we are back at level 0
                 if (level > 0) {
                     throw new Error("unexpected semi-colon in tree")

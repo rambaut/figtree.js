@@ -1,4 +1,8 @@
-import {Tree} from './tree.js';
+"use strict";
+
+/** @module roottotipplot */
+
+import {Tree} from "./tree.js";
 
 /**
  * The RootToTipPlot class
@@ -46,14 +50,14 @@ export class RootToTipPlot {
         const width = svg.getBoundingClientRect().width;
         const height = svg.getBoundingClientRect().height;
 
-        d3.select(svg).select('g').remove();
+        d3.select(svg).select("g").remove();
 
         // add a group which will containt the new tree
-        d3.select(svg).append('g');
-            //.attr('transform', `translate(${margins.left},${margins.top})`);
+        d3.select(svg).append("g");
+            //.attr("transform", `translate(${margins.left},${margins.top})`);
 
         //to save on writing later
-        this.svgSelection = d3.select(svg).select('g');
+        this.svgSelection = d3.select(svg).select("g");
 
         // least squares regression
         const regression = this.leastSquares(this.points);
@@ -235,7 +239,7 @@ export class RootToTipPlot {
             .call(yAxis);
 
         // update trend line
-        const line = this.svgSelection.select('#regression');
+        const line = this.svgSelection.select("#regression");
         if (selectedPoints.length > 1) {
 
             line
@@ -268,7 +272,7 @@ export class RootToTipPlot {
         }
 
         //update points
-        this.svgSelection.selectAll('.external-node')
+        this.svgSelection.selectAll(".external-node")
         // .data(data, node => node.tip.name)
             .transition()
             .duration(500)
@@ -282,8 +286,8 @@ export class RootToTipPlot {
         tips.forEach(tip => {
             const node1 = d3.select(self.svg).select(`#${tip}`).select(`.node-shape`);
             const node2 = d3.select(treeSVG).select(`#${tip}`).select(`.node-shape`);
-            node1.attr('class', 'node-shape selected');
-            node2.attr('class', 'node-shape selected');
+            node1.attr("class", "node-shape selected");
+            node2.attr("class", "node-shape selected");
             const node = this.tree.externalNodes.filter(d => d.name === tip)[0];
             node.isSelected = true;
 
@@ -295,12 +299,12 @@ export class RootToTipPlot {
         const self = this;
 
         const mouseover = function(d) {
-            d3.select(self.svg).select(`#${d.name}`).select(`.node-shape`).attr('r', self.settings.hoverNodeRadius);
-            d3.select(treeSVG).select(`#${d.name}`).select(`.node-shape`).attr('r', self.settings.hoverNodeRadius);
+            d3.select(self.svg).select(`#${d.name}`).select(`.node-shape`).attr("r", self.settings.hoverNodeRadius);
+            d3.select(treeSVG).select(`#${d.name}`).select(`.node-shape`).attr("r", self.settings.hoverNodeRadius);
         };
         const mouseout = function(d) {
-            d3.select(self.svg).select(`#${d.name}`).select(`.node-shape`).attr('r', self.settings.nodeRadius);
-            d3.select(treeSVG).select(`#${d.name}`).select(`.node-shape`).attr('r', self.settings.nodeRadius);
+            d3.select(self.svg).select(`#${d.name}`).select(`.node-shape`).attr("r", self.settings.nodeRadius);
+            d3.select(treeSVG).select(`#${d.name}`).select(`.node-shape`).attr("r", self.settings.nodeRadius);
         };
         const clicked = function(d) {
             // toggle isSelected
@@ -314,11 +318,11 @@ export class RootToTipPlot {
             const node2 = d3.select(treeSVG).select(`#${d.name}`).select(`.node-shape`);
 
             if (tip.isSelected) {
-                node1.attr('class', 'node-shape selected');
-                node2.attr('class', 'node-shape selected');
+                node1.attr("class", "node-shape selected");
+                node2.attr("class", "node-shape selected");
             } else {
-                node1.attr('class', 'node-shape unselected');
-                node2.attr('class', 'node-shape unselected');
+                node1.attr("class", "node-shape unselected");
+                node2.attr("class", "node-shape unselected");
             }
 
             self.update();
