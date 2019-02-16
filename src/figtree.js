@@ -47,7 +47,7 @@ export class FigTree {
 
         // add a group which will contain the new tree
         d3.select(svg).append('g');
-            //.attr('transform',`translate(${margins.left},${margins.top})`);
+        //.attr('transform',`translate(${margins.left},${margins.top})`);
 
         //to save on writing later
         this.svgSelection = d3.select(svg).select('g');
@@ -275,9 +275,14 @@ export class FigTree {
      * @param text
      */
     addLabels(selection, text) {
-        this.svgSelection.selectAll(selection).on("mouseover", function () {
+        this.svgSelection.selectAll(selection).on("mouseover",
+            function (selectedNode) {
                 let tooltip = document.getElementById("tooltip");
-                tooltip.innerHTML = text;
+                if (typeof text === typeof "") {
+                    tooltip.innerHTML = text;
+                } else {
+                    tooltip.innerHTML = text(selectedNode);
+                }
                 tooltip.style.display = "block";
                 tooltip.style.left = d3.event.pageX + 10 + 'px';
                 tooltip.style.top = d3.event.pageY + 10 + 'px';
@@ -334,6 +339,21 @@ export class FigTree {
      */
     static reroot(tree, branch, position) {
         tree.reroot(branch, position);
+    }
+
+    /**
+     * A utility function that will return a HTML string about the node and its
+     * annotations. Can be used with the addLabels() method.
+     *
+     * @param node
+     * @returns {string}
+     */
+    static nodeInfo(node) {
+        let text = `${node.name ? node.name : name.id }`;
+        Object.entries(node.annotations).forEach(([key, value]) => {
+            text += `<p>${key}: ${value}</p>`;
+        });
+        return text;
     }
 }
 
