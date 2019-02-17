@@ -130,7 +130,9 @@ export class RootToTipPlot {
             .data(this.points)
             .enter()
             .append("g")
-            .attr("id", d => d.id)
+            .attr("id", d => {
+                return d.tip.name;
+            })
             .attr("class", "node external-node")
             .attr("transform", `translate(${this.scales.x(x1)}, ${this.scales.y(y1)})`)
             .append("circle")
@@ -169,19 +171,13 @@ export class RootToTipPlot {
         const xBar = data.reduce((a, b) => (a + b.x), 0.0) / data.length;
         const yBar = data.reduce((a, b) => (a + b.y), 0.0) / data.length;
 
-        const ssXX = data.map(function (d) {
-            return Math.pow(d.x - xBar, 2);
-        })
+        const ssXX = data.map((d) => Math.pow(d.x - xBar, 2))
             .reduce((a, b) => a + b, 0.0);
 
-        const ssYY = data.map(function (d) {
-            return Math.pow(d.y - yBar, 2);
-        })
+        const ssYY = data.map((d) => Math.pow(d.y - yBar, 2))
             .reduce((a, b) => a + b, 0.0);
 
-        const ssXY = data.map(function (d) {
-            return (d.x - xBar) * (d.y - yBar);
-        })
+        const ssXY = data.map((d) => (d.x - xBar) * (d.y - yBar))
             .reduce((a, b) => a + b, 0.0);
 
         const slope = ssXY / ssXX;
