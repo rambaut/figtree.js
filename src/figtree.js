@@ -111,6 +111,10 @@ export class FigTree {
 
         //update nodes
         this.svgSelection.selectAll(".node")
+            // .sort( (a, b) => {
+            //     if (!a.isSelected) return -1;               // a is not the hovered element, send "a" to the back
+            //     else return 1;                             // a is the hovered element, bring "a" to the front
+            // })
             .transition()
             .duration(500)
             .attr("class", (d) => {

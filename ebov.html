@@ -26,17 +26,20 @@
         .node-background.internal-node {
             display: none;
         }
+
         .node-background.external-node {
             stroke: #541753;
         }
         .external-node .node-shape {
             fill: #22b680;
             /*stroke: rgb(255, 255, 255);*/
-            /*stroke-width: 1;*/
+            stroke-width: 0;
         }
 
-        .external-node .node-shape.hovered {
-            stroke: rgb(0,0,0);
+        .external-node .node-shape .hovered {
+            fill: #edb23b;
+            stroke: rgb(255, 255, 255);
+            stroke-width: 1;
         }
         .external-node .node-shape.unselected {
             fill: #22b680;
@@ -52,9 +55,6 @@
             /*stroke: rgb(255, 255, 255);*/
             /*stroke-width: 1;*/
             display: none;
-        }
-        .internal-node .node-shape.hovered {
-            stroke: rgb(0,0,0);
         }
 
         #root .node-shape {
@@ -141,8 +141,12 @@
     figTree.hilightInternalNodes();
     figTree.onClickNode(FigTree.rotate);
 
+    figTree.addToolTip('.external-node', FigTree.nodeInfo);
+
     const rrtp = new RootToTipPlot(document.getElementById('rrt-2-svg'), tree, { top: 10, bottom: 60, left: 60, right: 20},
         { slopeFormat: ",.5f" });
+
+    rrtp.addToolTip('.external-node', RootToTipPlot.nodeInfo);
 
     rrtp.linkWithTree(treeSVG);
 

@@ -191,6 +191,32 @@ export class RootToTipPlot {
         self.update();
     }
 
+    /**
+     * Registers some text to appear in a popup box when the mouse hovers over the selection.
+     *
+     * @param selection
+     * @param text
+     */
+    addToolTip(selection, text) {
+        this.svgSelection.selectAll(selection).on("mouseover",
+            function (selectedNode) {
+                let tooltip = document.getElementById("tooltip");
+                if (typeof text === typeof "") {
+                    tooltip.innerHTML = text;
+                } else {
+                    tooltip.innerHTML = text(selectedNode);
+                }
+                tooltip.style.display = "block";
+                tooltip.style.left = d3.event.pageX + 10 + "px";
+                tooltip.style.top = d3.event.pageY + 10 + "px";
+            }
+        );
+        this.svgSelection.selectAll(selection).on("mouseout", function () {
+            let tooltip = document.getElementById("tooltip");
+            tooltip.style.display = "none";
+        });
+    }
+
     linkWithTree(treeSVG) {
         const self = this;
 
@@ -233,6 +259,22 @@ export class RootToTipPlot {
         points.on("mouseover", mouseover);
         points.on("mouseout", mouseout);
         points.on("click", clicked);
+    }
+
+    /**
+     * A utility function that will return a HTML string about the node and its
+     * annotations. Can be used with the addLabels() method.
+     *
+     * @param node
+     * @returns {string}
+     */
+    static nodeInfo(point) {
+        const node = point.tip;
+        let text = `${node.name ? node.name : node.id }`;
+        Object.entries(node.annotations).forEach(([key, value]) => {
+            text += `<p>${key}: ${value}</p>`;
+        });
+        return text;
     }
 
 }
