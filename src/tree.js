@@ -470,12 +470,10 @@ export class Tree {
             } else {
                 let type = Type.DISCRETE;
 
-                if (typeof variable === typeof true) {
+                if (typeof addValues === typeof true) {
                     type = Type.BOOLEAN;
-                } else if (typeof variable === typeof 1) {
-                    type = Type.INTEGER;
-                } else if (typeof variable === typeof 1.0) {
-                    type = Type.FLOAT;
+                } else if (Number(addValues)) {
+                    type = (addValues % 1 === 0 ? Type.INTEGER : Type.FLOAT);
                 }
 
                 if (annotation.type && annotation.type !== type) {
@@ -603,7 +601,11 @@ export class Tree {
                     lengthNext = false;
                 } else if (labelNext) {
                     currentNode.label = token;
-                    currentNode.annotations[labelName] = currentNode.label;
+                    let value = parseFloat(currentNode.label);
+                    if (isNaN(value)) {
+                        value = currentNode.label;
+                    }
+                    currentNode.annotations[labelName] = value;
                     labelNext = false;
                 } else {
                     // an external node

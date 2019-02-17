@@ -3,6 +3,7 @@
 /** @module roottotipplot */
 
 import {Tree} from "./tree.js";
+import {Type} from "./tree.js";
 
 /**
  * The RootToTipPlot class
@@ -131,7 +132,22 @@ export class RootToTipPlot {
             .enter()
             .append("g")
             .attr("id", d => d.tip.name )
-            .attr("class", "node external-node")
+            // .attr("class", "node external-node")
+            .attr("class", (d) => {
+                let classes = ["node", "external-node", (d.tip.isSelected ? "selected" : "unselected")];
+                if (d.tip.annotations) {
+                    classes = [
+                        ...classes,
+                        ...Object.entries(d.tip.annotations)
+                            .filter(([key]) => {
+                                return this.tree.annotations[key].type === Type.DISCRETE ||
+                                    this.tree.annotations[key].type === Type.BOOLEAN ||
+                                    this.tree.annotations[key].type === Type.INTEGER;
+                            } )
+                            .map(([key, value]) => `${key}-${value}`)];
+                }
+                return classes.join(" ");
+            })
             .attr("transform", `translate(${this.scales.x(x1)}, ${this.scales.y(y1)})`)
             .append("circle")
             .attr("class", "node-shape unselected")
