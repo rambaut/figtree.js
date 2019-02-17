@@ -130,9 +130,7 @@ export class RootToTipPlot {
             .data(this.points)
             .enter()
             .append("g")
-            .attr("id", d => {
-                return d.tip.name;
-            })
+            .attr("id", d => d.tip.name )
             .attr("class", "node external-node")
             .attr("transform", `translate(${this.scales.x(x1)}, ${this.scales.y(y1)})`)
             .append("circle")
