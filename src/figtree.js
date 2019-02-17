@@ -20,6 +20,7 @@ export class FigTree {
             xAxisTitle: "Divergence",
             nodeRadius: 6,
             hoverNodeRadius: 8,
+            nodeBackgroundBorder: 1,
             lengthFormat: d3.format(".2f"),
             branchCurve: d3.curveStepBefore,
         };
@@ -39,47 +40,10 @@ export class FigTree {
         // merge the default settings with the supplied settings
         this.settings = {...FigTree.DEFAULT_SETTINGS(), ...settings};
 
-        // get the size of the svg we are drawing on
-        const width = svg.getBoundingClientRect().width;
-        const height = svg.getBoundingClientRect().height;
-
         this.layout = rectangularLayout;
 
-        //remove the tree if it is there already
-        d3.select(svg).select("g").remove();
-
-        // add a group which will contain the new tree
-        d3.select(svg).append("g");
-        //.attr("transform",`translate(${margins.left},${margins.top})`);
-
-        //to save on writing later
-        this.svgSelection = d3.select(svg).select("g");
-
-        const externalNodeCount = tree.externalNodes.length;
-        const maxRootToTip = d3.max([...tree.rootToTipLengths()]);
-
-        // create the scales
-        const xScale = d3.scaleLinear()
-            .domain([0, maxRootToTip])
-            .range([margins.left, width - margins.right]);
-
-        const yScale = d3.scaleLinear()
-            .domain([0, externalNodeCount - 1])
-            .range([margins.top + 20, height - margins.bottom - 20]);
-
-        this.scales = {x:xScale, y:yScale, width, height};
-
-        // layout the nodes using the provided layout function
-        this.layout(tree);
-
         // call the private methods to create the components of the diagram
-        addBranches.call(this);
-        addNodes.call(this);
-        addAxis.call(this, margins);
-
-        this.tree.treeUpdateCallback = () => {
-            this.update();
-        }
+        createElements.call(this, svg, margins);
     }
 
     /**
@@ -135,6 +99,16 @@ export class FigTree {
             })
             .text(d => this.settings.lengthFormat(d.length));
 
+        if (this.settings.nodeBackgroundBorder > 0) {
+            //update node backgrounds
+            this.svgSelection.selectAll(".node-background")
+                .transition()
+                .duration(500)
+                .attr("transform", d => {
+                    return `translate(${this.scales.x(d.height)}, ${this.scales.y(d.width)})`;
+                });
+        }
+
         //update nodes
         this.svgSelection.selectAll(".node")
             .transition()
@@ -157,8 +131,6 @@ export class FigTree {
                 return classes.join(" ");
             })
             .attr("transform", d => {
-                // d.x = this.scales.x(d.height);
-                // d.y = this.scales.y(d.width);
                 return `translate(${this.scales.x(d.height)}, ${this.scales.y(d.width)})`;
             });
 
@@ -179,7 +151,7 @@ export class FigTree {
                 else
                     return "hanging";
             });
-            //.text((d) => (d.label && d.label.startsWith("#")? "" : d.label));
+        //.text((d) => (d.label && d.label.startsWith("#")? "" : d.label));
     }
 
     /**
@@ -213,11 +185,11 @@ export class FigTree {
      */
     hilightNodes(selection) {
         const selected = this.svgSelection.selectAll(selection).selectAll(".node-shape");
-        selected.on("mouseover", function (d, i) {
+        selected.on("mouseover", (d, i) => {
             d3.select(this).attr("class", "node-shape hovered");
             d3.select(this).attr("r", this.settings.hoverNodeRadius);
         });
-        selected.on("mouseout", function (d, i) {
+        selected.on("mouseout", (d, i) => {
             d3.select(this).attr("class", "node-shape");
             d3.select(this).attr("r", this.settings.nodeRadius);
         });
@@ -393,12 +365,71 @@ export class FigTree {
  * Private methods, called by the class using the <function>.call(this) function.
  */
 
+function createElements(svg, margins) {
+    // get the size of the svg we are drawing on
+    const width = svg.getBoundingClientRect().width;
+    const height = svg.getBoundingClientRect().height;
+
+
+    //remove the tree if it is there already
+    d3.select(svg).select("g").remove();
+
+    // add a group which will contain the new tree
+    d3.select(svg).append("g");
+    //.attr("transform",`translate(${margins.left},${margins.top})`);
+
+    //to save on writing later
+    this.svgSelection = d3.select(svg).select("g");
+
+    const externalNodeCount = this.tree.externalNodes.length;
+    const maxRootToTip = d3.max([...this.tree.rootToTipLengths()]);
+
+    // create the scales
+    const xScale = d3.scaleLinear()
+        .domain([0, maxRootToTip])
+        .range([margins.left, width - margins.right]);
+
+    const yScale = d3.scaleLinear()
+        .domain([0, externalNodeCount - 1])
+        .range([margins.top + 20, height - margins.bottom - 20]);
+
+    this.scales = {x:xScale, y:yScale, width, height};
+
+    // layout the nodes using the provided layout function
+    this.layout(this.tree);
+
+    // call the private methods to create the components of the diagram
+    addBranches.call(this);
+    addNodes.call(this);
+    addAxis.call(this, margins);
+
+    this.tree.treeUpdateCallback = () => {
+        this.update();
+    }
+}
+
 /**
  * Adds internal and external nodes with shapes and labels
  */
 function addNodes() {
+
+    if (this.settings.nodeBackgroundBorder > 0) {
+        // add the node background
+        this.svgSelection.selectAll("g")
+            .data(this.tree.nodes)
+            .enter().append("circle")
+            .attr("class", (d) => ["node-background", (!d.children ? "external-node" : "internal-node")].join(" "))
+            .attr("transform", (d) => {
+                return `translate(${this.scales.x(d.height)}, ${this.scales.y(d.width)})`;
+            })
+            .attr("cx", 0)
+            .attr("cy", 0)
+            .attr("r", this.settings.nodeRadius + this.settings.nodeBackgroundBorder);
+    }
+
+    // add the actual nodes
     let node = this.svgSelection.selectAll("g")
-        .data(this.tree.nodes) // assign the id for continuity during transitions
+        .data(this.tree.nodes)
         .enter().append("g")
         .attr("id", d => {
             if (d.label && d.label.startsWith("#")) {

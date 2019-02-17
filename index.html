@@ -25,26 +25,27 @@
 
         .external-node .node-shape {
             fill: #22b680;
-            stroke: rgb(255, 255, 255);
-            stroke-width: 1;
+            /*stroke: rgb(255, 255, 255);*/
+            /*stroke-width: 1;*/
         }
 
         .external-node .node-shape.hovered {
             stroke: rgb(0,0,0);
+            /*stroke-width: 1;*/
         }
         .external-node .node-shape.unselected {
             fill: #22b680;
-            stroke: rgb(255, 255, 255);
+            /*stroke: rgb(255, 255, 255);*/
         }
         .external-node .node-shape.selected {
             fill: #edb23b;
-            stroke: rgb(0,0,0);
+            /*stroke: rgb(0,0,0);*/
         }
 
         .internal-node .node-shape {
             fill: #29c5ef;
-            stroke: rgb(255, 255, 255);
-            stroke-width: 1;
+            /*stroke: rgb(255, 255, 255);*/
+            /*stroke-width: 1;*/
         }
         .internal-node .node-shape.hovered {
             stroke: rgb(0,0,0);
@@ -52,8 +53,14 @@
 
         #root .node-shape {
             fill: #e31e58;
-            stroke: rgb(255, 255, 255);
-            stroke-width: 1;
+            /*stroke: rgb(255, 255, 255);*/
+            /*stroke-width: 1;*/
+        }
+
+        .node-background {
+            fill: rgb(255, 255, 255);
+            /*stroke: rgb(255, 255, 255);*/
+            /*stroke-width: 1;*/
         }
 
         .node-label {
@@ -257,6 +264,15 @@
     #tree-3-svg .internal-node {
         display: none;
     }
+    #tree-3-svg .node-background.external-node {
+        fill: #541753;
+    }
+    #rrt-3-svg .node-background.external-node {
+        fill: #541753;
+    }
+    #tree-3-svg .node-background.internal-node {
+        display: none;
+    }
 </style>
 
 <script type="module">
@@ -273,8 +289,8 @@
     const figTree = new FigTree(treeSVG, tree, { top: 10, bottom: 60, left: 10, right: 150},
         { // the settings
             xAxisTitle: "Divergence (subst./site)",
-            nodeRadius: 4,
-            hoverNodeRadius: 6
+            nodeRadius: 2,
+            hoverNodeRadius: 3
         });
 
     tree.order(tree.rootNode, false);
@@ -283,8 +299,8 @@
         { // the settings
             xAxisTitle: "Time",
             yAxisTitle: "Divergence (subst./site)",
-            nodeRadius: 4,
-            hoverNodeRadius: 6
+            nodeRadius: 2,
+            hoverNodeRadius: 3
         });
 
     rrtp.linkWithTree(treeSVG);
@@ -293,25 +309,29 @@
 
 <div>
     <figure>
+        <svg id="phylogram_3"  width="600" height="500"></svg>
         <style>
-            .internal-node .node-shape {
+            #phylogram_3 .internal-node .node-shape {
                 fill: #8c969c;
                 /*display: none;*/
             }
-            .host-camel .node-shape {
+            #phylogram_3 .host-camel .node-shape {
                 fill: #e58d48;
             }
-            .host-human .node-shape {
+            #phylogram_3 .host-human .node-shape {
                 fill: #366c9d;
             }
-            .host-bat .node-shape {
+            #phylogram_3 .host-bat .node-shape {
                 fill: #235a64;
             }
-            .host-whale .node-shape {
+            #phylogram_3 .host-whale .node-shape {
                 fill: #541753;
             }
+            #phylogram_3 .branch {
+                stroke-width: 4;
+            }
+
         </style>
-        <svg id="phylogram_3"  width="600" height="500"></svg>
     </figure>
 </div>
 

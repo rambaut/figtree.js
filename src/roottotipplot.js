@@ -18,6 +18,7 @@ export class RootToTipPlot {
             yAxisTitle: "Divergence",
             nodeRadius: 6,
             hoverNodeRadius: 8,
+            nodeBackgroundBorder: 1,
             slopeFormat: ",.2f",
             r2Format: ",.2f"
         };
@@ -47,133 +48,9 @@ export class RootToTipPlot {
                 };
             });
 
-        // get the size of the svg we are drawing on
-        const width = svg.getBoundingClientRect().width;
-        const height = svg.getBoundingClientRect().height;
-
-        d3.select(svg).select("g").remove();
-
-        // add a group which will containt the new tree
-        d3.select(svg).append("g");
-            //.attr("transform", `translate(${margins.left},${margins.top})`);
-
-        //to save on writing later
-        this.svgSelection = d3.select(svg).select("g");
-
-        // least squares regression
-        const regression = this.leastSquares(this.points);
-        const x1 = regression.xIntercept;
-        const y1 = 0.0;
-        const x2 = d3.max(this.points, d => d.x);
-        const y2 = d3.max([regression.y(x2), d3.max(this.points, d => d.y)]);
-
-        this.scales = {
-            x: d3.scaleLinear()
-                .domain([x1, x2]).nice()
-                .range([margins.left, width - margins.right]),
-            y: d3.scaleLinear()
-                .domain([y1, y2]).nice()
-                .range([height - margins.bottom, margins.top])
-        };
-
-        const xAxis = d3.axisBottom(this.scales.x)
-            .tickArguments(this.settings.xAxisTickArguments);
-        const yAxis = d3.axisLeft(this.scales.y)
-            .tickArguments(this.settings.yAxisTickArguments);
-
-        const xAxisWidth = width - margins.left - margins.right;
-        const yAxisHeight = height - margins.bottom - margins.top;
-
-        this.svgSelection.append("g")
-            .attr("id", "x-axis")
-            .attr("class", "axis")
-            .attr("transform", `translate(0, ${height - margins.bottom + 5})`)
-            .call(xAxis);
-
-        this.svgSelection.append("g")
-            .attr("id", "x-axis-label")
-            .attr("class", "axis-label")
-            .attr("transform", `translate(${margins.left}, ${height - margins.bottom})`)
-            .append("text")
-            .attr("transform", `translate(${xAxisWidth / 2}, 35)`)
-            .attr("alignment-baseline", "hanging")
-            .style("text-anchor", "middle")
-            .text(this.settings.xAxisTitle);
-
-        this.svgSelection.append("g")
-            .attr("id", "y-axis")
-            .attr("class", "axis")
-            .attr("transform", `translate(${margins.left - 5},0)`)
-            .call(yAxis);
-
-        this.svgSelection.append("g")
-            .attr("id", "y-axis-label")
-            .attr("class", "axis-label")
-            .attr("transform", `translate(${margins.left},${margins.top})`)
-            .append("text")
-            .attr("transform", "rotate(-90)")
-            .attr("y", 0 - margins.left)
-            .attr("x", 0 - (yAxisHeight / 2))
-            .attr("dy", "1em")
-            .style("text-anchor", "middle")
-            .text(this.settings.yAxisTitle);
-
-        this.svgSelection.append("line")
-            .attr("id", "regression")
-            .attr("class", "trend-line")
-            .attr("x1", this.scales.x(x1))
-            .attr("y1", this.scales.y(y1))
-            .attr("x2", this.scales.x(x1))
-            .attr("y2", this.scales.y(y1));
-
-        this.svgSelection.append("g")
-            .selectAll("circle")
-            .data(this.points)
-            .enter()
-            .append("g")
-            .attr("id", d => d.tip.name )
-            // .attr("class", "node external-node")
-            .attr("class", (d) => {
-                let classes = ["node", "external-node", (d.tip.isSelected ? "selected" : "unselected")];
-                if (d.tip.annotations) {
-                    classes = [
-                        ...classes,
-                        ...Object.entries(d.tip.annotations)
-                            .filter(([key]) => {
-                                return this.tree.annotations[key].type === Type.DISCRETE ||
-                                    this.tree.annotations[key].type === Type.BOOLEAN ||
-                                    this.tree.annotations[key].type === Type.INTEGER;
-                            } )
-                            .map(([key, value]) => `${key}-${value}`)];
-                }
-                return classes.join(" ");
-            })
-            .attr("transform", `translate(${this.scales.x(x1)}, ${this.scales.y(y1)})`)
-            .append("circle")
-            .attr("class", "node-shape unselected")
-            .attr("cx", 0)
-            .attr("cy", 0)
-            .attr("r", this.settings.nodeRadius);
-
-        this.svgSelection.append("text")
-            .attr("id", "statistics-slope")
-            .attr("transform", `translate(${margins.left + 20},${margins.top})`)
-            .style("text-anchor", "left")
-            .attr("alignment-baseline", "hanging")
-            .attr("dy", "0")
-            .text(`Slope: -`);
-        this.svgSelection.append("text")
-            .attr("id", "statistics-r2")
-            .attr("transform", `translate(${margins.left + 20},${margins.top})`)
-            .style("text-anchor", "left")
-            .attr("alignment-baseline", "hanging")
-            .attr("dy", "1.5em")
-            .text(`R^2: -`);
-
-        this.update();
-
-        this.tree.treeUpdateCallback = () => this.update();
-    };
+        // call the private methods to create the components of the diagram
+        createElements.call(this, svg, margins);
+    }
 
     /**
      * returns slope, intercept and r-square of the line
@@ -281,9 +158,18 @@ export class RootToTipPlot {
 
         }
 
-        //update points
-        this.svgSelection.selectAll(".external-node")
-        // .data(data, node => node.tip.name)
+        if (this.settings.nodeBackgroundBorder > 0) {
+            //update node background
+            this.svgSelection.selectAll(".node-background")
+                .transition()
+                .duration(500)
+                .attr("transform", d => {
+                    return `translate(${this.scales.x(d.x)}, ${this.scales.y(d.y)})`;
+                });
+        }
+
+        //update nodes
+        this.svgSelection.selectAll(".node")
             .transition()
             .duration(500)
             .attr("transform", d => {
@@ -350,3 +236,152 @@ export class RootToTipPlot {
     }
 
 }
+
+/*
+ * Private methods, called by the class using the <function>.call(this) function.
+ */
+
+function createElements(svg, margins) {
+    // get the size of the svg we are drawing on
+    const width = svg.getBoundingClientRect().width;
+    const height = svg.getBoundingClientRect().height;
+
+    d3.select(svg).select("g").remove();
+
+    // add a group which will containt the new tree
+    d3.select(svg).append("g");
+    //.attr("transform", `translate(${margins.left},${margins.top})`);
+
+    //to save on writing later
+    this.svgSelection = d3.select(svg).select("g");
+
+    // least squares regression
+    const regression = this.leastSquares(this.points);
+    const x1 = regression.xIntercept;
+    const y1 = 0.0;
+    const x2 = d3.max(this.points, d => d.x);
+    const y2 = d3.max([regression.y(x2), d3.max(this.points, d => d.y)]);
+
+    this.scales = {
+        x: d3.scaleLinear()
+            .domain([x1, x2]).nice()
+            .range([margins.left, width - margins.right]),
+        y: d3.scaleLinear()
+            .domain([y1, y2]).nice()
+            .range([height - margins.bottom, margins.top])
+    };
+
+    const xAxis = d3.axisBottom(this.scales.x)
+        .tickArguments(this.settings.xAxisTickArguments);
+    const yAxis = d3.axisLeft(this.scales.y)
+        .tickArguments(this.settings.yAxisTickArguments);
+
+    const xAxisWidth = width - margins.left - margins.right;
+    const yAxisHeight = height - margins.bottom - margins.top;
+
+    this.svgSelection.append("g")
+        .attr("id", "x-axis")
+        .attr("class", "axis")
+        .attr("transform", `translate(0, ${height - margins.bottom + 5})`)
+        .call(xAxis);
+
+    this.svgSelection.append("g")
+        .attr("id", "x-axis-label")
+        .attr("class", "axis-label")
+        .attr("transform", `translate(${margins.left}, ${height - margins.bottom})`)
+        .append("text")
+        .attr("transform", `translate(${xAxisWidth / 2}, 35)`)
+        .attr("alignment-baseline", "hanging")
+        .style("text-anchor", "middle")
+        .text(this.settings.xAxisTitle);
+
+    this.svgSelection.append("g")
+        .attr("id", "y-axis")
+        .attr("class", "axis")
+        .attr("transform", `translate(${margins.left - 5},0)`)
+        .call(yAxis);
+
+    this.svgSelection.append("g")
+        .attr("id", "y-axis-label")
+        .attr("class", "axis-label")
+        .attr("transform", `translate(${margins.left},${margins.top})`)
+        .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 0 - margins.left)
+        .attr("x", 0 - (yAxisHeight / 2))
+        .attr("dy", "1em")
+        .style("text-anchor", "middle")
+        .text(this.settings.yAxisTitle);
+
+    this.svgSelection.append("line")
+        .attr("id", "regression")
+        .attr("class", "trend-line")
+        .attr("x1", this.scales.x(x1))
+        .attr("y1", this.scales.y(y1))
+        .attr("x2", this.scales.x(x1))
+        .attr("y2", this.scales.y(y1));
+
+    if (this.settings.nodeBackgroundBorder > 0) {
+        this.svgSelection.append("g")
+            .selectAll("circle")
+            .data(this.points)
+            .enter()
+            .append("circle")
+            .attr("class", (d) => ["node-background", (!d.children ? "external-node" : "internal-node")].join(" "))
+            .attr("transform", `translate(${this.scales.x(x1)}, ${this.scales.y(y1)})`)
+            .attr("cx", 0)
+            .attr("cy", 0)
+            .attr("r", this.settings.nodeRadius + this.settings.nodeBackgroundBorder);
+    }
+
+    this.svgSelection.append("g")
+        .selectAll("circle")
+        .data(this.points)
+        .enter()
+        .append("g")
+        .attr("id", d => d.tip.name )
+        .attr("class", (d) => {
+            let classes = ["node", "external-node", (d.tip.isSelected ? "selected" : "unselected")];
+            if (d.tip.annotations) {
+                classes = [
+                    ...classes,
+                    ...Object.entries(d.tip.annotations)
+                        .filter(([key]) => {
+                            return this.tree.annotations[key].type === Type.DISCRETE ||
+                                this.tree.annotations[key].type === Type.BOOLEAN ||
+                                this.tree.annotations[key].type === Type.INTEGER;
+                        } )
+                        .map(([key, value]) => `${key}-${value}`)];
+            }
+            return classes.join(" ");
+        })
+        .attr("transform", `translate(${this.scales.x(x1)}, ${this.scales.y(y1)})`)
+        // .attr("transform", d => {
+        //     return `translate(${this.scales.x(d.x)}, ${this.scales.y(d.y)})`;
+        // })
+        .append("circle")
+        .attr("class", "node-shape")
+        .attr("cx", 0)
+        .attr("cy", 0)
+        .attr("r", this.settings.nodeRadius);
+
+    this.svgSelection.append("text")
+        .attr("id", "statistics-slope")
+        .attr("transform", `translate(${margins.left + 20},${margins.top})`)
+        .style("text-anchor", "left")
+        .attr("alignment-baseline", "hanging")
+        .attr("dy", "0")
+        .text(`Slope: -`);
+    this.svgSelection.append("text")
+        .attr("id", "statistics-r2")
+        .attr("transform", `translate(${margins.left + 20},${margins.top})`)
+        .style("text-anchor", "left")
+        .attr("alignment-baseline", "hanging")
+        .attr("dy", "1.5em")
+        .text(`R^2: -`);
+
+    this.update();
+
+    this.tree.treeUpdateCallback = () => this.update();
+};
+
