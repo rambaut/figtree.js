@@ -127,10 +127,10 @@ export class RootToTipPlot {
 
         this.svgSelection.append("g")
             .selectAll("circle")
-            .data(this.points, point => point.name)
+            .data(this.points)
             .enter()
             .append("g")
-            .attr("id", d => d.name)
+            .attr("id", d => d.id)
             .attr("class", "node external-node")
             .attr("transform", `translate(${this.scales.x(x1)}, ${this.scales.y(y1)})`)
             .append("circle")

@@ -21,7 +21,7 @@ export class FigTree {
             nodeRadius: 6,
             hoverNodeRadius: 8,
             lengthFormat: d3.format(".2f"),
-            branchCurve: d3.curveStepBefore
+            branchCurve: d3.curveStepBefore,
         };
     }
 
@@ -179,6 +179,7 @@ export class FigTree {
                 else
                     return "hanging";
             });
+            //.text((d) => (d.label && d.label.startsWith("#")? "" : d.label));
     }
 
     /**
@@ -289,12 +290,23 @@ export class FigTree {
     }
 
     /**
+     * Sets the annotation to use as the node labels.
+     *
+     * @param annotationName
+     */
+    setNodeLabels(selection, annotationName) {
+        this.svgSelection.selectAll(selection);
+        // .forEach((d) => d.label = annotationName);
+        this.update();
+    }
+
+    /**
      * Registers some text to appear in a popup box when the mouse hovers over the selection.
      *
      * @param selection
      * @param text
      */
-    addLabels(selection, text) {
+    addToolTip(selection, text) {
         this.svgSelection.selectAll(selection).on("mouseover",
             function (selectedNode) {
                 let tooltip = document.getElementById("tooltip");
@@ -369,7 +381,7 @@ export class FigTree {
      * @returns {string}
      */
     static nodeInfo(node) {
-        let text = `${node.name ? node.name : name.id }`;
+        let text = `${node.name ? node.name : node.id }`;
         Object.entries(node.annotations).forEach(([key, value]) => {
             text += `<p>${key}: ${value}</p>`;
         });
@@ -386,7 +398,7 @@ export class FigTree {
  */
 function addNodes() {
     let node = this.svgSelection.selectAll("g")
-        .data(this.tree.nodes, node => node.id) // assign the key for continuity during transitions
+        .data(this.tree.nodes) // assign the id for continuity during transitions
         .enter().append("g")
         .attr("id", d => {
             if (d.label && d.label.startsWith("#")) {
@@ -406,7 +418,7 @@ function addNodes() {
         .attr("cx", 0)
         .attr("cy", 0)
         .attr("r", this.settings.nodeRadius)
-        .attr("class", d => "node-shape");
+        .attr("class", () => "node-shape");
 
     node.append("text")
         .attr("class", "node-label")
@@ -414,27 +426,25 @@ function addNodes() {
         .attr("alignment-baseline", "middle")
         .attr("dx", "12")
         .attr("dy", "0")
-        .text(d => d.name);
+        .text((d) => d.name);
 
     node.append("text")
         .attr("class", "node-label support")
         .attr("text-anchor", "end")
         .attr("dx", "-6")
-        .attr("dy", d => {
+        .attr("dy", (d) => {
             if (d.parent && d.parent.children[0] === d)
                 return "-8";
             else
                 return "8";
         })
-        .attr("alignment-baseline", d => {
+        .attr("alignment-baseline", (d) => {
             if (d.parent && d.parent.children[0] === d)
                 return "bottom";
             else
                 return "hanging";
         })
-        .text(d => {
-            return (d.label && d.label.startsWith("#")? "" : d.label);
-        });
+        .text((d) => (d.label && d.label.startsWith("#")? "" : d.label));
 }
 
 /**
@@ -449,7 +459,7 @@ function addBranches() {
     const edges = this.tree.nodes.filter(n => n.location);
 
     this.svgSelection.selectAll("path")
-        .data(edges, n => n.id)
+        .data(edges)
         .enter()
         .append("path")
         .attr("class", "branch")
@@ -457,7 +467,7 @@ function addBranches() {
         .attr("d", edge => branchPath(edge.location));
 
     this.svgSelection.selectAll("text")
-        .data(edges, n => n.id)
+        .data(edges)
         .enter()
         .append("text")
         .attr("class", "branch-label length")

@@ -16,9 +16,7 @@ export function rectangularLayout(tree) {
     // first set the 'width' of the external nodes
     nodes.filter(n => !n.children).forEach((node, index) => (node.width = index));
 
-    nodes.forEach((node, index) => {
-        //adding string id so we can id the nodes and branches and keep them consistent during transitions
-        node.id = `node_${index}`;
+    nodes.forEach((node) => {
         node.height = this.tree.rootToTipLength(node); //Node height
 
         // internal nodes get the mean width of their children
@@ -54,9 +52,7 @@ export function transmissionLayout(tree) {
     // first set the 'width' of the external nodes
     nodes.filter(n => !n.children).forEach((node, index) => (node.width = index));
 
-    nodes.forEach((node, index) => {
-        //adding string id so we can id the nodes and branches and keep them consistent during transitions
-        node.id = `node_${index}`;
+    nodes.forEach((node) => {
         node.height = this.tree.rootToTipLength(node); //Node height
 
         // internal nodes get the mean width of their children

@@ -24,18 +24,16 @@ export class Tree {
     constructor(rootNode = {}) {
         this.root = rootNode;
 
-        this.nodeList = [...this.preorder()];
-        this.nodeList.forEach( (node, index) => node.key = Symbol(`node_${index}`) );
-        this.nodeMap = new Map(
-            this.nodeList.map( (node) => [node.key, node] )
-        );
-        this.tipMap = new Map(
-            this.externalNodes.map( (tip) => {
-                return [tip.name, tip];
-            } )
-        );
-
         this.annotations = {};
+
+        this.nodeList = [...this.preorder()];
+        this.nodeList.forEach( (node, index) => {
+            node.id = `node_${index}`;
+            this.addAnnotations(node.annotations);
+        });
+        this.nodeMap = new Map(this.nodeList.map( (node) => [node.id, node] ));
+        this.tipMap = new Map(this.externalNodes.map( (tip) => [tip.name, tip] ));
+
 
         // a callback function that is called whenever the tree is changed
         this.treeUpdateCallback = () => {};
@@ -91,24 +89,23 @@ export class Tree {
     }
 
     /**
-     * Returns a node from its key (a unique Symbol) stored in
-     * the node as poperty 'key'.
+     * Returns a node from its id stored.
      *
-     * @param key
+     * @param id
      * @returns {*}
      */
-    getNode(key) {
-        return this.nodeMap.get(key);
+    getNode(id) {
+        return this.nodeMap.get(id);
     }
 
     /**
-     * Returns an external node (tip) from its label.
+     * Returns an external node (tip) from its name.
      *
-     * @param label
+     * @param name
      * @returns {*}
      */
-    getExternalNode(label) {
-        return this.tipMap.get(label);
+    getExternalNode(name) {
+        return this.tipMap.get(name);
     }
 
     /**
@@ -400,10 +397,7 @@ export class Tree {
         this.addAnnotations(annotations);
 
         // add the annotations to the existing annotations object for the node object
-        if (!node.annotations) {
-            node.annotations = {};
-        }
-        node.annotations = {...node.annotations, ...annotations};
+        node.annotations = {...(node.annotations === undefined ? {} : node.annotations), ...annotations};
     }
 
     /**
@@ -444,20 +438,19 @@ export class Tree {
                     }
                     if (typeof value === typeof 1.0) {
                         // This is a vector of probabilities of different states
-                        if (!type) {
-                            type = Type.PROBABILITIES;
-                        }
+                        type = (type === undefined) ? Type.PROBABILITIES : type;
+
                         if (type === Type.DISCRETE) {
                             throw Error(`the values of annotation, ${key}, should be all boolean or all floats`);
                         }
+
                         sum += value;
                         if (sum > 1.0) {
                             throw Error(`the values of annotation, ${key}, should be probabilities of states and add to 1.0`);
                         }
                     } else if (typeof value === typeof true) {
-                        if (!type) {
-                            type = Type.DISCRETE;
-                        }
+                        type = (type === undefined) ? Type.DISCRETE : type;
+
                         if (type === Type.PROBABILITIES) {
                             throw Error(`the values of annotation, ${key}, should be all boolean or all floats`);
                         }
@@ -472,10 +465,7 @@ export class Tree {
                 }
 
                 annotation.type = type;
-                if (!annotation.values) {
-                    annotation.values = new Set();
-                }
-                annotation.values.add(addValues);
+                annotation.values = (annotation.values === undefined ? new Set() : annotation.values).add(addValues);
 
             } else {
                 let type = Type.DISCRETE;
@@ -521,20 +511,10 @@ export class Tree {
      * @param acctrans Use acctrans reconstruction if true, deltrans otherwise
      * @param node
      */
-    annotateNodesFromTips(name, acctrans = true, node = this.rootNode) {
+    annotateNodesFromTips(name, acctran = true) {
+        fitchParsimony(name, this.rootNode);
 
-        if (node.children){
-            node.children.map( (child) => {
-                if (child[name]) {
-                    return [...child[name]]
-                }
-                child[name]
-            })
-        }
-        // return (node.children ? node.children.map((child) => {
-        //     this.annotateNodesFromTips(name, acctrans, child)
-        // }) : {...node[name] = true});
-
+        reconstructInternalStates(name, [], acctran, this.rootNode);
     }
 
     /**
@@ -543,10 +523,11 @@ export class Tree {
      * or any of the tree definitition characters '(),:;' - the quotes (and any whitespace immediately within)
      * will be removed.
      * @param newickString - the Newick format tree as a string
+     * @param labelName
      * @param datePrefix
      * @returns {Tree} - an instance of the Tree class
      */
-    static parseNewick(newickString, datePrefix = undefined ) {
+    static parseNewick(newickString, labelName = "label", datePrefix = undefined ) {
         const tokens = newickString.split(/\s*('[^']+'|"[^"]+"|;|\(|\)|,|:)\s*/);
 
         let level = 0;
@@ -569,7 +550,8 @@ export class Tree {
                 let node = {
                     level: level,
                     parent: currentNode,
-                    children: []
+                    children: [],
+                    annotations: {}
                 };
                 level += 1;
                 if (currentNode) {
@@ -621,6 +603,7 @@ export class Tree {
                     lengthNext = false;
                 } else if (labelNext) {
                     currentNode.label = token;
+                    currentNode.annotations[labelName] = currentNode.label;
                     labelNext = false;
                 } else {
                     // an external node
@@ -651,7 +634,8 @@ export class Tree {
                     const externalNode = {
                         name: name,
                         date: date,
-                        parent: currentNode
+                        parent: currentNode,
+                        annotations: {}
                     };
 
                     if (currentNode) {
@@ -702,3 +686,65 @@ function orderNodes(node, increasing, callback = null) {
     return count;
 }
 
+/**
+ * A private recursive function that uses the Fitch algorithm to assign
+ * states to nodes using parsimony. An acctrans or deltrans algorithm can
+ * then be used to reconstruct internal node states.
+ * @param name
+ * @param node
+ * @returns {*}
+ */
+function fitchParsimony(name, node) {
+
+    if (!node.children) {
+        if (!node.annotations[name]) {
+            return []; // annotation not defined so return an empty set
+        }
+        return (Array.isArray(node.annotations[name]) ? node.annotations[name] : [node.annotations[name]]);
+    }
+
+    let I;
+    let U = [];
+    node.children.forEach( (child) => {
+        const childStates = fitchParsimony(name, child);
+        U = [...U, ...childStates.filter( (state) => !U.includes(state) )]; // take the union
+        I = (I === undefined ? childStates : childStates.filter( (state) => I.includes(state) )); // take the intersection
+    });
+
+    node.annotations = (node.annotations === undefined ? {} : node.annotations);
+
+    // set the node annotation to the intersection if not empty, the union otherwise
+    node.annotations[name] = [...(I.length > 0 ? I : U)];
+
+    return node.annotations[name];
+}
+
+function reconstructInternalStates(name, parentStates, acctran, node ) {
+    let nodeStates = node.annotations[name];
+    if (!Array.isArray(nodeStates)) {
+        nodeStates = [nodeStates];
+    }
+
+    if (node.children) {
+
+        let stateCounts = {};
+
+        nodeStates
+            .forEach((state) => stateCounts[state] = (stateCounts[state] ? stateCounts[state] += 1 : 1) );
+
+        parentStates
+            .forEach((state) => stateCounts[state] = (stateCounts[state] ? stateCounts[state] += 1 : 1) );
+
+        node.children.forEach((child) => {
+            reconstructInternalStates(name, nodeStates, acctran, child)
+                .forEach((state) => stateCounts[state] = (stateCounts[state] ? stateCounts[state] += 1 : 1) );
+        });
+
+        const max = Object.entries(stateCounts).reduce((prev, current) => (prev[1] > current[1]) ? prev : current)[1];
+        nodeStates = Object.entries(stateCounts).filter(([state, count]) => count === max).map(([state, count]) => state );
+
+        node.annotations[name] = (nodeStates.length === 1 ? nodeStates[0] : nodeStates);
+    }
+
+    return nodeStates;
+}
