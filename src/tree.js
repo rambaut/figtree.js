@@ -20,9 +20,31 @@ export class Tree {
      *
      * @constructor
      * @param {object} rootNode - The root node of the tree as an object.
+     * @param splitBranches - Whether to split each branch into two
      */
-    constructor(rootNode = {}) {
+    constructor(rootNode = {}, splitBranches = false) {
         this.root = rootNode;
+
+        if (splitBranches) {
+            // split each branch into two, with a node of
+            // degree two in the middle. This allows annotation
+            // of half a branch.
+            [...this.preorder()].forEach((node) => {
+                if (node.parent) {
+                    let splitNode = {
+                        parent: node.parent,
+                        children: [node],
+                        length: node.length / 2.0,
+                        annotations: {
+                            midpoint: true
+                        }
+                    };
+                    node.parent.children[node.parent.children.indexOf(node)] = splitNode;
+                    node.parent = splitNode;
+                    node.length = splitNode.length;
+                }
+            });
+        }
 
         this.annotations = {};
 
@@ -465,8 +487,7 @@ export class Tree {
                 }
 
                 annotation.type = type;
-                annotation.values = (annotation.values === undefined ? new Set() : annotation.values).add(addValues);
-
+                annotation.values = [...annotation.values, ...addValues];
             } else {
                 let type = Type.DISCRETE;
 
@@ -525,7 +546,7 @@ export class Tree {
      * @param datePrefix
      * @returns {Tree} - an instance of the Tree class
      */
-    static parseNewick(newickString, labelName = "label", datePrefix = undefined ) {
+    static parseNewick(newickString, labelName = "label", datePrefix = undefined, splitBranches = false ) {
         const tokens = newickString.split(/\s*('[^']+'|"[^"]+"|;|\(|\)|,|:)\s*/);
 
         let level = 0;
@@ -652,7 +673,7 @@ export class Tree {
             throw new Error("the brackets in the newick file are not balanced")
         }
 
-        return new Tree(currentNode);
+        return new Tree(currentNode, splitBranches);
     };
 }
 

@@ -78,7 +78,22 @@ export class FigTree {
         this.svgSelection.selectAll(".branch")
             .transition()
             .duration(500)
-            .attr("d", edge => branchPath(edge.location));
+            .attr("d", edge => branchPath(edge.location))
+            .attr("class", (d) => {
+                let classes = ["branch"];
+                if (d.annotations) {
+                    classes = [
+                        ...classes,
+                        ...Object.entries(d.annotations)
+                            .filter(([key]) => {
+                                return this.tree.annotations[key].type === Type.DISCRETE ||
+                                    this.tree.annotations[key].type === Type.BOOLEAN ||
+                                    this.tree.annotations[key].type === Type.INTEGER;
+                            } )
+                            .map(([key, value]) => `${key}-${value}`)];
+                }
+                return classes.join(" ");
+            });
 
         // update branch labels
         this.svgSelection.selectAll(".length")
@@ -111,10 +126,6 @@ export class FigTree {
 
         //update nodes
         this.svgSelection.selectAll(".node")
-            // .sort( (a, b) => {
-            //     if (!a.isSelected) return -1;               // a is not the hovered element, send "a" to the back
-            //     else return 1;                             // a is the hovered element, bring "a" to the front
-            // })
             .transition()
             .duration(500)
             .attr("class", (d) => {
@@ -139,7 +150,7 @@ export class FigTree {
             });
 
         //update labels
-        this.svgSelection.selectAll(".support")
+        this.svgSelection.selectAll(".node-label .support")
             .transition()
             .duration(250)
             .attr("dy", d => {
@@ -156,6 +167,30 @@ export class FigTree {
                     return "hanging";
             });
         //.text((d) => (d.label && d.label.startsWith("#")? "" : d.label));
+
+        // update the branch midpoint shapes
+        this.svgSelection.selectAll(".mid-branch")
+            .transition()
+            .duration(500)
+            .attr("class", (d) => {
+                let classes = ["mid-branch"];
+                if (d.annotations) {
+                    classes = [
+                        ...classes,
+                        ...Object.entries(d.annotations)
+                            .filter(([key]) => {
+                                return this.tree.annotations[key].type === Type.DISCRETE ||
+                                    this.tree.annotations[key].type === Type.BOOLEAN ||
+                                    this.tree.annotations[key].type === Type.INTEGER;
+                            } )
+                            .map(([key, value]) => `${key}-${value}`)];
+                }
+                return classes.join(" ");
+            })
+            .attr("transform", d => {
+                return `translate(${this.scales.x(d.height)}, ${this.scales.y(d.width)})`;
+            });
+
     }
 
     /**
@@ -417,10 +452,33 @@ function createElements(svg, margins) {
  */
 function addNodes() {
 
+    const nodes = this.tree.nodes
+        .filter((node) => !node.children || node.children.length > 1);
+
+    const splitNodes = this.tree.internalNodes
+        .filter((node) => node.children.length === 1);
+
     if (this.settings.nodeBackgroundBorder > 0) {
+        // add the branch midpoint background
+        if (splitNodes.length > 0) {
+            this.svgSelection.selectAll("g")
+                .data(splitNodes, (d) => d.id)
+                .enter().append("rect")
+                .attr("class", (d) => ["node-background", (!d.children ? "external-node" : "internal-node")].join(" "))
+                .attr("transform", (d) => {
+                    return `translate(${this.scales.x(d.height)}, ${this.scales.y(d.width)})`;
+                })
+                .attr("x", - (this.settings.nodeRadius * 0.25 + this.settings.nodeBackgroundBorder))
+                .attr("width", this.settings.nodeRadius * 0.5 + this.settings.nodeBackgroundBorder * 2)
+                .attr("y", - (this.settings.nodeRadius * 1.5 + this.settings.nodeBackgroundBorder))
+                .attr("height", this.settings.nodeRadius * 3 + this.settings.nodeBackgroundBorder * 2)
+                .attr("rx", 2)
+                .attr("ry", 2);
+        }
+
         // add the node background
         this.svgSelection.selectAll("g")
-            .data(this.tree.nodes)
+            .data(nodes, (d) => d.id)
             .enter().append("circle")
             .attr("class", (d) => ["node-background", (!d.children ? "external-node" : "internal-node")].join(" "))
             .attr("transform", (d) => {
@@ -431,9 +489,31 @@ function addNodes() {
             .attr("r", this.settings.nodeRadius + this.settings.nodeBackgroundBorder);
     }
 
+    // add the branch midpoint shapes
+    if (splitNodes.length > 0) {
+        this.svgSelection.selectAll("g")
+            .data(splitNodes, (d) => d.id )
+            .enter().append("g")
+            .attr("id", d => {
+                return d.id;
+            })
+            .attr("class", (d) => ["mid-branch"].join(" "))
+            .attr("transform", (d) => {
+                return `translate(${this.scales.x(d.height)}, ${this.scales.y(d.width)})`;
+            })
+            .append("rect")
+            .attr("class", () => "node-shape")
+            .attr("x", -this.settings.nodeRadius / 4)
+            .attr("width", this.settings.nodeRadius / 2)
+            .attr("y", -this.settings.nodeRadius * 1.5)
+            .attr("height", this.settings.nodeRadius * 3)
+            .attr("rx", 2)
+            .attr("ry", 2);
+    }
+
     // add the actual nodes
     let node = this.svgSelection.selectAll("g")
-        .data(this.tree.nodes)
+        .data(nodes, (d) => d.id )
         .enter().append("g")
         .attr("id", d => {
             if (d.label && d.label.startsWith("#")) {
@@ -450,10 +530,10 @@ function addNodes() {
         });
 
     node.append("circle")
+        .attr("class", () => "node-shape")
         .attr("cx", 0)
         .attr("cy", 0)
-        .attr("r", this.settings.nodeRadius)
-        .attr("class", () => "node-shape");
+        .attr("r", this.settings.nodeRadius);
 
     node.append("text")
         .attr("class", "node-label")
@@ -480,6 +560,7 @@ function addNodes() {
                 return "hanging";
         })
         .text((d) => (d.label && d.label.startsWith("#")? "" : d.label));
+
 }
 
 /**
