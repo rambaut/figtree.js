@@ -1,7 +1,7 @@
 {
   "name": "figtree",
   "version": "0.1.0",
-  "main": "figtree.js",
+  "main": "index.js",
   "keywords": [
     "phylogeny",
     "tree"
