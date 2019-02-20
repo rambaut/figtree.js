@@ -1,7 +1,7 @@
 {
   "name": "figtree",
   "version": "0.1.0",
-  "main": "figtree.js",
+  "main": "index.js",
   "keywords": [
     "phylogeny",
     "tree"
@@ -19,6 +19,7 @@
     "webpack-cli": "^3.1.0"
   },
   "scripts": {
-    "docs": "sphinx-build -b html docs documentation"
+    "docs": "sphinx-build -b html docs documentation",
+    "build": "webpack --mode production"
   }
 }
