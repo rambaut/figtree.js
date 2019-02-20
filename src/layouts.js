@@ -2,6 +2,8 @@
 
 /** @module layouts */
 
+import {Type} from "./tree";
+
 /**
  * Lays out the tree in a standard rectangular format.
  *
@@ -22,42 +24,82 @@ export function rectangularLayout(tree, vertices, edges) {
 
     let y = -1;
 
-    const nodeMap =  new Map();
+    const nodeMap = new Map();
 
     if (vertices.length === 0) {
-        // create the node locations (vertices)
+        // create the vertices (only done if the array is empty)
         nodes.forEach((n, i) => {
             const vertex = {
-                x: this.tree.rootToTipLength(n),
-                y: (n.children ? d3.mean(n.children, (child) => nodeMap.get(child).y) : y += 1),
                 node: n
             };
             vertices.push(vertex);
             nodeMap.set(n, vertex);
         });
-    } else {
+
         // update the node locations (vertices)
-        nodes
-            .forEach((n, i) => {
-                vertices[i].x = this.tree.rootToTipLength(n);
-                vertices[i].y = (n.children ? d3.mean(n.children, (child) => nodeMap.get(child).y) : y += 1);
-                vertices[i].node = n;
+        vertices
+            .forEach((v) => {
+                v.x = this.tree.rootToTipLength(v.node);
+                v.y = (v.node.children ? d3.mean(v.node.children, (child) => nodeMap.get(child).y) : y += 1);
+
+                v.classes = ["node",
+                    (!v.node.children ? "external-node" : "internal-node"),
+                    (v.node.isSelected ? "selected" : "unselected")];
+
+                if (v.node.annotations) {
+                    v.classes = [
+                        ...v.classes,
+                        ...Object.entries(v.node.annotations)
+                            .filter(([key]) => {
+                                return this.tree.annotations[key].type === Type.DISCRETE ||
+                                    this.tree.annotations[key].type === Type.BOOLEAN ||
+                                    this.tree.annotations[key].type === Type.INTEGER;
+                            })
+                            .map(([key, value]) => `${key}-${value}`)];
+                }
+
+                // either the tip name or the internal node label
+                v.label = (v.node.children ? v.node.label : v.node.name);
+
+                // should the node label be above or below the node?
+                v.labelAbove = (v.node.children && v.node.parent && v.node.parent.children[0] === v.node);
                 nodeMap.set(n, vertices[i]);
             });
-    }
 
-    if (edges.length === 0) {
-        // create the edges
-        nodes
-            .filter((n) => n.parent )
-            .forEach((n, i) => edges.push({ v0: nodeMap.get(n.parent), v1: nodeMap.get(n) }));
-    } else {
+        if (edges.length === 0) {
+            // create the edges (only done if the array is empty)
+            nodes
+                .filter((n) => n.parent)
+                .forEach((n, i) => {
+                    const edge = {
+                        v0: null,
+                        v1: null
+                    };
+                    edges.push(edge);
+                });
+        }
+
         // update the edges
-        nodes
-            .filter((n) => n.parent)
-            .forEach((n, i) => {
-                edges[i].v0 = nodeMap.get(n.parent);
-                edges[i].v1 = nodeMap.get(n);
+        edges
+            .forEach((e) => {
+                e.v0 = nodeMap.get(n.parent);
+                e.v1 = nodeMap.get(n);
+                e.classes = ["branch"];
+
+                if (e.v1.node.annotations) {
+                    e.classes = [
+                        ...e.classes,
+                        ...Object.entries(e.v1.node.annotations)
+                            .filter(([key]) => {
+                                return this.tree.annotations[key].type === Type.DISCRETE ||
+                                    this.tree.annotations[key].type === Type.BOOLEAN ||
+                                    this.tree.annotations[key].type === Type.INTEGER;
+                            })
+                            .map(([key, value]) => `${key}-${value}`)];
+                }
+                edge.length = length;
+                edge.label = `${length}`;
+                edge.labelAbove = (v.node.children && v.node.parent && v.node.parent.children[0] === v.node);
             });
     }
 }
@@ -81,7 +123,7 @@ export function transmissionLayout(tree, vertices, edges) {
 
     let y = -1;
 
-    const nodeMap =  new Map();
+    const nodeMap = new Map();
 
     // create the node locations (vertices)
     nodes

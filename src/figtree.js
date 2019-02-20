@@ -2,9 +2,6 @@
 
 /** @module figtree */
 
-import { Tree, Type } from "./tree.js";
-import { rectangularLayout } from "./layouts.js";
-
 /**
  * The FigTree class
  *
@@ -20,27 +17,23 @@ export class FigTree {
             xAxisTitle: "Divergence",
             nodeRadius: 6,
             hoverNodeRadius: 8,
-            nodeBackgroundBorder: 1,
-            lengthFormat: d3.format(".2f"),
-            branchCurve: d3.curveStepBefore,
+            nodeBackgroundBorder: 1
         };
     }
 
     /**
      * The constructor.
      * @param svg
-     * @param tree
+     * @param layout
      * @param margins
      * @param settings
      */
-    constructor(svg, tree, margins, settings = {}) {
-        this.tree = tree;
+    constructor(svg, layout, margins, settings = {}) {
+        this.layout = layout;
         this.margins = margins;
 
         // merge the default settings with the supplied settings
         this.settings = {...FigTree.DEFAULT_SETTINGS(), ...settings};
-
-        this.layout = rectangularLayout;
 
         this.vertices = [];
         this.edges = [];
@@ -48,8 +41,8 @@ export class FigTree {
         // call the private methods to create the components of the diagram
         createElements.call(this, svg, margins);
 
-        // Called whenever the tree changes...
-        this.tree.treeUpdateCallback = () => {
+        // Called whenever the layout changes...
+        this.layout.updateCallback = () => {
             this.update();
         }
     }
@@ -60,14 +53,11 @@ export class FigTree {
     update() {
 
         // get new positions
-        this.layout(this.tree, this.vertices, this.edges);
-
-        const externalNodeCount = this.tree.externalNodes.length;
-        const maxRootToTip = d3.max([...this.tree.rootToTipLengths()]);
+        this.layout.layout(this.vertices, this.edges);
 
         // update the scales" domains
-        this.scales.x.domain([0, maxRootToTip]);
-        this.scales.y.domain([0, externalNodeCount - 1]);
+        this.scales.x.domain(this.layout.horizontalRange);
+        this.scales.y.domain(this.layout.verticalRange);
 
         const xAxis = d3.axisBottom(this.scales.x)
             .tickArguments(this.settings.xAxisTickArguments);
@@ -80,27 +70,15 @@ export class FigTree {
         const branchPath = d3.line()
             .x(d => this.scales.x(d.x))
             .y(d => this.scales.y(d.y))
-            .curve(this.settings.branchCurve);
+            .curve(this.layout.edgeCurve);
 
         // update branches
-        this.svgSelection.selectAll(".branch")
+        this.svgSelection.selectAll(`.${this.layout.edgeClass}`)
             .transition()
             .duration(500)
             .attr("d", edge => branchPath([edge.v0, edge.v1]))
             .attr("class", (d) => {
-                let classes = ["branch"];
-                if (d.v1.node.annotations) {
-                    classes = [
-                        ...classes,
-                        ...Object.entries(d.v1.node.annotations)
-                            .filter(([key]) => {
-                                return this.tree.annotations[key].type === Type.DISCRETE ||
-                                    this.tree.annotations[key].type === Type.BOOLEAN ||
-                                    this.tree.annotations[key].type === Type.INTEGER;
-                            } )
-                            .map(([key, value]) => `${key}-${value}`)];
-                }
-                return classes.join(" ");
+                return d.classes.join(" ");
             });
 
         // update branch labels
@@ -108,19 +86,9 @@ export class FigTree {
             .transition()
             .duration(500)
             .attr("dx", d => this.scales.x((d.v1.x + d.v0.x) / 2))
-            .attr("dy", d => {
-                if (d.v1.node.children && d.v0.node.children[0] === d.v1.node)
-                    return this.scales.y(d.v1.y) + 6;
-                else
-                    return this.scales.y(d.v1.y) - 6;
-            })
-            .attr("alignment-baseline", d => {
-                if (d.v1.node.children && d.v0.node.children[0] === d.v1.node)
-                    return "hanging";
-                else
-                    return "bottom";
-            })
-            .text(d => this.settings.lengthFormat(d.v1.x - d.v0.x));
+            .attr("dy", d => (d.labelBelow ? this.scales.y(d.v1.y) + 6 : this.scales.y(d.v1.y) - 6))
+            .attr("alignment-baseline", d => (d.labelBelow ? "hanging" : "bottom"))
+            .text(d => d.label);
 
         if (this.settings.nodeBackgroundBorder > 0) {
             //update node backgrounds
@@ -133,25 +101,11 @@ export class FigTree {
         }
 
         //update nodes
-        this.svgSelection.selectAll(".node")
+        this.svgSelection.selectAll(`.${this.layout.vertexClass}`)
             .transition()
             .duration(500)
             .attr("class", (d) => {
-                let classes = ["node",
-                    (!d.node.children ? "external-node" : "internal-node"),
-                    (d.node.isSelected ? "selected" : "unselected")];
-                if (d.node.annotations) {
-                    classes = [
-                        ...classes,
-                        ...Object.entries(d.node.annotations)
-                            .filter(([key]) => {
-                                return this.tree.annotations[key].type === Type.DISCRETE ||
-                                    this.tree.annotations[key].type === Type.BOOLEAN ||
-                                    this.tree.annotations[key].type === Type.INTEGER;
-                            } )
-                            .map(([key, value]) => `${key}-${value}`)];
-                }
-                return classes.join(" ");
+                return d.classes.join(" ");
             })
             .attr("transform", d => {
                 return `translate(${this.scales.x(d.x)}, ${this.scales.y(d.y)})`;
@@ -161,38 +115,17 @@ export class FigTree {
         this.svgSelection.selectAll(".support")
             .transition()
             .duration(250)
-            .attr("dy", d => {
-                if (d.node.parent && d.node.parent.children[0] === d.node)
-                    return "-8";
-                else
-                    return "8";
-            })
+            .attr("dy", d => (d.labelBelow ? -8 : +8))
             .delay(250)
-            .attr("alignment-baseline", d => {
-                if (d.node.parent && d.node.parent.children[0] === d.node)
-                    return "bottom";
-                else
-                    return "hanging";
-            });
-        //.text((d) => (d.label && d.label.startsWith("#")? "" : d.label));
+            .attr("alignment-baseline", d => (d.labelBelow ? "bottom": "hanging" ))
+            .text((d) => d.leftLabel);
 
         // update the branch midpoint shapes
         this.svgSelection.selectAll(".mid-branch")
             .transition()
             .duration(500)
             .attr("class", (d) => {
-                let classes = ["mid-branch"];
-                if (d.node.annotations) {
-                    classes = [
-                        ...classes,
-                        ...Object.entries(d.node.annotations)
-                            .filter(([key]) => {
-                                return this.tree.annotations[key].type === Type.DISCRETE ||
-                                    this.tree.annotations[key].type === Type.BOOLEAN ||
-                                    this.tree.annotations[key].type === Type.INTEGER;
-                            } )
-                            .map(([key, value]) => `${key}-${value}`)];
-                }
+                let classes = [...d.classes];
                 return classes.join(" ");
             })
             .attr("transform", d => {
@@ -205,11 +138,14 @@ export class FigTree {
      * set mouseover highlighting of branches
      */
     hilightBranches() {
-        this.svgSelection.selectAll(".branch").on("mouseover", function (d, i) {
-            d3.select(this).attr("class", "branch hovered");
+        // need to use 'function' here so that 'this' refers to the SVG
+        // element being hovered over.
+        const selected = this.svgSelection.selectAll(`.${this.layout.edgeClass}`).selectAll(".edge-path");
+        selected.on("mouseover", function (d, i) {
+            d3.select(this).attr("class", "edge-path hovered");
         });
-        this.svgSelection.selectAll(".branch").on("mouseout", function (d, i) {
-            d3.select(this).attr("class", "branch");
+        selected.on("mouseout", function (d, i) {
+            d3.select(this).attr("class", "edge-path");
         });
     }
 
@@ -231,25 +167,25 @@ export class FigTree {
      * Set mouseover highlighting of nodes
      */
     hilightNodes(selection) {
-        const selected = this.svgSelection.selectAll(selection).selectAll(".node-shape");
-        selected.on("mouseover", (d, i) => {
-            d3.select(this).attr("class", "node-shape hovered");
-            d3.select(this).attr("r", this.settings.hoverNodeRadius);
+        // need to use 'function' here so that 'this' refers to the SVG
+        // element being hovered over.
+        const self = this;
+        const selected = this.svgSelection.selectAll(selection).selectAll(".vertex-shape");
+        selected.on("mouseover", function (d, i) {
+            d3.select(this).attr("class", "vertex-shape hovered");
+            d3.select(this).attr("r", self.settings.hoverNodeRadius);
         });
-        selected.on("mouseout", (d, i) => {
-            d3.select(this).attr("class", "node-shape");
-            d3.select(this).attr("r", this.settings.nodeRadius);
+        selected.on("mouseout", function (d, i) {
+            d3.select(this).attr("class", "vertex-shape");
+            d3.select(this).attr("r", self.settings.nodeRadius);
         });
     }
 
     /**
-     * Registers action function to be called when a branch is clicked on. The function should
-     * take the tree, the node for the branch that was clicked on and the position of the click
-     * as a proportion of the length of the branch.
+     * Registers action function to be called when an edge is clicked on. The function is passed
+     * edge object that was clicked on and the position of the click as a proportion of the edge length.
      *
      * Optionally a selection string can be provided - i.e., to select a particular branch by its id.
-     *
-     * A static method - Tree.reroot() is available for rerooting the tree on the clicked branch.
      *
      * @param action
      * @param selection
@@ -259,14 +195,13 @@ export class FigTree {
         // points to the actual SVG element (so we can use d3.mouse(this)). We therefore need
         // to store a reference to the object in "self".
         const self = this;
-        const selected = this.svgSelection.selectAll(`${selection ? selection : ".branch"}`);
-        selected.on("click", function (selectedBranch) {
-            const x1 = self.scales.x(selectedBranch.v1.x);
-            const x2 = self.scales.x(selectedBranch.v0.x);
+        const selected = this.svgSelection.selectAll(`${selection ? selection : `.${this.layout.edgeClass}`}`);
+        selected.on("click", function (edge) {
+            const x1 = self.scales.x(edge.v1.x);
+            const x2 = self.scales.x(edge.v0.x);
             const mx = d3.mouse(this)[0];
             const proportion = Math.max(0.0, Math.min(1.0, (mx - x2) / (x1 - x2)));
-            action(self.tree, selectedBranch.v1.node, proportion);
-            self.update();
+            action(edge, proportion);
         })
     }
 
@@ -279,7 +214,7 @@ export class FigTree {
      * @param action
      */
     onClickInternalNode(action) {
-        onClickNode(action, ".internal-node");
+        this.onClickNode(action, ".internal-node");
     }
 
     /**
@@ -289,34 +224,23 @@ export class FigTree {
      * @param action
      */
     onClickExternalNode(action) {
-        onClickNode(action, ".external-node");
+        this.onClickNode(action, ".external-node");
     }
 
     /**
-     * Registers action function to be called when a node is clicked on. The function should
-     * take the tree and the node that was clicked on.
+     * Registers action function to be called when a vertex is clicked on. The function is passed
+     * the vertex object.
      *
      * Optionally a selection string can be provided - i.e., to select a particular node by its id.
+     *
      * @param action
      * @param selection
      */
     onClickNode(action, selection = null) {
-        const selected = this.svgSelection.selectAll(`${selection ? selection : ".node"}`).selectAll(".node-shape");
-        selected.on("click", (selectedNode) => {
-            action(this.tree, selectedNode.node);
-            this.update();
+        const selected = this.svgSelection.selectAll(`${selection ? selection : `.${this.layout.vertexClass}`}`).selectAll(".vertex-shape");
+        selected.on("click", (vertex) => {
+            action(vertex);
         })
-    }
-
-    /**
-     * Sets the annotation to use as the node labels.
-     *
-     * @param annotationName
-     */
-    setNodeLabels(selection, annotationName) {
-        this.svgSelection.selectAll(selection);
-        // .forEach((d) => d.label = annotationName);
-        this.update();
     }
 
     /**
@@ -327,12 +251,12 @@ export class FigTree {
      */
     addToolTip(selection, text) {
         this.svgSelection.selectAll(selection).on("mouseover",
-            function (selectedNode) {
+            function (selected) {
                 let tooltip = document.getElementById("tooltip");
                 if (typeof text === typeof "") {
                     tooltip.innerHTML = text;
                 } else {
-                    tooltip.innerHTML = text(selectedNode.node);
+                    tooltip.innerHTML = text(selected);
                 }
                 tooltip.style.display = "block";
                 tooltip.style.left = d3.event.pageX + 10 + "px";
@@ -349,63 +273,6 @@ export class FigTree {
         this.layout = layout;
         this.update();
     }
-
-    set branchCurve(curve) {
-        this.curve = curve;
-        this.update();
-    }
-
-    /**
-     * A utility function for rotating a node
-     * @param tree the tree
-     * @param node the node
-     */
-    static rotate(tree, node) {
-        tree.rotate(node);
-    }
-
-    /**
-     * A utility function for ordering a subtree with increasing tip density
-     * @param tree the tree
-     * @param node the node
-     */
-    static orderIncreasing(tree, node) {
-        tree.order(node, true);
-    }
-
-    /**
-     * A utility function for ordering a subtree with decreasing tip density
-     * @param tree the tree
-     * @param node the node
-     */
-    static orderDecreasing(tree, node) {
-        tree.order(node, false);
-    }
-
-    /**
-     * A utility function for rerooting the tree
-     * @param tree the tree
-     * @param branch the branch
-     * @param position the position on the branch (0, 1) where 1 is closest to the root.
-     */
-    static reroot(tree, branch, position) {
-        tree.reroot(branch, position);
-    }
-
-    /**
-     * A utility function that will return a HTML string about the node and its
-     * annotations. Can be used with the addLabels() method.
-     *
-     * @param node
-     * @returns {string}
-     */
-    static nodeInfo(node) {
-        let text = `${node.name ? node.name : node.id }`;
-        Object.entries(node.annotations).forEach(([key, value]) => {
-            text += `<p>${key}: ${value}</p>`;
-        });
-        return text;
-    }
 }
 
 /*
@@ -413,6 +280,9 @@ export class FigTree {
  */
 
 function createElements(svg, margins) {
+    // layout the graph using the provided layout function
+    this.layout.layout(this.vertices, this.edges);
+
     // get the size of the svg we are drawing on
     const width = svg.getBoundingClientRect().width;
     const height = svg.getBoundingClientRect().height;
@@ -427,22 +297,16 @@ function createElements(svg, margins) {
     //to selecting every time
     this.svgSelection = d3.select(svg).select("g");
 
-    const externalNodeCount = this.tree.externalNodes.length;
-    const maxRootToTip = d3.max([...this.tree.rootToTipLengths()]);
-
     // create the scales
     const xScale = d3.scaleLinear()
-        .domain([0, maxRootToTip])
+        .domain(this.layout.horizontalRange)
         .range([margins.left, width - margins.right]);
 
     const yScale = d3.scaleLinear()
-        .domain([0, externalNodeCount - 1])
+        .domain(this.layout.verticalRange)
         .range([margins.top + 20, height - margins.bottom - 20]);
 
     this.scales = {x:xScale, y:yScale, width, height};
-
-    // layout the nodes using the provided layout function
-    this.layout(this.tree, this.vertices, this.edges);
 
     // call the private methods to create the components of the diagram
     addBranches.call(this);
@@ -456,16 +320,16 @@ function createElements(svg, margins) {
 function addNodes() {
 
     const vertices = this.vertices
-        .filter((v) => !v.node.children || v.node.children.length > 1);
+        .filter((v) => v.degree !== 2);
 
-    const splitVertices = this.vertices
-        .filter((v) => v.node.children && v.node.children.length === 1);
+    const degree2Vertices = this.vertices
+        .filter((v) => v.degree === 2);
 
     if (this.settings.nodeBackgroundBorder > 0) {
         // add the branch midpoint background
-        if (splitVertices.length > 0) {
+        if (degree2Vertices.length > 0) {
             this.svgSelection.selectAll("g")
-                .data(splitVertices, (d) => d.node.id)
+                .data(degree2Vertices, (d) => d.key.toString() )
                 .enter().append("rect")
                 .attr("class", (d) => ["node-background", (!d.node.children ? "external-node" : "internal-node")].join(" "))
                 .attr("transform", (d) => {
@@ -481,7 +345,7 @@ function addNodes() {
 
         // add the node background
         this.svgSelection.selectAll("g")
-            .data(vertices, (d) => d.node.id)
+            .data(vertices, (d) => d.key.toString() )
             .enter().append("circle")
             .attr("class", (d) => ["node-background", (!d.node.children ? "external-node" : "internal-node")].join(" "))
             .attr("transform", (d) => {
@@ -493,9 +357,9 @@ function addNodes() {
     }
 
     // add the branch midpoint shapes
-    if (splitVertices.length > 0) {
+    if (degree2Vertices.length > 0) {
         this.svgSelection.selectAll("g")
-            .data(splitVertices, (d) => d.node.id )
+            .data(degree2Vertices, (d) => d.key.toString() )
             .enter().append("g")
             .attr("id", d => {
                 return d.node.id;
@@ -505,7 +369,7 @@ function addNodes() {
                 return `translate(${this.scales.x(d.x)}, ${this.scales.y(d.y)})`;
             })
             .append("rect")
-            .attr("class", () => "node-shape")
+            .attr("class", () => "vertex-shape")
             .attr("x", -this.settings.nodeRadius / 4)
             .attr("width", this.settings.nodeRadius / 2)
             .attr("y", -this.settings.nodeRadius * 1.5)
@@ -516,7 +380,7 @@ function addNodes() {
 
     // add the actual nodes
     let node = this.svgSelection.selectAll("g")
-        .data(vertices, (d) => d.node.id)
+        .data(vertices, (d) => d.key.toString())
         .enter().append("g")
         .attr("id", d => {
             const n = d.node;
@@ -526,46 +390,32 @@ function addNodes() {
                 return (n.name ? n.name : (n.parent ? n.id : "root"));
             }
         })
-        .attr("class", (d) => ["node",
-            (!d.node.children ? "external-node" : "internal-node"),
-            (d.node.isSelected ? "selected" : "unselected")].join(" "))
+        .attr("class", (d) => d.classes.join(" "))
         .attr("transform", (d) => {
             return `translate(${this.scales.x(d.x)}, ${this.scales.y(d.y)})`;
         });
 
     node.append("circle")
-        .attr("class", () => "node-shape")
+        .attr("class", () => "vertex-shape")
         .attr("cx", 0)
         .attr("cy", 0)
         .attr("r", this.settings.nodeRadius);
 
     node.append("text")
-        .attr("class", "node-label")
+        .attr("class", "vertex-label")
         .attr("text-anchor", "start")
         .attr("alignment-baseline", "middle")
         .attr("dx", "12")
         .attr("dy", "0")
-        .text((d) => d.node.name);
+        .text((d) => d.rightLabel);
 
     node.append("text")
-        .attr("class", "node-label support")
+        .attr("class", "vertex-label support")
         .attr("text-anchor", "end")
         .attr("dx", "-6")
-        .attr("dy", (d) => {
-            const n = d.node;
-            if (n.parent && n.parent.children[0] === n)
-                return "-8";
-            else
-                return "8";
-        })
-        .attr("alignment-baseline", (d) => {
-            const n = d.node;
-            if (n.parent && n.parent.children[0] === n)
-                return "bottom";
-            else
-                return "hanging";
-        })
-        .text((d) => (d.node.label && d.node.label.startsWith("#")? "" : d.node.label));
+        .attr("dy", d => (d.labelBelow ? -8 : +8))
+        .attr("alignment-baseline", d => (d.labelBelow ? "bottom": "hanging" ))
+        .text((d) => d.leftLabel);
 }
 
 /**
@@ -573,38 +423,28 @@ function addNodes() {
  */
 function addBranches() {
     const branchPath = d3.line()
-        .x(d => this.scales.x(d.x))
-        .y(d => this.scales.y(d.y))
-        .curve(this.settings.branchCurve);
+        .x((v) => this.scales.x(v.x))
+        .y((v) => this.scales.y(v.y))
+        .curve(this.layout.edgeCurve);
 
     this.svgSelection.selectAll("path")
-        .data(this.edges)
+        .data(this.edges, (e) => e.key.toString() )
         .enter()
         .append("path")
-        .attr("class", "branch")
-        .attr("id", (edge) => edge.id)
-        .attr("d", (edge) => branchPath([edge.v0, edge.v1]));
+        .attr("class", (e) => e.classes.join(" "))
+        .attr("id", (e) => e.id)
+        .attr("d", (e) => branchPath([e.v0, e.v1]));
 
     this.svgSelection.selectAll("text")
-        .data(this.edges)
+        .data(this.edges, (e) => e.key.toString() )
         .enter()
         .append("text")
         .attr("class", "branch-label length")
-        .attr("dx", d => this.scales.x((d.v1.x + d.v0.x) / 2))
-        .attr("dy", d => {
-            if (d.v1.node.children && d.v0.node.children[0] === d.v1.node)
-                return this.scales.y(d.v1.y) + 6;
-            else
-                return this.scales.y(d.v1.y) - 6;
-        })
+        .attr("dx", (e) => this.scales.x((e.v1.x + e.v0.x) / 2))
+        .attr("dy", (e) => (e.labelBelow ? this.scales.y(e.v1.y) + 6 : this.scales.y(e.v1.y) - 6))
+        .attr("alignment-baseline", (e) => (e.labelBelow ? "hanging" : "bottom"))
         .attr("text-anchor", "middle")
-        .attr("alignment-baseline", d => {
-            if (d.v1.node.children && d.v0.node.children[0] === d.v1.node)
-                return "hanging";
-            else
-                return "bottom";
-        })
-        .text(d => this.settings.lengthFormat(d.v1.x - d.v0.x));
+        .text((e) => e.label);
 }
 
 /**

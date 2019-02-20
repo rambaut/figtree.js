@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>FigTree Demo</title>
-    <script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
+    <script src="js/d3.js" charset="utf-8"></script>
+    <!--<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>-->
     <style>
         text {
             font-family: "helvetica-neue",  "helvetica",  "sans-serif";
@@ -124,6 +125,7 @@
 
 <script type="module">
     import { Tree } from "./src/tree.js";
+    import { RectangularLayout } from "./src/layout.js";
     import { FigTree } from "./src/figtree.js";
 
     const newickString =
@@ -132,9 +134,10 @@
     const tree = Tree.parseNewick(newickString, "probability");
     const treeSVG = document.getElementById('phylogram_1a');
 
-    const figTree = new FigTree(treeSVG, tree, { top: 10, bottom: 60, left: 10, right: 150});
+    const layout = new RectangularLayout(tree);
+    const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150});
     figTree.hilightInternalNodes();
-    figTree.onClickNode(FigTree.rotate);
+    figTree.onClickNode(layout.rotate);
 
     figTree.setNodeLabels(".internal-node", "probability");
 
@@ -169,6 +172,7 @@
 
 <script type="module">
     import { Tree } from "./src/tree.js";
+    import { RectangularLayout } from "./src/layout.js";
     import { FigTree } from "./src/figtree.js";
 
     const newickString =
@@ -176,7 +180,8 @@
 
     const tree = Tree.parseNewick(newickString);
     const treeSVG = document.getElementById('phylogram_2');
-    const figTree = new FigTree(treeSVG, tree, { top: 10, bottom: 60, left: 10, right: 150});
+    const layout = new RectangularLayout(tree);
+    const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150});
 
     figTree.hilightInternalNodes();
     figTree.onClickNode(FigTree.rotate);
@@ -206,6 +211,7 @@
 
 <script type="module">
     import { Tree } from "./src/tree.js";
+    import { RectangularLayout } from "./src/layout.js";
     import { FigTree } from "./src/figtree.js";
     import { RootToTipPlot } from "./src/roottotipplot.js";
 
@@ -214,8 +220,8 @@
 
     const tree = Tree.parseNewick(timeTreeString, null, "_");
     const treeSVG = document.getElementById('tree-2-svg');
-
-    const figTree = new FigTree(treeSVG, tree, { top: 10, bottom: 60, left: 10, right: 150});
+    const layout = new RectangularLayout(tree);
+    const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150});
 
     figTree.hilightBranches();
     figTree.onClickBranch(FigTree.reroot);
@@ -228,28 +234,29 @@
 
 </script>
 
-<div>
-    <figure>
-        <svg id="transmission-1"  width="600" height="500"></svg>
-    </figure>
-</div>
+<!--<div>-->
+    <!--<figure>-->
+        <!--<svg id="transmission-1"  width="600" height="500"></svg>-->
+    <!--</figure>-->
+<!--</div>-->
 
-<script type="module">
-    import { Tree } from "./src/tree.js";
-    import { FigTree } from "./src/figtree.js";
-    import { transmissionLayout } from './src/layouts.js';
+<!--<script type="module">-->
+    <!--import { Tree } from "./src/tree.js";-->
+    <!--import { RectangularLayout } from "./src/layout.js";-->
+    <!--import { FigTree } from "./src/figtree.js";-->
+    <!--import { transmissionLayout } from './src/layouts.js';-->
 
-    const newickString =
-        '((((((virus1:0.1,virus2:0.12):0.08,(virus3:0.011,virus4:0.0087):0.15):0.03,virus5:0.21):0.2,(virus6:0.45,virus7:0.4):0.02):0.1,virus8:0.4):0.1,(virus9:0.04,virus10:0.03):0.6);';
+    <!--const newickString =-->
+        <!--'((((((virus1:0.1,virus2:0.12):0.08,(virus3:0.011,virus4:0.0087):0.15):0.03,virus5:0.21):0.2,(virus6:0.45,virus7:0.4):0.02):0.1,virus8:0.4):0.1,(virus9:0.04,virus10:0.03):0.6);';-->
 
-    const tree = Tree.parseNewick(newickString);
-    const treeSVG = document.getElementById('transmission-1');
-    const figTree = new FigTree(treeSVG, tree, { top: 10, bottom: 60, left: 10, right: 150});
-    figTree.treeLayout = transmissionLayout;
+    <!--const tree = Tree.parseNewick(newickString);-->
+    <!--const treeSVG = document.getElementById('transmission-1');-->
+    <!--const layout = new RectangularLayout(tree);-->
+    <!--const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150});-->
 
-    figTree.hilightInternalNodes();
-    figTree.onClickNode(FigTree.rotate)
-</script>
+    <!--figTree.hilightInternalNodes();-->
+    <!--figTree.onClickNode(FigTree.rotate)-->
+<!--</script>-->
 
 <div>
     <svg id="tree-3-svg"  width="600" height="600"></svg>
@@ -277,6 +284,7 @@
 
 <script type="module">
     import { Tree } from "./src/tree.js";
+    import { RectangularLayout } from "./src/layout.js";
     import { FigTree } from "./src/figtree.js";
     import { RootToTipPlot } from "./src/roottotipplot.js";
 
@@ -285,8 +293,8 @@
 
     const tree = Tree.parseNewick(timeTreeString, null, "_");
     const treeSVG = document.getElementById('tree-3-svg');
-
-    const figTree = new FigTree(treeSVG, tree, { top: 10, bottom: 60, left: 10, right: 150},
+    const layout = new RectangularLayout(tree);
+    const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150},
         { // the settings
             xAxisTitle: "Divergence (subst./site)",
             nodeRadius: 2,
@@ -339,14 +347,16 @@
 
 <script type="module">
     import { Tree } from "./src/tree.js";
-    import { FigTree } from "./src/figtree.js";
+    import { RectangularLayout } from "./src/layout.js";
+        import { FigTree } from "./src/figtree.js";
 
     const newickString =
         '((((((virus1:0.1,virus2:0.12)0.95:0.08,(virus3:0.011,virus4:0.0087)1.0:0.15)0.65:0.03,virus5:0.21)1.0:0.2,(virus6:0.45,virus7:0.4)0.51:0.02)1.0:0.1,virus8:0.4)1.0:0.1,(virus9:0.04,virus10:0.03)1.0:0.6);';
 
     const tree = Tree.parseNewick(newickString, "probability", undefined, true);
     const treeSVG = document.getElementById('phylogram_3');
-    const figTree = new FigTree(treeSVG, tree, { top: 10, bottom: 60, left: 10, right: 150}, { nodeRadius: 10 });
+    const layout = new RectangularLayout(tree);
+    const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150}, { nodeRadius: 10 });
 
     tree.annotateTips({
         "virus1": { host: "camel" },
