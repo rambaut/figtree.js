@@ -6,8 +6,5 @@ module.exports = {
     output: {
         path: path.resolve(__dirname, 'dist'),
         filename: 'figtree.js'
-    },
-    externals: [
-        'd3'
-    ]
+    }
 };
