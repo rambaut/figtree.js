@@ -1,6 +1,6 @@
-import { Tree, Type } from "src/tree.js";
-import { rectangularLayout,transmissionLayout } from "src/layouts.js";
-import {Figtree} from "src/figtree.js";
+import { Tree, Type } from "./src/tree.js";
+import { rectangularLayout,transmissionLayout } from "./src/layouts.js";
+import {FigTree} from "./src/figtree.js";
 // automate with gulp/grunt
 
 export{
@@ -8,5 +8,5 @@ export{
     Type,
     rectangularLayout,
     transmissionLayout,
-    Figtree
+    FigTree
 }

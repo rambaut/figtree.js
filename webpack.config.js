@@ -2,9 +2,9 @@ const path = require('path');
 
 module.exports = {
     mode: 'development',
-    entry: path.resolve(__dirname, 'src', 'tree.mjs'),
+    entry: path.resolve(__dirname, 'index.js'),
     output: {
-        path: path.resolve(__dirname, 'js'),
+        path: path.resolve(__dirname, 'dist'),
         filename: 'figtree.js'
     },
     externals: [

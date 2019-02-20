@@ -4,6 +4,7 @@
 
 import { Tree, Type } from "./tree.js";
 import { rectangularLayout } from "./layouts.js";
+import * as d3 from 'd3';
 
 /**
  * The FigTree class
