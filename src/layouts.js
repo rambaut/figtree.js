@@ -2,7 +2,7 @@
 
 /** @module layouts */
 
-import {Type} from "./tree";
+import {Type} from "./tree.js";
 
 /**
  * Lays out the tree in a standard rectangular format.

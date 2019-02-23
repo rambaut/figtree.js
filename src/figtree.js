@@ -24,7 +24,7 @@ export class FigTree {
     /**
      * The constructor.
      * @param svg
-     * @param layout
+     * @param layout - an instance of class Layout
      * @param margins
      * @param settings
      */
@@ -70,15 +70,15 @@ export class FigTree {
         const branchPath = d3.line()
             .x(d => this.scales.x(d.x))
             .y(d => this.scales.y(d.y))
-            .curve(this.layout.edgeCurve);
+            .curve(this.layout.branchCurve);
 
         // update branches
-        this.svgSelection.selectAll(`.${this.layout.edgeClass}`)
+        this.svgSelection.selectAll(".branch")
             .transition()
             .duration(500)
             .attr("d", edge => branchPath([edge.v0, edge.v1]))
             .attr("class", (d) => {
-                return d.classes.join(" ");
+                return ["branch", ...d.classes].join(" ");
             });
 
         // update branch labels
@@ -101,11 +101,11 @@ export class FigTree {
         }
 
         //update nodes
-        this.svgSelection.selectAll(`.${this.layout.vertexClass}`)
+        this.svgSelection.selectAll(".node")
             .transition()
             .duration(500)
             .attr("class", (d) => {
-                return d.classes.join(" ");
+                return ["node", ...d.classes].join(" ");
             })
             .attr("transform", d => {
                 return `translate(${this.scales.x(d.x)}, ${this.scales.y(d.y)})`;
@@ -125,8 +125,7 @@ export class FigTree {
             .transition()
             .duration(500)
             .attr("class", (d) => {
-                let classes = [...d.classes];
-                return classes.join(" ");
+                return ["mid-branch", ...d.classes].join(" ");
             })
             .attr("transform", d => {
                 return `translate(${this.scales.x(d.x)}, ${this.scales.y(d.y)})`;
@@ -140,12 +139,12 @@ export class FigTree {
     hilightBranches() {
         // need to use 'function' here so that 'this' refers to the SVG
         // element being hovered over.
-        const selected = this.svgSelection.selectAll(`.${this.layout.edgeClass}`).selectAll(".edge-path");
+        const selected = this.svgSelection.selectAll(".branch").selectAll(".branch-path");
         selected.on("mouseover", function (d, i) {
-            d3.select(this).attr("class", "edge-path hovered");
+            d3.select(this).attr("class", "branch-path hovered");
         });
         selected.on("mouseout", function (d, i) {
-            d3.select(this).attr("class", "edge-path");
+            d3.select(this).attr("class", "branch-path");
         });
     }
 
@@ -170,13 +169,13 @@ export class FigTree {
         // need to use 'function' here so that 'this' refers to the SVG
         // element being hovered over.
         const self = this;
-        const selected = this.svgSelection.selectAll(selection).selectAll(".vertex-shape");
+        const selected = this.svgSelection.selectAll(selection).selectAll(".node-shape");
         selected.on("mouseover", function (d, i) {
-            d3.select(this).attr("class", "vertex-shape hovered");
+            d3.select(this).attr("class", "node-shape hovered");
             d3.select(this).attr("r", self.settings.hoverNodeRadius);
         });
         selected.on("mouseout", function (d, i) {
-            d3.select(this).attr("class", "vertex-shape");
+            d3.select(this).attr("class", "node-shape");
             d3.select(this).attr("r", self.settings.nodeRadius);
         });
     }
@@ -195,7 +194,7 @@ export class FigTree {
         // points to the actual SVG element (so we can use d3.mouse(this)). We therefore need
         // to store a reference to the object in "self".
         const self = this;
-        const selected = this.svgSelection.selectAll(`${selection ? selection : `.${this.layout.edgeClass}`}`);
+        const selected = this.svgSelection.selectAll(`${selection ? selection : ".branch"}`);
         selected.on("click", function (edge) {
             const x1 = self.scales.x(edge.v1.x);
             const x2 = self.scales.x(edge.v0.x);
@@ -237,7 +236,7 @@ export class FigTree {
      * @param selection
      */
     onClickNode(action, selection = null) {
-        const selected = this.svgSelection.selectAll(`${selection ? selection : `.${this.layout.vertexClass}`}`).selectAll(".vertex-shape");
+        const selected = this.svgSelection.selectAll(`${selection ? selection : ".node"}`).selectAll(".node-shape");
         selected.on("click", (vertex) => {
             action(vertex);
         })
@@ -331,7 +330,7 @@ function addNodes() {
             this.svgSelection.selectAll("g")
                 .data(degree2Vertices, (d) => d.key.toString() )
                 .enter().append("rect")
-                .attr("class", (d) => ["node-background", (!d.node.children ? "external-node" : "internal-node")].join(" "))
+                .attr("class", (d) => ["node-background", ...d.classes].join(" "))
                 .attr("transform", (d) => {
                     return `translate(${this.scales.x(d.x)}, ${this.scales.y(d.y)})`;
                 })
@@ -347,7 +346,7 @@ function addNodes() {
         this.svgSelection.selectAll("g")
             .data(vertices, (d) => d.key.toString() )
             .enter().append("circle")
-            .attr("class", (d) => ["node-background", (!d.node.children ? "external-node" : "internal-node")].join(" "))
+            .attr("class", (d) => ["node-background", ...d.classes].join(" "))
             .attr("transform", (d) => {
                 return `translate(${this.scales.x(d.x)}, ${this.scales.y(d.y)})`;
             })
@@ -364,12 +363,12 @@ function addNodes() {
             .attr("id", d => {
                 return d.node.id;
             })
-            .attr("class", (d) => ["mid-branch"].join(" "))
+            .attr("class", (d) => ["node", "mid-branch", ...d.classes].join(" "))
             .attr("transform", (d) => {
                 return `translate(${this.scales.x(d.x)}, ${this.scales.y(d.y)})`;
             })
             .append("rect")
-            .attr("class", () => "vertex-shape")
+            .attr("class", () => "node-shape")
             .attr("x", -this.settings.nodeRadius / 4)
             .attr("width", this.settings.nodeRadius / 2)
             .attr("y", -this.settings.nodeRadius * 1.5)
@@ -390,19 +389,19 @@ function addNodes() {
                 return (n.name ? n.name : (n.parent ? n.id : "root"));
             }
         })
-        .attr("class", (d) => d.classes.join(" "))
+        .attr("class", (d) => ["node", ...d.classes].join(" "))
         .attr("transform", (d) => {
             return `translate(${this.scales.x(d.x)}, ${this.scales.y(d.y)})`;
         });
 
     node.append("circle")
-        .attr("class", () => "vertex-shape")
+        .attr("class", () => "node-shape")
         .attr("cx", 0)
         .attr("cy", 0)
         .attr("r", this.settings.nodeRadius);
 
     node.append("text")
-        .attr("class", "vertex-label")
+        .attr("class", "node-label")
         .attr("text-anchor", "start")
         .attr("alignment-baseline", "middle")
         .attr("dx", "12")
@@ -410,7 +409,7 @@ function addNodes() {
         .text((d) => d.rightLabel);
 
     node.append("text")
-        .attr("class", "vertex-label support")
+        .attr("class", "node-label support")
         .attr("text-anchor", "end")
         .attr("dx", "-6")
         .attr("dy", d => (d.labelBelow ? -8 : +8))
@@ -425,13 +424,13 @@ function addBranches() {
     const branchPath = d3.line()
         .x((v) => this.scales.x(v.x))
         .y((v) => this.scales.y(v.y))
-        .curve(this.layout.edgeCurve);
+        .curve(this.layout.branchCurve);
 
     this.svgSelection.selectAll("path")
         .data(this.edges, (e) => e.key.toString() )
         .enter()
         .append("path")
-        .attr("class", (e) => e.classes.join(" "))
+        .attr("class", (e) => ["branch", ...e.classes].join(" "))
         .attr("id", (e) => e.id)
         .attr("d", (e) => branchPath([e.v0, e.v1]));
 

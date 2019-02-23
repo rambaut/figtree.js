@@ -125,7 +125,7 @@
 
 <script type="module">
     import { Tree } from "./src/tree.js";
-    import { RectangularLayout } from "./src/layout.js";
+    import { RectangularLayout } from "./src/rectangularlayout.js";
     import { FigTree } from "./src/figtree.js";
 
     const newickString =
@@ -139,7 +139,7 @@
     figTree.hilightInternalNodes();
     figTree.onClickNode(layout.rotate);
 
-    figTree.setNodeLabels(".internal-node", "probability");
+    layout.setInternalNodeLabels("probability");
 
     figTree.addToolTip('#root', "The root node - represents the most recent<br>common ancestor of the whole tree");
     figTree.addToolTip('.internal-node .node-shape', "This is an internal node - it is the most recent<br>common ancestor of the viruses to the right" );
@@ -172,7 +172,7 @@
 
 <script type="module">
     import { Tree } from "./src/tree.js";
-    import { RectangularLayout } from "./src/layout.js";
+    import { RectangularLayout } from "./src/rectangularlayout.js";
     import { FigTree } from "./src/figtree.js";
 
     const newickString =
@@ -184,7 +184,7 @@
     const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150});
 
     figTree.hilightInternalNodes();
-    figTree.onClickNode(FigTree.rotate);
+    figTree.onClickNode(layout.rotate);
 
     d3.select(treeSVG)
         .select("#root")
@@ -211,7 +211,7 @@
 
 <script type="module">
     import { Tree } from "./src/tree.js";
-    import { RectangularLayout } from "./src/layout.js";
+    import { RectangularLayout } from "./src/rectangularlayout.js";
     import { FigTree } from "./src/figtree.js";
     import { RootToTipPlot } from "./src/roottotipplot.js";
 
@@ -224,9 +224,9 @@
     const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150});
 
     figTree.hilightBranches();
-    figTree.onClickBranch(FigTree.reroot);
+    figTree.onClickBranch(layout.reroot);
     figTree.hilightInternalNodes();
-    figTree.onClickNode(FigTree.rotate);
+    figTree.onClickNode(layout.rotate);
 
     const rrtp = new RootToTipPlot(document.getElementById('rrt-2-svg'), tree, { top: 10, bottom: 60, left: 60, right: 100});
 
@@ -234,29 +234,28 @@
 
 </script>
 
-<!--<div>-->
-    <!--<figure>-->
-        <!--<svg id="transmission-1"  width="600" height="500"></svg>-->
-    <!--</figure>-->
-<!--</div>-->
+<div>
+    <figure>
+        <svg id="transmission-1"  width="600" height="500"></svg>
+    </figure>
+</div>
 
-<!--<script type="module">-->
-    <!--import { Tree } from "./src/tree.js";-->
-    <!--import { RectangularLayout } from "./src/layout.js";-->
-    <!--import { FigTree } from "./src/figtree.js";-->
-    <!--import { transmissionLayout } from './src/layouts.js';-->
+<script type="module">
+    import { Tree } from "./src/tree.js";
+    import { TransmissionLayout } from "./src/transmissionlayout.js";
+    import { FigTree } from "./src/figtree.js";
 
-    <!--const newickString =-->
-        <!--'((((((virus1:0.1,virus2:0.12):0.08,(virus3:0.011,virus4:0.0087):0.15):0.03,virus5:0.21):0.2,(virus6:0.45,virus7:0.4):0.02):0.1,virus8:0.4):0.1,(virus9:0.04,virus10:0.03):0.6);';-->
+    const newickString =
+        '((((((virus1:0.1,virus2:0.12):0.08,(virus3:0.011,virus4:0.0087):0.15):0.03,virus5:0.21):0.2,(virus6:0.45,virus7:0.4):0.02):0.1,virus8:0.4):0.1,(virus9:0.04,virus10:0.03):0.6);';
 
-    <!--const tree = Tree.parseNewick(newickString);-->
-    <!--const treeSVG = document.getElementById('transmission-1');-->
-    <!--const layout = new RectangularLayout(tree);-->
-    <!--const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150});-->
+    const tree = Tree.parseNewick(newickString);
+    const treeSVG = document.getElementById('transmission-1');
+    const layout = new TransmissionLayout(tree);
+    const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150});
 
-    <!--figTree.hilightInternalNodes();-->
-    <!--figTree.onClickNode(FigTree.rotate)-->
-<!--</script>-->
+    figTree.hilightInternalNodes();
+    figTree.onClickNode(layout.rotate)
+</script>
 
 <div>
     <svg id="tree-3-svg"  width="600" height="600"></svg>
@@ -284,7 +283,7 @@
 
 <script type="module">
     import { Tree } from "./src/tree.js";
-    import { RectangularLayout } from "./src/layout.js";
+    import { RectangularLayout } from "./src/rectangularlayout.js";
     import { FigTree } from "./src/figtree.js";
     import { RootToTipPlot } from "./src/roottotipplot.js";
 
@@ -347,8 +346,8 @@
 
 <script type="module">
     import { Tree } from "./src/tree.js";
-    import { RectangularLayout } from "./src/layout.js";
-        import { FigTree } from "./src/figtree.js";
+    import { RectangularLayout } from "./src/rectangularlayout.js";
+    import { FigTree } from "./src/figtree.js";
 
     const newickString =
         '((((((virus1:0.1,virus2:0.12)0.95:0.08,(virus3:0.011,virus4:0.0087)1.0:0.15)0.65:0.03,virus5:0.21)1.0:0.2,(virus6:0.45,virus7:0.4)0.51:0.02)1.0:0.1,virus8:0.4)1.0:0.1,(virus9:0.04,virus10:0.03)1.0:0.6);';
@@ -371,15 +370,15 @@
         "virus10": { host: "whale" }
     });
 
-    figTree.setNodeLabels("probability");
+    layout.setInternalNodeLabels("probability");
 
     // figTree.addLabels('.external-node', FigTree.nodeInfo);
-    figTree.addToolTip('.node', FigTree.nodeInfo);
+    figTree.addToolTip('.node', layout.nodeInfo);
 
     figTree.hilightBranches();
-    figTree.onClickBranch(FigTree.reroot);
+    figTree.onClickBranch(layout.reroot);
     figTree.hilightInternalNodes();
-    figTree.onClickNode(FigTree.rotate);
+    figTree.onClickNode(layout.rotate);
 
     tree.annotateNodesFromTips("host");
 
