@@ -263,6 +263,43 @@ export class Graph{
 
 // -----------  Methods from figtree.js tree object -----------------------------
     /**
+     * Reverses the order of the children of the given node. If 'recursive=true' then it will
+     * descend down the subtree reversing all the sub nodes.
+     *
+     * @param node
+     * @param recursive
+     */
+    // add options with edgeFilter callback
+    rotate(node, recursive = false) {
+        const outGoingEdges=this.getOutgoingEdges(node);
+        if (outGoingEdges.length>0) {
+            if (recursive) {
+                for (const edge of outGoingEdges) {
+                    //Needs to avoid circulare loops 
+                    const child =edge.target;
+                    this.rotate(child, recursive);
+                }
+            }
+            outGoingEdges.reverse();
+        }
+    };
+
+        /**
+     * Sorts the child branches of each node in order of increasing or decreasing number
+     * of tips. This operates recursively from the node given.
+     *
+     * @param node - the node to start sorting from
+     * @param {boolean} increasing - sorting in increasing node order or decreasing?
+     * @returns {number} - the number of tips below this node
+     */
+    order(node, increasing = true) {
+        // orderNodes.call(this, node, increasing, this.treeUpdateCallback);
+        orderNodes.call(this, node, increasing);
+        this.treeUpdateCallback();
+    }
+
+
+    /**
      * A generator function that returns the nodes in a pre-order traversal. Starting at 
      * node. An optional options objects can be used to select which edges are used in the traversal
      * @param {*} node 
@@ -523,5 +560,36 @@ export class Graph{
  * Private methods, called by the class using the <function>.call(this) function.
  */
 
+/**
+ * A private recursive function that rotates nodes to give an ordering.
+ * @param node
+ * @param increasing
+ * @param callback an optional callback that is called each rotate
+ * @returns {number}
+ */
+function orderNodes(node, increasing, callback = null) {
+    const factor = increasing ? 1 : -1;
+    let count = 0;
+    const outGoingEdges=this.getOutgoingEdges(node);
+    
+    if (outGoingEdges.length>0) {
+        const counts = new Map();
 
+        for (const edge of outGoingEdges) {
+            // Needs to avoid circular loops
+            const child = edge.target;
+            const value = orderNodes(child, increasing, callback);
+            counts.set(child, value);
+            count += value;
+        }
+        node.children.sort((a, b) => {
+            return (counts.get(a) - counts.get(b)) * factor
+        });
+
+        if (callback) callback();
+    } else {
+        count = 1
+    }
+    return count;
+}
 
