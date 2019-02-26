@@ -1,3 +1,4 @@
+"use strict"
 /** @module Graph */
 
 // import {Type} from 'figtree';
@@ -11,16 +12,16 @@
  */
 export class Graph{
     constructor(nodes=[],edges=[]) {
+        
         this.nodeList =[];
         this.nodeMap = new Map();
-        nodes.forEach(node=>this.addNode(node));
-
+        this.outGoingEdgeMap = new Map();
+        this.incomingEdgeMap= new Map();
         this.edgeList = [];
-        this.edgeMap = new Map();   
-        edges.forEach(edge=>this.makeEdge(edge));
+        this.edgeMap = new Map();  
 
-        this.outGoingEdgeMap = new Map(this.nodeList.map(node=>[node,[...this.edgeList.filter(edge=>edge.source===node)]]));
-        this.incomingEdgeMap= new Map(this.nodeList.map(node=>[node,[...this.edgeList.filter(edge=>edge.target===node)]]));
+        nodes.forEach(node=>this.addNode(node));
+        edges.forEach(edge=>this.makeEdge(edge));
         // This is used in identifying terminal tips  
     };
     
@@ -198,7 +199,7 @@ export class Graph{
         // new outgoing
         const newOutgoing = this.getOutgoingEdges(edge.source).filter(e=>e!==edge);
         this.outGoingEdgeMap.set(edge.source,newOutgoing);
-        const newIncoming = this.getIncomingEdges(edge.taget).filter(e=>e!==edge);
+        const newIncoming = this.getIncomingEdges(edge.target).filter(e=>e!==edge);
         this.incomingEdgeMap.set(edge.target,newIncoming);
 
     }
@@ -214,7 +215,7 @@ export class Graph{
             this.addNode(node)
         }
         this.makeEdge(edge.source,node);
-        this.makeEdge(node,edge.taget);
+        this.makeEdge(node,edge.target);
         this.removeEdge(edge)
     }
 
@@ -234,7 +235,7 @@ export class Graph{
             // If there is at least 1 node not hit in the traversal
             return new Graph();
         }
-        const edges = nodes.map(n=>[...this.getOutgoingEdges(n).filter(e=>options.filterEdges(e)).filter(e=>nodes.indexOf(e.taget)>-1),
+        const edges = nodes.map(n=>[...this.getOutgoingEdges(n).filter(e=>options.filterEdges(e)).filter(e=>nodes.indexOf(e.target)>-1),
                                     ...this.getIncomingEdges(n).filter(e=>options.filterEdges(e)).filter(e=>nodes.indexOf(e.source)>-1)]);
         const uniqueEdges = [...new Set(edges)];
         return new Graph(nodes,uniqueEdges)
@@ -263,28 +264,32 @@ export class Graph{
      * @param {object} options - an optional object with filterEdges:function() that filters the edges used in the traversal
      * @returns {IterableIterator<IterableIterator<*|*>>}
      */
-    *preorder(node,options) {
+    *preorder(node,options={filterEdges:(e)=>true}) {
         // We have to mark nodes as visited since it is possible to cycle back
         this.edgeList.forEach(e=>e.visited=false);
         this.nodeList.forEach(n => n.visited=false);
+        const self = this;
         const traverse = function *(node,options){
             yield node;
-            this.getEdges(node).filter(e=>options.filterEdges(e)).forEach(edge=>{
-                if(!edge.visited){
-                    let nextNode;
-                    if(node===edge.source){
-                        nextNode = edge.target;
-                    }else{
-                        nextNode=edge.source;
-                    }
-                    if(!nextNode.visited){
-                        edge.visited=true;
-                        traverse(nextNode,options);
-                    }else{
-                        edge.visited=true; // technically a back edge
+            const edges = self.getEdges(node).filter(e=>options.filterEdges(e));
+            if(edges.length>0){
+                for(const edge of edges){
+                    if(!edge.visited){
+                        let nextNode;
+                        if(node===edge.source){
+                            nextNode = edge.target;
+                        }else{
+                            nextNode=edge.source;
+                        }
+                        if(!nextNode.visited){
+                            edge.visited=true;
+                            yield* traverse(nextNode,options);
+                        }else{
+                            edge.visited=true; // technically a back edge
+                        }
                     }
                 }
-            })
+            }
         };
         yield* traverse(node,options);
         this.edgeList.forEach(e=> delete e["visited"]);
@@ -298,27 +303,31 @@ export class Graph{
      * @param {object} options - an optional object with filterEdges:function() that filters the edges used in the traversal
      * @returns {IterableIterator<IterableIterator<*|*>>}
      */
-    *postorder(node,options) {
+    *postorder(node,options={filterEdges:(e)=>true}) {
         // We have to mark nodes as visited since it is possible to cycle back
         this.edgeList.forEach(e=>e.visited=false);
         this.nodeList.forEach(n => n.visited=false);
+        const self=this;
         const traverse = function *(node,options){
-            this.getEdges(node).filter(e=>options.filterEdges(e)).forEach(edge=>{
-                if(!edge.visited){
-                    let nextNode;
-                    if(node===edge.source){
-                        nextNode = edge.target;
-                    }else{
-                        nextNode=edge.source;
+            const edges = self.getEdges(node).filter(e=>options.filterEdges(e));
+            if(edges.length>0){
+                for(const edge of edges){
+                    if(!edge.visited){
+                        let nextNode;
+                        if(node===edge.source){
+                            nextNode = edge.target;
+                        }else{
+                            nextNode=edge.source;
+                        }
+                        if(!nextNode.visited){
+                            edge.visited=true;
+                            yield* traverse(nextNode,options);
+                        }else{
+                            edge.visited=true; // technically a back edge
+                        }
                     }
-                    if(!nextNode.visited){
-                        edge.visited=true;
-                        traverse(nextNode,options);
-                    }else{
-                        edge.visited=true; // technically a back edge
-                    }
-                }
-            })
+                }  
+            }
             yield node;
 
         };
