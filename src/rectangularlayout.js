@@ -61,7 +61,7 @@ export class RectangularLayout extends Layout {
         // get the nodes in post-order
         const nodes = [...this.tree.postorder()];
 
-        let y = -1;
+        let currentY = -1;
 
         if (vertices.length === 0) {
             this.nodeMap = new Map();
@@ -70,7 +70,8 @@ export class RectangularLayout extends Layout {
             nodes.forEach((n, i) => {
                 const vertex = {
                     node: n,
-                    key: Symbol(n.id)
+                    key: n.id
+                    // key: Symbol(n.id).toString()
                 };
                 vertices.push(vertex);
                 this.nodeMap.set(n, vertex);
@@ -83,7 +84,7 @@ export class RectangularLayout extends Layout {
                 const v = this.nodeMap.get(n);
 
                 v.x = this.tree.rootToTipLength(v.node);
-                v.y = (v.node.children ? d3.mean(v.node.children, (child) => this.nodeMap.get(child).y) : y += 1);
+                currentY = this.setYPosition(v, currentY)
 
                 v.degree = (v.node.children ? v.node.children.length + 1: 1); // the number of edges (including stem)
 
@@ -111,7 +112,7 @@ export class RectangularLayout extends Layout {
                     v.rightLabel = "";
 
                     // should the left node label be above or below the node?
-                    v.labelBelow = v.node.parent && v.node.parent.children[0] === v.node;
+                    v.labelBelow = (!v.node.parent || v.node.parent.children[0] !== v.node);
                 } else {
                     v.leftLabel = "";
                     v.rightLabel = (this.externalNodeLabelAnnotationName?
@@ -132,7 +133,8 @@ export class RectangularLayout extends Layout {
                     const edge = {
                         v0: this.nodeMap.get(n.parent),
                         v1: this.nodeMap.get(n),
-                        key: Symbol(n.id)
+                        key: n.id
+                        // key: Symbol(n.id).toString()
                     };
                     edges.push(edge);
                     this.edgeMap.set(edge, edge.v1);
@@ -144,8 +146,7 @@ export class RectangularLayout extends Layout {
             .forEach((e) => {
                 e.v1 = this.edgeMap.get(e);
                 e.v0 = this.nodeMap.get(e.v1.node.parent),
-
-                e.classes = [];
+                    e.classes = [];
 
                 if (e.v1.node.annotations) {
                     e.classes = [
@@ -163,7 +164,7 @@ export class RectangularLayout extends Layout {
                 e.label = (this.branchLabelAnnotationName?
                     e.v1.node.annotations[this.branchLabelAnnotationName]:
                     this.settings.lengthFormat(length));
-                e.labelBelow = e.v1.node.parent && e.v1.node.parent.children[0] === e.v1.node;
+                e.labelBelow = e.v1.node.parent.children[0] !== e.v1.node;
             });
     }
 
@@ -213,6 +214,11 @@ export class RectangularLayout extends Layout {
      */
     update() {
         this.updateCallback();
+    }
+
+    setYPosition(vertex, currentY) {
+        vertex.y = (vertex.node.children ? d3.mean(vertex.node.children, (child) => this.nodeMap.get(child).y) : currentY += 1);
+        return currentY;
     }
 }
 

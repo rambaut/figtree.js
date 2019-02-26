@@ -2,6 +2,7 @@
 
 /** @module layout */
 
+
 /**
  * The Layout class
  *
@@ -27,10 +28,7 @@ export class Layout {
      * @param vertices - objects with an x, y coordinates and a reference to the original node
      * @param edges - objects with v1 (a vertex) and v0 (the parent vertex).
      */
-    layout(vertices, edges) {
-
-
-    }
+    layout(vertices, edges) { }
 
     get horizontalRange() {
         return this._horizontalRange;
