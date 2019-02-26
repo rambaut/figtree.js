@@ -7,13 +7,13 @@
  *
  * A class that takes an arrary of nodes and edges and provides a number of methods
  * for manipulating the graph.
- * @param nodes - an array of nodes
- * @param edges - an array of edges linking the nodes
+ * @param nodes - an array of nodes. Should contain a unique id identifier
+ * @param edges - an array of edges linking the nodes {source:node.id,target:node.id}
  */
 export class Graph{
     constructor(nodes=[],edges=[]) {
         
-        this.nodeList =[];
+        this.nodeList = [];
         this.nodeMap = new Map();
         this.outGoingEdgeMap = new Map();
         this.incomingEdgeMap= new Map();
@@ -21,7 +21,7 @@ export class Graph{
         this.edgeMap = new Map();  
 
         nodes.forEach(node=>this.addNode(node));
-        edges.forEach(edge=>this.makeEdge(edge));
+        edges.forEach(edge=>this.makeEdge(edge.source,edge.target));
         // This is used in identifying terminal tips  
     };
     
@@ -42,11 +42,14 @@ export class Graph{
      * @param {*} node 
      */
     addNode(node){
-        if(!node.key){
-            node.key=Symbol();
+        if(!node.id){
+            throw new Error(`All node's must contain an 'id' key ${node}`)
         }
         this.nodeList.push(node);
-        this.nodeMap.set(node.key,node);
+        if(this.nodeMap.has(node.id)){
+            throw new Error(`All node's must have unique id values ${node.id} seen twice`)
+        }
+        this.nodeMap.set(node.id,node);
 
         this.outGoingEdgeMap.set(node,[]);
         this.incomingEdgeMap.set(node,[]);
@@ -54,21 +57,12 @@ export class Graph{
    
    /**
     * return a node given the key
-    * @param {*} key 
+    * @param {*} id the node id value 
     */
-    getNode(key){
-        return this.nodeMap.get(key);
+    getNode(id){
+        return this.nodeMap.get(id);
     }
     
-    /**
-     * Returns the nodes with matching values matching the key-value pair given
-     * @param {*} key 
-     * @param {*} value 
-     * @returns {array} - Array of nodes with  
-     */
-    getNodesFromKeyValuePair(key,value){
-        return this.nodeList.filter(node=>node[key]===value)
-    }
     /**
      * Get the edges entering a node
      * @param {*} node 
@@ -95,29 +89,29 @@ export class Graph{
          return[...this.getOutgoingEdges(node),...this.getIncomingEdges(node)]
      }
 
-    getNodeHtml(node){
+    getNodeInfo(node){
         // const formatDate=d3.timeFormat("%Y-%m-%d")
-        let outString = `${node.id} </br>`
-        // for(const key of Object.keys(node)){
-        //     if(node[key]){
-        //         if(key!=="id"&& key!=="metaData"&&key!=="key"){
-        //             if(key.toLowerCase().indexOf("date")>-1){
-        //                 outString = `${outString}${key}: ${node[key].toISOString().substring(0, 10)}</br>`;
-        //                 }else{
-        //                 outString = `${outString}${key}: ${node[key]}</br>`;
-        //                 }            
-        //             }
+        // let outString = `${node.id} </br>`
+        // // for(const key of Object.keys(node)){
+        // //     if(node[key]){
+        // //         if(key!=="id"&& key!=="metaData"&&key!=="key"){
+        // //             if(key.toLowerCase().indexOf("date")>-1){
+        // //                 outString = `${outString}${key}: ${node[key].toISOString().substring(0, 10)}</br>`;
+        // //                 }else{
+        // //                 outString = `${outString}${key}: ${node[key]}</br>`;
+        // //                 }            
+        // //             }
+        // //     }
+        // // }
+    
+        // for(const key of Object.keys(node.metaData)){
+        //     if(key.toLowerCase().indexOf("date")>-1){
+        //     outString = `${outString}${key}: ${node.metaData[key].toISOString().substring(0, 10)}</br>`;
+        //     }else{
+        //     outString = `${outString}${key}: ${node.metaData[key]}</br>`;
         //     }
         // }
-    
-        for(const key of Object.keys(node.metaData)){
-            if(key.toLowerCase().indexOf("date")>-1){
-            outString = `${outString}${key}: ${node.metaData[key].toISOString().substring(0, 10)}</br>`;
-            }else{
-            outString = `${outString}${key}: ${node.metaData[key]}</br>`;
-            }
-        }
-        return outString;
+        // return outString;
     }
 
     /**
@@ -130,9 +124,9 @@ export class Graph{
         const edges = this.getEdges(node);
         edges.forEach(edge=>this.removeEdge(edge))
 
-        const key=node.key
-        this.nodeList=this.nodeList.filter(node=>node.key!==key);
-        this.nodeMap.delete(key);
+        const id=node.id
+        this.nodeList=this.nodeList.filter(node=>node.id!==id);
+        this.nodeMap.delete(id);
         this.incomingEdgeMap.delete(node);
         this.outGoingEdgeMap.delete(node);
     }
@@ -146,43 +140,51 @@ export class Graph{
     
     /**
      * returns the edge
-     * @param {*} key 
+     * @param {Symbol()} id - symbol key of the edge
      * @returns {*} edge
      */
-    getEdge(key){
-        return this.edgeMap.get(key);
+    getEdge(id){
+        return this.edgeMap.get(id);
     }
     getEdgeHtml(edge){
-        // const formatDate=d3.timeFormat("%Y-%m-%d")
-        let outString = `Source:${edge.source.id} </br> Target: ${edge.target.id}</br>`;
-        for(const key of Object.keys(edge.metaData)){
-            if(key.toLowerCase().indexOf("date")>-1){
-            outString = `${outString}${key}: ${edge.metaData[key].toISOString().substring(0, 10)}</br>`;
-            }else{
-            outString = `${outString}${key}: ${edge.metaData[key]}</br>`;
-            }
-        }
-        return outString;
+        // // const formatDate=d3.timeFormat("%Y-%m-%d")
+        // let outString = `Source:${edge.source.id} </br> Target: ${edge.target.id}</br>`;
+        // for(const key of Object.keys(edge.metaData)){
+        //     if(key.toLowerCase().indexOf("date")>-1){
+        //     outString = `${outString}${key}: ${edge.metaData[key].toISOString().substring(0, 10)}</br>`;
+        //     }else{
+        //     outString = `${outString}${key}: ${edge.metaData[key]}</br>`;
+        //     }
+        // }
+        // return outString;
     }
      /**
      * Adds an edge between the provide source and target nodes. It the nodes are not part of the graph they are added.
-     * @param {*} sourceNode 
-     * @param {*} targetNode 
-     * @param {*} metaData - Optional object that can hold meta data concerning the connection
+     * @param {String} sourceNode Id
+     * @param {String} targetNode Id
      */
-    makeEdge(sourceNode,targetNode,metaData={}){
-        if(!sourceNode.key||!this.nodeMap.has(sourceNode.key)){
-            this.addNode(sourceNode)
+    makeEdge(sourceNodeId,targetNodeId){
+        if(!this.nodeMap.has(sourceNodeId)){
+            throw new Error(`${sourceNodeId} not found in graph`)
         }
-        if(!targetNode.key||!this.nodeMap.has(targetNode.key)){
-            this.addNode(targetNode)
+        if(!this.nodeMap.has(targetNodeId)){
+            throw new Error(`${targetNodeId} not found in graph`)
         }
-        const edge = {source:sourceNode,target:targetNode,metaData:metaData,key:Symbol()};
+        const edge = {source:this.getNode(sourceNodeId),target:this.getNode(targetNodeId),key:Symbol()};
         this.edgeList.push(edge);
         this.edgeMap.set(edge.key,edge);
-        
-        this.outGoingEdgeMap.get(sourceNode).push(edge);
-        this.incomingEdgeMap.get(targetNode).push(edge);
+        this.outGoingEdgeMap.get(edge.source).push(edge);
+        this.incomingEdgeMap.get(edge.target).push(edge);
+    }
+    /**
+     * Adds an premade edge which between the provide source and target nodes. It the nodes are not part of the graph they are added.
+     * @param {*} {source:node, targe:node} 
+     */
+    addEdge(edge){
+        this.edgeList.push(edge);
+        this.edgeMap.set(edge.key,edge);
+        this.outGoingEdgeMap.get(edge.source).push(edge);
+        this.incomingEdgeMap.get(edge.target).push(edge);
     }
     
 
@@ -211,15 +213,13 @@ export class Graph{
      * @param {*} edge 
      */
     insertNode(node,edge){
-        if(!node.key||this.nodeMap.has(node.key)){
+        if(!this.nodeMap.has(node.id)){
             this.addNode(node)
         }
-        this.makeEdge(edge.source,node);
-        this.makeEdge(node,edge.target);
+        this.makeEdge(edge.source.id,node.id);
+        this.makeEdge(node.id,edge.target.id);
         this.removeEdge(edge)
     }
-
-    
 
     /**
      * A function to return a sub graph given an arrary of nodes.
@@ -230,15 +230,20 @@ export class Graph{
      */
     getSubGraph(nodes,options={filterEdges:(e)=>true}){
         // check there is a path between all nodes
-        const preorder= [...this.preorder(nodes[0])];
-        if(nodes.some(n=>preorder.indexOf(n)===-1)){ 
-            // If there is at least 1 node not hit in the traversal
-            return new Graph();
-        }
-        const edges = nodes.map(n=>[...this.getOutgoingEdges(n).filter(e=>options.filterEdges(e)).filter(e=>nodes.indexOf(e.target)>-1),
-                                    ...this.getIncomingEdges(n).filter(e=>options.filterEdges(e)).filter(e=>nodes.indexOf(e.source)>-1)]);
-        const uniqueEdges = [...new Set(edges)];
-        return new Graph(nodes,uniqueEdges)
+        // const preorder= [...this.preorder(nodes[0])];
+        // if(nodes.some(n=>preorder.indexOf(n)===-1)){ 
+        //     // If there is at least 1 node not hit in the traversal
+        //     return new Graph();
+        // }
+        // const edges = nodes.map(n=>[...this.getOutgoingEdges(n).filter(e=>options.filterEdges(e)).filter(e=>nodes.indexOf(e.target)>-1),
+        //                             ...this.getIncomingEdges(n).filter(e=>options.filterEdges(e)).filter(e=>nodes.indexOf(e.source)>-1)]);
+        // const uniqueEdges = [...new Set(edges)];
+        // const subGraph = new Graph();
+        
+        
+        // return new Graph();
+
+        // nodes,uniqueEdges)
        
     }
 
