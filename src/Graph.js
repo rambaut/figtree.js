@@ -11,7 +11,7 @@
  * @param edges - an array of edges linking the nodes {source:node.id,target:node.id}
  */
 export class Graph{
-    constructor(nodes=[],edges=[]) {
+    constructor(nodes=[],edges=[],settings={acyclicSelector:(e)=>true}) {
         
         this.nodeList = [];
         this.nodeMap = new Map();
@@ -19,6 +19,8 @@ export class Graph{
         this.incomingEdgeMap= new Map();
         this.edgeList = [];
         this.edgeMap = new Map();  
+        this.acyclicSelector=settings.acyclicSelector;
+
 
         nodes.forEach(node=>this.addNode(node));
         edges.forEach(edge=>this.drawEdge(edge.source,edge.target));
@@ -69,7 +71,7 @@ export class Graph{
      * @returns {array} array of edges that end with the node
      */
     getIncomingEdges(node){
-        return [...this.incomingEdgeMap.get(node)]
+        return this.incomingEdgeMap.get(node)
      }
      /**
       * Get the edges leaving a node
@@ -78,7 +80,7 @@ export class Graph{
       */
  
      getOutgoingEdges(node){
-         return [...this.outGoingEdgeMap.get(node)]
+         return this.outGoingEdgeMap.get(node)
      }
      /**
       * Get all the edges leaving and entering a node
@@ -86,7 +88,7 @@ export class Graph{
       * @returns {array} array of edges that touch node
       */
      getEdges(node){
-         return[...this.getOutgoingEdges(node),...this.getIncomingEdges(node)]
+         return (this.getOutgoingEdges(node).concat(this.getIncomingEdges(node)));
      }
 
     getNodeInfo(node){
@@ -267,9 +269,10 @@ export class Graph{
      * @param recursive
      */
     // add options with edgeFilter callback
-    rotate(node, options={filterEdges:(e)=>true,recursive:false}) {
-        const nodesToVisit = [...this.preorder(node,options)];
-        const outGoingEdges=this.getOutgoingEdges(node).filter(e=>options.filterEdges(e));
+    rotate(node, options={recursive:false}) {
+        const nodesToVisit = [...this.preorder(node)];
+        const outGoingEdges=this.getOutgoingEdges(node);
+
             if (options.recursive) {
                 for (const n of nodesToVisit) {
                     //Needs to avoid circulare loops 
@@ -277,12 +280,9 @@ export class Graph{
                     nOutGoingEdges.reverse();
                 }
             }else{
-                console.log(outGoingEdges.map(e=>e.target.id))
                 outGoingEdges.reverse();
-                console.log(outGoingEdges.map(e=>e.target.id))
 
             }
-
         };
 
     /**
@@ -293,10 +293,10 @@ export class Graph{
      * @param {boolean} increasing - sorting in increasing node order or decreasing?
      * @returns {number} - the number of tips below this node
      */
-    order(node, options={increasing:true}) {
+    order(node, increasing) {
         // orderNodes.call(this, node, increasing, this.treeUpdateCallback);
-        orderNodes.call(this, node,options);
-        this.treeUpdateCallback();
+        orderNodes.call(this, node,increasing);
+        // this.treeUpdateCallback();
     }
 
 
@@ -307,14 +307,15 @@ export class Graph{
      * @param {object} options - an optional object with filterEdges:function() that filters the edges used in the traversal
      * @returns {IterableIterator<IterableIterator<*|*>>}
      */
-    *preorder(node,options={filterEdges:(e)=>true}) {
+    *preorder(node) {
         // We have to mark nodes as visited since it is possible to cycle back
         this.edgeList.forEach(e=>e.visited=false);
         this.nodeList.forEach(n => n.visited=false);
         const self = this;
-        const traverse = function *(node,options){
+        const traverse = function *(node){
             yield node;
-            const edges = self.getEdges(node).filter(e=>options.filterEdges(e));
+            const edges = self.getEdges(node).filter(e=>self.acyclicSelector(e));
+            // don't need all this if using acyclic edges
             if(edges.length>0){
                 for(const edge of edges){
                     if(!edge.visited){
@@ -326,7 +327,7 @@ export class Graph{
                         }
                         if(!nextNode.visited){
                             edge.visited=true;
-                            yield* traverse(nextNode,options);
+                            yield* traverse(nextNode);
                         }else{
                             edge.visited=true; // technically a back edge
                         }
@@ -334,7 +335,7 @@ export class Graph{
                 }
             }
         };
-        yield* traverse(node,options);
+        yield* traverse(node);
         this.edgeList.forEach(e=> delete e["visited"]);
         this.nodeList.forEach(n => delete n["visited"]);
     }
@@ -346,13 +347,14 @@ export class Graph{
      * @param {object} options - an optional object with filterEdges:function() that filters the edges used in the traversal
      * @returns {IterableIterator<IterableIterator<*|*>>}
      */
-    *postorder(node,options={filterEdges:(e)=>true}) {
+    *postorder(node) {
         // We have to mark nodes as visited since it is possible to cycle back
         this.edgeList.forEach(e=>e.visited=false);
         this.nodeList.forEach(n => n.visited=false);
         const self=this;
-        const traverse = function *(node,options){
-            const edges = self.getEdges(node).filter(e=>options.filterEdges(e));
+        const traverse = function *(node){
+            const edges = self.getEdges(node).filter(e=>self.acyclicSelector(e));
+            // don't need all this if using acyclic edges
             if(edges.length>0){
                 for(const edge of edges){
                     if(!edge.visited){
@@ -364,7 +366,7 @@ export class Graph{
                         }
                         if(!nextNode.visited){
                             edge.visited=true;
-                            yield* traverse(nextNode,options);
+                            yield* traverse(nextNode);
                         }else{
                             edge.visited=true; // technically a back edge
                         }
@@ -374,189 +376,12 @@ export class Graph{
             yield node;
 
         };
-        yield* traverse(node,options);
+        yield* traverse(node);
         this.edgeList.forEach(e=> delete e["visited"]);
         this.nodeList.forEach(n => delete n["visited"]);
     }
 
-    /**
-     * This is similar to annotateTips but the annotation objects are keyed by node
-     * keys (Symbols).
-     *
-     * @param annotations a dictionary of annotations keyed by node key
-     */
-    annotateNodes(annotations) {
-        console.log(Object.getOwnPropertySymbols(annotations));
-        for (let key of Object.getOwnPropertySymbols(annotations)) {
-            const node = this.getNode(key);
-            const values = annotations[key];
-            if (!node) {
-                throw new Error(`tip with key ${key} not found in tree`);
-            }
-            console.log(`annotating node: ${node.id} with ${values}`)
-            this.annotateNode(node, values);
-        }
-    }
-
-    /**
-     * This is similar to annotateTips but the annotation objects are keyed by node
-     * keys (Symbols).
-     *
-     * @param annotations a dictionary of annotations keyed by node key
-     */
-    annotateEdges(annotations) {
-        for (let [key, values] of Object.entries(annotations)) {
-            const node = this.getEdge(key);
-            if (!node) {
-                throw new Error(`tip with key ${key} not found in tree`);
-            }
-
-            this.annotateNode(node, values);
-        }
-    }
-
-    /**
-     * Adds the given annotations to a particular node object.
-     *
-     * The annotations is an object with properties keyed by external node labels each
-     * of which is an object with key value pairs for the annotations. The
-     * key value pairs will be added to a property called 'annotations' in the node.
-     *
-     * Boolean or Numerical traits are given as a single value.
-     * Sets of values with probabilities should be given as an object.
-     * Discrete values should be given as an array (even if containing only one value)
-     * or an object with booleans to give the full set of possible trait values.
-     *
-     * For example:
-     *
-     * {
-     *     'tip_1': {
-     *         'trait_1' : true,
-     *         'trait_4' : 3.141592,
-     *         'trait_2' : [1, 2], // discrete trait
-     *         'trait_3' : ["London", "Paris", "New York"], // discrete trait
-     *         'trait_3' : {"London" : true, "Paris" : false, "New York": false], // discrete trait with full set of values
-     *         'trait_4' : {"London" : 0.75, "Paris" : 0.20, "New York": 0.05} // probability set
-     *     },
-     *     'tip_2': {...}
-     * }
-     *
-     * The annotation labels, type and possible values are also added to the tree in a property called 'annotations'.
-     *
-     * A reconstruction method such as annotateNodesFromTips can then be used to provide reconstructed values
-     * for internal nodes. Or annotateNodes can provide annotations for any node in the tree.
-     *
-     * @param node
-     * @param annotations a dictionary of annotations keyed by the annotation name.
-     */
-    annotateNode(node, annotations) {
-        this.addAnnotations(annotations);
-
-        // add the annotations to the existing annotations object for the node object
-        node.annotations = {...(node.annotations === undefined ? {} : node.annotations), ...annotations};
-    }
-
-    /**
-     * Adds the annotation information to the graph. This stores the type and possible values
-     * for each annotation seen in the nodes of the graph.
-     *
-     * This methods also checks the values are correct and conform to previous annotations
-     * in type.
-     *
-     * @param annotations
-     */
-    addAnnotations(annotations) {
-        for (let [key, addValues] of Object.entries(annotations)) {
-            let annotation = this.annotations[key];
-            if (!annotation) {
-                annotation = {};
-                this.annotations[key] = annotation;
-            }
-
-            if (Array.isArray(addValues)) {
-                // is a set of discrete values
-                const type = Type.DISCRETE;
-
-                if (annotation.type && annotation.type !== type) {
-                    throw Error(`existing values of the annotation, ${key}, in the tree is not of the same type`);
-                }
-                annotation.type = type;
-                annotation.values = [...annotation.values, ...addValues];
-            } else if (Object.isExtensible(addValues)) {
-                // is a set of properties with values
-                let type = null;
-
-                let sum = 0.0;
-                let keys = [];
-                for (let [key, value] of Object.entries(addValues)) {
-                    if (keys.includes(key)) {
-                        throw Error(`the states of annotation, ${key}, should be unique`);
-                    }
-                    if (typeof value === typeof 1.0) {
-                        // This is a vector of probabilities of different states
-                        type = (type === undefined) ? Type.PROBABILITIES : type;
-
-                        if (type === Type.DISCRETE) {
-                            throw Error(`the values of annotation, ${key}, should be all boolean or all floats`);
-                        }
-
-                        sum += value;
-                        if (sum > 1.0) {
-                            throw Error(`the values of annotation, ${key}, should be probabilities of states and add to 1.0`);
-                        }
-                    } else if (typeof value === typeof true) {
-                        type = (type === undefined) ? Type.DISCRETE : type;
-
-                        if (type === Type.PROBABILITIES) {
-                            throw Error(`the values of annotation, ${key}, should be all boolean or all floats`);
-                        }
-                    } else {
-                        throw Error(`the values of annotation, ${key}, should be all boolean or all floats`);
-                    }
-                    keys.append(key);
-                }
-
-                if (annotation.type && annotation.type !== type) {
-                    throw Error(`existing values of the annotation, ${key}, in the tree is not of the same type`);
-                }
-
-                annotation.type = type;
-                annotation.values = [...annotation.values, ...addValues];
-            } else {
-                let type = Type.DISCRETE;
-
-                if (typeof addValues === typeof true) {
-                    type = Type.BOOLEAN;
-                } else if (Number(addValues)) {
-                    type = (addValues % 1 === 0 ? Type.INTEGER : Type.FLOAT);
-                }
-
-                if (annotation.type && annotation.type !== type) {
-                    if ((type === Type.INTEGER && annotation.type === Type.FLOAT) ||
-                        (type === Type.FLOAT && annotation.type === Type.INTEGER)) {
-                        // upgrade to float
-                        type = Type.FLOAT;
-                    } else {
-                        throw Error(`existing values of the annotation, ${key}, in the tree is not of the same type`);
-                    }
-                }
-
-                if (type === Type.DISCRETE) {
-                    if (!annotation.values) {
-                        annotation.values = new Set();
-                    }
-                    annotation.values.add(addValues);
-                }
-
-                annotation.type = type;
-            }
-
-            // overwrite the existing annotation property
-            this.annotations[key] = annotation;
-        }
-    }
 }
-
 /*
  * Private methods, called by the class using the <function>.call(this) function.
  */
@@ -564,33 +389,30 @@ export class Graph{
 /**
  * A private recursive function that rotates nodes to give an ordering.
  * @param node
- * @param options
+ * @param increasing
  * @param callback an optional callback that is called each rotate
  * @returns {number}
  */
-function orderNodes(node, options ={increasing:true, callback: null}) {
-    const factor = options.increasing ? 1 : -1;
-    let count = 0;
-    const outGoingEdges=this.getOutgoingEdges(node);
-    const nodesToVisit = [...this.preorder(node,options)];
+function orderNodes(node, increasing, callback = null) {
+    // const factor = increasing ? 1 : -1;
+    // let count = 1;
+    // const pathsOut=this.getOutgoingEdges(node);
+    // if (pathsOut.length>0) {
+    //     const counts = new Map();
+    //     for (const child of pathsOut.map(e=>e.target) ) {
+    //         const value = orderNodes.call(this,child, increasing, callback);
+    //         counts.set(child, value);
+    //         count += value;
+    //     }
+    //     console.log(counts)
+    //     pathsOut.sort((a, b) => {
+    //         return (counts.get(a.target) - counts.get(b.target)) * factor
+    //     });
 
-    if (nodesToVisit.length>1) {
-        const counts = new Map();
-
-        for (const n of nodesToVisit) {
-            // Needs to avoid circular loops
-            const value = orderNodes(n, options);
-            counts.set(child, value);
-            count += value;
-        }
-        node.children.sort((a, b) => {
-            return (counts.get(a) - counts.get(b)) * factor
-        });
-
-        if (options.callback) options.callback();
-    } else {
-        count = 1
-    }
-    return count;
+    //     if (callback) callback();
+    // } else {
+    //     count = 1
+    // }
+    // return count;
 }
 

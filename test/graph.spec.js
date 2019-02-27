@@ -44,9 +44,10 @@ describe("traverse graph", () => {
             ];
     const graph = new Graph(nodes,edges);
     const node = graph.getNode("node1");
-    console.log(graph.getOutgoingEdges(node).map(e=>e.target.id));
+    // console.log(graph.getOutgoingEdges(node).map(e=>e.target.id));
     graph.rotate(node);
-    console.log(graph.getOutgoingEdges(node).map(e=>e.target.id));
+
+    // console.log(graph.getOutgoingEdges(node).map(e=>e.target.id));
     const preorder=[...graph.preorder(node)]
     expect(preorder).to.eql([graph.getNode("node1"),
        graph.getNode("node3"),
@@ -54,6 +55,21 @@ describe("traverse graph", () => {
        graph.getNode("node2")])
     
   });
+  it("should order",()=>{
+    const nodes=[{id:"node1"},{id:"node2"},{id:"node3"},{id:"node4"}]
+    const edges =[{source:"node1",target:"node2"},
+                {source:"node1",target:"node3"},
+                {source:"node3",target:"node4"}
+            ];
+    const graph = new Graph(nodes,edges);
+    const node = graph.getNode("node1");
+    graph.order(node);
+    const preorder=[...graph.preorder(node)]
+    // expect(preorder).to.eql([graph.getNode("node1"),
+      //  graph.getNode("node3"),
+      //  graph.getNode("node4"),
+      //  graph.getNode("node2")])
+  })
   it("should get sub graph")//,()=>{
   //   const nodes=[{id:"node1"},{id:"node2"},{id:"node3"},{id:"node4"}]
   //   const edges =[{source:"node1",target:"node2"},
