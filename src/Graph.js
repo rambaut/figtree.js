@@ -21,7 +21,7 @@ export class Graph{
         this.edgeMap = new Map();  
 
         nodes.forEach(node=>this.addNode(node));
-        edges.forEach(edge=>this.makeEdge(edge.source,edge.target));
+        edges.forEach(edge=>this.drawEdge(edge.source,edge.target));
         // This is used in identifying terminal tips  
     };
     
@@ -146,7 +146,7 @@ export class Graph{
     getEdge(id){
         return this.edgeMap.get(id);
     }
-    getEdgeHtml(edge){
+    getEdgeInfo(edge){
         // // const formatDate=d3.timeFormat("%Y-%m-%d")
         // let outString = `Source:${edge.source.id} </br> Target: ${edge.target.id}</br>`;
         // for(const key of Object.keys(edge.metaData)){
@@ -163,7 +163,7 @@ export class Graph{
      * @param {String} sourceNode Id
      * @param {String} targetNode Id
      */
-    makeEdge(sourceNodeId,targetNodeId){
+    drawEdge(sourceNodeId,targetNodeId){
         if(!this.nodeMap.has(sourceNodeId)){
             throw new Error(`${sourceNodeId} not found in graph`)
         }
@@ -171,10 +171,7 @@ export class Graph{
             throw new Error(`${targetNodeId} not found in graph`)
         }
         const edge = {source:this.getNode(sourceNodeId),target:this.getNode(targetNodeId),key:Symbol()};
-        this.edgeList.push(edge);
-        this.edgeMap.set(edge.key,edge);
-        this.outGoingEdgeMap.get(edge.source).push(edge);
-        this.incomingEdgeMap.get(edge.target).push(edge);
+        this.addEdge(edge);
     }
     /**
      * Adds an premade edge which between the provide source and target nodes. It the nodes are not part of the graph they are added.
@@ -208,7 +205,7 @@ export class Graph{
 
 
     /**
-     * Inserts a node into an edge. This replaced the edge with two new edges which pass through a node.
+     * Inserts a node into an edge. This replaced the edge with two new edges which pass through the node.
      * @param {*} node 
      * @param {*} edge 
      */
@@ -216,8 +213,8 @@ export class Graph{
         if(!this.nodeMap.has(node.id)){
             this.addNode(node)
         }
-        this.makeEdge(edge.source.id,node.id);
-        this.makeEdge(node.id,edge.target.id);
+        this.drawEdge(edge.source.id,node.id);
+        this.drawEdge(node.id,edge.target.id);
         this.removeEdge(edge)
     }
 
@@ -261,7 +258,7 @@ export class Graph{
        
     }
 
-// -----------  Methods from figtree.js tree object -----------------------------
+// -----------  Methods rejigged from figtree.js tree object -----------------------------
     /**
      * Reverses the order of the children of the given node. If 'recursive=true' then it will
      * descend down the subtree reversing all the sub nodes.
@@ -270,21 +267,25 @@ export class Graph{
      * @param recursive
      */
     // add options with edgeFilter callback
-    rotate(node, recursive = false) {
-        const outGoingEdges=this.getOutgoingEdges(node);
-        if (outGoingEdges.length>0) {
-            if (recursive) {
-                for (const edge of outGoingEdges) {
+    rotate(node, options={filterEdges:(e)=>true,recursive:false}) {
+        const nodesToVisit = [...this.preorder(node,options)];
+        const outGoingEdges=this.getOutgoingEdges(node).filter(e=>options.filterEdges(e));
+            if (options.recursive) {
+                for (const n of nodesToVisit) {
                     //Needs to avoid circulare loops 
-                    const child =edge.target;
-                    this.rotate(child, recursive);
+                    const nOutGoingEdges=this.getOutgoingEdges(n);
+                    nOutGoingEdges.reverse();
                 }
-            }
-            outGoingEdges.reverse();
-        }
-    };
+            }else{
+                console.log(outGoingEdges.map(e=>e.target.id))
+                outGoingEdges.reverse();
+                console.log(outGoingEdges.map(e=>e.target.id))
 
-        /**
+            }
+
+        };
+
+    /**
      * Sorts the child branches of each node in order of increasing or decreasing number
      * of tips. This operates recursively from the node given.
      *
@@ -292,9 +293,9 @@ export class Graph{
      * @param {boolean} increasing - sorting in increasing node order or decreasing?
      * @returns {number} - the number of tips below this node
      */
-    order(node, increasing = true) {
+    order(node, options={increasing:true}) {
         // orderNodes.call(this, node, increasing, this.treeUpdateCallback);
-        orderNodes.call(this, node, increasing);
+        orderNodes.call(this, node,options);
         this.treeUpdateCallback();
     }
 
@@ -563,22 +564,22 @@ export class Graph{
 /**
  * A private recursive function that rotates nodes to give an ordering.
  * @param node
- * @param increasing
+ * @param options
  * @param callback an optional callback that is called each rotate
  * @returns {number}
  */
-function orderNodes(node, increasing, callback = null) {
-    const factor = increasing ? 1 : -1;
+function orderNodes(node, options ={increasing:true, callback: null}) {
+    const factor = options.increasing ? 1 : -1;
     let count = 0;
     const outGoingEdges=this.getOutgoingEdges(node);
-    
-    if (outGoingEdges.length>0) {
+    const nodesToVisit = [...this.preorder(node,options)];
+
+    if (nodesToVisit.length>1) {
         const counts = new Map();
 
-        for (const edge of outGoingEdges) {
+        for (const n of nodesToVisit) {
             // Needs to avoid circular loops
-            const child = edge.target;
-            const value = orderNodes(child, increasing, callback);
+            const value = orderNodes(n, options);
             counts.set(child, value);
             count += value;
         }
@@ -586,7 +587,7 @@ function orderNodes(node, increasing, callback = null) {
             return (counts.get(a) - counts.get(b)) * factor
         });
 
-        if (callback) callback();
+        if (options.callback) options.callback();
     } else {
         count = 1
     }
