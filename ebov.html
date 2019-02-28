@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>FigTree Demo</title>
-    <script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
+    <script src="js/d3.js" charset="utf-8"></script>
+    <!--<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>-->
     <style>
         text {
             font-family: "helvetica-neue",  "helvetica",  "sans-serif";
@@ -125,6 +126,7 @@
 
 <script type="module">
     import { Tree } from "./src/tree.js";
+    import { RectangularLayout } from "./src/layout.js";
     import { FigTree } from "./src/figtree.js";
     import { RootToTipPlot } from "./src/roottotipplot.js";
 
@@ -133,15 +135,16 @@
 
     const tree = Tree.parseNewick(timeTreeString, null, "_");
     const treeSVG = document.getElementById('tree-2-svg');
-
-    const figTree = new FigTree(treeSVG, tree, { top: 10, bottom: 60, left: 20, right: 190});
+    const layout = new RectangularLayout(tree);
+    const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 20, right: 190});
 
     figTree.hilightBranches();
-    figTree.onClickBranch(FigTree.reroot);
-    figTree.hilightInternalNodes();
-    figTree.onClickNode(FigTree.rotate);
+    figTree.onClickBranch(layout.reroot());
 
-    figTree.addToolTip('.external-node', FigTree.nodeInfo);
+    // figTree.hilightInternalNodes();
+    // figTree.onClickNode(layout.rotate());
+
+    // figTree.addToolTip('.external-node', FigTree.nodeInfo);
 
     const rrtp = new RootToTipPlot(document.getElementById('rrt-2-svg'), tree, { top: 10, bottom: 60, left: 60, right: 20},
         { slopeFormat: ",.5f" });
