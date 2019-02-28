@@ -15,9 +15,10 @@ export class FigTree {
         return {
             xAxisTickArguments: [5, "f"],
             xAxisTitle: "Divergence",
-            nodeRadius: 6,
-            hoverNodeRadius: 8,
-            nodeBackgroundBorder: 1
+            // nodeRadius: 6,
+            // hoverNodeRadius: 8,
+            nodeBackgroundBorder: 0,
+            baubles: []
         };
     }
 
@@ -48,6 +49,13 @@ export class FigTree {
 
         //to selecting every time
         this.svgSelection = d3.select(svg).select("g");
+
+        this.svgSelection.append("g").attr("class", "axes-layer");
+        this.svgSelection.append("g").attr("class", "branches-layer");
+        if (this.settings.nodeBackgroundBorder > 0) {
+            this.svgSelection.append("g").attr("class", "nodes-background-layer");
+        }
+        this.svgSelection.append("g").attr("class", "nodes-layer");
 
         // create the scales
         const xScale = d3.scaleLinear()
@@ -93,11 +101,15 @@ export class FigTree {
             .duration(500)
             .call(xAxis);
 
+
         // call the private methods to create the components of the diagram
         updateBranches.call(this);
-        updateNodeBackgrounds.call(this);
+
+        if (this.settings.nodeBackgroundBorder > 0) {
+            updateNodeBackgrounds.call(this);
+        }
+
         updateNodes.call(this);
-        updateMidbranchNodes.call(this);
 
     }
 
@@ -251,13 +263,12 @@ export class FigTree {
  */
 function updateNodes() {
 
-    const branchEndVertices = this.vertices
-        .filter((v) => v.degree !== 2);
+    const nodesLayer = this.svgSelection.select(".nodes-layer");
 
     // DATA JOIN
     // Join new data with old elements, if any.
-    const nodes = this.svgSelection.selectAll("g .node")
-        .data(branchEndVertices, (v) => `n_${v.key}`);
+    const nodes = nodesLayer.selectAll(".node")
+        .data(this.vertices, (v) => `n_${v.key}`);
 
     // ENTER
     // Create new elements as needed.
@@ -268,11 +279,13 @@ function updateNodes() {
             return `translate(${this.scales.x(v.x)}, ${this.scales.y(v.y)})`;
         });
 
-    newNodes.append("circle")
-        .attr("class", "node-shape")
-        .attr("cx", 0)
-        .attr("cy", 0)
-        .attr("r", this.settings.nodeRadius);
+    // add the specific node shapes or 'baubles'
+    this.settings.baubles.forEach((bauble) => {
+        const d = bauble
+            .createShapes(newNodes.filter(bauble.vertexFilter))
+            .attr("class", "node-shape");
+        bauble.updateShapes(d);
+    });
 
     newNodes.append("text")
         .attr("class", "node-label name")
@@ -299,13 +312,14 @@ function updateNodes() {
             return `translate(${this.scales.x(v.x)}, ${this.scales.y(v.y)})`;
         });
 
-    nodes.select("circle")
-        .transition()
-        .duration(500)
-        .attr("class", "node-shape")
-        .attr("cx", 0)
-        .attr("cy", 0)
-        .attr("r", this.settings.nodeRadius);
+    // update all the baubles
+    this.settings.baubles.forEach((bauble) => {
+        const d = nodes.select(".node-shape")
+            .filter(bauble.vertexFilter)
+            .transition()
+            .duration(500);
+        bauble.updateShapes(d)
+    });
 
     nodes.select("text .node-label .name")
         .transition()
@@ -325,99 +339,6 @@ function updateNodes() {
         .attr("text-anchor", "end")
         .attr("dx", "-6")
         .attr("dy", d => (d.labelBelow ? -8 : +8))
-        .text((d) => d.leftLabel);
-
-    // EXIT
-    // Remove old elements as needed.
-    nodes.exit().remove();
-
-}
-
-/**
- * Adds or updates nodes
- */
-function updateMidbranchNodes() {
-
-    const midbranchVertices = this.vertices
-        .filter((v) => v.degree === 2);
-
-    // DATA JOIN
-    // Join new data with old elements, if any.
-    const nodes = this.svgSelection.selectAll("g .node .mid-branch")
-        .data(midbranchVertices, (v) => `n_${v.key}`);
-
-    // ENTER
-    // Create new elements as needed.
-    const newNodes = nodes.enter().append("g")
-        .attr("id", (v) => v.node.id)
-        .attr("class", (v) => ["node", "mid-branch", ...v.classes].join(" "))
-        .attr("transform", (v) => {
-            return `translate(${this.scales.x(v.x)}, ${this.scales.y(v.y)})`;
-        });
-
-    newNodes.append("rect")
-        .attr("class", "node-shape")
-        .attr("x", -this.settings.nodeRadius / 4)
-        .attr("width", this.settings.nodeRadius / 2)
-        .attr("y", -this.settings.nodeRadius * 1.5)
-        .attr("height", this.settings.nodeRadius * 3)
-        .attr("rx", 2)
-        .attr("ry", 2);
-
-    newNodes.append("text")
-        .attr("class", "node-label name")
-        .attr("text-anchor", "start")
-        .attr("dx", "6")
-        .attr("dy", d => (d.labelBelow ? -8 : +8))
-        .attr("alignment-baseline", d => (d.labelBelow ? "bottom": "hanging" ))
-        .text((d) => d.rightLabel);
-
-    newNodes.append("text")
-        .attr("class", "node-label support")
-        .attr("text-anchor", "end")
-        .attr("dx", "-6")
-        .attr("dy", d => (d.labelBelow ? -8 : +8))
-        .attr("alignment-baseline", d => (d.labelBelow ? "bottom": "hanging" ))
-        .text((d) => d.leftLabel);
-
-    // update the existing elements
-    nodes
-        .transition()
-        .duration(500)
-        .attr("class", (v) => ["node", "mid-branch", ...v.classes].join(" "))
-        .attr("transform", (v) => {
-            return `translate(${this.scales.x(v.x)}, ${this.scales.y(v.y)})`;
-        });
-
-    nodes.select("rect")
-        .transition()
-        .duration(500)
-        .attr("class", "node-shape")
-        .attr("x", -this.settings.nodeRadius / 4)
-        .attr("width", this.settings.nodeRadius / 2)
-        .attr("y", -this.settings.nodeRadius * 1.5)
-        .attr("height", this.settings.nodeRadius * 3)
-        .attr("rx", 2)
-        .attr("ry", 2);
-
-    nodes.select("text .node-label .name")
-        .transition()
-        .duration(500)
-        .attr("class", "node-label name")
-        .attr("text-anchor", "start")
-        .attr("dx", "6")
-        .attr("dy", d => (d.labelBelow ? -8 : +8))
-        .attr("alignment-baseline", d => (d.labelBelow ? "bottom": "hanging" ))
-        .text((d) => d.rightLabel);
-
-    nodes.select("text .node-label .support")
-        .transition()
-        .duration(500)
-        .attr("class", "node-label support")
-        .attr("text-anchor", "end")
-        .attr("dx", "-6")
-        .attr("dy", d => (d.labelBelow ? -8 : +8))
-        .attr("alignment-baseline", d => (d.labelBelow ? "bottom": "hanging" ))
         .text((d) => d.leftLabel);
 
     // EXIT
@@ -428,75 +349,44 @@ function updateMidbranchNodes() {
 
 function updateNodeBackgrounds() {
 
-    const branchEndVertices = this.vertices
-        .filter((v) => v.degree !== 2);
+    const nodesBackgroundLayer = this.svgSelection.select(".nodes-background-layer");
 
     // DATA JOIN
     // Join new data with old elements, if any.
-    const nodes = this.svgSelection.selectAll("circle .node-background")
-        .data(branchEndVertices, (v) => `nb_${v.key}`);
+    const nodes = nodesBackgroundLayer.selectAll(".node-background")
+        .data(this.vertices, (v) => `nb_${v.key}`);
 
     // ENTER
     // Create new elements as needed.
-    const newNodes = nodes.enter().append("circle")
-        .attr("class", (v) => ["node-background", ...v.classes].join(" "))
-        .attr("transform", (v) => {
-            return `translate(${this.scales.x(v.x)}, ${this.scales.y(v.y)})`;
-        })
-        .attr("cx", 0)
-        .attr("cy", 0)
-        .attr("r", this.settings.nodeRadius + this.settings.nodeBackgroundBorder);
+    const newNodes = nodes.enter();
 
+    // add the specific node shapes or 'baubles'
+    this.settings.baubles.forEach((bauble) => {
+        const d = bauble
+            .createShapes(newNodes.filter(bauble.vertexFilter))
+            .attr("class", "node-background")
+            .attr("transform", (v) => {
+                return `translate(${this.scales.x(v.x)}, ${this.scales.y(v.y)})`;
+            });
 
-    // update the existing elements
-    nodes
-        .transition()
-        .duration(500)
-        .attr("class", (v) => ["node-background", ...v.classes].join(" "))
-        .attr("transform", (v) => {
-            return `translate(${this.scales.x(v.x)}, ${this.scales.y(v.y)})`;
-        });
+        bauble.updateShapes(d, this.settings.nodeBackgroundBorder);
+    });
+
+    // update all the existing elements
+    this.settings.baubles.forEach((bauble) => {
+        const d = nodes
+            .filter(bauble.vertexFilter)
+            .transition()
+            .duration(500)
+            .attr("transform", (v) => {
+                return `translate(${this.scales.x(v.x)}, ${this.scales.y(v.y)})`;
+            });
+        bauble.updateShapes(d, this.settings.nodeBackgroundBorder)
+    });
 
     // EXIT
     // Remove old elements as needed.
     nodes.exit().remove();
-
-    // add the branch midpoint background
-    const midBranchVertices = this.vertices
-        .filter((v) => v.degree === 2);
-
-    // DATA JOIN
-    // Join new data with old elements, if any.
-    const midBranchNodes = this.svgSelection.selectAll("rect .node-background")
-        .data(midBranchVertices, (v) => `nb_${v.key}`);
-
-    // ENTER
-    // Create new elements as needed.
-    midBranchNodes.enter().append("rect")
-        .attr("class", (v) => ["node-background", ...v.classes].join(" "))
-        .attr("transform", (v) => {
-            return `translate(${this.scales.x(v.x)}, ${this.scales.y(v.y)})`;
-        })
-        .attr("x", - (this.settings.nodeRadius * 0.25 + this.settings.nodeBackgroundBorder))
-        .attr("width", this.settings.nodeRadius * 0.5 + this.settings.nodeBackgroundBorder * 2)
-        .attr("y", - (this.settings.nodeRadius * 1.5 + this.settings.nodeBackgroundBorder))
-        .attr("height", this.settings.nodeRadius * 3 + this.settings.nodeBackgroundBorder * 2)
-        .attr("rx", 2)
-        .attr("ry", 2);
-
-
-    // update the existing elements
-    midBranchNodes
-        .transition()
-        .duration(500)
-        .attr("class", (v) => ["node-background", ...v.classes].join(" "))
-        .attr("transform", (v) => {
-            return `translate(${this.scales.x(v.x)}, ${this.scales.y(v.y)})`;
-        });
-
-    // EXIT
-    // Remove old elements as needed.
-    midBranchNodes.exit().remove();
 
 }
 
@@ -506,6 +396,8 @@ function updateNodeBackgrounds() {
  */
 function updateBranches() {
 
+    const branchesLayer = this.svgSelection.select(".branches-layer");
+
     // a function to create a line path
     const branchPath = d3.line()
         .x((v) => v.x)
@@ -514,7 +406,7 @@ function updateBranches() {
 
     // DATA JOIN
     // Join new data with old elements, if any.
-    const branches = this.svgSelection.selectAll("g .branch")
+    const branches = branchesLayer.selectAll("g .branch")
         .data(this.edges, (e) => `b_${e.key}`);
 
     // ENTER
@@ -577,13 +469,17 @@ function addAxis() {
 
     const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
 
-    this.svgSelection.append("g")
+    const axesLayer = this.svgSelection.select(".axes-layer");
+
+    axesLayer
+        .append("g")
         .attr("id", "x-axis")
         .attr("class", "axis")
         .attr("transform", `translate(0, ${this.scales.height - this.margins.bottom + 5})`)
         .call(xAxis);
 
-    this.svgSelection.append("g")
+    axesLayer
+        .append("g")
         .attr("id", "x-axis-label")
         .attr("class", "axis-label")
         .attr("transform", `translate(${this.margins.left}, ${this.scales.height - this.margins.bottom})`)

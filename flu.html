@@ -140,6 +140,7 @@
 <script type="module">
     import { Tree } from "./src/tree.js";
     import { RectangularLayout } from "./src/rectangularlayout.js";
+    import { CircleBauble } from "./src/bauble.js";
     import { FigTree } from "./src/figtree.js";
     import { RootToTipPlot } from "./src/roottotipplot.js";
 
@@ -152,8 +153,10 @@
     const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150},
         { // the settings
             xAxisTitle: "Divergence (subst./site)",
-            nodeRadius: 2,
-            hoverNodeRadius: 3
+            nodeBackgroundBorder: 1,
+            baubles: [
+                new CircleBauble({ radius: 2, vertexFilter: (v) => v.degree === 1 })
+            ]
         });
 
     tree.order(tree.rootNode, false);

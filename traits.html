@@ -162,6 +162,7 @@
 <script type="module">
     import { Tree } from "./src/tree.js";
     import { RectangularLayout } from "./src/rectangularlayout.js";
+    import { CircleBauble, RectangularBauble } from "./src/bauble.js";
     import { FigTree } from "./src/figtree.js";
 
     const newickString =
@@ -170,7 +171,14 @@
     const tree = Tree.parseNewick(newickString, "probability", undefined, true);
     const treeSVG = document.getElementById('phylogram_3');
     const layout = new RectangularLayout(tree);
-    const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150}, { nodeRadius: 10, hoverNodeRadius: 14, nodeBackgroundBorder: 2 });
+    const figTree = new FigTree(treeSVG, layout,
+        { top: 10, bottom: 60, left: 10, right: 150},
+        { /* nodeRadius: 10, hoverNodeRadius: 14, nodeBackgroundBorder: 2 */
+            baubles: [
+                new CircleBauble((v) => v.degree !== 2),
+                new RectangularBauble((v) => v.degree === 2)
+            ]
+        });
 
     tree.annotateTips({
         "virus1": { host: "camel" },
