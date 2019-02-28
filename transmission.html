@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>FigTree Demo</title>
     <script src="js/d3.js" charset="utf-8"></script>
+    <!--<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>-->
     <style>
         text {
             font-family: "helvetica-neue",  "helvetica",  "sans-serif";
@@ -14,13 +15,13 @@
         .branch {
             fill: none;
             stroke: #541753;
-            stroke-width: 2;
+            stroke-width: 2px;
             stroke-linecap: round;
             stroke-linejoin: round;
         }
 
         .branch.hovered {
-            stroke-width: 4;
+            stroke-width: 4px;
         }
 
         .external-node .node-shape {
@@ -71,7 +72,7 @@
 
         .trend-line {
             stroke: rgb(0,0,0);
-            stroke-width: 2;
+            stroke-width: 2px;
             stroke-linecap: round;
         }
 
@@ -114,100 +115,27 @@
 
 <div>
     <figure>
-        <svg id="phylogram_3"  width="600" height="500"></svg>
-        <style>
-            #phylogram_3 .node-background {
-                fill: #334433;
-                /*display: none;*/
-            }
-            #phylogram_3 .node-shape {
-                fill: #8c969c;
-                /*display: none;*/
-            }
-            #phylogram_3 .host-camel .node-shape {
-                fill: #e58d48;
-            }
-            #phylogram_3 .host-human .node-shape {
-                fill: #366c9d;
-            }
-            #phylogram_3 .host-bat .node-shape {
-                fill: #235a64;
-            }
-            #phylogram_3 .host-whale .node-shape {
-                fill: #541753;
-            }
-            #phylogram_3 .branch {
-                stroke-width: 4;
-                stroke: #8c969c;
-            }
-            #phylogram_3 .branch.host-camel {
-                stroke: #e58d48;
-            }
-            #phylogram_3 .branch.host-human {
-                stroke: #366c9d;
-            }
-            #phylogram_3 .branch.host-bat {
-                stroke: #235a64;
-            }
-            #phylogram_3 .branch.host-whale {
-                stroke: #541753;
-            }
-
-        </style>
+        <svg id="transmission-1"  width="600" height="500"></svg>
     </figure>
 </div>
 
-
-
 <script type="module">
     import { Tree } from "./src/tree.js";
-    import { RectangularLayout } from "./src/rectangularlayout.js";
-    import { CircleBauble, RectangularBauble } from "./src/bauble.js";
+    import { TransmissionLayout } from "./src/transmissionlayout.js";
     import { FigTree } from "./src/figtree.js";
 
     const newickString =
-        '((((((virus1:0.1,virus2:0.12)0.95:0.08,(virus3:0.011,virus4:0.0087)1.0:0.15)0.65:0.03,virus5:0.21)1.0:0.2,(virus6:0.45,virus7:0.4)0.51:0.02)1.0:0.1,virus8:0.4)1.0:0.1,(virus9:0.04,virus10:0.03)1.0:0.6);';
+        '((((((virus1:0.1,virus2:0.12):0.08,(virus3:0.011,virus4:0.0087):0.15):0.03,virus5:0.21):0.2,(virus6:0.45,virus7:0.4):0.02):0.1,virus8:0.4):0.1,(virus9:0.04,virus10:0.03):0.6);';
 
-    const tree = Tree.parseNewick(newickString, "probability", undefined, true);
-    const treeSVG = document.getElementById('phylogram_3');
-    const layout = new RectangularLayout(tree);
-    const figTree = new FigTree(treeSVG, layout,
-        { top: 10, bottom: 60, left: 10, right: 150},
-        { /* nodeRadius: 10, hoverNodeRadius: 14, nodeBackgroundBorder: 2 */
-            baubles: [
-                new CircleBauble((v) => v.degree !== 2),
-                new RectangularBauble((v) => v.degree === 2)
-            ]
-        });
+    const tree = Tree.parseNewick(newickString);
+    const treeSVG = document.getElementById('transmission-1');
+    const layout = new TransmissionLayout(tree);
+    const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150});
 
-    tree.annotateTips({
-        "virus1": { host: "camel" },
-        "virus2": { host: "camel" },
-        "virus3": { host: "human" },
-        "virus4": { host: "human" },
-        "virus5": { host: "bat" },
-        "virus6": { host: "bat" },
-        "virus7": { host: "bat" },
-        "virus8": { host: "bat" },
-        "virus9": { host: "whale" },
-        "virus10": { host: "whale" }
-    });
-
-    // figTree.setNodeLabels("probability");
-
-    // figTree.addLabels('.external-node', FigTree.nodeInfo);
-    // figTree.addToolTip('.node', FigTree.nodeInfo);
-
-    figTree.hilightBranches();
-    figTree.onClickBranch(layout.reroot());
     figTree.hilightInternalNodes();
-    figTree.onClickNode(layout.rotate());
-
-    tree.annotateNodesFromTips("host");
-
-    figTree.update();
-
+    figTree.onClickNode(layout.rotate)
 </script>
+
 
 </body>
 

@@ -2,8 +2,7 @@
 
 /** @module roottotipplot */
 
-import {Tree} from "./tree.js";
-import {Type} from "./tree.js";
+import {Tree, Type} from "./tree.js";
 
 /**
  * The RootToTipPlot class
