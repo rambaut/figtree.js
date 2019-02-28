@@ -26,8 +26,8 @@
 
         .external-node .node-shape {
             fill: #22b680;
-            /*stroke: rgb(255, 255, 255);*/
-            /*stroke-width: 1;*/
+            stroke: rgb(255, 255, 255);
+            stroke-width: 1;
         }
 
         .external-node .node-shape.hovered {
@@ -178,6 +178,20 @@
         <svg id="phylogram_2"  width="600" height="500"></svg>
     </figure>
 </div>
+<style>
+    #phylogram_2 #root .node-shape {
+        fill: #e31e58;
+        /*stroke: rgb(255, 255, 255);*/
+        /*stroke-width: 1;*/
+    }
+
+    #phylogram_2 #old-root .node-shape {
+        fill: #e31e58;
+        /*stroke: rgb(255, 255, 255);*/
+        /*stroke-width: 1;*/
+    }
+</style>
+
 
 <script type="module">
     import { Tree } from "./src/tree.js";
@@ -186,14 +200,14 @@
     import { FigTree } from "./src/figtree.js";
 
     const newickString =
-        '((virus1:0.1,virus2:0.12):0.04,((virus3:0.011,virus4:0.0087):0.15,(virus5:0.21,((virus6:0.45,virus7:0.4):0.02,(virus8:0.4,((virus9:0.04,virus10:0.03):0.6)#old-root:0.1):0.1):0.2):0.03):0.04);';
+        '((virus1:0.1,virus2:0.12):0.04,((virus3:0.011,virus4:0.0087):0.15,(virus5:0.21,((virus6:0.45,virus7:0.4):0.02,(virus8:0.4,((virus9:0.04,virus10:0.03):0.6)#old-root:0.1):0.1):0.2):0.03):0.04)#root;';
 
     const tree = Tree.parseNewick(newickString);
     const treeSVG = document.getElementById('phylogram_2');
     const layout = new RectangularLayout(tree);
     const figTree = new FigTree(treeSVG, layout,
         { top: 10, bottom: 60, left: 10, right: 150},
-        { hoverBorder: 2, backgroundBorder: 2, baubles: [ new CircleBauble() ]}
+        { hoverBorder: 2, backgroundBorder: 0, baubles: [ new CircleBauble() ]}
     );
     
     figTree.hilightInternalNodes();

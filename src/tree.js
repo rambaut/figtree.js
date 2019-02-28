@@ -50,7 +50,12 @@ export class Tree {
 
         this.nodeList = [...this.preorder()];
         this.nodeList.forEach( (node, index) => {
-            node.id = `node_${index}`;
+            if (node.label && node.label.startsWith("#")) {
+                // an id string has been specified in the newick label.
+                node.id = node.label.substring(1);
+            } else {
+                node.id = `node_${index}`;
+            }
             this.addAnnotations(node.annotations);
         });
         this.nodeMap = new Map(this.nodeList.map( (node) => [node.id, node] ));
@@ -622,11 +627,13 @@ export class Tree {
                     lengthNext = false;
                 } else if (labelNext) {
                     currentNode.label = token;
-                    let value = parseFloat(currentNode.label);
-                    if (isNaN(value)) {
-                        value = currentNode.label;
+                    if (!currentNode.label.startsWith("#")) {
+                        let value = parseFloat(currentNode.label);
+                        if (isNaN(value)) {
+                            value = currentNode.label;
+                        }
+                        currentNode.annotations[labelName] = value;
                     }
-                    currentNode.annotations[labelName] = value;
                     labelNext = false;
                 } else {
                     // an external node
