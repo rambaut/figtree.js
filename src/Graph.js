@@ -172,7 +172,8 @@ export class Graph{
         if(!this.nodeMap.has(targetNodeId)){
             throw new Error(`${targetNodeId} not found in graph`)
         }
-        const edge = {source:this.getNode(sourceNodeId),target:this.getNode(targetNodeId),key:Symbol()};
+        const index = this.edgeList.legnth;
+        const edge = {source:this.getNode(sourceNodeId),target:this.getNode(targetNodeId),id:`edge_${index}`};
         this.addEdge(edge);
     }
     /**
@@ -181,7 +182,7 @@ export class Graph{
      */
     addEdge(edge){
         this.edgeList.push(edge);
-        this.edgeMap.set(edge.key,edge);
+        this.edgeMap.set(edge.id,edge);
         this.outGoingEdgeMap.get(edge.source).push(edge);
         this.incomingEdgeMap.get(edge.target).push(edge);
     }
@@ -192,11 +193,11 @@ export class Graph{
      * @param {*} edge 
      */
     removeEdge(edge){
-        const key=edge.key
-        this.edgeList=this.edgeList.filter(edge=>edge.key!==key);
+        const id=edge.id
+        this.edgeList=this.edgeList.filter(edge=>edge.id!==id);
 
         // update edgemaps
-        this.edgeMap.delete(key)
+        this.edgeMap.delete(id)
         // new outgoing
         const newOutgoing = this.getOutgoingEdges(edge.source).filter(e=>e!==edge);
         this.outGoingEdgeMap.set(edge.source,newOutgoing);
