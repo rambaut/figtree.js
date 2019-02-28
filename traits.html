@@ -19,7 +19,7 @@
             stroke-linejoin: round;
         }
 
-        .branch.hovered {
+        .branch-path.hovered {
             stroke-width: 4;
         }
 
@@ -30,7 +30,7 @@
         }
 
         .external-node .node-shape.hovered {
-            stroke: rgb(0,0,0);
+            /*stroke: rgb(0,0,0);*/
             /*stroke-width: 1;*/
         }
         .external-node .node-shape.unselected {
@@ -48,7 +48,7 @@
             /*stroke-width: 1;*/
         }
         .internal-node .node-shape.hovered {
-            stroke: rgb(0,0,0);
+            /*stroke: rgb(0,0,0);*/
         }
 
         #root .node-shape {
@@ -117,7 +117,8 @@
         <svg id="phylogram_3"  width="600" height="500"></svg>
         <style>
             #phylogram_3 .node-background {
-                fill: #334433;
+                /*fill: #334433;*/
+                fill: #ffffff
                 /*display: none;*/
             }
             #phylogram_3 .node-shape {
@@ -139,6 +140,9 @@
             #phylogram_3 .branch {
                 stroke-width: 4;
                 stroke: #8c969c;
+            }
+            #phylogram_3 .branch-path.hovered {
+                stroke-width: 6;
             }
             #phylogram_3 .branch.host-camel {
                 stroke: #e58d48;
@@ -162,6 +166,7 @@
 <script type="module">
     import { Tree } from "./src/tree.js";
     import { RectangularLayout } from "./src/rectangularlayout.js";
+    import { CircleBauble, RectangularBauble } from "./src/bauble.js";
     import { FigTree } from "./src/figtree.js";
 
     const newickString =
@@ -170,7 +175,14 @@
     const tree = Tree.parseNewick(newickString, "probability", undefined, true);
     const treeSVG = document.getElementById('phylogram_3');
     const layout = new RectangularLayout(tree);
-    const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150}, { nodeRadius: 10, hoverNodeRadius: 14, nodeBackgroundBorder: 2 });
+    const figTree = new FigTree(treeSVG, layout,
+        { top: 10, bottom: 60, left: 10, right: 150},
+        {   hoverBorder: 2, backgroundBorder: 2,
+            baubles: [
+                new CircleBauble({ vertexFilter: (v) => v.degree !== 2 }),
+                new RectangularBauble({ vertexFilter: (v) => v.degree === 2})
+            ]
+        });
 
     tree.annotateTips({
         "virus1": { host: "camel" },

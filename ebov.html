@@ -24,23 +24,16 @@
             stroke-width: 4;
         }
 
-        .node-background.internal-node {
-            display: none;
+        .node-background {
+            fill: #541753;
         }
 
-        .node-background.external-node {
-            stroke: #541753;
-        }
-        .external-node .node-shape {
+        .node-shape {
             fill: #22b680;
-            /*stroke: rgb(255, 255, 255);*/
-            stroke-width: 0;
         }
 
-        .external-node .node-shape .hovered {
+        .external-node .node-shape.hovered {
             fill: #edb23b;
-            stroke: rgb(255, 255, 255);
-            stroke-width: 1;
         }
         .external-node .node-shape.unselected {
             fill: #22b680;
@@ -126,7 +119,8 @@
 
 <script type="module">
     import { Tree } from "./src/tree.js";
-    import { RectangularLayout } from "./src/layout.js";
+    import { RectangularLayout } from "./src/rectangularlayout.js";
+    import { CircleBauble } from "./src/bauble.js";
     import { FigTree } from "./src/figtree.js";
     import { RootToTipPlot } from "./src/roottotipplot.js";
 
@@ -136,15 +130,21 @@
     const tree = Tree.parseNewick(timeTreeString, null, "_");
     const treeSVG = document.getElementById('tree-2-svg');
     const layout = new RectangularLayout(tree);
-    const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 20, right: 190});
+    const figTree = new FigTree(treeSVG, layout,
+        { top: 10, bottom: 60, left: 20, right: 190},
+        {   hoverBorder: 2, backgroundBorder: 2,
+            baubles: [
+                new CircleBauble({ vertexFilter: (v) => v.degree === 1 }),
+            ]
+        });
 
     figTree.hilightBranches();
     figTree.onClickBranch(layout.reroot());
 
-    // figTree.hilightInternalNodes();
+    figTree.hilightExternalNodes();
     // figTree.onClickNode(layout.rotate());
 
-    // figTree.addToolTip('.external-node', FigTree.nodeInfo);
+    figTree.addToolTip('.external-node', FigTree.nodeInfo);
 
     const rrtp = new RootToTipPlot(document.getElementById('rrt-2-svg'), tree, { top: 10, bottom: 60, left: 60, right: 20},
         { slopeFormat: ",.5f" });

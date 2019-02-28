@@ -161,9 +161,11 @@ export class RectangularLayout extends Layout {
                 }
                 const length = e.v1.x - e.v0.x;
                 e.length = length;
-                e.label = (this.branchLabelAnnotationName?
-                    e.v1.node.annotations[this.branchLabelAnnotationName]:
-                    this.settings.lengthFormat(length));
+                e.label = (this.branchLabelAnnotationName ?
+                    (this.branchLabelAnnotationName === 'length' ?
+                        this.settings.lengthFormat(length) :
+                        e.v1.node.annotations[this.branchLabelAnnotationName]) :
+                    null );
                 e.labelBelow = e.v1.node.parent.children[0] !== e.v1.node;
             });
     }

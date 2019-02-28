@@ -20,7 +20,7 @@
             stroke-linejoin: round;
         }
 
-        .branch.hovered .branch-path {
+        .branch .branch-path.hovered {
             stroke-width: 4px;
         }
 
@@ -126,6 +126,7 @@
 <script type="module">
     import { Tree } from "./src/tree.js";
     import { RectangularLayout } from "./src/rectangularlayout.js";
+    import { CircleBauble } from "./src/bauble.js";
     import { FigTree } from "./src/figtree.js";
 
     const newickString =
@@ -135,9 +136,16 @@
     const treeSVG = document.getElementById('phylogram_1a');
 
     const layout = new RectangularLayout(tree);
+    // layout.setBranchLabels("length");
     layout.setInternalNodeLabels("probability");
 
-    const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150});
+    const figTree = new FigTree(treeSVG, layout,
+        { top: 10, bottom: 60, left: 10, right: 150},
+        { hoverBorder: 2, backgroundBorder: 2,
+            baubles: [
+                new CircleBauble(),
+            ]
+        });
 
     figTree.hilightInternalNodes();
     figTree.onClickInternalNode(layout.rotate());
