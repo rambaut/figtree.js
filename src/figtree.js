@@ -287,7 +287,7 @@ function updateNodes() {
     // ENTER
     // Create new elements as needed.
     const newNodes = nodes.enter().append("g")
-        .attr("id", (v) => v.node.id)
+        .attr("id", (v) => v.id)
         .attr("class", (v) => ["node", ...v.classes].join(" "))
         .attr("transform", (v) => {
             return `translate(${this.scales.x(v.x)}, ${this.scales.y(v.y)})`;
@@ -426,7 +426,7 @@ function updateBranches() {
     // ENTER
     // Create new elements as needed.
     const newBranches = branches.enter().append("g")
-        .attr("id", (e) => e.v1.node.id)
+        .attr("id", (e) => e.id)
         .attr("class", (e) => ["branch", ...e.classes].join(" "))
         .attr("transform", (e) => {
             return `translate(${this.scales.x(e.v0.x)}, ${this.scales.y(e.v1.y)})`;

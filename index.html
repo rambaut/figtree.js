@@ -126,6 +126,7 @@
 <script type="module">
     import { Tree } from "./src/tree.js";
     import { RectangularLayout } from "./src/rectangularlayout.js";
+    import { CircleBauble } from "./src/bauble.js";
     import { FigTree } from "./src/figtree.js";
 
     const newickString =
@@ -135,14 +136,22 @@
     const treeSVG = document.getElementById('phylogram_1a');
 
     const layout = new RectangularLayout(tree);
-    const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150});
+
+    const figTree = new FigTree(treeSVG, layout,
+        { top: 10, bottom: 60, left: 10, right: 150},
+        { hoverBorder: 2, backgroundBorder: 2,
+            baubles: [
+                new CircleBauble(),
+            ]
+        });
+
     figTree.hilightInternalNodes();
-    figTree.onClickNode(layout.rotate);
+    figTree.onClickNode(layout.rotate());
 
     layout.setInternalNodeLabels("probability");
 
     figTree.addToolTip('#root', "The root node - represents the most recent<br>common ancestor of the whole tree");
-    figTree.addToolTip('.internal-node .node-shape', "This is an internal node - it is the most recent<br>common ancestor of the viruses to the right" );
+    figTree.addToolTip('.internal-node .node-shape', "This is an internal node - it is the most recent<br>common ancestor of the viruses to the right.<br>Click the node to change the order of the descendents." );
     figTree.addToolTip('.internal-node .node-label', "This is a support value - it gives the degree<br>of statistical support that the viruses to the<br>right cluster together");
     figTree.addToolTip('.external-node', "This is an external, leaf, or tip node - it represents<br>a sampled, sequenced virus");
     figTree.addToolTip('.branch', "This is a branch - it represents an<br>evolutionary lineage joining two nodes");
@@ -173,6 +182,7 @@
 <script type="module">
     import { Tree } from "./src/tree.js";
     import { RectangularLayout } from "./src/rectangularlayout.js";
+    import { CircleBauble } from "./src/bauble.js";
     import { FigTree } from "./src/figtree.js";
 
     const newickString =
@@ -181,17 +191,20 @@
     const tree = Tree.parseNewick(newickString);
     const treeSVG = document.getElementById('phylogram_2');
     const layout = new RectangularLayout(tree);
-    const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150});
-
+    const figTree = new FigTree(treeSVG, layout,
+        { top: 10, bottom: 60, left: 10, right: 150},
+        { hoverBorder: 2, backgroundBorder: 2, baubles: [ new CircleBauble() ]}
+    );
+    
     figTree.hilightInternalNodes();
-    figTree.onClickNode(layout.rotate);
+    // figTree.onClickNode(layout.rotate());
 
     d3.select(treeSVG)
         .select("#root")
         .attr("display", "none");
 
-    figTree.onClickNode((tree, node) => {
-        tree.reroot(node, 1.0);
+    figTree.onClickNode((vertex) => {
+        tree.reroot(vertex.node, 1.0);
         d3.select(treeSVG)
             .select("#root")
             .attr("display", "inline");
@@ -212,6 +225,7 @@
 <script type="module">
     import { Tree } from "./src/tree.js";
     import { RectangularLayout } from "./src/rectangularlayout.js";
+    import { CircleBauble } from "./src/bauble.js";
     import { FigTree } from "./src/figtree.js";
     import { RootToTipPlot } from "./src/roottotipplot.js";
 
@@ -221,12 +235,17 @@
     const tree = Tree.parseNewick(timeTreeString, null, "_");
     const treeSVG = document.getElementById('tree-2-svg');
     const layout = new RectangularLayout(tree);
-    const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150});
+    const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150},
+        { hoverBorder: 2, backgroundBorder: 2,
+            baubles: [
+                new CircleBauble(),
+            ]
+        });
 
     figTree.hilightBranches();
-    figTree.onClickBranch(layout.reroot);
+    figTree.onClickBranch(layout.reroot());
     figTree.hilightInternalNodes();
-    figTree.onClickNode(layout.rotate);
+    figTree.onClickNode(layout.rotate());
 
     const rrtp = new RootToTipPlot(document.getElementById('rrt-2-svg'), tree, { top: 10, bottom: 60, left: 60, right: 100});
 
@@ -243,6 +262,7 @@
 <script type="module">
     import { Tree } from "./src/tree.js";
     import { TransmissionLayout } from "./src/transmissionlayout.js";
+    import { CircleBauble } from "./src/bauble.js";
     import { FigTree } from "./src/figtree.js";
 
     const newickString =
@@ -251,10 +271,14 @@
     const tree = Tree.parseNewick(newickString);
     const treeSVG = document.getElementById('transmission-1');
     const layout = new TransmissionLayout(tree);
-    const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150});
-
+    const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150},
+        { hoverBorder: 2, backgroundBorder: 2,
+            baubles: [
+                new CircleBauble(),
+            ]
+        });
     figTree.hilightInternalNodes();
-    figTree.onClickNode(layout.rotate)
+    figTree.onClickNode(layout.rotate())
 </script>
 
 <div>
@@ -270,7 +294,7 @@
     #tree-3-svg .internal-node {
         display: none;
     }
-    #tree-3-svg .node-background.external-node {
+    #tree-3-svg .node-background {
         fill: #541753;
     }
     #rrt-3-svg .node-background.external-node {
@@ -284,6 +308,7 @@
 <script type="module">
     import { Tree } from "./src/tree.js";
     import { RectangularLayout } from "./src/rectangularlayout.js";
+    import { CircleBauble } from "./src/bauble.js";
     import { FigTree } from "./src/figtree.js";
     import { RootToTipPlot } from "./src/roottotipplot.js";
 
@@ -296,8 +321,10 @@
     const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150},
         { // the settings
             xAxisTitle: "Divergence (subst./site)",
-            nodeRadius: 2,
-            hoverNodeRadius: 3
+            backgroundBorder: 1,
+            baubles: [
+                new CircleBauble({ radius: 2, vertexFilter: (v) => v.degree === 1 })
+            ]
         });
 
     tree.order(tree.rootNode, false);
@@ -318,7 +345,12 @@
     <figure>
         <svg id="phylogram_3"  width="600" height="500"></svg>
         <style>
-            #phylogram_3 .internal-node .node-shape {
+            #phylogram_3 .node-background {
+                /*fill: #334433;*/
+                fill: #ffffff
+                /*display: none;*/
+            }
+            #phylogram_3 .node-shape {
                 fill: #8c969c;
                 /*display: none;*/
             }
@@ -335,7 +367,23 @@
                 fill: #541753;
             }
             #phylogram_3 .branch {
-                stroke-width: 4px;
+                stroke-width: 4;
+                stroke: #8c969c;
+            }
+            #phylogram_3 .branch-path.hovered {
+                stroke-width: 6;
+            }
+            #phylogram_3 .branch.host-camel {
+                stroke: #e58d48;
+            }
+            #phylogram_3 .branch.host-human {
+                stroke: #366c9d;
+            }
+            #phylogram_3 .branch.host-bat {
+                stroke: #235a64;
+            }
+            #phylogram_3 .branch.host-whale {
+                stroke: #541753;
             }
 
         </style>
@@ -347,6 +395,7 @@
 <script type="module">
     import { Tree } from "./src/tree.js";
     import { RectangularLayout } from "./src/rectangularlayout.js";
+    import { CircleBauble, RectangularBauble } from "./src/bauble.js";
     import { FigTree } from "./src/figtree.js";
 
     const newickString =
@@ -355,7 +404,14 @@
     const tree = Tree.parseNewick(newickString, "probability", undefined, true);
     const treeSVG = document.getElementById('phylogram_3');
     const layout = new RectangularLayout(tree);
-    const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150}, { nodeRadius: 10 });
+    const figTree = new FigTree(treeSVG, layout,
+        { top: 10, bottom: 60, left: 10, right: 150},
+        {   hoverBorder: 2, backgroundBorder: 2,
+            baubles: [
+                new CircleBauble({ vertexFilter: (v) => v.degree !== 2 }),
+                new RectangularBauble({ vertexFilter: (v) => v.degree === 2})
+            ]
+        });
 
     tree.annotateTips({
         "virus1": { host: "camel" },
@@ -376,9 +432,9 @@
     figTree.addToolTip('.node', layout.nodeInfo);
 
     figTree.hilightBranches();
-    figTree.onClickBranch(layout.reroot);
+    figTree.onClickBranch(layout.reroot());
     figTree.hilightInternalNodes();
-    figTree.onClickNode(layout.rotate);
+    figTree.onClickNode(layout.rotate());
 
     tree.annotateNodesFromTips("host");
 

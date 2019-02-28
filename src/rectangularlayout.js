@@ -88,6 +88,8 @@ export class RectangularLayout extends Layout {
 
                 v.degree = (v.node.children ? v.node.children.length + 1: 1); // the number of edges (including stem)
 
+                v.id = n.id;
+
                 v.classes = [
                     (!v.node.children ? "external-node" : "internal-node"),
                     (v.node.isSelected ? "selected" : "unselected")];
