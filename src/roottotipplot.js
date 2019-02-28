@@ -17,7 +17,7 @@ export class RootToTipPlot {
             yAxisTitle: "Divergence",
             nodeRadius: 6,
             hoverNodeRadius: 8,
-            nodeBackgroundBorder: 1,
+            backgroundBorder: 1,
             slopeFormat: ",.2f",
             r2Format: ",.2f"
         };
@@ -157,7 +157,7 @@ export class RootToTipPlot {
 
         }
 
-        if (this.settings.nodeBackgroundBorder > 0) {
+        if (this.settings.backgroundBorder > 0) {
             //update node background
             this.svgSelection.selectAll(".node-background")
                 .transition()
@@ -362,7 +362,7 @@ function createElements(svg, margins) {
         .attr("x2", this.scales.x(x1))
         .attr("y2", this.scales.y(y1));
 
-    if (this.settings.nodeBackgroundBorder > 0) {
+    if (this.settings.backgroundBorder > 0) {
         this.svgSelection.append("g")
             .selectAll("circle")
             .data(this.points)
@@ -372,7 +372,7 @@ function createElements(svg, margins) {
             .attr("transform", `translate(${this.scales.x(x1)}, ${this.scales.y(y1)})`)
             .attr("cx", 0)
             .attr("cy", 0)
-            .attr("r", this.settings.nodeRadius + this.settings.nodeBackgroundBorder);
+            .attr("r", this.settings.nodeRadius + this.settings.backgroundBorder);
     }
 
     this.svgSelection.append("g")

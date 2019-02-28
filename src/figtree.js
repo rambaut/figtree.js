@@ -16,8 +16,8 @@ export class FigTree {
             xAxisTickArguments: [5, "f"],
             xAxisTitle: "Divergence",
             // nodeRadius: 6,
-            // hoverNodeRadius: 8,
-            nodeBackgroundBorder: 0,
+            hoverBorder: 2,
+            backgroundBorder: 0,
             baubles: []
         };
     }
@@ -52,7 +52,7 @@ export class FigTree {
 
         this.svgSelection.append("g").attr("class", "axes-layer");
         this.svgSelection.append("g").attr("class", "branches-layer");
-        if (this.settings.nodeBackgroundBorder > 0) {
+        if (this.settings.backgroundBorder > 0) {
             this.svgSelection.append("g").attr("class", "nodes-background-layer");
         }
         this.svgSelection.append("g").attr("class", "nodes-layer");
@@ -105,7 +105,7 @@ export class FigTree {
         // call the private methods to create the components of the diagram
         updateBranches.call(this);
 
-        if (this.settings.nodeBackgroundBorder > 0) {
+        if (this.settings.backgroundBorder > 0) {
             updateNodeBackgrounds.call(this);
         }
 
@@ -151,12 +151,26 @@ export class FigTree {
         const self = this;
         const selected = this.svgSelection.selectAll(selection).select(".node-shape");
         selected.on("mouseover", function (d, i) {
-            d3.select(this).classed("hovered", true);
-            d3.select(this).attr("r", self.settings.hoverNodeRadius);
+            const node = d3.select(this);
+
+            self.settings.baubles.forEach((bauble) => {
+                if (bauble.vertexFilter(node)) {
+                    bauble.updateShapes(node, self.settings.hoverBorder);
+                }
+            });
+
+            node.classed("hovered", true);
         });
         selected.on("mouseout", function (d, i) {
-            d3.select(this).classed("hovered", false);
-            d3.select(this).attr("r", self.settings.nodeRadius);
+            const node = d3.select(this);
+
+            self.settings.baubles.forEach((bauble) => {
+                if (bauble.vertexFilter(node)) {
+                    bauble.updateShapes(node, 0);
+                }
+            });
+
+            node.classed("hovered", false);
         });
     }
 
@@ -369,7 +383,7 @@ function updateNodeBackgrounds() {
                 return `translate(${this.scales.x(v.x)}, ${this.scales.y(v.y)})`;
             });
 
-        bauble.updateShapes(d, this.settings.nodeBackgroundBorder);
+        bauble.updateShapes(d, this.settings.backgroundBorder);
     });
 
     // update all the existing elements
@@ -381,7 +395,7 @@ function updateNodeBackgrounds() {
             .attr("transform", (v) => {
                 return `translate(${this.scales.x(v.x)}, ${this.scales.y(v.y)})`;
             });
-        bauble.updateShapes(d, this.settings.nodeBackgroundBorder)
+        bauble.updateShapes(d, this.settings.backgroundBorder)
     });
 
     // EXIT

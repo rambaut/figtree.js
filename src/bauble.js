@@ -39,7 +39,7 @@ export class Bauble {
 export class CircleBauble extends Bauble {
     static DEFAULT_SETTINGS() {
         return {
-            radius: 8,
+            radius: 6,
         };
     }
 
@@ -66,8 +66,8 @@ export class CircleBauble extends Bauble {
 export class RectangularBauble extends Bauble {
     static DEFAULT_SETTINGS() {
         return {
-            height: 8,
-            width: 3,
+            height: 16,
+            width: 6,
             radius: 2,
         };
     }
