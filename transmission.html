@@ -117,6 +117,7 @@
     <figure>
         <svg id="transmission-1"  width="600" height="500"></svg>
         <svg id="transmission-2"  width="600" height="500"></svg>
+        <svg id="transmission-3"  width="600" height="500"></svg>
     </figure>
 </div>
 
@@ -161,6 +162,36 @@
     const graph = new Graph(nodes,edges)
     const graphSVG = document.getElementById('transmission-2');
     const layout = new EconomyLayout(graph);
+    const figTree = new FigTree(graphSVG, layout, { top: 10, bottom: 60, left: 10, right: 150},
+        { hoverBorder: 2, backgroundBorder: 2,
+            baubles: [
+                new CircleBauble(),
+            ],
+            xAxisTitle:"Onset"
+        });
+
+    figTree.hilightInternalNodes();
+    figTree.onClickInternalNode(layout.rotate())
+</script>
+<script type="module">
+    import { Graph } from "./src/Graph.js";
+    import { ArcLayout } from "./src/arclayout.js";
+    import { CircleBauble } from "./src/bauble.js";
+    import { FigTree } from "./src/figtree.js";
+
+    const nodes = [{id:"host1",onset:0},{id:"host2",onset:10},
+                    {id:"host3",onset:9},{id:"host4",onset:9},
+                    {id:"host5",onset:7},{id:"host6",onset:5},
+                    {id:"host7",onset:6},{id:"host8",onset:4},
+                    {id:"host9",onset:1},{id:"host10",onset:5}]
+    const edges = [{source:"host1",target:"host2"},{source:"host1",target:"host3"},
+                    {source:"host3",target:"host4"},{source:"host1",target:"host5"},
+                    {source:"host1",target:"host6"},{source:"host6",target:"host7"},
+                    {source:"host1",target:"host8"},{source:"host1",target:"host9"},
+                    {source:"host9",target:"host10"}]
+    const graph = new Graph(nodes,edges)
+    const graphSVG = document.getElementById('transmission-3');
+    const layout = new ArcLayout(graph);
     const figTree = new FigTree(graphSVG, layout, { top: 10, bottom: 60, left: 10, right: 150},
         { hoverBorder: 2, backgroundBorder: 2,
             baubles: [

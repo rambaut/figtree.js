@@ -224,6 +224,22 @@ export class RectangularLayout extends Layout {
         vertex.y = (vertex.node.children ? d3.mean(vertex.node.children, (child) => this.nodeMap.get(child).y) : currentY += 1);
         return currentY;
     }
+    branchPathGenerator(scales){
+        const branchPath =(e,i)=>{
+            const branchLine = d3.line()
+                 .x((v) => v.x)
+                .y((v) => v.y)
+                .curve(this.branchCurve);
+            return(
+                branchLine(
+                    [{x: 0, y: scales.y(e.v0.y) - scales.y(e.v1.y)},
+                    {x: scales.x(e.v1.x) - scales.x(e.v0.x), y: 0}]
+                )
+            )
+            
+        }
+        return branchPath;
+    }
 }
 
 /*
