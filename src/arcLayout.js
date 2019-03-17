@@ -9,13 +9,14 @@ import { Type } from "./tree.js";
  * The Layout class
  *
  */
-export class EconomyLayout extends Layout {
+export class ArcLayout extends Layout {
 
     static DEFAULT_SETTINGS() {
         return {
             lengthFormat: d3.format(".2f"),
-            branchCurve: d3.curveLinear,
-            xFunction:(n)=>n.onset
+            edgeWidth:2,
+            xFunction:(n,i)=>i,
+            branchCurve:d3.curveLinear
         };
     }
 
@@ -30,7 +31,7 @@ export class EconomyLayout extends Layout {
         this.graph = graph;
 
         // merge the default settings with the supplied settings
-        this.settings = {...EconomyLayout.DEFAULT_SETTINGS(), ...settings};
+        this.settings = {...ArcLayout.DEFAULT_SETTINGS(), ...settings};
 
         this.branchLabelAnnotationName = null;
         this.internalNodeLabelAnnotationName = null;
@@ -56,13 +57,12 @@ export class EconomyLayout extends Layout {
      */
     layout(vertices, edges) {
 
-        this._horizontalRange = [0.0, d3.max(this.graph.nodes,n=>this.settings.xFunction(n))];
-        this._verticalRange = [this.graph.nodes.length,0];
+        this._horizontalRange = [0.0, d3.max(this.graph.nodes,(n,i)=>this.settings.xFunction(n,i))];
+        this._verticalRange = [-this.graph.nodes.length,this.graph.nodes.length];
 
         // get the nodes in pre-order (starting at first node)
         const nodes = [...this.graph.preorder(this.graph.nodes[0])];
 
-        let currentY = -1;
 
         if (vertices.length === 0) {
             this.nodeMap = new Map();
@@ -85,8 +85,8 @@ export class EconomyLayout extends Layout {
             .forEach((n,i) => {
                 const v = this.nodeMap.get(n);
 
-                v.x = this.settings.xFunction(n);
-                currentY=this.setYPosition(v,currentY);
+                v.x = this.settings.xFunction(n,i);
+                v.y=0;
 
                 v.degree = this.graph.getEdges(v.node).length ; // the number of edges 
 
@@ -144,11 +144,14 @@ export class EconomyLayout extends Layout {
         }
 
         // update the edges
+
+
         edges
             .forEach((e) => {
                 e.v1 = this.edgeMap.get(e);
                 e.v0 = this.nodeMap.get(e.v0.node),
                     e.classes = [];
+
 
                 if (e.v1.node.annotations) {
                     e.classes = [
@@ -219,30 +222,37 @@ export class EconomyLayout extends Layout {
     update() {
         this.updateCallback();
     }
-
-    setYPosition(vertex, currentY) {
-        vertex.y = currentY+1;
-        return currentY+1;
-    }
+// do it with interpelations
     branchPathGenerator(scales){
-        const branchPath =(e,i)=>{
-            const branchLine = d3.line()
-                 .x((v) => v.x)
-                .y((v) => v.y)
-                .curve(this.branchCurve);
+            const branchPath =(e,i)=>{
+                const branchLine = d3.line()
+                     .x((v) => v.x)
+                    .y((v) => v.y)
+                    .curve(this.branchCurve);
+            const r = (scales.x(e.v1.x) - scales.x(e.v0.x))/2
+            const a = r; // center x position
+            const sign = i%2===0?1:-1;
+            const x = d3.range(0,scales.x(e.v1.x) - scales.x(e.v0.x),1)//step every pixel
+            const y = x.map(x=>circleY.call(this,x,r,a,sign));
+            const points = x.map((x,i)=>{
+                return{x:x,y:y[i]}
+            })        
             return(
                 branchLine(
-                    [{x: 0, y: scales.y(e.v0.y) - scales.y(e.v1.y)},
-                    {x: scales.x(e.v1.x) - scales.x(e.v0.x), y: 0}]
+                    points
                 )
             )
             
         }
         return branchPath;
     }
+
 }
 
 /*
  * Private methods, called by the class using the <function>.call(this) function.
  */
+function circleY(x,r,a,sign){
+        return  sign*(Math.sqrt(Math.pow(r,2)-Math.pow((x-a),2)))
+}
 

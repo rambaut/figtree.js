@@ -2,6 +2,7 @@
 /** @module Graph */
 
 // import {Type} from 'figtree';
+import {Tree} from './tree.js'
 /**
  * The graph class
  *
@@ -26,7 +27,17 @@ export class Graph{
         edges.forEach(edge=>this.drawEdge(edge.source,edge.target));
         // This is used in identifying terminal tips  
     };
-    
+    /**
+     * A static function to make a graph out of a tree
+     * @param {*} tree 
+     * @returns {Graph}
+     */
+    static fromPhylogeny(tree){
+        const nodes = tree.externalNodes;
+        // links inferred from the transmission layout
+        // will also need a call back somewhere to update the links
+        
+    }
     /**
      * @returns {*}
      */

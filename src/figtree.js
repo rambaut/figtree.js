@@ -413,10 +413,11 @@ function updateBranches() {
     const branchesLayer = this.svgSelection.select(".branches-layer");
 
     // a function to create a line path
-    const branchPath = d3.line()
-        .x((v) => v.x)
-        .y((v) => v.y)
-        .curve(this.layout.branchCurve);
+    // const branchPath = d3.line()
+    //     .x((v) => v.x)
+    //     .y((v) => v.y)
+    //     .curve(this.layout.branchCurve);
+    const branchPath = this.layout.branchPathGenerator(this.scales)
 
     // DATA JOIN
     // Join new data with old elements, if any.
@@ -434,9 +435,7 @@ function updateBranches() {
 
     newBranches.append("path")
         .attr("class", "branch-path")
-        .attr("d", (e) => branchPath([
-            {x: 0, y: this.scales.y(e.v0.y) - this.scales.y(e.v1.y)},
-            {x: this.scales.x(e.v1.x) - this.scales.x(e.v0.x), y: 0}]));
+        .attr("d", (e,i) => branchPath(e,i));
 
     newBranches.append("text")
         .attr("class", "branch-label length")
@@ -456,9 +455,7 @@ function updateBranches() {
         })
 
         .select("path")
-        .attr("d", (e) => branchPath([
-            {x: 0, y: this.scales.y(e.v0.y) - this.scales.y(e.v1.y)},
-            {x: this.scales.x(e.v1.x) - this.scales.x(e.v0.x), y: 0}]))
+        .attr("d", (e,i) => branchPath(e,i))
 
         .select("text .branch-label .length")
         .attr("class", "branch-label length")
