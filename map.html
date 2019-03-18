@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+    body {
+        background: #fcfcfa;
+    }
+
+    .stroke {
+        fill: none;
+        stroke: #000;
+        stroke-width: 3px;
+    }
+
+    .fill {
+        fill: #fff;
+    }
+
+    .graticule {
+        fill: none;
+        stroke: #777;
+        stroke-width: .5px;
+        stroke-opacity: .5;
+    }
+
+    .land {
+        fill: #bbb;
+    }
+
+    .boundary {
+        fill: none;
+        stroke: #fff;
+        stroke-width: .5px;
+    }
+
+    .points circle {
+        fill: #fff;
+        stroke: red;
+        stroke-width: 2px;
+    }
+
+    .points text {
+        font: 11px sans-serif;
+        text-anchor: middle;
+        text-shadow: 0 1px 0 #fff, 0 -1px 0 #fff, 1px 0 0 #fff, -1px 0 0 #fff;
+    }
+
+    .route {
+        fill: none;
+        stroke: red;
+        stroke-width: 3px;
+    }
+
+</style>
+<svg></svg>
+<script src="js/d3.js"></script>
+<script src="js/d3-geo-projection.js"></script>
+<script src="js/topojson.js"></script>
+<script type="module">
+
+    var width = 960,
+        height = 570;
+
+    // var projection = d3.geoNicolosi()
+    // var projection = d3.geoPeirceQuincuncial()
+    var projection = d3.geoNaturalEarth2()
+    // .scale(170)
+    // .rotate([-40, 0])
+    // .translate([width / 2, height / 2])
+        .precision(.1);
+    // var projection = d3.geoKavrayskiy7()
+    //     .scale(170)
+    //     .rotate([-40, 0])
+    //     .translate([width / 2, height / 2])
+    //     .precision(.1);
+
+    var path = d3.geoPath()
+        .projection(projection);
+
+    var graticule = d3.geoGraticule();
+
+    var svg = d3.select("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    // d3.json("data/readme-world-110m.json")
+    d3.json("data/world-110m.json")
+        .then(function(world) {
+
+                svg.insert("path", ".graticule")
+                    .datum(topojson.feature(world, world.objects.land))
+                    .attr("class", "land")
+                    .attr("d", path);
+
+                svg.insert("path", ".graticule")
+                    .datum(topojson.mesh(world, world.objects.countries, function(a, b) { return a !== b; }))
+                    .attr("class", "boundary")
+                    .attr("d", path);
+
+                svg.append("path")
+                // .datum({type: "LineString", coordinates: [[-77.05, 38.91], [116.35, 39.91]]})
+                    .datum({type: "LineString", coordinates: [[20.0, 0.0], [-77.05, 38.91]]})
+                    .attr("class", "route")
+                    .attr("stroke-dasharray", "0%,0%,0%,100%")
+                    .attr("d", path);
+
+                svg.select(".route")
+                    .transition()
+                    .duration(1000)
+                    .attr("stroke-dasharray", "0%,0%,100%,0%");
+
+                svg.select(".route")
+                    .transition()
+                    .duration(1000)
+                    .delay(500)
+                    .attr("stroke-dasharray", "0%,100%,0%,0%");
+
+// let countries = topojson.feature(world, world.objects.countries).features;
+                // let i = -1;
+                // let n = countries.length;
+                //
+                // let country = svg.selectAll(".country")
+                //     .data(countries)
+                //     .enter().insert("path", ".graticule")
+                //     .attr("class", "country")
+                //     .attr("d", path);
+                //
+                // step();
+                //
+                // function step() {
+                //     if (++i >= n) i = 0;
+                //
+                //     country.transition()
+                //         .style("fill", function(d, j) { return j === i ? "red" : "#b8b8b8"; });
+                //
+                //
+                //     d3.transition()
+                //         .delay(250)
+                //         .duration(1250)
+                //         .tween("rotate", function() {
+                //             var point = d3.geoCentroid(countries[i]),
+                //                 rotate = d3.interpolate(projection.rotate(), [-point[0], -point[1]]);
+                //             return function(t) {
+                //                 projection.rotate(rotate(t));
+                //                 country.attr("d", path);
+                //             };
+                //         })
+                //         .transition()
+                //         .on("end", step);
+                // }
+            },
+            function(error) {
+                if (error) throw error;
+            }
+        );
+
+    d3.select(self.frameElement).style("height", height + "px");
+
+
+
+</script>
