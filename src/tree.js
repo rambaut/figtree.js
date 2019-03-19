@@ -311,20 +311,29 @@ export class Tree {
     }
 
     lastCommonAncestor(node1, node2) {
-        throw new Error("method 'lastCommonAncestor' is not implemented yet");
 
-        // path1 = [...pathToRoot(node1)];
-        // path2 = [...pathToRoot(node2)];
+        const path1 = [...Tree.pathToRoot(node1)];
+        const path2 = [...Tree.pathToRoot(node2)];
+      
+        const sharedAncestors = path1.filter(n1=>path2.map(n2=>n2.id).indexOf(n1.id)>-1);
+        const lastSharedAncestor = sharedAncestors.reduce((acc,curr)=>acc = acc.level>curr.level?acc:curr);
+        return lastSharedAncestor;
+      
     }
 
     pathLength(node1, node2) {
-        throw new Error("method 'pathLength' is not implemented yet");
 
-        // let sum = 0;
-        // path1 = [...pathToRoot(node1)];
-        // path2 = [...pathToRoot(node2)];
-
-        // return sum;
+        let sum = 0;
+        
+        const mrca = this.lastCommonAncestor(node1,node2);
+        for(let node of [node1,node2]){
+            while(node!=mrca){
+              sum+=node.length;
+              node=node.parent;
+            }
+        }
+        
+        return sum;
     }
 
     /**
