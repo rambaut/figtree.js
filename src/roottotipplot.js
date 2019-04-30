@@ -41,11 +41,15 @@ export class RootToTipPlot {
             .map((tip) => {
                 return {
                     name: tip.name,
-                    tip: tip,
+                    node: tip,
                     x: tip.date,
                     y: tree.rootToTipLength(tip)
                 };
             });
+
+        this.tipNodes = {};
+        tree.externalNodes.forEach((tip) => this.tipNodes[tip.name] = tip );
+
 
         // call the private methods to create the components of the diagram
         createElements.call(this, svg, margins);
@@ -88,7 +92,7 @@ export class RootToTipPlot {
     update() {
 
         this.points.forEach((point) => {
-            point.y = this.tree.rootToTipLength(point.tip);
+            point.y = this.tree.rootToTipLength(point.node);
         });
 
         let x1 = d3.min(this.points, d => d.x);
@@ -97,7 +101,7 @@ export class RootToTipPlot {
         let y2 = d3.max(this.points, d => d.y);
 
         // least squares regression
-        const selectedPoints = this.points.filter((point) => !point.tip.isSelected);
+        const selectedPoints = this.points.filter((point) => !point.node.isSelected);
 
         const regression = this.leastSquares(selectedPoints);
         if (selectedPoints.length > 1 && regression.slope > 0.0) {
@@ -179,11 +183,11 @@ export class RootToTipPlot {
     selectTips(treeSVG, tips) {
         const self = this;
         tips.forEach(tip => {
-            const node1 = d3.select(self.svg).select(`#${tip}`).select(`.node-shape`);
-            const node2 = d3.select(treeSVG).select(`#${tip}`).select(`.node-shape`);
-            node1.attr("class", "node-shape selected");
-            node2.attr("class", "node-shape selected");
-            const node = this.tree.externalNodes.filter(d => d.name === tip)[0];
+            const node = this.tipNodes[tip];
+            const nodeShape1 = d3.select(self.svg).select(`#${node.id}`).select(`.node-shape`);
+            const nodeShape2 = d3.select(treeSVG).select(`#${node.id}`).select(`.node-shape`);
+            nodeShape1.attr("class", "node-shape selected");
+            nodeShape2.attr("class", "node-shape selected");
             node.isSelected = true;
 
         })
@@ -220,23 +224,23 @@ export class RootToTipPlot {
         const self = this;
 
         const mouseover = function(d) {
-            d3.select(self.svg).select(`#${d.name}`).select(`.node-shape`).attr("r", self.settings.hoverNodeRadius);
-            d3.select(treeSVG).select(`#${d.name}`).select(`.node-shape`).attr("r", self.settings.hoverNodeRadius);
+            d3.select(self.svg).select(`#${d.node.id}`).select(`.node-shape`).attr("r", self.settings.hoverNodeRadius);
+            d3.select(treeSVG).select(`#${d.node.id}`).select(`.node-shape`).attr("r", self.settings.hoverNodeRadius);
         };
         const mouseout = function(d) {
-            d3.select(self.svg).select(`#${d.name}`).select(`.node-shape`).attr("r", self.settings.nodeRadius);
-            d3.select(treeSVG).select(`#${d.name}`).select(`.node-shape`).attr("r", self.settings.nodeRadius);
+            d3.select(self.svg).select(`#${d.node.id}`).select(`.node-shape`).attr("r", self.settings.nodeRadius);
+            d3.select(treeSVG).select(`#${d.node.id}`).select(`.node-shape`).attr("r", self.settings.nodeRadius);
         };
         const clicked = function(d) {
             // toggle isSelected
             let tip = d;
-            if (d.tip) {
-                tip = d.tip;
+            if (d.node) {
+                tip = d.node;
             }
             tip.isSelected = !tip.isSelected;
 
-            const node1 = d3.select(self.svg).select(`#${d.name}`).select(`.node-shape`);
-            const node2 = d3.select(treeSVG).select(`#${d.name}`).select(`.node-shape`);
+            const node1 = d3.select(self.svg).select(`#${tip.id}`).select(`.node-shape`);
+            const node2 = d3.select(treeSVG).select(`#${tip.id}`).select(`.node-shape`);
 
             if (tip.isSelected) {
                 node1.attr("class", "node-shape selected");
@@ -268,7 +272,7 @@ export class RootToTipPlot {
      * @returns {string}
      */
     static nodeInfo(point) {
-        const node = point.tip;
+        const node = point.node;
         let text = `${node.name ? node.name : node.id }`;
         Object.entries(node.annotations).forEach(([key, value]) => {
             text += `<p>${key}: ${value}</p>`;
@@ -380,13 +384,13 @@ function createElements(svg, margins) {
         .data(this.points)
         .enter()
         .append("g")
-        .attr("id", d => d.tip.name )
+        .attr("id", d => d.node.id )
         .attr("class", (d) => {
-            let classes = ["node", "external-node", (d.tip.isSelected ? "selected" : "unselected")];
-            if (d.tip.annotations) {
+            let classes = ["node", "external-node", (d.node.isSelected ? "selected" : "unselected")];
+            if (d.node.annotations) {
                 classes = [
                     ...classes,
-                    ...Object.entries(d.tip.annotations)
+                    ...Object.entries(d.node.annotations)
                         .filter(([key]) => {
                             return this.tree.annotations[key].type === Type.DISCRETE ||
                                 this.tree.annotations[key].type === Type.BOOLEAN ||

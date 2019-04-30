@@ -249,7 +249,7 @@ export class FigTree {
                 if (typeof text === typeof "") {
                     tooltip.innerHTML = text;
                 } else {
-                    tooltip.innerHTML = text(selected);
+                    tooltip.innerHTML = text(selected.node);
                 }
                 tooltip.style.display = "block";
                 tooltip.style.left = d3.event.pageX + 10 + "px";
