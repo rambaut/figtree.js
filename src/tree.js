@@ -20,31 +20,9 @@ export class Tree {
      *
      * @constructor
      * @param {object} rootNode - The root node of the tree as an object.
-     * @param splitBranches - Whether to split each branch into two
      */
-    constructor(rootNode = {}, splitBranches = false) {
+    constructor(rootNode = {}) {
         this.root = rootNode;
-
-        if (splitBranches) {
-            // split each branch into two, with a node of
-            // degree two in the middle. This allows annotation
-            // of half a branch.
-            [...this.preorder()].forEach((node) => {
-                if (node.parent) {
-                    let splitNode = {
-                        parent: node.parent,
-                        children: [node],
-                        length: node.length / 2.0,
-                        annotations: {
-                            midpoint: true
-                        }
-                    };
-                    node.parent.children[node.parent.children.indexOf(node)] = splitNode;
-                    node.parent = splitNode;
-                    node.length = splitNode.length;
-                }
-            });
-        }
 
         this.annotations = {};
 
@@ -352,6 +330,42 @@ export class Tree {
     }
 
     /**
+     * Splits each branch in multiple segments inserting a new degree 2 nodes. If splitLocations is
+     * null then it splits each in two at the mid-point
+     * @param splitLocations
+     */
+    splitBranches(splitLocations = null) {
+        // split each branch into two, with a node of
+        // degree two in the middle. This allows annotation
+        // of half a branch.
+        [...this.preorder()]
+            .filter((node) => node.parent)
+            .forEach((node) => this.splitBranch(node, node.length / 2.0));
+    }
+
+    /**
+     * Splits a branch in two inserting a new degree 2 node. The splitLocation should be less than
+     * the orginal branch length.
+     * @param node
+     * @param splitLocation
+     */
+    splitBranch(node, splitLocation) {
+        const oldLength = node.length;
+
+        let splitNode = {
+            parent: node.parent,
+            children: [node],
+            length: oldLength - splitLocation,
+            annotations: {
+                midpoint: true
+            }
+        };
+        node.parent.children[node.parent.children.indexOf(node)] = splitNode;
+        node.parent = splitNode;
+        node.length = splitLocation;
+    }
+
+        /**
      * Set one or more annotations for the tips.
      *
      * See annotateNode for a description of the annotation structure.
@@ -551,7 +565,7 @@ export class Tree {
      * @param datePrefix
      * @returns {Tree} - an instance of the Tree class
      */
-    static parseNewick(newickString, labelName = "label", datePrefix = undefined, splitBranches = false ) {
+    static parseNewick(newickString, labelName = "label", datePrefix = undefined ) {
         const tokens = newickString.split(/\s*('[^']+'|"[^"]+"|;|\(|\)|,|:)\s*/);
 
         let level = 0;
@@ -680,7 +694,7 @@ export class Tree {
             throw new Error("the brackets in the newick file are not balanced")
         }
 
-        return new Tree(currentNode, splitBranches);
+        return new Tree(currentNode);
     };
 }
 

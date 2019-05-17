@@ -99,9 +99,10 @@ export class RectangularLayout extends Layout {
                         ...v.classes,
                         ...Object.entries(v.node.annotations)
                             .filter(([key]) => {
-                                return this.tree.annotations[key].type === Type.DISCRETE ||
+                                return this.tree.annotations[key] &&
+                                    (this.tree.annotations[key].type === Type.DISCRETE ||
                                     this.tree.annotations[key].type === Type.BOOLEAN ||
-                                    this.tree.annotations[key].type === Type.INTEGER;
+                                    this.tree.annotations[key].type === Type.INTEGER);
                             })
                             .map(([key, value]) => `${key}-${value}`)];
                 }
@@ -155,9 +156,10 @@ export class RectangularLayout extends Layout {
                         ...e.classes,
                         ...Object.entries(e.v1.node.annotations)
                             .filter(([key]) => {
-                                return this.tree.annotations[key].type === Type.DISCRETE ||
+                                return this.tree.annotations[key] &&
+                                    (this.tree.annotations[key].type === Type.DISCRETE ||
                                     this.tree.annotations[key].type === Type.BOOLEAN ||
-                                    this.tree.annotations[key].type === Type.INTEGER;
+                                    this.tree.annotations[key].type === Type.INTEGER);
                             })
                             .map(([key, value]) => `${key}-${value}`)];
                 }
