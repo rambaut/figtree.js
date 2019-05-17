@@ -9,12 +9,13 @@ import { Type } from "./tree.js";
  * The Layout class
  *
  */
-export class RectangularLayout extends Layout {
+export class EconomyLayout extends Layout {
 
     static DEFAULT_SETTINGS() {
         return {
             lengthFormat: d3.format(".2f"),
-            branchCurve: d3.curveStepBefore
+            branchCurve: d3.curveLinear,
+            xFunction:(n)=>n.onset
         };
     }
 
@@ -23,22 +24,22 @@ export class RectangularLayout extends Layout {
      * @param tree
      * @param settings
      */
-    constructor(tree, settings = { }) {
+    constructor(graph, settings = { }) {
         super();
 
-        this.tree = tree;
+        this.graph = graph;
 
         // merge the default settings with the supplied settings
-        this.settings = {...RectangularLayout.DEFAULT_SETTINGS(), ...settings};
+        this.settings = {...EconomyLayout.DEFAULT_SETTINGS(), ...settings};
 
         this.branchLabelAnnotationName = null;
         this.internalNodeLabelAnnotationName = null;
         this.externalNodeLabelAnnotationName = null;
 
         // called whenever the tree changes...
-        this.tree.treeUpdateCallback = () => {
-            this.update();
-        };
+        // this.tree.treeUpdateCallback = () => {
+        //     this.update();
+        // };
     }
 
     /**
@@ -55,11 +56,11 @@ export class RectangularLayout extends Layout {
      */
     layout(vertices, edges) {
 
-        this._horizontalRange = [0.0, d3.max([...this.tree.rootToTipLengths()])];
-        this._verticalRange = [0, this.tree.externalNodes.length - 1];
+        this._horizontalRange = [0.0, d3.max(this.graph.nodes,n=>this.settings.xFunction(n))];
+        this._verticalRange = [this.graph.nodes.length,0];
 
-        // get the nodes in post-order
-        const nodes = [...this.tree.postorder()];
+        // get the nodes in pre-order (starting at first node)
+        const nodes = [...this.graph.preorder(this.graph.nodes[0])];
 
         let currentY = -1;
 
@@ -79,19 +80,18 @@ export class RectangularLayout extends Layout {
         }
 
         // update the node locations (vertices)
+        //
         nodes
-            .forEach((n) => {
+            .forEach((n,i) => {
                 const v = this.nodeMap.get(n);
 
-                v.x = this.tree.rootToTipLength(v.node);
-                currentY = this.setYPosition(v, currentY)
+                v.x = this.settings.xFunction(n);
+                currentY=this.setYPosition(v,currentY);
 
-                v.degree = (v.node.children ? v.node.children.length + 1: 1); // the number of edges (including stem)
-
-                v.id = n.id;
+                v.degree = this.graph.getEdges(v.node).length ; // the number of edges 
 
                 v.classes = [
-                    (!v.node.children ? "external-node" : "internal-node"),
+                    (!this.graph.getOutgoingEdges(v.node).length>0? "external-node" : "internal-node"),
                     (v.node.isSelected ? "selected" : "unselected")];
 
                 if (v.node.annotations) {
@@ -99,10 +99,9 @@ export class RectangularLayout extends Layout {
                         ...v.classes,
                         ...Object.entries(v.node.annotations)
                             .filter(([key]) => {
-                                return this.tree.annotations[key] &&
-                                    (this.tree.annotations[key].type === Type.DISCRETE ||
+                                return this.tree.annotations[key].type === Type.DISCRETE ||
                                     this.tree.annotations[key].type === Type.BOOLEAN ||
-                                    this.tree.annotations[key].type === Type.INTEGER);
+                                    this.tree.annotations[key].type === Type.INTEGER;
                             })
                             .map(([key, value]) => `${key}-${value}`)];
                 }
@@ -130,13 +129,13 @@ export class RectangularLayout extends Layout {
             this.edgeMap = new Map();
 
             // create the edges (only done if the array is empty)
-            nodes
-                .filter((n) => n.parent) // exclude the root
-                .forEach((n, i) => {
+            const dataEdges = this.graph.edges;
+            dataEdges
+                .forEach((e, i) => {
                     const edge = {
-                        v0: this.nodeMap.get(n.parent),
-                        v1: this.nodeMap.get(n),
-                        key: n.id
+                        v0: this.nodeMap.get(e.source),
+                        v1: this.nodeMap.get(e.target),
+                        key: e.id
                         // key: Symbol(n.id).toString()
                     };
                     edges.push(edge);
@@ -148,7 +147,7 @@ export class RectangularLayout extends Layout {
         edges
             .forEach((e) => {
                 e.v1 = this.edgeMap.get(e);
-                e.v0 = this.nodeMap.get(e.v1.node.parent),
+                e.v0 = this.nodeMap.get(e.v0.node),
                     e.classes = [];
 
                 if (e.v1.node.annotations) {
@@ -156,10 +155,9 @@ export class RectangularLayout extends Layout {
                         ...e.classes,
                         ...Object.entries(e.v1.node.annotations)
                             .filter(([key]) => {
-                                return this.tree.annotations[key] &&
-                                    (this.tree.annotations[key].type === Type.DISCRETE ||
+                                return this.tree.annotations[key].type === Type.DISCRETE ||
                                     this.tree.annotations[key].type === Type.BOOLEAN ||
-                                    this.tree.annotations[key].type === Type.INTEGER);
+                                    this.tree.annotations[key].type === Type.INTEGER;
                             })
                             .map(([key, value]) => `${key}-${value}`)];
                 }
@@ -170,7 +168,7 @@ export class RectangularLayout extends Layout {
                         this.settings.lengthFormat(length) :
                         e.v1.node.annotations[this.branchLabelAnnotationName]) :
                     null );
-                e.labelBelow = e.v1.node.parent.children[0] !== e.v1.node;
+                // e.labelBelow = e.v1.node.parent.children[0] !== e.v1.node;
             });
     }
 
@@ -223,8 +221,8 @@ export class RectangularLayout extends Layout {
     }
 
     setYPosition(vertex, currentY) {
-        vertex.y = (vertex.node.children ? d3.mean(vertex.node.children, (child) => this.nodeMap.get(child).y) : currentY += 1);
-        return currentY;
+        vertex.y = currentY+1;
+        return currentY+1;
     }
     branchPathGenerator(scales){
         const branchPath =(e,i)=>{
