@@ -332,15 +332,28 @@ export class Tree {
     /**
      * Splits each branch in multiple segments inserting a new degree 2 nodes. If splitLocations is
      * null then it splits each in two at the mid-point
-     * @param splitLocations
+     * @param splits
      */
-    splitBranches(splitLocations = null) {
-        // split each branch into two, with a node of
+    splitBranches(splits = null) {
+        // split each branch into sections, with a node of
         // degree two in the middle. This allows annotation
-        // of half a branch.
+        // of part of a branch.
         [...this.preorder()]
             .filter((node) => node.parent)
-            .forEach((node) => this.splitBranch(node, node.length / 2.0));
+            .forEach((node) => {
+                if (splits !== null) {
+                    if (splits[node.id]) {
+                        let splitNode = node;
+                        splits[node.id].forEach(([time, id]) => {
+                            splitNode = this.splitBranch(splitNode, time);
+                            splitNode.id = id;
+                        })
+                    }
+                } else {
+                    // if no splitLocations are given then split it in the middle.
+                    this.splitBranch(node, node.length / 2.0);
+                }
+            });
     }
 
     /**
@@ -363,9 +376,11 @@ export class Tree {
         node.parent.children[node.parent.children.indexOf(node)] = splitNode;
         node.parent = splitNode;
         node.length = splitLocation;
+
+        return splitNode;
     }
 
-        /**
+    /**
      * Set one or more annotations for the tips.
      *
      * See annotateNode for a description of the annotation structure.
@@ -647,6 +662,8 @@ export class Tree {
                             value = currentNode.label;
                         }
                         currentNode.annotations[labelName] = value;
+                    } else {
+                        currentNode.id = currentNode.label.substring(1);
                     }
                     labelNext = false;
                 } else {
