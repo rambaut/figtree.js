@@ -130,7 +130,7 @@
     const newickString =
         '((((((virus1:0.1,virus2:0.12)#node11:0.08,(virus3:0.011,virus4:0.0087)#node12:0.15)#node13:0.03,virus5:0.21)#node14:0.2,(virus6:0.45,virus7:0.4)#node15:0.02)#node16:0.1,virus8:0.4)#node17:0.1,(virus9:0.04,virus10:0.03)#node18:0.6)#node19;';
 
-    const tree = Tree.parseNewick(newickString, "id");
+    const tree = Tree.parseNewick(newickString);
 
     const splits = {
         "node11": [[0.01, "node11.1"], [0.03, "node11.2"], [0.05, "node11.3"]]
