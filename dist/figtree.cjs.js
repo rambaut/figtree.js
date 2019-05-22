@@ -7769,20 +7769,23 @@ class FigTree {
 
         // merge the default settings with the supplied settings
         this.settings = {...FigTree.DEFAULT_SETTINGS(), ...settings};
-
+        this.svg=svg;
+    }
+    draw(){
+        
         // get the size of the svg we are drawing on
-        const width = svg.getBoundingClientRect().width;
-        const height = svg.getBoundingClientRect().height;
+        const width = this.svg.getBoundingClientRect().width;
+        const height = this.svg.getBoundingClientRect().height;
 
         //remove the tree if it is there already
-        select(svg).select("g").remove();
+        select(this.svg).select("g").remove();
 
         // add a group which will contain the new tree
-        select(svg).append("g")
-            .attr("transform",`translate(${margins.left},${margins.top})`);
+        select(this.svg).append("g")
+            .attr("transform",`translate(${this.margins.left},${this.margins.top})`);
 
         //to selecting every time
-        this.svgSelection = select(svg).select("g");
+        this.svgSelection = select(this.svg).select("g");
 
         this.svgSelection.append("g").attr("class", "axes-layer");
         this.svgSelection.append("g").attr("class", "branches-layer");
@@ -7794,15 +7797,15 @@ class FigTree {
         // create the scales
         const xScale = linear$1()
             .domain(this.layout.horizontalRange)
-            .range([margins.left, width - margins.right]);
+            .range([this.margins.left, width - this.margins.right]);
 
         const yScale = linear$1()
             .domain(this.layout.verticalRange)
-            .range([margins.top + 20, height - margins.bottom - 20]);
+            .range([this.margins.top + 20, height -this. margins.bottom - 20]);
 
         this.scales = {x:xScale, y:yScale, width, height};
 
-        addAxis.call(this, margins);
+        addAxis.call(this, this.margins);
 
         this.vertices = [];
         this.edges = [];
@@ -7823,17 +7826,25 @@ class FigTree {
         // get new positions
         this.layout.layout(this.vertices, this.edges);
 
+        // svg may have changed sizes
+        // get the size of the svg we are drawing on
+        const width = this.svg.getBoundingClientRect().width;
+        const height = this.svg.getBoundingClientRect().height;
+
         // update the scales' domains
-        this.scales.x.domain(this.layout.horizontalRange);
-        this.scales.y.domain(this.layout.verticalRange);
+        this.scales.x.domain(this.layout.horizontalRange).range([this.margins.left, width - this.margins.right]);
+        this.scales.y.domain(this.layout.verticalRange).range([this.margins.top + 20, height -this. margins.bottom - 20]);
+        this.scales.width=width;
+        this.scales.height=height;
 
-        const xAxis = axisBottom(this.scales.x)
-            .tickArguments(this.settings.xAxisTickArguments);
+        updateAxis.call(this);
+        // const xAxis = axisBottom(this.scales.x)
+        //     .tickArguments(this.settings.xAxisTickArguments);
 
-        this.svgSelection.select("#x-axis")
-            .transition()
-            .duration(500)
-            .call(xAxis);
+        // this.svgSelection.select("#x-axis")
+        //     .transition()
+        //     .duration(500)
+        //     .call(xAxis);
 
 
         // call the private methods to create the components of the diagram
@@ -8233,6 +8244,35 @@ function addAxis() {
         .attr("alignment-baseline", "hanging")
         .style("text-anchor", "middle")
         .text(this.settings.xAxisTitle);
+}
+
+/**
+ * Update Axis
+ */
+function updateAxis(){
+    const xAxis = axisBottom(this.scales.x)
+        .tickArguments(this.settings.xAxisTickArguments);
+
+    const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
+
+    const axesLayer = this.svgSelection.select(".axes-layer");
+
+    axesLayer
+        .transition()
+        .duration(500)
+        .attr("transform", `translate(0, ${this.scales.height - this.margins.bottom + 5})`);
+       
+
+    // axesLayer
+    //     .append("g")
+    //     .attr("id", "x-axis-label")
+    //     .attr("class", "axis-label")
+    //     .attr("transform", `translate(${this.margins.left}, ${this.scales.height - this.margins.bottom})`)
+    //     .append("text")
+    //     .attr("transform", `translate(${xAxisWidth / 2}, 35)`)
+    //     .attr("alignment-baseline", "hanging")
+    //     .style("text-anchor", "middle")
+    //     .text(this.settings.xAxisTitle);
 }
 
 /** @module Graph */
