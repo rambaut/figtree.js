@@ -4,6 +4,7 @@
 
 import { Layout } from "./layout.js"
 // const d3 = require("d3");
+import {format,max,} from "d3";
 
 /**
  * The equal angle unrooted layout class
@@ -13,8 +14,8 @@ import { Layout } from "./layout.js"
  export class equalAngleLayout extends Layout {
     static DEFAULT_SETTINGS() {
         return {
-            lengthFormat: d3.format(".2f"),
-            branchCurve: d3.curveStepBefore
+            lengthFormat: format(".2f"),
+            branchCurve: curveStepBefore
         };
     }
     /**
@@ -56,7 +57,7 @@ import { Layout } from "./layout.js"
 
     layout(vertices, edges) {
 
-        this._horizontalRange = [0.0, d3.max([...this.tree.rootToTipLengths()])];
+        this._horizontalRange = [0.0, max([...this.tree.rootToTipLengths()])];
         this._verticalRange = [0, this.tree.externalNodes.length - 1];
 
         // setup initial angles

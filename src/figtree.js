@@ -1,4 +1,5 @@
 "use strict";
+import {select,scaleLinear,axisBottom,mouse,event} from "d3";
 
 /** @module figtree */
 // const d3 = require("d3");
@@ -42,14 +43,14 @@ export class FigTree {
         const height = svg.getBoundingClientRect().height;
 
         //remove the tree if it is there already
-        d3.select(svg).select("g").remove();
+        select(svg).select("g").remove();
 
         // add a group which will contain the new tree
-        d3.select(svg).append("g")
+        select(svg).append("g")
             .attr("transform",`translate(${margins.left},${margins.top})`);
 
         //to selecting every time
-        this.svgSelection = d3.select(svg).select("g");
+        this.svgSelection = select(svg).select("g");
 
         this.svgSelection.append("g").attr("class", "axes-layer");
         this.svgSelection.append("g").attr("class", "branches-layer");
@@ -59,11 +60,11 @@ export class FigTree {
         this.svgSelection.append("g").attr("class", "nodes-layer");
 
         // create the scales
-        const xScale = d3.scaleLinear()
+        const xScale = scaleLinear()
             .domain(this.layout.horizontalRange)
             .range([margins.left, width - margins.right]);
 
-        const yScale = d3.scaleLinear()
+        const yScale = scaleLinear()
             .domain(this.layout.verticalRange)
             .range([margins.top + 20, height - margins.bottom - 20]);
 
@@ -94,7 +95,7 @@ export class FigTree {
         this.scales.x.domain(this.layout.horizontalRange);
         this.scales.y.domain(this.layout.verticalRange);
 
-        const xAxis = d3.axisBottom(this.scales.x)
+        const xAxis = axisBottom(this.scales.x)
             .tickArguments(this.settings.xAxisTickArguments);
 
         this.svgSelection.select("#x-axis")
@@ -122,10 +123,10 @@ export class FigTree {
         // element being hovered over.
         const selected = this.svgSelection.selectAll(".branch").select(".branch-path");
         selected.on("mouseover", function (d, i) {
-            d3.select(this).classed("hovered", true);
+            select(this).classed("hovered", true);
         });
         selected.on("mouseout", function (d, i) {
-            d3.select(this).classed("hovered", false);
+            select(this).classed("hovered", false);
         });
     }
 
@@ -152,7 +153,7 @@ export class FigTree {
         const self = this;
         const selected = this.svgSelection.selectAll(selection).select(".node-shape");
         selected.on("mouseover", function (d, i) {
-            const node = d3.select(this);
+            const node = select(this);
 
             self.settings.baubles.forEach((bauble) => {
                 if (bauble.vertexFilter(node)) {
@@ -163,7 +164,7 @@ export class FigTree {
             node.classed("hovered", true);
         });
         selected.on("mouseout", function (d, i) {
-            const node = d3.select(this);
+            const node = select(this);
 
             self.settings.baubles.forEach((bauble) => {
                 if (bauble.vertexFilter(node)) {
@@ -193,7 +194,7 @@ export class FigTree {
         selected.on("click", function (edge) {
             const x1 = self.scales.x(edge.v1.x);
             const x2 = self.scales.x(edge.v0.x);
-            const mx = d3.mouse(this)[0];
+            const mx = mouse(this)[0];
             const proportion = Math.max(0.0, Math.min(1.0, (mx - x2) / (x1 - x2)));
             action(edge, proportion);
         })
@@ -253,8 +254,8 @@ export class FigTree {
                     tooltip.innerHTML = text(selected.node);
                 }
                 tooltip.style.display = "block";
-                tooltip.style.left = d3.event.pageX + 10 + "px";
-                tooltip.style.top = d3.event.pageY + 10 + "px";
+                tooltip.style.left =event.pageX + 10 + "px";
+                tooltip.style.top = event.pageY + 10 + "px";
             }
         );
         this.svgSelection.selectAll(selection).on("mouseout", function () {
@@ -476,7 +477,7 @@ function updateBranches() {
  * Add axis
  */
 function addAxis() {
-    const xAxis = d3.axisBottom(this.scales.x)
+    const xAxis = axisBottom(this.scales.x)
         .tickArguments(this.settings.xAxisTickArguments);
 
     const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;

@@ -25,10 +25,13 @@ export default [
 	// `file` and `format` for each target)
 	{
 		input: 'index.js',
-		external: ['d3'],
 		output: [
 			{ file: pkg.main, format: 'cjs' },
-			{ file: pkg.module, format: 'es' }
+			{ file: pkg.module, format: 'es' },
+		],
+		plugins: [
+			resolve(), // so Rollup can find `ms`
+			commonjs() // so Rollup can convert `ms` to an ES module
 		]
 	}
 ];

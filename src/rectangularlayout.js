@@ -4,6 +4,8 @@
 
 import { Layout } from "./layout.js";
 import { Type } from "./tree.js";
+import {format,curveStepBefore,max,line,mean} from "d3";
+
 // const d3 = require("d3");
 /**
  * The Layout class
@@ -13,8 +15,8 @@ export class RectangularLayout extends Layout {
 
     static DEFAULT_SETTINGS() {
         return {
-            lengthFormat: d3.format(".2f"),
-            branchCurve: d3.curveStepBefore
+            lengthFormat: format(".2f"),
+            branchCurve: curveStepBefore
         };
     }
 
@@ -55,7 +57,7 @@ export class RectangularLayout extends Layout {
      */
     layout(vertices, edges) {
 
-        this._horizontalRange = [0.0, d3.max([...this.tree.rootToTipLengths()])];
+        this._horizontalRange = [0.0, max([...this.tree.rootToTipLengths()])];
         this._verticalRange = [0, this.tree.externalNodes.length - 1];
 
         // get the nodes in post-order
@@ -223,12 +225,12 @@ export class RectangularLayout extends Layout {
     }
 
     setYPosition(vertex, currentY) {
-        vertex.y = (vertex.node.children ? d3.mean(vertex.node.children, (child) => this.nodeMap.get(child).y) : currentY += 1);
+        vertex.y = (vertex.node.children ? mean(vertex.node.children, (child) => this.nodeMap.get(child).y) : currentY += 1);
         return currentY;
     }
     branchPathGenerator(scales){
         const branchPath =(e,i)=>{
-            const branchLine = d3.line()
+            const branchLine = line()
                  .x((v) => v.x)
                 .y((v) => v.y)
                 .curve(this.branchCurve);

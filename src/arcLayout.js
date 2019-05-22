@@ -5,6 +5,7 @@
 import { Layout } from "./layout.js";
 import { Type } from "./tree.js";
 // const d3 = require("d3");
+import {format,curveLinear,max,line,range} from "d3";
 
 /**
  * The Layout class
@@ -14,10 +15,10 @@ export class ArcLayout extends Layout {
 
     static DEFAULT_SETTINGS() {
         return {
-            lengthFormat: d3.format(".2f"),
+            lengthFormat: format(".2f"),
             edgeWidth:2,
             xFunction:(n,i)=>i,
-            branchCurve:d3.curveLinear
+            branchCurve:curveLinear
         };
     }
 
@@ -58,7 +59,7 @@ export class ArcLayout extends Layout {
      */
     layout(vertices, edges) {
 
-        this._horizontalRange = [0.0, d3.max(this.graph.nodes,(n,i)=>this.settings.xFunction(n,i))];
+        this._horizontalRange = [0.0, max(this.graph.nodes,(n,i)=>this.settings.xFunction(n,i))];
         this._verticalRange = [-this.graph.nodes.length,this.graph.nodes.length];
 
         // get the nodes in pre-order (starting at first node)
@@ -226,14 +227,14 @@ export class ArcLayout extends Layout {
 // do it with interpelations
     branchPathGenerator(scales){
             const branchPath =(e,i)=>{
-                const branchLine = d3.line()
+                const branchLine = line()
                      .x((v) => v.x)
                     .y((v) => v.y)
                     .curve(this.branchCurve);
             const r = (scales.x(e.v1.x) - scales.x(e.v0.x))/2
             const a = r; // center x position
             const sign = i%2===0?1:-1;
-            const x = d3.range(0,scales.x(e.v1.x) - scales.x(e.v0.x),1)//step every pixel
+            const x = range(0,scales.x(e.v1.x) - scales.x(e.v0.x),1)//step every pixel
             const y = x.map(x=>circleY.call(this,x,r,a,sign));
             const points = x.map((x,i)=>{
                 return{x:x,y:y[i]}
