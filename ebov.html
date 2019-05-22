@@ -132,7 +132,7 @@
     const layout = new RectangularLayout(tree);
     const figTree = new FigTree(treeSVG, layout,
         { top: 10, bottom: 60, left: 20, right: 190},
-        {   hoverBorder: 2, backgroundBorder: 2,
+        {   hoverBorder: 2, backgroundBorder: 1,
             baubles: [
                 new CircleBauble({ vertexFilter: (v) => v.degree === 1 }),
             ]
@@ -144,7 +144,7 @@
     figTree.hilightExternalNodes();
     // figTree.onClickNode(layout.rotate());
 
-    figTree.addToolTip('.external-node', FigTree.nodeInfo);
+    figTree.addToolTip('.external-node', RectangularLayout.nodeInfo);
 
     const rrtp = new RootToTipPlot(document.getElementById('rrt-2-svg'), tree, { top: 10, bottom: 60, left: 60, right: 20},
         { slopeFormat: ",.5f" });
