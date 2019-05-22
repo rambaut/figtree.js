@@ -1,6 +1,7 @@
 "use strict";
 
 /** @module figtree */
+const d3 = require("d3");
 
 /**
  * The FigTree class

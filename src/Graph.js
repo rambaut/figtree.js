@@ -2,7 +2,6 @@
 /** @module Graph */
 
 // import {Type} from 'figtree';
-import {Tree} from './tree.js'
 /**
  * The graph class
  *
