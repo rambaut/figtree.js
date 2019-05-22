@@ -282,9 +282,25 @@ export class Tree {
      * @param {boolean} increasing - sorting in increasing node order or decreasing?
      * @returns {number} - the number of tips below this node
      */
-    order(node = this.rootNode, increasing = true) {
-        // orderNodes.call(this, node, increasing, this.treeUpdateCallback);
-        orderNodes.call(this, node, increasing);
+    orderByNodeDensity(increasing = true, node = this.rootNode) {
+        const factor = increasing ? 1 : -1;
+        orderNodes.call(this, node, (nodeA, countA, nodeB, countB) => {
+            return (countA - countB) * factor;
+        }, callback);
+        this.treeUpdateCallback();
+    }
+
+    /**
+     * Sorts the child branches of each node in order given by the function. This operates
+     * recursively from the node given.
+     *
+     * @param node - the node to start sorting from
+     * @param {function} ordering - provides a pairwise sorting order.
+     *  Function signature: (nodeA, childCountNodeA, nodeB, childCountNodeB)
+     * @returns {number} - the number of tips below this node
+     */
+    order(ordering, node = this.rootNode) {
+        orderNodes.call(this, node, ordering);
         this.treeUpdateCallback();
     }
 
@@ -725,24 +741,27 @@ export class Tree {
  */
 
 /**
- * A private recursive function that rotates nodes to give an ordering.
+ * A private recursive function that rotates nodes to give an ordering provided
+ * by a function.
  * @param node
- * @param increasing
+ * @param ordering
  * @param callback an optional callback that is called each rotate
  * @returns {number}
  */
-function orderNodes(node, increasing, callback = null) {
-    const factor = increasing ? 1 : -1;
+function orderNodes(node, ordering, callback = null) {
     let count = 0;
     if (node.children) {
+        // count the number of descendents for each child
         const counts = new Map();
         for (const child of node.children) {
-            const value = orderNodes(child, increasing, callback);
+            const value = orderNodes(child, ordering, callback);
             counts.set(child, value);
             count += value;
         }
+
+        // sort the children using the provided function
         node.children.sort((a, b) => {
-            return (counts.get(a) - counts.get(b)) * factor
+            return ordering(a, counts.get(a), b, counts.get(b))
         });
 
         if (callback) callback();

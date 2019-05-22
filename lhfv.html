@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FigTree Demo</title>
+    <script src="js/d3.js" charset="utf-8"></script>
+    <!--<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>-->
+    <style>
+        text {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 14pt;
+            font-weight: 300;
+        }
+
+        .branch {
+            fill: none;
+            stroke: #541753;
+            stroke-width: 2px;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .branch-path.hovered {
+            stroke-width: 4px;
+        }
+
+        .external-node .node-shape {
+            fill: #22b680;
+            /*stroke: rgb(255, 255, 255);*/
+            /*stroke-width: 1;*/
+        }
+
+        .external-node .node-shape.hovered {
+            stroke: rgb(0,0,0);
+            /*stroke-width: 1;*/
+        }
+        .external-node .node-shape.unselected {
+            fill: #22b680;
+            /*stroke: rgb(255, 255, 255);*/
+        }
+        .external-node .node-shape.selected {
+            fill: #edb23b;
+            /*stroke: rgb(0,0,0);*/
+        }
+
+        .internal-node .node-shape {
+            fill: #29c5ef;
+            /*stroke: rgb(255, 255, 255);*/
+            /*stroke-width: 1;*/
+        }
+        .internal-node .node-shape.hovered {
+            stroke: rgb(0,0,0);
+        }
+
+        #root .node-shape {
+            fill: #e31e58;
+            /*stroke: rgb(255, 255, 255);*/
+            /*stroke-width: 1;*/
+        }
+
+        .node-background {
+            fill: rgb(255, 255, 255);
+            /*stroke: rgb(255, 255, 255);*/
+            /*stroke-width: 1;*/
+        }
+
+        .node-label {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 14pt;
+            font-weight: 300;
+        }
+
+        .trend-line {
+            stroke: rgb(0,0,0);
+            stroke-width: 2px;
+            stroke-linecap: round;
+        }
+
+        .axis text {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 12pt;
+            font-weight: 300;
+        }
+
+        .axis-label text {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 12pt;
+            font-weight: bold;
+        }
+
+        .node-label.support {
+            font-size: 10pt;
+        }
+
+        .branch-label.length {
+            display: none;
+            font-size: 8pt;
+        }
+
+        #tooltip {
+            background: #F6EECA;
+            border: 1px solid #005C68;
+            color: #005C68;
+            border-radius: 5px;
+            padding: 5px;
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 12pt;
+            font-weight: 300;
+        }
+    </style>
+</head>
+
+<body>
+<div id="tooltip" display="none" style="position: absolute; display: none;"></div>
+
+<div>
+    <figure>
+        <svg id="transmission-1"  width="900" height="800"></svg>
+    </figure>
+</div>
+
+<script type="module">
+    import { Tree } from "./src/tree.js";
+    import { TransmissionLayout } from "./src/transmissionlayout.js";
+    import { CircleBauble } from "./src/bauble.js";
+    import { FigTree } from "./src/figtree.js";
+
+    function annotateTransmissions(tree, transmissions) {
+        transmissions.forEach((record) => {
+            const id = "node" + record.node;
+            let node =  tree.getExternalNode(record.id);
+            if (!node) {
+                node = tree.getNode(record.id);
+            }
+
+            let splitNode = node;
+            record.transmissions.forEach((trans) => {
+                // {"host":"UnSampled8","height":0.0497}
+                splitNode = tree.splitBranch(splitNode, trans.height);
+                // splitNode.id = trans.id;
+                splitNode.host = trans.host;
+            });
+        })
+    }
+
+    const transmissions = [{"node":1,"host":"PHR-11","transmissions":[],"id":"PHR-11"},{"node":2,"host":"PHR-22","transmissions":[],"id":"PHR-22"},{"node":3,"host":"PHR-79","transmissions":[{"host":"UnSampled8","height":0.0497}],"id":"PHR-79"},{"node":4,"host":"PHR-71","transmissions":[],"id":"PHR-71"},{"node":5,"host":"PHR-101","transmissions":[{"host":"PHR-89","height":0.0412}],"id":"PHR-101"},{"node":6,"host":"PHR-89","transmissions":[],"id":"PHR-89"},{"node":7,"host":"PHR-54","transmissions":[],"id":"PHR-54"},{"node":8,"host":"PHR-103","transmissions":[{"host":"UnSampled4","height":0.0332},{"host":"PHR-54","height":0.079}],"id":"PHR-103"},{"node":9,"host":"PHR-77","transmissions":[{"host":"PHR-54","height":0.0488}],"id":"PHR-77"},{"node":10,"host":"PHR-74","transmissions":[{"host":"PHR-54","height":0.043}],"id":"PHR-74"},{"node":11,"host":"PHR-66","transmissions":[],"id":"PHR-66"},{"node":12,"host":"PHR-87","transmissions":[{"host":"PHR-66","height":0.0199}],"id":"PHR-87"},{"node":13,"host":"PHR-95","transmissions":[{"host":"PHR-66","height":0.0266}],"id":"PHR-95"},{"node":14,"host":"PHR-92","transmissions":[{"host":"PHR-66","height":0.0409}],"id":"PHR-92"},{"node":15,"host":"PHR-93","transmissions":[{"host":"UnSampled1","height":0.0223},{"host":"PHR-85","height":0.0422}],"id":"PHR-93"},{"node":16,"host":"PHR-85","transmissions":[],"id":"PHR-85"},{"node":17,"host":"PHR-91","transmissions":[{"host":"PHR-66","height":0.0375}],"id":"PHR-91"},{"node":18,"host":"PHR-25","transmissions":[{"host":"UnSampled14","height":0.0233}],"id":"PHR-25"},{"node":19,"host":"PHR-51","transmissions":[{"host":"UnSampled11","height":0.0401},{"host":"PHR-46","height":0.0627}],"id":"PHR-51"},{"node":20,"host":"PHR-46","transmissions":[],"id":"PHR-46"},{"node":21,"host":"PHR-83","transmissions":[{"host":"UnSampled6","height":0.0376}],"id":"PHR-83"},{"node":22,"host":"PHR-94","transmissions":[{"host":"UnSampled2","height":0.0399},{"host":"UnSampled5","height":0.0778},{"host":"UnSampled6","height":0.108}],"id":"PHR-94"},{"node":23,"host":"PHR-78","transmissions":[{"host":"UnSampled6","height":0.0167}],"id":"PHR-78"},{"node":24,"host":"PHR-28","transmissions":[],"id":"PHR-28"},{"node":25,"host":"PHR-47","transmissions":[{"host":"PHR-28","height":0.0394}],"id":"PHR-47"},{"node":26,"host":"PHR-39","transmissions":[],"id":"PHR-39"},{"node":27,"host":"PHR-75","transmissions":[{"host":"UnSampled7","height":0.0383},{"host":"PHR-39","height":0.0816}],"id":"PHR-75"},{"node":28,"host":"PHR-40","transmissions":[],"id":"PHR-40"},{"node":29,"host":"PHR-67","transmissions":[{"host":"UnSampled9","height":0.0349},{"host":"PHR-40","height":0.0877}],"id":"PHR-67"},{"node":30,"host":"PHR-42","transmissions":[{"host":"PHR-27","height":0.0231}],"id":"PHR-42"},{"node":31,"host":"PHR-27","transmissions":[],"id":"PHR-27"},{"node":32,"host":"PHR-30","transmissions":[],"id":"PHR-30"},{"node":33,"host":"PHR-36","transmissions":[],"id":"PHR-36"},{"node":34,"host":"PHR-60","transmissions":[{"host":"UnSampled12","height":0.0521},{"host":"PHR-36","height":0.082}],"id":"PHR-60"},{"node":35,"host":"PHR-3","transmissions":[],"id":"PHR-3"},{"node":36,"host":"PHR-33","transmissions":[{"host":"PHR-17","height":0.03}],"id":"PHR-33"},{"node":37,"host":"PHR-17","transmissions":[],"id":"PHR-17"},{"node":38,"host":"PHR-9","transmissions":[],"id":"PHR-9"},{"node":39,"host":"PHR-43","transmissions":[{"host":"PHR-9","height":0.0375}],"id":"PHR-43"},{"node":40,"host":"PHR-20","transmissions":[{"host":"UnSampled18","height":0.0318}],"id":"PHR-20"},{"node":41,"host":"PHR-15","transmissions":[],"id":"PHR-15"},{"node":42,"host":"PHR-57","transmissions":[],"id":"PHR-57"},{"node":43,"host":"PHR-98","transmissions":[{"host":"UnSampled3","height":0.0359},{"host":"PHR-57","height":0.0701}],"id":"PHR-98"},{"node":44,"host":"PHR-44","transmissions":[{"host":"PHR-15","height":0.0317}],"id":"PHR-44"},{"node":45,"host":"PHR-6","transmissions":[{"host":"UnSampled21","height":0.0293},{"host":"UnSampled22","height":0.0815}],"id":"PHR-6"},{"node":46,"host":"UnSampled21","transmissions":[{"host":"UnSampled22","height":0.0522}],"id":"node45"},{"node":47,"host":"UnSampled19","transmissions":[],"id":"node46"},{"node":48,"host":"UnSampled19","transmissions":[],"id":"node47"},{"node":49,"host":"UnSampled19","transmissions":[],"id":"node48"},{"node":50,"host":"PHR-11","transmissions":[{"host":"UnSampled19","height":0.0177}],"id":"node49"},{"node":51,"host":"PHR-22","transmissions":[{"host":"PHR-11","height":0.0279}],"id":"node50"},{"node":52,"host":"UnSampled8","transmissions":[],"id":"node51"},{"node":53,"host":"UnSampled8","transmissions":[],"id":"node52"},{"node":54,"host":"UnSampled8","transmissions":[],"id":"node53"},{"node":55,"host":"PHR-71","transmissions":[{"host":"UnSampled8","height":0.0206}],"id":"node54"},{"node":56,"host":"PHR-89","transmissions":[],"id":"node55"},{"node":57,"host":"PHR-54","transmissions":[],"id":"node56"},{"node":58,"host":"PHR-54","transmissions":[],"id":"node57"},{"node":59,"host":"PHR-54","transmissions":[],"id":"node58"},{"node":60,"host":"PHR-66","transmissions":[{"host":"UnSampled8","height":0.0041}],"id":"node59"},{"node":61,"host":"PHR-66","transmissions":[],"id":"node60"},{"node":62,"host":"PHR-66","transmissions":[],"id":"node61"},{"node":63,"host":"PHR-66","transmissions":[],"id":"node62"},{"node":64,"host":"PHR-66","transmissions":[],"id":"node63"},{"node":65,"host":"UnSampled1","transmissions":[{"host":"PHR-85","height":0.0199}],"id":"node64"},{"node":66,"host":"UnSampled19","transmissions":[],"id":"node65"},{"node":67,"host":"UnSampled14","transmissions":[{"host":"UnSampled19","height":0.0382}],"id":"node66"},{"node":68,"host":"UnSampled14","transmissions":[],"id":"node67"},{"node":69,"host":"UnSampled11","transmissions":[{"host":"PHR-46","height":0.0226}],"id":"node68"},{"node":70,"host":"PHR-46","transmissions":[],"id":"node69"},{"node":71,"host":"UnSampled6","transmissions":[],"id":"node70"},{"node":72,"host":"UnSampled6","transmissions":[],"id":"node71"},{"node":73,"host":"PHR-28","transmissions":[{"host":"UnSampled15","height":0.0084},{"host":"UnSampled19","height":0.0572}],"id":"node72"},{"node":74,"host":"UnSampled16","transmissions":[{"host":"PHR-30","height":0.0333}],"id":"node73"},{"node":75,"host":"PHR-30","transmissions":[],"id":"node74"},{"node":76,"host":"PHR-40","transmissions":[],"id":"node75"},{"node":77,"host":"PHR-39","transmissions":[{"host":"PHR-40","height":0.0093}],"id":"node76"},{"node":78,"host":"PHR-40","transmissions":[],"id":"node77"},{"node":79,"host":"PHR-30","transmissions":[],"id":"node78"},{"node":80,"host":"PHR-27","transmissions":[],"id":"node79"},{"node":81,"host":"PHR-36","transmissions":[{"host":"UnSampled16","height":0.003},{"host":"PHR-30","height":0.0362}],"id":"node80"},{"node":82,"host":"PHR-3","transmissions":[{"host":"UnSampled19","height":0.0425}],"id":"node81"},{"node":83,"host":"PHR-17","transmissions":[],"id":"node82"},{"node":84,"host":"UnSampled20","transmissions":[],"id":"node83"},{"node":85,"host":"PHR-9","transmissions":[{"host":"UnSampled20","height":0.0417}],"id":"node84"},{"node":86,"host":"UnSampled18","transmissions":[],"id":"node85"},{"node":87,"host":"PHR-15","transmissions":[],"id":"node86"},{"node":88,"host":"PHR-15","transmissions":[],"id":"node87"},{"node":89,"host":"PHR-57","transmissions":[{"host":"UnSampled10","height":0.0013},{"host":"PHR-15","height":0.0639}],"id":"node88"}];
+    const newickString =
+        '(((((PHR-11:0.032363,(PHR-22:0.008236,(((PHR-79:0.099702,(PHR-71:0.021208,(PHR-101:0.047475,PHR-89:0.009262)#node55:0.03852)#node54:0.061286)#node53:0.001245,(((PHR-54:0.008806,PHR-103:0.099166)#node58:0.002706,PHR-77:0.064584)#node57:0.006109,PHR-74:0.063286)#node56:0.031396)#node52:0.002275,(PHR-66:0.035236,((PHR-87:0.022587,(PHR-95:0.030064,(PHR-92:0.04099,(PHR-93:0.064776,PHR-85:0.008236)#node64:0.013261)#node63:0.009684)#node62:0.002981)#node61:0.005227,PHR-91:0.040699)#node60:0.026941)#node59:0.043921)#node51:0.033497)#node50:0.040551)#node49:0.052001,(((PHR-25:0.024333,(PHR-51:0.075936,(PHR-46:0.011759,((PHR-83:0.067073,PHR-94:0.124843)#node71:0.010703,PHR-78:0.07394)#node70:0.016449)#node69:0.02912)#node68:0.032604)#node67:0.04595,(PHR-28:0.008236,PHR-47:0.069938)#node72:0.071498)#node66:0.018768,((((PHR-39:0.008236,PHR-75:0.107635)#node76:0.016076,(PHR-40:0.008236,PHR-67:0.08906)#node77:0.019703)#node75:0.046594,((PHR-42:0.042745,PHR-27:0.008236)#node79:0.028165,PHR-30:0.037494)#node78:0.01937)#node74:0.00962,(PHR-36:0.02966,PHR-60:0.103728)#node80:0.04392)#node73:0.032541)#node65:0.013825)#node48:0.012715,(PHR-3:0.008236,(PHR-33:0.033256,PHR-17:0.008236)#node82:0.03774)#node81:0.065031)#node47:0.001365,((PHR-9:0.013443,PHR-43:0.053316)#node84:0.070839,(PHR-20:0.048915,((PHR-15:0.008236,(PHR-57:0.021842,PHR-98:0.114469)#node88:0.077363)#node87:0.01278,PHR-44:0.062793)#node86:0.026587)#node85:0.039239)#node83:0.023175)#node46:0.010956,PHR-6:0.083586)#node45;';
+
+    const tree = Tree.parseNewick(newickString);
+
+    annotateTransmissions(tree, transmissions);
+
+    tree.order((nodeA, countA, nodeB, countB) => {
+        if (nodeA.parent && nodeA.parent.annotations.host) {
+            // attempt to order by whether the host annotation is the same as the
+            // parent.
+            parentHost = nodeA.parent.annotations.host;
+            if (nodeA.annotations.host === parentHost) {
+                return 1;
+            }
+            if (nodeB.annotations.host === parentHost) {
+                return -1;
+            }
+        }
+        // otherwise just order by increasing node density
+        return (countA - countB);
+    });
+
+    const treeSVG = document.getElementById('transmission-1');
+    const layout = new TransmissionLayout(tree);
+    const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150},
+        { hoverBorder: 2, backgroundBorder: 2,
+            baubles: [
+                new CircleBauble(),
+            ]
+        });
+
+    figTree.hilightInternalNodes();
+    figTree.onClickInternalNode(layout.rotate())
+</script>
+
+</body>
+
+</html>
