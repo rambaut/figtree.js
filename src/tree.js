@@ -373,7 +373,12 @@ export class Tree {
                 midpoint: true
             }
         };
-        node.parent.children[node.parent.children.indexOf(node)] = splitNode;
+        if (node.parent) {
+            node.parent.children[node.parent.children.indexOf(node)] = splitNode;
+        } else {
+            // node is the root so make splitNode the root
+            this.root = splitNode;
+        }
         node.parent = splitNode;
         node.length = splitLocation;
 
