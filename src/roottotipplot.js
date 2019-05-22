@@ -3,7 +3,7 @@
 /** @module roottotipplot */
 
 import {Tree, Type} from "./tree.js";
-const d3 = require("d3");
+// const d3 = require("d3");
 
 /**
  * The RootToTipPlot class

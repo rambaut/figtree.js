@@ -2,7 +2,7 @@
 
 /** @module layout */
 
-import { RectangularLayout } from "./rectangularlayout.js";
+import { RectangularLayout } from "./rectangularLayout.js";
 
 export const Direction = {
     UP : Symbol("UP"),

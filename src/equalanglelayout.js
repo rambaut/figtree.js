@@ -3,7 +3,7 @@
 /** @module equal angle unrooted layout  */
 
 import { Layout } from "./layout.js"
-const d3 = require("d3");
+// const d3 = require("d3");
 
 /**
  * The equal angle unrooted layout class
