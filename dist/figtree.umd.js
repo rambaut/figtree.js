@@ -7754,7 +7754,8 @@
                 // nodeRadius: 6,
                 hoverBorder: 2,
                 backgroundBorder: 0,
-                baubles: []
+                baubles: [],
+                transitionDuration:500,
             };
         }
 
@@ -7863,7 +7864,7 @@
 
             this.svgSelection.select("#x-axis")
                 .transition()
-                .duration(500)
+                .duration(this.settings.transitionDuration)
                 .call(xAxis);
 
 
@@ -7884,7 +7885,7 @@
         hilightBranches() {
             // need to use 'function' here so that 'this' refers to the SVG
             // element being hovered over.
-            const selected = this.svgSelection.selectAll(".branch");
+            const selected = this.svgSelection.selectAll(".branch").select(".branch-path");
             selected.on("mouseover", function (d, i) {
                 select(this).classed("hovered", true);
 
@@ -8001,7 +8002,41 @@
                 action(vertex);
             });
         }
+        /**
+         * General Nodehover callback
+         * @param {*} action and object with an enter and exit function
+         * @param {*} selection defualts to ".node" will select this selection's child ".node-shape"
+         */
 
+        onHoverNode(action,selection=null){
+            const selected = this.svgSelection.selectAll(`${selection ? selection : ".node"}`).select(".node-shape");        
+            selected.on("mouseover", (vertex) => {
+                action.enter(vertex);
+            });
+            selected.on("mouseout", (vertex) => {
+                action.exit(vertex);
+            });
+        }
+
+        /**
+         * General branch hover callback
+         * @param {*} action and object with an enter and exit function
+         * @param {*} selection defualts to .branch
+         */
+        onHoverBranch(action,selection=null){ 
+            // need to use 'function' here so that 'this' refers to the SVG
+            // element being hovered over.
+            const selected = this.svgSelection.selectAll(`${selection ? selection : ".branch"}`).select("branch-path");
+
+            selected.on("mouseover", function (d, i) {
+                action.enter(this);
+
+            });
+            selected.on("mouseout", function (d, i) {
+                action.exit(this);
+
+            });
+        }
         /**
          * Registers some text to appear in a popup box when the mouse hovers over the selection.
          *
@@ -8086,7 +8121,7 @@
         // update the existing elements
         nodes
             .transition()
-            .duration(500)
+            .duration(this.settings.transitionDuration)
             .attr("class", (v) => ["node", ...v.classes].join(" "))
             .attr("transform", (v) => {
                 return `translate(${this.scales.x(v.x)}, ${this.scales.y(v.y)})`;
@@ -8097,13 +8132,13 @@
             const d = nodes.select(".node-shape")
                 .filter(bauble.vertexFilter)
                 .transition()
-                .duration(500);
+                .duration(this.settings.transitionDuration);
             bauble.updateShapes(d);
         });
 
         nodes.select("text .node-label .name")
             .transition()
-            .duration(500)
+            .duration(this.settings.transitionDuration)
             .attr("class", "node-label name")
             .attr("text-anchor", "start")
             .attr("alignment-baseline", "middle")
@@ -8113,7 +8148,7 @@
 
         nodes.select("text .node-label .support")
             .transition()
-            .duration(500)
+            .duration(this.settings.transitionDuration)
             .attr("alignment-baseline", d => (d.labelBelow ? "bottom": "hanging" ))
             .attr("class", "node-label support")
             .attr("text-anchor", "end")
@@ -8157,7 +8192,7 @@
             const d = nodes
                 .filter(bauble.vertexFilter)
                 .transition()
-                .duration(500)
+                .duration(this.settings.transitionDuration)
                 .attr("transform", (v) => {
                     return `translate(${this.scales.x(v.x)}, ${this.scales.y(v.y)})`;
                 });
@@ -8214,7 +8249,7 @@
         // update the existing elements
         branches
             .transition()
-            .duration(500)
+            .duration(this.settings.transitionDuration)
             .attr("class", (e) => ["branch", ...e.classes].join(" "))
             .attr("transform", (e) => {
                 return `translate(${this.scales.x(e.v0.x)}, ${this.scales.y(e.v1.y)})`;
