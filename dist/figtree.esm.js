@@ -8320,7 +8320,11 @@ class Graph{
 
 
         nodes.forEach(node=>this.addNode(node));
-        edges.forEach(edge=>this.drawEdge(edge.source,edge.target));
+        edges.forEach(edge=> {
+                            const metaData = edge.metaData? edge.metaData:{};
+                           
+                            this.drawEdge(edge.source,edge.target,metaData);
+        });
         // This is used in identifying terminal tips  
     };
     /**
@@ -8472,7 +8476,7 @@ class Graph{
      * @param {String} sourceNode Id
      * @param {String} targetNode Id
      */
-    drawEdge(sourceNodeId,targetNodeId){
+    drawEdge(sourceNodeId,targetNodeId,metaData={}){
         if(!this.nodeMap.has(sourceNodeId)){
             throw new Error(`${sourceNodeId} not found in graph`)
         }
@@ -8480,7 +8484,7 @@ class Graph{
             throw new Error(`${targetNodeId} not found in graph`)
         }
         const index = this.edgeList.legnth;
-        const edge = {source:this.getNode(sourceNodeId),target:this.getNode(targetNodeId),id:`edge_${index}`};
+        const edge = {source:this.getNode(sourceNodeId),target:this.getNode(targetNodeId),id:`edge_${index}`,metaData:metaData};
         this.addEdge(edge);
     }
     /**
