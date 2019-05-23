@@ -7377,8 +7377,9 @@ class TransmissionLayout extends RectangularLayout {
  */
 
 /**
- * The Layout class
- *
+ * The ArcLayout class
+ * note the function in the settings that placed the nodes on the xaxis. the default is the 
+ * node's index in the node list.
  */
 class ArcLayout extends Layout {
 
@@ -7387,7 +7388,7 @@ class ArcLayout extends Layout {
             lengthFormat: format(".2f"),
             edgeWidth:2,
             xFunction:(n,i)=>i,
-            branchCurve:curveLinear
+            branchCurve:curveLinear,
         };
     }
 
@@ -7432,7 +7433,8 @@ class ArcLayout extends Layout {
         this._verticalRange = [-this.graph.nodes.length,this.graph.nodes.length];
 
         // get the nodes in pre-order (starting at first node)
-        const nodes = [...this.graph.preorder(this.graph.nodes[0])];
+        // const nodes = [...this.graph.preorder(this.graph.nodes[0])];
+        const nodes = [...this.graph.nodes];
 
 
         if (vertices.length === 0) {
@@ -7470,9 +7472,9 @@ class ArcLayout extends Layout {
                         ...v.classes,
                         ...Object.entries(v.node.annotations)
                             .filter(([key]) => {
-                                return this.tree.annotations[key].type === Type.DISCRETE ||
-                                    this.tree.annotations[key].type === Type.BOOLEAN ||
-                                    this.tree.annotations[key].type === Type.INTEGER;
+                                return this.graph.annotations[key].type === Type.DISCRETE ||
+                                    this.graph.annotations[key].type === Type.BOOLEAN ||
+                                    this.graph.annotations[key].type === Type.INTEGER;
                             })
                             .map(([key, value]) => `${key}-${value}`)];
                 }
@@ -7529,9 +7531,9 @@ class ArcLayout extends Layout {
                         ...e.classes,
                         ...Object.entries(e.v1.node.annotations)
                             .filter(([key]) => {
-                                return this.tree.annotations[key].type === Type.DISCRETE ||
-                                    this.tree.annotations[key].type === Type.BOOLEAN ||
-                                    this.tree.annotations[key].type === Type.INTEGER;
+                                return this.graph.annotations[key].type === Type.DISCRETE ||
+                                    this.graph.annotations[key].type === Type.BOOLEAN ||
+                                    this.graph.annotations[key].type === Type.INTEGER;
                             })
                             .map(([key, value]) => `${key}-${value}`)];
                 }
