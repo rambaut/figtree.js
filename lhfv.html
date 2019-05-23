@@ -132,13 +132,17 @@
             if (!node) {
                 node = tree.getNode(record.id);
             }
+            node.annotations.host = record.host;
 
+            let height = tree.getHeight(node);
             let splitNode = node;
             record.transmissions.forEach((trans) => {
                 // {"host":"UnSampled8","height":0.0497}
-                splitNode = tree.splitBranch(splitNode, trans.height);
+                splitNode = tree.splitBranch(splitNode, trans.height - height);
                 // splitNode.id = trans.id;
-                splitNode.host = trans.host;
+                splitNode.id = `node_${trans.node}`;
+                splitNode.annotations.host = trans.host;
+                height = trans.height;
             });
         })
     }
@@ -155,12 +159,12 @@
         if (nodeA.parent && nodeA.parent.annotations.host) {
             // attempt to order by whether the host annotation is the same as the
             // parent.
-            parentHost = nodeA.parent.annotations.host;
+            const parentHost = nodeA.parent.annotations.host;
             if (nodeA.annotations.host === parentHost) {
-                return 1;
+                return -1;
             }
             if (nodeB.annotations.host === parentHost) {
-                return -1;
+                return 1;
             }
         }
         // otherwise just order by increasing node density
@@ -170,14 +174,20 @@
     const treeSVG = document.getElementById('transmission-1');
     const layout = new TransmissionLayout(tree);
     const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150},
-        { hoverBorder: 2, backgroundBorder: 2,
+        { hoverBorder: 2, backgroundBorder: 1,
             baubles: [
-                new CircleBauble(),
+                new CircleBauble({ radius: 4, vertexFilter: (v) => v.degree === 1 }),
+                new CircleBauble({ radius: 2, vertexFilter: (v) => v.degree === 2 })
             ]
         });
 
+    figTree.addToolTip('.internal-node', (node) => {
+        let text = `${node.name ? node.name : node.id }`;
+        text += `<p>case: ${node.annotations.host}</p>`;
+        return text;
+    });
+
     figTree.hilightInternalNodes();
-    figTree.onClickInternalNode(layout.rotate())
 </script>
 
 </body>

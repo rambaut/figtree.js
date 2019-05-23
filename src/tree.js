@@ -84,7 +84,7 @@ export class Tree {
      * Returns the sibling of a node (i.e., the first other child of the parent)
      *
      * @param node
-     * @returns {*}
+     * @returns {object}
      */
     getSibling(node) {
         if (!node.parent) {
@@ -97,7 +97,7 @@ export class Tree {
      * Returns a node from its id stored.
      *
      * @param id
-     * @returns {*}
+     * @returns {object}
      */
     getNode(id) {
         return this.nodeMap.get(id);
@@ -107,10 +107,24 @@ export class Tree {
      * Returns an external node (tip) from its name.
      *
      * @param name
-     * @returns {*}
+     * @returns {object}
      */
     getExternalNode(name) {
         return this.tipMap.get(name);
+    }
+
+    /**
+     * If heights are not currently known then calculate heights for all nodes
+     * then return the height of the specified node.
+     * @param node
+     * @returns {number}
+     */
+    getHeight(node) {
+        if (!this.heightsKnown) {
+
+            calculateHeights.call(this, 0.0);
+        }
+        return node.height;
     }
 
     /**
@@ -250,6 +264,8 @@ export class Tree {
             node.length = l;
             this.getSibling(node).length = rootLength - l;
         }
+
+        this.heightsKnown = false;
 
         this.treeUpdateCallback();
     };
@@ -770,6 +786,34 @@ function orderNodes(node, ordering, callback = null) {
     }
     return count;
 }
+
+/**
+ * A private recursive function that calculates the height of each node (with the most
+ * diverged tip from the root having height given by origin).
+ * @param origin
+ */
+function calculateHeights(origin) {
+    let maxDivergence = [ 0.0 ];
+    calculateDivergence(this.root, origin, maxDivergence);
+
+    this.nodeList.forEach((node) => node.height = maxDivergence[0] - node.divergence );
+    this.heightsKnown = true;
+}
+
+function calculateDivergence(node, divergence, maxDivergence) {
+    let d = divergence + node.length;
+    if (node.children) {
+        // count the number of descendents for each child
+        for (const child of node.children) {
+            calculateDivergence(child, d, maxDivergence);
+        }
+    }
+    if (d > maxDivergence[0]) {
+        maxDivergence[0] = d;
+    }
+    node.divergence = d;
+}
+
 
 /**
  * A private recursive function that uses the Fitch algorithm to assign
