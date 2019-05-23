@@ -7414,7 +7414,8 @@
             this.branchLabelAnnotationName = null;
             this.internalNodeLabelAnnotationName = null;
             this.externalNodeLabelAnnotationName = null;
-
+            this._horizontalRange = [0.0, max(this.graph.nodes,(n,i)=>this.settings.xFunction(n,i))];
+            this._verticalRange = [-this.graph.nodes.length,this.graph.nodes.length];
             // called whenever the tree changes...
             // this.tree.treeUpdateCallback = () => {
             //     this.update();
@@ -7435,8 +7436,7 @@
          */
         layout(vertices, edges) {
 
-            this._horizontalRange = [0.0, max(this.graph.nodes,(n,i)=>this.settings.xFunction(n,i))];
-            this._verticalRange = [-this.graph.nodes.length,this.graph.nodes.length];
+
 
             // get the nodes in pre-order (starting at first node)
             // const nodes = [...this.graph.preorder(this.graph.nodes[0])];
@@ -7466,7 +7466,6 @@
 
                     v.x = this.settings.xFunction(n,i);
                     v.y=0;
-
                     v.degree = this.graph.getEdges(v.node).length ; // the number of edges 
 
                     v.classes = [
@@ -7816,10 +7815,11 @@
 
             const yScale = linear$1()
                 .domain(this.layout.verticalRange)
-                .range([this.margins.top + 20, height -this. margins.bottom - 20]);
+                .range([this.margins.top + 20, height -this.margins.bottom - 20]);
 
             this.scales = {x:xScale, y:yScale, width, height};
-
+            console.log(this.scales.x.domain());
+            console.log(this.scales.x.range());
             addAxis.call(this, this.margins);
 
             this.vertices = [];
@@ -7840,7 +7840,6 @@
 
             // get new positions
             this.layout.layout(this.vertices, this.edges);
-
             // svg may have changed sizes
             let width,height;
             if(Object.keys(this.settings).indexOf("width")>-1){

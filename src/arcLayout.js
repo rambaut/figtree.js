@@ -39,7 +39,8 @@ export class ArcLayout extends Layout {
         this.branchLabelAnnotationName = null;
         this.internalNodeLabelAnnotationName = null;
         this.externalNodeLabelAnnotationName = null;
-
+        this._horizontalRange = [0.0, max(this.graph.nodes,(n,i)=>this.settings.xFunction(n,i))];
+        this._verticalRange = [-this.graph.nodes.length,this.graph.nodes.length];
         // called whenever the tree changes...
         // this.tree.treeUpdateCallback = () => {
         //     this.update();
@@ -60,8 +61,7 @@ export class ArcLayout extends Layout {
      */
     layout(vertices, edges) {
 
-        this._horizontalRange = [0.0, max(this.graph.nodes,(n,i)=>this.settings.xFunction(n,i))];
-        this._verticalRange = [-this.graph.nodes.length,this.graph.nodes.length];
+
 
         // get the nodes in pre-order (starting at first node)
         // const nodes = [...this.graph.preorder(this.graph.nodes[0])];
@@ -91,7 +91,6 @@ export class ArcLayout extends Layout {
 
                 v.x = this.settings.xFunction(n,i);
                 v.y=0;
-
                 v.degree = this.graph.getEdges(v.node).length ; // the number of edges 
 
                 v.classes = [

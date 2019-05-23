@@ -80,10 +80,11 @@ export class FigTree {
 
         const yScale = scaleLinear()
             .domain(this.layout.verticalRange)
-            .range([this.margins.top + 20, height -this. margins.bottom - 20]);
+            .range([this.margins.top + 20, height -this.margins.bottom - 20]);
 
         this.scales = {x:xScale, y:yScale, width, height};
-
+        console.log(this.scales.x.domain());
+        console.log(this.scales.x.range());
         addAxis.call(this, this.margins);
 
         this.vertices = [];
@@ -104,7 +105,6 @@ export class FigTree {
 
         // get new positions
         this.layout.layout(this.vertices, this.edges);
-
         // svg may have changed sizes
         let width,height;
         if(Object.keys(this.settings).indexOf("width")>-1){
