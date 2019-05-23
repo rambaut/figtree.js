@@ -1,5 +1,5 @@
 "use strict";
-import {select,scaleLinear,axisBottom,mouse,event} from "d3";
+import {select,selectAll,scaleLinear,axisBottom,mouse,event} from "d3";
 
 /** @module figtree */
 // const d3 = require("d3");
@@ -38,12 +38,22 @@ export class FigTree {
         // merge the default settings with the supplied settings
         this.settings = {...FigTree.DEFAULT_SETTINGS(), ...settings};
         this.svg=svg;
+
     }
     draw(){
         
         // get the size of the svg we are drawing on
-        const width = this.svg.getBoundingClientRect().width;
-        const height = this.svg.getBoundingClientRect().height;
+        let width,height;
+        if(Object.keys(this.settings).indexOf("width")>-1){
+            width =this. settings.width;
+        }else{
+            width = this.svg.getBoundingClientRect().width;
+        }
+        if(Object.keys(this.settings).indexOf("height")>-1){
+            height =this. settings.heiheightgth;
+        }else{
+            height = this.svg.getBoundingClientRect().height;
+        }
 
         //remove the tree if it is there already
         select(this.svg).select("g").remove();
@@ -95,9 +105,17 @@ export class FigTree {
         this.layout.layout(this.vertices, this.edges);
 
         // svg may have changed sizes
-        // get the size of the svg we are drawing on
-        const width = this.svg.getBoundingClientRect().width;
-        const height = this.svg.getBoundingClientRect().height;
+        let width,height;
+        if(Object.keys(this.settings).indexOf("width")>-1){
+            width =this. settings.width;
+        }else{
+            width = this.svg.getBoundingClientRect().width;
+        }
+        if(Object.keys(this.settings).indexOf("height")>-1){
+            height =this. settings.height;
+        }else{
+            height = this.svg.getBoundingClientRect().height;
+        }
 
         // update the scales' domains
         this.scales.x.domain(this.layout.horizontalRange).range([this.margins.left, width - this.margins.right]);
@@ -105,14 +123,14 @@ export class FigTree {
         this.scales.width=width;
         this.scales.height=height;
 
-        updateAxis.call(this);
-        // const xAxis = axisBottom(this.scales.x)
-        //     .tickArguments(this.settings.xAxisTickArguments);
+        // updateAxis.call(this);
+        const xAxis = axisBottom(this.scales.x)
+            .tickArguments(this.settings.xAxisTickArguments);
 
-        // this.svgSelection.select("#x-axis")
-        //     .transition()
-        //     .duration(500)
-        //     .call(xAxis);
+        this.svgSelection.select("#x-axis")
+            .transition()
+            .duration(500)
+            .call(xAxis);
 
 
         // call the private methods to create the components of the diagram
@@ -132,12 +150,14 @@ export class FigTree {
     hilightBranches() {
         // need to use 'function' here so that 'this' refers to the SVG
         // element being hovered over.
-        const selected = this.svgSelection.selectAll(".branch").select(".branch-path");
+        const selected = this.svgSelection.selectAll(".branch")
         selected.on("mouseover", function (d, i) {
             select(this).classed("hovered", true);
+
         });
         selected.on("mouseout", function (d, i) {
             select(this).classed("hovered", false);
+
         });
     }
 
@@ -162,10 +182,9 @@ export class FigTree {
         // need to use 'function' here so that 'this' refers to the SVG
         // element being hovered over.
         const self = this;
-        const selected = this.svgSelection.selectAll(selection).select(".node-shape");
+        const selected = this.svgSelection.selectAll(selection);
         selected.on("mouseover", function (d, i) {
-            const node = select(this);
-
+            const node = select(this).select(".node-shape");
             self.settings.baubles.forEach((bauble) => {
                 if (bauble.vertexFilter(node)) {
                     bauble.updateShapes(node, self.settings.hoverBorder);
@@ -175,7 +194,7 @@ export class FigTree {
             node.classed("hovered", true);
         });
         selected.on("mouseout", function (d, i) {
-            const node = select(this);
+            const node = select(this).select(".node-shape");
 
             self.settings.baubles.forEach((bauble) => {
                 if (bauble.vertexFilter(node)) {
@@ -243,7 +262,7 @@ export class FigTree {
      * @param selection
      */
     onClickNode(action, selection = null) {
-        const selected = this.svgSelection.selectAll(`${selection ? selection : ".node"}`).select(".node-shape");
+        const selected = this.svgSelection.selectAll(`${selection ? selection : ".node"}`).select(".node-shape");        
         selected.on("click", (vertex) => {
             action(vertex);
         })
@@ -290,7 +309,7 @@ export class FigTree {
  */
 function updateNodes() {
 
-    const nodesLayer = this.svgSelection.select(".nodes-layer");
+    const nodesLayer = select(this.svg).select(".nodes-layer");
 
     // DATA JOIN
     // Join new data with old elements, if any.
@@ -514,31 +533,3 @@ function addAxis() {
         .text(this.settings.xAxisTitle);
 }
 
-/**
- * Update Axis
- */
-function updateAxis(){
-    const xAxis = axisBottom(this.scales.x)
-        .tickArguments(this.settings.xAxisTickArguments);
-
-    const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
-
-    const axesLayer = this.svgSelection.select(".axes-layer");
-
-    axesLayer
-        .transition()
-        .duration(500)
-        .attr("transform", `translate(0, ${this.scales.height - this.margins.bottom + 5})`)
-       
-
-    // axesLayer
-    //     .append("g")
-    //     .attr("id", "x-axis-label")
-    //     .attr("class", "axis-label")
-    //     .attr("transform", `translate(${this.margins.left}, ${this.scales.height - this.margins.bottom})`)
-    //     .append("text")
-    //     .attr("transform", `translate(${xAxisWidth / 2}, 35)`)
-    //     .attr("alignment-baseline", "hanging")
-    //     .style("text-anchor", "middle")
-    //     .text(this.settings.xAxisTitle);
-}

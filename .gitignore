@@ -64,3 +64,5 @@ typings/
 .ipr
 .iws
 package-lock.json
+Gruntfile.js
+test/graph.spec.js

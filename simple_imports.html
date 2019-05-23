@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>FigTree Demo</title>
-    <!-- <script src="js/d3.js" charset="utf-8"></script> -->
+    <script src="js/d3.js" charset="utf-8"></script>
     <!--<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>-->
     <style>
         text {
@@ -146,12 +146,13 @@
                 new CircleBauble(),
             ]
         });
-
+        figTree.draw();
     figTree.hilightInternalNodes();
-    figTree.onClickInternalNode(layout.rotate());
+    figTree.onClickInternalNode(d=>console.log("clicked"));//layout.rotate());
 
-    figTree.hilightBranches();
-    figTree.onClickBranch(layout.reroot());
+    // figTree.hilightBranches();
+
+        figTree.onClickBranch(layout.reroot());
 
     // figTree.addToolTip('#root', "The root node - represents the most recent<br>common ancestor of the whole tree");
     // figTree.addToolTip('.internal-node .node-shape', "This is an internal node - it is the most recent<br>common ancestor of the viruses to the right" );
