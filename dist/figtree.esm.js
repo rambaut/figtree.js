@@ -1,3 +1,5 @@
+import 'constants';
+
 /** @module tree */
 
 const Type = {
@@ -7389,6 +7391,8 @@ class ArcLayout extends Layout {
             edgeWidth:2,
             xFunction:(n,i)=>i,
             branchCurve:curveLinear,
+            curve:'arc',
+            
         };
     }
 
@@ -7595,21 +7599,39 @@ class ArcLayout extends Layout {
     update() {
         this.updateCallback();
     }
-// do it with interpelations
+// Takes in scales and returns a function that will draw the branch paths given each edge and index as input.
+// branches have been translated so 0,0 is the top left hand corner of the group - 
     branchPathGenerator(scales){
             const branchPath =(e,i)=>{
+                let points;
+            if(this.settings.curve==="bezier"){
+                const sign = i%2===0?1:-1;
+                
+                const startingP = {x:0,
+                                    y: scales.y(e.v0.y)-scales.y(e.v1.y)}; // which is 0 in the defualt setting
+                const endingP = {x:scales.x(e.v1.x)-scales.x(e.v0.x),
+                                y: 0};
+                const correctingFactor =  Math.abs(startingP.x-endingP.x)/(scales.x.range()[1]-scales.x.range()[0]); // so the longer the arc the heigher it goes
+                const controlPoint = {"x":(startingP.x),//+endingP.x)/3,
+                    "y":sign*scales.y(scales.y.domain()[1])*correctingFactor};
+                points = quadraticBezier(startingP,endingP,controlPoint);
+                console.log(points);
+            }else{
+                const r = (scales.x(e.v1.x) - scales.x(e.v0.x))/2;
+                const a = r; // center x position
+                const sign = i%2===0?1:-1;
+                const x = range(0,scales.x(e.v1.x) - scales.x(e.v0.x),1);//step every pixel
+                const y = x.map(x=>circleY(x,r,a,sign));
+                points = x.map((x,i)=>{
+                    return {x:x,y:y[i]}
+                }); 
+            }
+
                 const branchLine = line()
                      .x((v) => v.x)
                     .y((v) => v.y)
                     .curve(this.branchCurve);
-            const r = (scales.x(e.v1.x) - scales.x(e.v0.x))/2;
-            const a = r; // center x position
-            const sign = i%2===0?1:-1;
-            const x = range(0,scales.x(e.v1.x) - scales.x(e.v0.x),1);//step every pixel
-            const y = x.map(x=>circleY.call(this,x,r,a,sign));
-            const points = x.map((x,i)=>{
-                return {x:x,y:y[i]}
-            });        
+      
             return(
                 branchLine(
                     points
@@ -7622,12 +7644,37 @@ class ArcLayout extends Layout {
 
 }
 
+
 /*
  * Private methods, called by the class using the <function>.call(this) function.
  */
 function circleY(x,r,a,sign){
         return  sign*(Math.sqrt(Math.pow(r,2)-Math.pow((x-a),2)))
 }
+
+/** Draws a quadraic bezier curve between two points
+ * 
+ * @param {*} p0 - starting point {x:,y:}
+ * @param {*} p1 - ending point {x:,y:}
+ * @param {*} q - control point {x:,y:}
+ */
+function quadraticBezier(p0,p1,q){
+    const points = [];
+    console.log([p0,p1,q]);
+    for(let t =0; t<=1;t+=0.01){
+        const x = Math.pow((1-t),2)*p0.x+2*(1-t)*t*q.x+Math.pow(t,2)*p1.x;
+        const y = Math.pow((1-t),2)*p0.y+2*(1-t)*t*q.y+Math.pow(t,2)*p1.y;
+        points.push({"x":x,"y":y});
+    }
+    return points;
+}
+/**
+ * Cubic Bezier curves
+ * @param {*} p0 -starting point
+ * @param {*} p1 - ending point
+ * @param {*} ...rest control points
+ * @param {*} q1 - control point 2
+ */
 
 /** @module bauble */
 
