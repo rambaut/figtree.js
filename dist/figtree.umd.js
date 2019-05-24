@@ -7830,7 +7830,7 @@
                 width = this.svg.getBoundingClientRect().width;
             }
             if(Object.keys(this.settings).indexOf("height")>-1){
-                height =this. settings.heiheightgth;
+                height =this.settings.height;
             }else{
                 height = this.svg.getBoundingClientRect().height;
             }
