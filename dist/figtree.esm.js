@@ -7612,10 +7612,15 @@ class ArcLayout extends Layout {
                 const endingP = {x:scales.x(e.v1.x)-scales.x(e.v0.x),
                                 y: 0};
                 const correctingFactor =  Math.abs(startingP.x-endingP.x)/(scales.x.range()[1]-scales.x.range()[0]); // so the longer the arc the heigher it goes
-                const controlPoint = {"x":(startingP.x),//+endingP.x)/3,
-                    "y":sign*scales.y(scales.y.domain()[1])*correctingFactor};
-                points = quadraticBezier(startingP,endingP,controlPoint);
-                console.log(points);
+                const controlPoint = {"x":startingP.x,
+                                        "y":sign*scales.y(scales.y.domain()[1])*correctingFactor};
+                const controlPoint1 = {"x":startingP.x,//+endingP.x)/3,
+                                        "y":sign*scales.y(scales.y.domain()[1])*correctingFactor};
+                    
+                const controlPoint2 = {"x":endingP.x,//+endingP.x)/3,
+                                        "y":sign*scales.y(scales.y.domain()[1])*correctingFactor};
+                points = cubicBezier(startingP,controlPoint1,controlPoint2,endingP);
+                // points = quadraticBezier(startingP,controlPoint,endingP)
             }else{
                 const r = (scales.x(e.v1.x) - scales.x(e.v0.x))/2;
                 const a = r; // center x position
@@ -7651,30 +7656,23 @@ class ArcLayout extends Layout {
 function circleY(x,r,a,sign){
         return  sign*(Math.sqrt(Math.pow(r,2)-Math.pow((x-a),2)))
 }
-
-/** Draws a quadraic bezier curve between two points
- * 
- * @param {*} p0 - starting point {x:,y:}
- * @param {*} p1 - ending point {x:,y:}
- * @param {*} q - control point {x:,y:}
- */
-function quadraticBezier(p0,p1,q){
-    const points = [];
-    console.log([p0,p1,q]);
-    for(let t =0; t<=1;t+=0.01){
-        const x = Math.pow((1-t),2)*p0.x+2*(1-t)*t*q.x+Math.pow(t,2)*p1.x;
-        const y = Math.pow((1-t),2)*p0.y+2*(1-t)*t*q.y+Math.pow(t,2)*p1.y;
-        points.push({"x":x,"y":y});
-    }
-    return points;
-}
 /**
  * Cubic Bezier curves
  * @param {*} p0 -starting point
  * @param {*} p1 - ending point
- * @param {*} ...rest control points
+ * @param {*} q0 control points
  * @param {*} q1 - control point 2
  */
+function cubicBezier(p0,p1,p2,p3){
+
+    const points = [];
+    for(let t =0; t<=1;t+=0.01){
+        const x = Math.pow((1-t),3)*p0.x + 3*Math.pow((1-t),2)*t*p1.x +  3*(1-t)*Math.pow(t,2)*p2.x + Math.pow(t,3)*p3.x;
+        const y = Math.pow((1-t),3)*p0.y + 3*Math.pow((1-t),2)*t*p1.y +  3*(1-t)*Math.pow(t,2)*p2.y + Math.pow(t,3)*p3.y;
+        points.push({"x":x,"y":y});
+    }
+    return points;
+}
 
 /** @module bauble */
 
