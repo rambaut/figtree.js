@@ -83,8 +83,6 @@ export class FigTree {
             .range([this.margins.top + 20, height -this.margins.bottom - 20]);
 
         this.scales = {x:xScale, y:yScale, width, height};
-        console.log(this.scales.x.domain());
-        console.log(this.scales.x.range());
         addAxis.call(this, this.margins);
 
         this.vertices = [];

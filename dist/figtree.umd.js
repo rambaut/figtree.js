@@ -7400,7 +7400,7 @@
 
         /**
          * The constructor.
-         * @param tree
+         * @param graph
          * @param settings
          */
         constructor(graph, settings = { }) {
@@ -7414,8 +7414,7 @@
             this.branchLabelAnnotationName = null;
             this.internalNodeLabelAnnotationName = null;
             this.externalNodeLabelAnnotationName = null;
-            this._horizontalRange = [0.0, max(this.graph.nodes,(n,i)=>this.settings.xFunction(n,i))];
-            this._verticalRange = [-this.graph.nodes.length,this.graph.nodes.length];
+
             // called whenever the tree changes...
             // this.tree.treeUpdateCallback = () => {
             //     this.update();
@@ -7436,7 +7435,8 @@
          */
         layout(vertices, edges) {
 
-
+            this._horizontalRange = [0.0, max(this.graph.nodes,(n,i)=>this.settings.xFunction(n,i))];
+            this._verticalRange = [-this.graph.nodes.length,this.graph.nodes.length];
 
             // get the nodes in pre-order (starting at first node)
             // const nodes = [...this.graph.preorder(this.graph.nodes[0])];
@@ -7511,6 +7511,7 @@
                 dataEdges
                     .forEach((e, i) => {
                         const edge = {
+                            // The source and targets here are nodes in the graph;
                             v0: this.nodeMap.get(e.source),
                             v1: this.nodeMap.get(e.target),
                             key: e.id
@@ -7818,8 +7819,6 @@
                 .range([this.margins.top + 20, height -this.margins.bottom - 20]);
 
             this.scales = {x:xScale, y:yScale, width, height};
-            console.log(this.scales.x.domain());
-            console.log(this.scales.x.range());
             addAxis.call(this, this.margins);
 
             this.vertices = [];
@@ -8490,7 +8489,7 @@
             if(!this.nodeMap.has(targetNodeId)){
                 throw new Error(`${targetNodeId} not found in graph`)
             }
-            const index = this.edgeList.legnth;
+            const index = this.edgeList.length;
             const edge = {source:this.getNode(sourceNodeId),target:this.getNode(targetNodeId),id:`edge_${index}`,metaData:metaData};
             this.addEdge(edge);
         }

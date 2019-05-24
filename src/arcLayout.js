@@ -25,7 +25,7 @@ export class ArcLayout extends Layout {
 
     /**
      * The constructor.
-     * @param tree
+     * @param graph
      * @param settings
      */
     constructor(graph, settings = { }) {
@@ -39,8 +39,7 @@ export class ArcLayout extends Layout {
         this.branchLabelAnnotationName = null;
         this.internalNodeLabelAnnotationName = null;
         this.externalNodeLabelAnnotationName = null;
-        this._horizontalRange = [0.0, max(this.graph.nodes,(n,i)=>this.settings.xFunction(n,i))];
-        this._verticalRange = [-this.graph.nodes.length,this.graph.nodes.length];
+
         // called whenever the tree changes...
         // this.tree.treeUpdateCallback = () => {
         //     this.update();
@@ -61,7 +60,8 @@ export class ArcLayout extends Layout {
      */
     layout(vertices, edges) {
 
-
+        this._horizontalRange = [0.0, max(this.graph.nodes,(n,i)=>this.settings.xFunction(n,i))];
+        this._verticalRange = [-this.graph.nodes.length,this.graph.nodes.length];
 
         // get the nodes in pre-order (starting at first node)
         // const nodes = [...this.graph.preorder(this.graph.nodes[0])];
@@ -136,6 +136,7 @@ export class ArcLayout extends Layout {
             dataEdges
                 .forEach((e, i) => {
                     const edge = {
+                        // The source and targets here are nodes in the graph;
                         v0: this.nodeMap.get(e.source),
                         v1: this.nodeMap.get(e.target),
                         key: e.id

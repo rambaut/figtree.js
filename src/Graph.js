@@ -186,7 +186,7 @@ export class Graph{
         if(!this.nodeMap.has(targetNodeId)){
             throw new Error(`${targetNodeId} not found in graph`)
         }
-        const index = this.edgeList.legnth;
+        const index = this.edgeList.length;
         const edge = {source:this.getNode(sourceNodeId),target:this.getNode(targetNodeId),id:`edge_${index}`,metaData:metaData};
         this.addEdge(edge);
     }
