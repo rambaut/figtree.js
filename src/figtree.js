@@ -1,6 +1,8 @@
 "use strict";
+import {select,selectAll,scaleLinear,axisBottom,mouse,event} from "d3";
 
 /** @module figtree */
+// const d3 = require("d3");
 
 /**
  * The FigTree class
@@ -18,7 +20,8 @@ export class FigTree {
             // nodeRadius: 6,
             hoverBorder: 2,
             backgroundBorder: 0,
-            baubles: []
+            baubles: [],
+            transitionDuration:500,
         };
     }
 
@@ -35,20 +38,33 @@ export class FigTree {
 
         // merge the default settings with the supplied settings
         this.settings = {...FigTree.DEFAULT_SETTINGS(), ...settings};
+        this.svg=svg;
 
+    }
+    draw(){
+        
         // get the size of the svg we are drawing on
-        const width = svg.getBoundingClientRect().width;
-        const height = svg.getBoundingClientRect().height;
+        let width,height;
+        if(Object.keys(this.settings).indexOf("width")>-1){
+            width =this. settings.width;
+        }else{
+            width = this.svg.getBoundingClientRect().width;
+        }
+        if(Object.keys(this.settings).indexOf("height")>-1){
+            height =this.settings.height;
+        }else{
+            height = this.svg.getBoundingClientRect().height;
+        }
 
         //remove the tree if it is there already
-        d3.select(svg).select("g").remove();
+        select(this.svg).select("g").remove();
 
         // add a group which will contain the new tree
-        d3.select(svg).append("g")
-            .attr("transform",`translate(${margins.left},${margins.top})`);
+        select(this.svg).append("g")
+            .attr("transform",`translate(${this.margins.left},${this.margins.top})`);
 
         //to selecting every time
-        this.svgSelection = d3.select(svg).select("g");
+        this.svgSelection = select(this.svg).select("g");
 
         this.svgSelection.append("g").attr("class", "axes-layer");
         this.svgSelection.append("g").attr("class", "branches-layer");
@@ -58,17 +74,16 @@ export class FigTree {
         this.svgSelection.append("g").attr("class", "nodes-layer");
 
         // create the scales
-        const xScale = d3.scaleLinear()
+        const xScale = scaleLinear()
             .domain(this.layout.horizontalRange)
-            .range([margins.left, width - margins.right]);
+            .range([this.margins.left, width - this.margins.right]);
 
-        const yScale = d3.scaleLinear()
+        const yScale = scaleLinear()
             .domain(this.layout.verticalRange)
-            .range([margins.top + 20, height - margins.bottom - 20]);
+            .range([this.margins.top + 20, height -this.margins.bottom - 20]);
 
         this.scales = {x:xScale, y:yScale, width, height};
-
-        addAxis.call(this, margins);
+        addAxis.call(this, this.margins);
 
         this.vertices = [];
         this.edges = [];
@@ -88,17 +103,32 @@ export class FigTree {
 
         // get new positions
         this.layout.layout(this.vertices, this.edges);
+        // svg may have changed sizes
+        let width,height;
+        if(Object.keys(this.settings).indexOf("width")>-1){
+            width =this. settings.width;
+        }else{
+            width = this.svg.getBoundingClientRect().width;
+        }
+        if(Object.keys(this.settings).indexOf("height")>-1){
+            height =this. settings.height;
+        }else{
+            height = this.svg.getBoundingClientRect().height;
+        }
 
         // update the scales' domains
-        this.scales.x.domain(this.layout.horizontalRange);
-        this.scales.y.domain(this.layout.verticalRange);
+        this.scales.x.domain(this.layout.horizontalRange).range([this.margins.left, width - this.margins.right]);
+        this.scales.y.domain(this.layout.verticalRange).range([this.margins.top + 20, height -this. margins.bottom - 20]);
+        this.scales.width=width;
+        this.scales.height=height;
 
-        const xAxis = d3.axisBottom(this.scales.x)
+        // updateAxis.call(this);
+        const xAxis = axisBottom(this.scales.x)
             .tickArguments(this.settings.xAxisTickArguments);
 
         this.svgSelection.select("#x-axis")
             .transition()
-            .duration(500)
+            .duration(this.settings.transitionDuration)
             .call(xAxis);
 
 
@@ -121,10 +151,12 @@ export class FigTree {
         // element being hovered over.
         const selected = this.svgSelection.selectAll(".branch").select(".branch-path");
         selected.on("mouseover", function (d, i) {
-            d3.select(this).classed("hovered", true);
+            select(this).classed("hovered", true);
+
         });
         selected.on("mouseout", function (d, i) {
-            d3.select(this).classed("hovered", false);
+            select(this).classed("hovered", false);
+
         });
     }
 
@@ -149,10 +181,9 @@ export class FigTree {
         // need to use 'function' here so that 'this' refers to the SVG
         // element being hovered over.
         const self = this;
-        const selected = this.svgSelection.selectAll(selection).select(".node-shape");
+        const selected = this.svgSelection.selectAll(selection);
         selected.on("mouseover", function (d, i) {
-            const node = d3.select(this);
-
+            const node = select(this).select(".node-shape");
             self.settings.baubles.forEach((bauble) => {
                 if (bauble.vertexFilter(node)) {
                     bauble.updateShapes(node, self.settings.hoverBorder);
@@ -162,7 +193,7 @@ export class FigTree {
             node.classed("hovered", true);
         });
         selected.on("mouseout", function (d, i) {
-            const node = d3.select(this);
+            const node = select(this).select(".node-shape");
 
             self.settings.baubles.forEach((bauble) => {
                 if (bauble.vertexFilter(node)) {
@@ -192,7 +223,7 @@ export class FigTree {
         selected.on("click", function (edge) {
             const x1 = self.scales.x(edge.v1.x);
             const x2 = self.scales.x(edge.v0.x);
-            const mx = d3.mouse(this)[0];
+            const mx = mouse(this)[0];
             const proportion = Math.max(0.0, Math.min(1.0, (mx - x2) / (x1 - x2)));
             action(edge, proportion);
         })
@@ -230,12 +261,46 @@ export class FigTree {
      * @param selection
      */
     onClickNode(action, selection = null) {
-        const selected = this.svgSelection.selectAll(`${selection ? selection : ".node"}`).select(".node-shape");
+        const selected = this.svgSelection.selectAll(`${selection ? selection : ".node"}`).select(".node-shape");        
         selected.on("click", (vertex) => {
             action(vertex);
         })
     }
+    /**
+     * General Nodehover callback
+     * @param {*} action and object with an enter and exit function
+     * @param {*} selection defualts to ".node" will select this selection's child ".node-shape"
+     */
 
+    onHoverNode(action,selection=null){
+        const selected = this.svgSelection.selectAll(`${selection ? selection : ".node"}`).select(".node-shape");        
+        selected.on("mouseover", (vertex) => {
+            action.enter(vertex);
+        });
+        selected.on("mouseout", (vertex) => {
+            action.exit(vertex);
+        });
+    }
+
+    /**
+     * General branch hover callback
+     * @param {*} action and object with an enter and exit function
+     * @param {*} selection defualts to .branch
+     */
+    onHoverBranch(action,selection=null){ 
+        // need to use 'function' here so that 'this' refers to the SVG
+        // element being hovered over.
+        const selected = this.svgSelection.selectAll(`${selection ? selection : ".branch"}`).select("branch-path");
+
+        selected.on("mouseover", function (d, i) {
+            action.enter(this);
+
+        });
+        selected.on("mouseout", function (d, i) {
+            action.exit(this);
+
+        });
+    }
     /**
      * Registers some text to appear in a popup box when the mouse hovers over the selection.
      *
@@ -252,8 +317,8 @@ export class FigTree {
                     tooltip.innerHTML = text(selected.node);
                 }
                 tooltip.style.display = "block";
-                tooltip.style.left = d3.event.pageX + 10 + "px";
-                tooltip.style.top = d3.event.pageY + 10 + "px";
+                tooltip.style.left =event.pageX + 10 + "px";
+                tooltip.style.top = event.pageY + 10 + "px";
             }
         );
         this.svgSelection.selectAll(selection).on("mouseout", function () {
@@ -277,7 +342,7 @@ export class FigTree {
  */
 function updateNodes() {
 
-    const nodesLayer = this.svgSelection.select(".nodes-layer");
+    const nodesLayer = select(this.svg).select(".nodes-layer");
 
     // DATA JOIN
     // Join new data with old elements, if any.
@@ -320,7 +385,7 @@ function updateNodes() {
     // update the existing elements
     nodes
         .transition()
-        .duration(500)
+        .duration(this.settings.transitionDuration)
         .attr("class", (v) => ["node", ...v.classes].join(" "))
         .attr("transform", (v) => {
             return `translate(${this.scales.x(v.x)}, ${this.scales.y(v.y)})`;
@@ -331,13 +396,13 @@ function updateNodes() {
         const d = nodes.select(".node-shape")
             .filter(bauble.vertexFilter)
             .transition()
-            .duration(500);
+            .duration(this.settings.transitionDuration);
         bauble.updateShapes(d)
     });
 
     nodes.select("text .node-label .name")
         .transition()
-        .duration(500)
+        .duration(this.settings.transitionDuration)
         .attr("class", "node-label name")
         .attr("text-anchor", "start")
         .attr("alignment-baseline", "middle")
@@ -347,7 +412,7 @@ function updateNodes() {
 
     nodes.select("text .node-label .support")
         .transition()
-        .duration(500)
+        .duration(this.settings.transitionDuration)
         .attr("alignment-baseline", d => (d.labelBelow ? "bottom": "hanging" ))
         .attr("class", "node-label support")
         .attr("text-anchor", "end")
@@ -391,7 +456,7 @@ function updateNodeBackgrounds() {
         const d = nodes
             .filter(bauble.vertexFilter)
             .transition()
-            .duration(500)
+            .duration(this.settings.transitionDuration)
             .attr("transform", (v) => {
                 return `translate(${this.scales.x(v.x)}, ${this.scales.y(v.y)})`;
             });
@@ -448,7 +513,7 @@ function updateBranches() {
     // update the existing elements
     branches
         .transition()
-        .duration(500)
+        .duration(this.settings.transitionDuration)
         .attr("class", (e) => ["branch", ...e.classes].join(" "))
         .attr("transform", (e) => {
             return `translate(${this.scales.x(e.v0.x)}, ${this.scales.y(e.v1.y)})`;
@@ -475,7 +540,7 @@ function updateBranches() {
  * Add axis
  */
 function addAxis() {
-    const xAxis = d3.axisBottom(this.scales.x)
+    const xAxis = axisBottom(this.scales.x)
         .tickArguments(this.settings.xAxisTickArguments);
 
     const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
@@ -500,3 +565,4 @@ function addAxis() {
         .style("text-anchor", "middle")
         .text(this.settings.xAxisTitle);
 }
+

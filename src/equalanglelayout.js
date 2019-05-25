@@ -1,50 +1,49 @@
 "use strict";
 
-/** @module layout */
+/** @module equal angle unrooted layout  */
 
-import { Layout } from "./layout.js";
-import { Type } from "./tree.js";
-import {format,curveStepBefore,max,line,mean} from "d3";
-
+import { Layout } from "./layout.js"
 // const d3 = require("d3");
-/**
- * The Layout class
- *
- */
-export class RectangularLayout extends Layout {
+import {format,max,} from "d3";
 
+/**
+ * The equal angle unrooted layout class
+ */
+
+
+ export class equalAngleLayout extends Layout {
     static DEFAULT_SETTINGS() {
         return {
             lengthFormat: format(".2f"),
             branchCurve: curveStepBefore
         };
     }
-
     /**
-     * The constructor.
+     * The constructor
      * @param tree
      * @param settings
      */
-    constructor(tree, settings = { }) {
-        super();
 
-        this.tree = tree;
+     constructor(tree,settings={}){
+         super();
+         this.tree = tree;
 
-        // merge the default settings with the supplied settings
-        this.settings = {...RectangularLayout.DEFAULT_SETTINGS(), ...settings};
+         // merge default settings with the supplied settings
 
-        this.branchLabelAnnotationName = null;
-        this.internalNodeLabelAnnotationName = null;
-        this.externalNodeLabelAnnotationName = null;
+         this.settings = {...UnrootedLayout.DEFAULT_SETTINGS(),...settings};
 
-        // called whenever the tree changes...
-        this.tree.treeUpdateCallback = () => {
-            this.update();
-        };
-    }
+         this.branchLabelAnnotationName = null;
+         this.internalNodeLabelAnnotationName = null;
+         this.externalNodeaLabelAnnotationName = null;
+
+         this.tree.treeUpdateCallback = () => {
+             this.update()
+         };
+     }
 
     /**
-     * Lays out the tree in a standard rectangular format.
+     * Lays out the tree using the equal-angle algorithm begining with an equal 
+     * angle tree
      *
      * This function is called by the FigTree class and is used to layout the nodes of the tree. It
      * populates the vertices array with vertex objects that wrap the nodes and have coordinates and
@@ -55,13 +54,33 @@ export class RectangularLayout extends Layout {
      * @param vertices - objects with an x, y coordinates and a reference to the original node
      * @param edges - objects with v1 (a vertex) and v0 (the parent vertex).
      */
+
     layout(vertices, edges) {
 
         this._horizontalRange = [0.0, max([...this.tree.rootToTipLengths()])];
         this._verticalRange = [0, this.tree.externalNodes.length - 1];
 
+        // setup initial angles
+        const numberOfTaxa = this.tree.externalNodes().legnth;
+        const radiansPerTaxa = Math.PI*2/numberOfTaxa;
+
+
         // get the nodes in post-order
         const nodes = [...this.tree.postorder()];
+
+        // get the an internal node
+
+        const startingNode = this.tree.internalNodes()[0];
+
+        // set angles using preorder traversal on node
+
+        // reroot on incoming branch
+
+        // set angles using preorder traversal on sibling
+
+
+        //determine x and y from angles and branch length
+
 
         let currentY = -1;
 
@@ -101,10 +120,9 @@ export class RectangularLayout extends Layout {
                         ...v.classes,
                         ...Object.entries(v.node.annotations)
                             .filter(([key]) => {
-                                return this.tree.annotations[key] &&
-                                    (this.tree.annotations[key].type === Type.DISCRETE ||
+                                return this.tree.annotations[key].type === Type.DISCRETE ||
                                     this.tree.annotations[key].type === Type.BOOLEAN ||
-                                    this.tree.annotations[key].type === Type.INTEGER);
+                                    this.tree.annotations[key].type === Type.INTEGER;
                             })
                             .map(([key, value]) => `${key}-${value}`)];
                 }
@@ -158,10 +176,9 @@ export class RectangularLayout extends Layout {
                         ...e.classes,
                         ...Object.entries(e.v1.node.annotations)
                             .filter(([key]) => {
-                                return this.tree.annotations[key] &&
-                                    (this.tree.annotations[key].type === Type.DISCRETE ||
+                                return this.tree.annotations[key].type === Type.DISCRETE ||
                                     this.tree.annotations[key].type === Type.BOOLEAN ||
-                                    this.tree.annotations[key].type === Type.INTEGER);
+                                    this.tree.annotations[key].type === Type.INTEGER;
                             })
                             .map(([key, value]) => `${key}-${value}`)];
                 }
@@ -175,78 +192,4 @@ export class RectangularLayout extends Layout {
                 e.labelBelow = e.v1.node.parent.children[0] !== e.v1.node;
             });
     }
-
-    set branchCurve(curve) {
-        this.settings.branchCurve = curve;
-        this.update();
-    }
-
-
-    get branchCurve() {
-        return this.settings.branchCurve;
-    }
-
-    /**
-     * Sets the annotation to use as the node labels.
-     *
-     * @param annotationName
-     */
-    setInternalNodeLabels(annotationName) {
-        this.internalNodeLabelAnnotationName = annotationName;
-        this.update();
-    }
-
-    /**
-     * Sets the annotation to use as the node labels.
-     *
-     * @param annotationName
-     */
-    setExternalNodeLabels(annotationName) {
-        this.externalNodeLabelAnnotationName = annotationName;
-        this.update();
-    }
-
-    /**
-     * Sets the annotation to use as the node labels.
-     *
-     * @param annotationName
-     */
-    setBranchLabels(annotationName) {
-        this.branchLabelAnnotationName = annotationName;
-        this.update();
-    }
-
-
-    /**
-     * Updates the tree when it has changed
-     */
-    update() {
-        this.updateCallback();
-    }
-
-    setYPosition(vertex, currentY) {
-        vertex.y = (vertex.node.children ? mean(vertex.node.children, (child) => this.nodeMap.get(child).y) : currentY += 1);
-        return currentY;
-    }
-    branchPathGenerator(scales){
-        const branchPath =(e,i)=>{
-            const branchLine = line()
-                 .x((v) => v.x)
-                .y((v) => v.y)
-                .curve(this.branchCurve);
-            return(
-                branchLine(
-                    [{x: 0, y: scales.y(e.v0.y) - scales.y(e.v1.y)},
-                    {x: scales.x(e.v1.x) - scales.x(e.v0.x), y: 0}]
-                )
-            )
-            
-        }
-        return branchPath;
-    }
 }
-
-/*
- * Private methods, called by the class using the <function>.call(this) function.
- */
-

@@ -4,25 +4,31 @@
 
 import { Layout } from "./layout.js";
 import { Type } from "./tree.js";
+// const d3 = require("d3");
+import {format,curveLinear,max,line,range} from "d3";
+import { SSL_OP_NO_TLSv1_1 } from "constants";
 
 /**
- * The Layout class
- *
+ * The ArcLayout class
+ * note the function in the settings that placed the nodes on the xaxis. the default is the 
+ * node's index in the node list.
  */
 export class ArcLayout extends Layout {
 
     static DEFAULT_SETTINGS() {
         return {
-            lengthFormat: d3.format(".2f"),
+            lengthFormat: format(".2f"),
             edgeWidth:2,
             xFunction:(n,i)=>i,
-            branchCurve:d3.curveLinear
+            branchCurve:curveLinear,
+            curve:'arc',
+            
         };
     }
 
     /**
      * The constructor.
-     * @param tree
+     * @param graph
      * @param settings
      */
     constructor(graph, settings = { }) {
@@ -57,11 +63,12 @@ export class ArcLayout extends Layout {
      */
     layout(vertices, edges) {
 
-        this._horizontalRange = [0.0, d3.max(this.graph.nodes,(n,i)=>this.settings.xFunction(n,i))];
+        this._horizontalRange = [0.0, max(this.graph.nodes,(n,i)=>this.settings.xFunction(n,i))];
         this._verticalRange = [-this.graph.nodes.length,this.graph.nodes.length];
 
         // get the nodes in pre-order (starting at first node)
-        const nodes = [...this.graph.preorder(this.graph.nodes[0])];
+        // const nodes = [...this.graph.preorder(this.graph.nodes[0])];
+        const nodes = [...this.graph.nodes];
 
 
         if (vertices.length === 0) {
@@ -87,7 +94,6 @@ export class ArcLayout extends Layout {
 
                 v.x = this.settings.xFunction(n,i);
                 v.y=0;
-
                 v.degree = this.graph.getEdges(v.node).length ; // the number of edges 
 
                 v.classes = [
@@ -99,9 +105,9 @@ export class ArcLayout extends Layout {
                         ...v.classes,
                         ...Object.entries(v.node.annotations)
                             .filter(([key]) => {
-                                return this.tree.annotations[key].type === Type.DISCRETE ||
-                                    this.tree.annotations[key].type === Type.BOOLEAN ||
-                                    this.tree.annotations[key].type === Type.INTEGER;
+                                return this.graph.annotations[key].type === Type.DISCRETE ||
+                                    this.graph.annotations[key].type === Type.BOOLEAN ||
+                                    this.graph.annotations[key].type === Type.INTEGER;
                             })
                             .map(([key, value]) => `${key}-${value}`)];
                 }
@@ -133,6 +139,7 @@ export class ArcLayout extends Layout {
             dataEdges
                 .forEach((e, i) => {
                     const edge = {
+                        // The source and targets here are nodes in the graph;
                         v0: this.nodeMap.get(e.source),
                         v1: this.nodeMap.get(e.target),
                         key: e.id
@@ -158,9 +165,9 @@ export class ArcLayout extends Layout {
                         ...e.classes,
                         ...Object.entries(e.v1.node.annotations)
                             .filter(([key]) => {
-                                return this.tree.annotations[key].type === Type.DISCRETE ||
-                                    this.tree.annotations[key].type === Type.BOOLEAN ||
-                                    this.tree.annotations[key].type === Type.INTEGER;
+                                return this.graph.annotations[key].type === Type.DISCRETE ||
+                                    this.graph.annotations[key].type === Type.BOOLEAN ||
+                                    this.graph.annotations[key].type === Type.INTEGER;
                             })
                             .map(([key, value]) => `${key}-${value}`)];
                 }
@@ -222,21 +229,44 @@ export class ArcLayout extends Layout {
     update() {
         this.updateCallback();
     }
-// do it with interpelations
+// Takes in scales and returns a function that will draw the branch paths given each edge and index as input.
+// branches have been translated so 0,0 is the top left hand corner of the group - 
     branchPathGenerator(scales){
             const branchPath =(e,i)=>{
-                const branchLine = d3.line()
+                let points;
+            if(this.settings.curve==="bezier"){
+                const sign = i%2===0?1:-1;
+                
+                const startingP = {x:0,
+                                    y: scales.y(e.v0.y)-scales.y(e.v1.y)}; // which is 0 in the defualt setting
+                const endingP = {x:scales.x(e.v1.x)-scales.x(e.v0.x),
+                                y: 0};
+                const correctingFactor =  Math.abs(startingP.x-endingP.x)/(scales.x.range()[1]-scales.x.range()[0]); // so the longer the arc the heigher it goes
+                const controlPoint = {"x":startingP.x,
+                                        "y":sign*scales.y(scales.y.domain()[1])*correctingFactor};
+                const controlPoint1 = {"x":startingP.x,//+endingP.x)/3,
+                                        "y":sign*scales.y(scales.y.domain()[1])*correctingFactor};
+                    
+                const controlPoint2 = {"x":endingP.x,//+endingP.x)/3,
+                                        "y":sign*scales.y(scales.y.domain()[1])*correctingFactor};
+                points = cubicBezier(startingP,controlPoint1,controlPoint2,endingP)
+                // points = quadraticBezier(startingP,controlPoint,endingP)
+            }else{
+                const r = (scales.x(e.v1.x) - scales.x(e.v0.x))/2
+                const a = r; // center x position
+                const sign = i%2===0?1:-1;
+                const x = range(0,scales.x(e.v1.x) - scales.x(e.v0.x),1)//step every pixel
+                const y = x.map(x=>circleY(x,r,a,sign));
+                points = x.map((x,i)=>{
+                    return{x:x,y:y[i]}
+                }) 
+            }
+
+                const branchLine = line()
                      .x((v) => v.x)
                     .y((v) => v.y)
                     .curve(this.branchCurve);
-            const r = (scales.x(e.v1.x) - scales.x(e.v0.x))/2
-            const a = r; // center x position
-            const sign = i%2===0?1:-1;
-            const x = d3.range(0,scales.x(e.v1.x) - scales.x(e.v0.x),1)//step every pixel
-            const y = x.map(x=>circleY.call(this,x,r,a,sign));
-            const points = x.map((x,i)=>{
-                return{x:x,y:y[i]}
-            })        
+      
             return(
                 branchLine(
                     points
@@ -249,10 +279,44 @@ export class ArcLayout extends Layout {
 
 }
 
+
 /*
  * Private methods, called by the class using the <function>.call(this) function.
  */
 function circleY(x,r,a,sign){
         return  sign*(Math.sqrt(Math.pow(r,2)-Math.pow((x-a),2)))
+}
+
+/** Draws a quadraic bezier curve between two points
+ * 
+ * @param {*} p0 - starting point {x:,y:}
+ * @param {*} p1 - control point {x:,y:}
+ * @param {*} p2- ending point {x:,y:}
+ */
+function quadraticBezier(p0,p1,q){
+    const points = [];
+    for(let t =0; t<=1;t+=0.01){
+        const x = Math.pow((1-t),2)*p0.x+2*(1-t)*t*p1.x+Math.pow(t,2)*p2.x;
+        const y = Math.pow((1-t),2)*p0.y+2*(1-t)*t*p1.y+Math.pow(t,2)*p2.y;
+        points.push({"x":x,"y":y});
+    }
+    return points;
+}
+/**
+ * Cubic Bezier curves
+ * @param {*} p0 -starting point
+ * @param {*} p1 - ending point
+ * @param {*} q0 control points
+ * @param {*} q1 - control point 2
+ */
+function cubicBezier(p0,p1,p2,p3){
+
+    const points = [];
+    for(let t =0; t<=1;t+=0.01){
+        const x = Math.pow((1-t),3)*p0.x + 3*Math.pow((1-t),2)*t*p1.x +  3*(1-t)*Math.pow(t,2)*p2.x + Math.pow(t,3)*p3.x;
+        const y = Math.pow((1-t),3)*p0.y + 3*Math.pow((1-t),2)*t*p1.y +  3*(1-t)*Math.pow(t,2)*p2.y + Math.pow(t,3)*p3.y;
+        points.push({"x":x,"y":y});
+    }
+    return points;
 }
 

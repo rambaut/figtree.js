@@ -1,7 +1,9 @@
 {
   "name": "figtree",
   "version": "0.1.0",
-  "main": "figtree.js",
+  "main": "dist/figtree.cjs.js",
+  "module": "dist/figtree.esm.js",
+  "browser": "dist/figtree.umd.js",
   "keywords": [
     "phylogeny",
     "tree"
@@ -10,15 +12,29 @@
     "index.html"
   ],
   "dependencies": {
-    "d3": "4.x",
+    "d3": "^5.9.1",
     "font-awesome": "4.x",
     "sphinx": "^0.1.2"
   },
   "devDependencies": {
-    "webpack": "^4.28.3",
-    "webpack-cli": "^3.1.0"
+    "@babel/core": "^7.3.4",
+    "@babel/preset-env": "^7.3.4",
+    "babel-loader": "^8.0.5",
+    "rollup": "^1.12.3",
+    "rollup-plugin-commonjs": "^10.0.0",
+    "rollup-plugin-node-resolve": "^5.0.0",
+    "webpack": "^4.28.4",
+    "webpack-cli": "^3.2.1",
+    "webpack-dev-server": "^3.2.1"
   },
   "scripts": {
-    "docs": "sphinx-build -b html docs documentation"
-  }
+    "docs": "sphinx-build -b html docs documentation",
+    "build-webpack": "webpack",
+    "start:dev": "webpack-dev-server",
+    "build": "rollup -c",
+    "dev": "rollup -c -w"
+  },
+  "files": [
+    "dist"
+  ]
 }
