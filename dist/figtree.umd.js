@@ -1,8 +1,8 @@
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('constants')) :
-    typeof define === 'function' && define.amd ? define(['exports', 'constants'], factory) :
-    (global = global || self, factory(global.figtree = {}, global.constants));
-}(this, function (exports, constants) { 'use strict';
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+    typeof define === 'function' && define.amd ? define(['exports'], factory) :
+    (global = global || self, factory(global.figtree = {}));
+}(this, function (exports) { 'use strict';
 
     /** @module tree */
 
@@ -836,6 +836,7 @@
             // default ranges - these should be set in layout()
             this._horizontalRange = [0.0, 1.0];
             this._verticalRange = [0, 1.0];
+            this._horizontalTicks= [0,0.5,1];
 
             // create an empty callback function
             this.updateCallback = () => { };
@@ -856,7 +857,9 @@
         get verticalRange() {
             return this._verticalRange;
         }
-
+        get horizontalAxisTicks(){
+            return this._horizontalTicks;
+        }
         /**
          * Updates the tree when it has changed
          */
@@ -7096,7 +7099,8 @@
         static DEFAULT_SETTINGS() {
             return {
                 lengthFormat: format(".2f"),
-                branchCurve: stepBefore
+                branchCurve: stepBefore,
+                horizontalScale: null, // a scale that converts root to tip distance to 0,1 domain. default is 0 = root 1 = highest tip
             };
         }
 
@@ -7137,8 +7141,13 @@
          */
         layout(vertices, edges) {
 
-            this._horizontalRange = [0.0, max([...this.tree.rootToTipLengths()])];
+            this._horizontalRange = [0,1];//[0.0, max([...this.tree.rootToTipLengths()])];
             this._verticalRange = [0, this.tree.externalNodes.length - 1];
+             if(!this.settings.horizontalScale){
+                 this.horizontalScale = linear$1().domain([0,max([...this.tree.rootToTipLengths()])]).range(this._horizontalRange);
+             }else{
+                 this.horizontalScale = this.settings.horizontalScale;
+             }
 
             // get the nodes in post-order
             const nodes = [...this.tree.postorder()];
@@ -7165,7 +7174,7 @@
                 .forEach((n) => {
                     const v = this.nodeMap.get(n);
 
-                    v.x = this.tree.rootToTipLength(v.node);
+                    v.x = this.horizontalScale(this.tree.rootToTipLength(v.node));
                     currentY = this.setYPosition(v, currentY);
 
                     v.degree = (v.node.children ? v.node.children.length + 1: 1); // the number of edges (including stem)
@@ -7384,7 +7393,8 @@
 
     /**
      * The ArcLayout class
-     * note the function in the settings that placed the nodes on the xaxis. the default is the 
+     * note the function in the settings that placed the nodes on the xaxis a 0,1 range. The horizontal range is always 0->1. it is this funciton's job
+     * To map the nodes to that space. the default is the 
      * node's index in the node list.
      */
     class ArcLayout extends Layout {
@@ -7393,7 +7403,7 @@
             return {
                 lengthFormat: format(".2f"),
                 edgeWidth:2,
-                xFunction:(n,i)=>i,
+                xFunction:(n,i,t)=>i/t.length,
                 branchCurve:curveLinear,
                 curve:'arc',
                 
@@ -7436,8 +7446,7 @@
          * @param edges - objects with v1 (a vertex) and v0 (the parent vertex).
          */
         layout(vertices, edges) {
-
-            this._horizontalRange = [0.0, max(this.graph.nodes,(n,i)=>this.settings.xFunction(n,i))];
+            this._horizontalRange = [0,1];
             this._verticalRange = [-this.graph.nodes.length,this.graph.nodes.length];
 
             // get the nodes in pre-order (starting at first node)
@@ -7469,7 +7478,7 @@
                     v.x = this.settings.xFunction(n,i);
                     v.y=0;
                     v.degree = this.graph.getEdges(v.node).length ; // the number of edges 
-
+                    console.log(v.x);
                     v.classes = [
                         (!this.graph.getOutgoingEdges(v.node).length>0? "external-node" : "internal-node"),
                         (v.node.isSelected ? "selected" : "unselected")];

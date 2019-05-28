@@ -17,6 +17,7 @@ export class Layout {
         // default ranges - these should be set in layout()
         this._horizontalRange = [0.0, 1.0];
         this._verticalRange = [0, 1.0];
+        this._horizontalTicks= [0,0.5,1]
 
         // create an empty callback function
         this.updateCallback = () => { };
@@ -37,7 +38,9 @@ export class Layout {
     get verticalRange() {
         return this._verticalRange;
     }
-
+    get horizontalAxisTicks(){
+        return this._horizontalTicks;
+    }
     /**
      * Updates the tree when it has changed
      */

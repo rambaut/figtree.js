@@ -5,12 +5,12 @@
 import { Layout } from "./layout.js";
 import { Type } from "./tree.js";
 // const d3 = require("d3");
-import {format,curveLinear,max,line,range} from "d3";
-import { SSL_OP_NO_TLSv1_1 } from "constants";
-
+import {format,curveLinear,extent,line,range} from "d3";
+import {scaleLinear} from "d3";
 /**
  * The ArcLayout class
- * note the function in the settings that placed the nodes on the xaxis. the default is the 
+ * note the function in the settings that placed the nodes on the xaxis a 0,1 range. The horizontal range is always 0->1. it is this funciton's job
+ * To map the nodes to that space. the default is the 
  * node's index in the node list.
  */
 export class ArcLayout extends Layout {
@@ -19,7 +19,7 @@ export class ArcLayout extends Layout {
         return {
             lengthFormat: format(".2f"),
             edgeWidth:2,
-            xFunction:(n,i)=>i,
+            xFunction:(n,i,t)=>i/t.length,
             branchCurve:curveLinear,
             curve:'arc',
             
@@ -62,8 +62,7 @@ export class ArcLayout extends Layout {
      * @param edges - objects with v1 (a vertex) and v0 (the parent vertex).
      */
     layout(vertices, edges) {
-
-        this._horizontalRange = [0.0, max(this.graph.nodes,(n,i)=>this.settings.xFunction(n,i))];
+        this._horizontalRange = [0,1];
         this._verticalRange = [-this.graph.nodes.length,this.graph.nodes.length];
 
         // get the nodes in pre-order (starting at first node)
@@ -95,7 +94,7 @@ export class ArcLayout extends Layout {
                 v.x = this.settings.xFunction(n,i);
                 v.y=0;
                 v.degree = this.graph.getEdges(v.node).length ; // the number of edges 
-
+                console.log(v.x)
                 v.classes = [
                     (!this.graph.getOutgoingEdges(v.node).length>0? "external-node" : "internal-node"),
                     (v.node.isSelected ? "selected" : "unselected")];
