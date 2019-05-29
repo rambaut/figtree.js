@@ -7419,7 +7419,7 @@
             super();
 
             this.graph = graph;
-
+            this.annotations={};
             // merge the default settings with the supplied settings
             this.settings = {...ArcLayout.DEFAULT_SETTINGS(), ...settings};
 
@@ -7452,7 +7452,7 @@
             // get the nodes in pre-order (starting at first node)
             // const nodes = [...this.graph.preorder(this.graph.nodes[0])];
             const nodes = [...this.graph.nodes];
-
+            nodes.forEach(n=>this.addAnnotations(n));
 
             if (vertices.length === 0) {
                 this.nodeMap = new Map();
@@ -7478,38 +7478,16 @@
                     v.x = this.settings.xFunction(n,i);
                     v.y=0;
                     v.degree = this.graph.getEdges(v.node).length ; // the number of edges 
-                    console.log(v.x);
+                    // console.log(v.x)
                     v.classes = [
                         (!this.graph.getOutgoingEdges(v.node).length>0? "external-node" : "internal-node"),
                         (v.node.isSelected ? "selected" : "unselected")];
 
-                    if (v.node.annotations) {
+                    // if (v.node.annotations) {
                         v.classes = [
                             ...v.classes,
-                            ...Object.entries(v.node.annotations)
-                                .filter(([key]) => {
-                                    return this.graph.annotations[key].type === Type.DISCRETE ||
-                                        this.graph.annotations[key].type === Type.BOOLEAN ||
-                                        this.graph.annotations[key].type === Type.INTEGER;
-                                })
-                                .map(([key, value]) => `${key}-${value}`)];
-                    }
-
-                    // either the tip name or the internal node label
-                    if (v.node.children) {
-                        v.leftLabel = (this.internalNodeLabelAnnotationName?
-                            v.node.annotations[this.internalNodeLabelAnnotationName]:
-                            "");
-                        v.rightLabel = "";
-
-                        // should the left node label be above or below the node?
-                        v.labelBelow = (!v.node.parent || v.node.parent.children[0] !== v.node);
-                    } else {
-                        v.leftLabel = "";
-                        v.rightLabel = (this.externalNodeLabelAnnotationName?
-                            v.node.annotations[this.externalNodeLabelAnnotationName]:
-                            v.node.name);
-                    }
+                            ...this.getAnnotations(v.node)];
+                    // }
 
                     this.nodeMap.set(v.node, v);
                 });
@@ -7543,17 +7521,12 @@
                         e.classes = [];
 
 
-                    if (e.v1.node.annotations) {
+                    // if (e.v1.node.annotations) {
                         e.classes = [
                             ...e.classes,
-                            ...Object.entries(e.v1.node.annotations)
-                                .filter(([key]) => {
-                                    return this.graph.annotations[key].type === Type.DISCRETE ||
-                                        this.graph.annotations[key].type === Type.BOOLEAN ||
-                                        this.graph.annotations[key].type === Type.INTEGER;
-                                })
-                                .map(([key, value]) => `${key}-${value}`)];
-                    }
+                            ...this.getAnnotations(e.v1.node)];
+
+                    // }
                     const length = e.v1.x - e.v0.x;
                     e.length = length;
                     e.label = (this.branchLabelAnnotationName ?
@@ -7612,6 +7585,124 @@
         update() {
             this.updateCallback();
         }
+
+        /* This methods also checks the values are correct and conform to previous annotations
+        * in type.
+        *
+        * @param annotations
+        */
+       addAnnotations(datum) {
+           for (let [key, addValues] of Object.entries(datum)) {
+               if(addValues instanceof Date||  typeof addValues === 'symbol'){
+                   continue; // don't handel dates yet
+               }
+                let annotation = this.annotations[key];
+               if (!annotation) {
+                   annotation = {};
+                   this.annotations[key] = annotation;
+               }
+
+               if(typeof addValues === 'string' || addValues instanceof String){
+                   // fake it as an array
+                   addValues = [addValues];
+               }
+               if (Array.isArray(addValues)) {
+                   // is a set of discrete values or 
+                   const type = Type.DISCRETE;
+
+                   if (annotation.type && annotation.type !== type) {
+                       throw Error(`existing values of the annotation, ${key}, in the tree is not of the same type`);
+                   }
+                   annotation.type = type;
+                   annotation.values = annotation.values? [...annotation.values, ...addValues]:[...addValues];
+               } else if (Object.isExtensible(addValues)) {
+                   // is a set of properties with values               
+                   let type = null;
+
+                   let sum = 0.0;
+                   let keys = [];
+                   for (let [key, value] of Object.entries(addValues)) {
+                       if (keys.includes(key)) {
+                           throw Error(`the states of annotation, ${key}, should be unique`);
+                       }
+                       if (typeof value === typeof 1.0) {
+                           // This is a vector of probabilities of different states
+                           type = (type === undefined) ? Type.PROBABILITIES : type;
+
+                           if (type === Type.DISCRETE) {
+                               throw Error(`the values of annotation, ${key}, should be all boolean or all floats`);
+                           }
+
+                           sum += value;
+                           if (sum > 1.0) {
+                               throw Error(`the values of annotation, ${key}, should be probabilities of states and add to 1.0`);
+                           }
+                       } else if (typeof value === typeof true) {
+                           type = (type === undefined) ? Type.DISCRETE : type;
+
+                           if (type === Type.PROBABILITIES) {
+                               throw Error(`the values of annotation, ${key}, should be all boolean or all floats`);
+                           }
+                       } else {
+                           throw Error(`the values of annotation, ${key}, should be all boolean or all floats`);
+                       }
+                       keys.append(key);
+                   }
+
+                   if (annotation.type && annotation.type !== type) {
+                       throw Error(`existing values of the annotation, ${key}, in the tree is not of the same type`);
+                   }
+
+                   annotation.type = type;
+                   annotation.values = annotation.values? [...annotation.values, ...addValues]:[...addValues];
+               } else {
+                   let type = Type.DISCRETE;
+
+                   if (typeof addValues === typeof true) {
+                       type = Type.BOOLEAN;
+                   } else if (Number(addValues)) {
+                       type = (addValues % 1 === 0 ? Type.INTEGER : Type.FLOAT);
+                   }
+
+                   if (annotation.type && annotation.type !== type) {
+                       if ((type === Type.INTEGER && annotation.type === Type.FLOAT) ||
+                           (type === Type.FLOAT && annotation.type === Type.INTEGER)) {
+                           // upgrade to float
+                           type = Type.FLOAT;
+                       } else {
+                           throw Error(`existing values of the annotation, ${key}, in the tree is not of the same type`);
+                       }
+                   }
+
+                   if (type === Type.DISCRETE) {
+                       if (!annotation.values) {
+                           annotation.values = new Set();
+                       }
+                        annotation.values.add(addValues);
+                    
+                   }
+
+                   annotation.type = type;
+               }
+
+               // overwrite the existing annotation property
+               this.annotations[key] = annotation;
+           }
+       }
+
+       getAnnotations(datum){
+        const annotationClasses=[ ...Object.entries(datum)
+                             .filter(([key]) => {
+                                 if(!this.annotations[key]){
+                                     return false;
+                                 }
+                                 return this.annotations[key].type === Type.DISCRETE ||
+                                     this.annotations[key].type === Type.BOOLEAN ||
+                                     this.annotations[key].type === Type.INTEGER;
+                             })
+                             .map(([key, value]) => `${key}-${value}`)];
+         return annotationClasses
+     }
     // Takes in scales and returns a function that will draw the branch paths given each edge and index as input.
     // branches have been translated so 0,0 is the top left hand corner of the group - 
         branchPathGenerator(scales){
