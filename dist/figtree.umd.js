@@ -7517,8 +7517,8 @@
             edges
                 .forEach((e) => {
                     e.v1 = this.edgeMap.get(e);
-                    e.v0 = this.nodeMap.get(e.v0.node),
-                        e.classes = [];
+                    e.v0 = this.nodeMap.get(e.v0.node);
+                    e.classes = [];
 
 
                     // if (e.v1.node.annotations) {
