@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>FigTree Demo</title>
-    <script src="js/d3.js" charset="utf-8"></script>
+    <!-- <script src="./js/d3.js" charset="utf-8"></script> -->
     <!--<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>-->
     <style>
         text {
@@ -118,11 +118,11 @@
 </div>
 
 <script type="module">
-    import { Tree } from "./src/tree.js";
-    import { RectangularLayout } from "./src/rectangularlayout.js";
-    import { CircleBauble } from "./src/bauble.js";
-    import { FigTree } from "./src/figtree.js";
-    import { RootToTipPlot } from "./src/roottotipplot.js";
+    import { Tree } from "./dist/figtree.esm.js";
+    import { RectangularLayout } from "./dist/figtree.esm.js";
+    import { CircleBauble } from "./dist/figtree.esm.js";
+    import { FigTree } from "./dist/figtree.esm.js";
+    import { RootToTipPlot } from "./dist/figtree.esm.js";
 
     const timeTreeString =
         '((Bonduni_DRC_1977-06:5.3E-5,Yambuku-Mayinga_DRC_1976-10-01:2.0E-6):0.002186,((Muembe1_DRC_2017-05:0.007975,Beni-18FHV090_DRC_2018-07-28:0.00898):0.002026,(((Ilembe_Gabon_2002-02-23:0.001437,Kelle_2_COG_2003-10:0.001852):0.01144,(Makona-C07_Guinea_2014-03-20:0.020514,(034-KS_DRC_2008-12-31:5.43E-4,M-M_DRC_2007-08-31:4.5E-5):0.009434):2.05E-4):0.005346,(Kikwit-9510621_DRC_1995-05-04:0.003643,((Lomela-Lokolia16_DRC_2014-08-20:0.002216,BIK009-Bikoro_DRC_2018-05-10:0.002896):0.001998,(2Nza_Gabon_1996-10-27:0.002238,(Gabon_Gabon_1994-12-27:7.94E-4,1Eko_Gabon_1996-02:0.00106):6.25E-4):0.004065):5.18E-4):0.003691):2.81E-4):0.002186);';
@@ -137,7 +137,7 @@
                 new CircleBauble({ vertexFilter: (v) => v.degree === 1 }),
             ]
         });
-
+    figTree.draw();
     figTree.hilightBranches();
     figTree.onClickBranch(layout.reroot());
 
