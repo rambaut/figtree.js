@@ -161,10 +161,10 @@
             // parent.
             const parentHost = nodeA.parent.annotations.host;
             if (nodeA.annotations.host === parentHost) {
-                return -1;
+                return 1;
             }
             if (nodeB.annotations.host === parentHost) {
-                return 1;
+                return -1;
             }
         }
         // otherwise just order by increasing node density

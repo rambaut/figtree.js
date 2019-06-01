@@ -4,7 +4,7 @@
 
 import { Layout } from "./layout.js";
 import { Type } from "./tree.js";
-import {format,curveStepBefore,max,line,mean} from "d3";
+import {format,curveStepBefore,max,line,mean,scaleLinear} from "d3";
 
 // const d3 = require("d3");
 /**
@@ -16,7 +16,8 @@ export class RectangularLayout extends Layout {
     static DEFAULT_SETTINGS() {
         return {
             lengthFormat: format(".2f"),
-            branchCurve: curveStepBefore
+            branchCurve: curveStepBefore,
+            horizontalScale: null, // a scale that converts root to tip distance to 0,1 domain. default is 0 = root 1 = highest tip
         };
     }
 
@@ -57,8 +58,13 @@ export class RectangularLayout extends Layout {
      */
     layout(vertices, edges) {
 
-        this._horizontalRange = [0.0, max([...this.tree.rootToTipLengths()])];
+        this._horizontalRange = [0,1];//[0.0, max([...this.tree.rootToTipLengths()])];
         this._verticalRange = [0, this.tree.externalNodes.length - 1];
+         if(!this.settings.horizontalScale){
+             this.horizontalScale = scaleLinear().domain([0,max([...this.tree.rootToTipLengths()])]).range(this._horizontalRange);
+         }else{
+             this.horizontalScale = this.settings.horizontalScale;
+         }
 
         // get the nodes in post-order
         const nodes = [...this.tree.postorder()];
@@ -85,7 +91,7 @@ export class RectangularLayout extends Layout {
             .forEach((n) => {
                 const v = this.nodeMap.get(n);
 
-                v.x = this.tree.rootToTipLength(v.node);
+                v.x = this.horizontalScale(this.tree.rootToTipLength(v.node));
                 currentY = this.setYPosition(v, currentY)
 
                 v.degree = (v.node.children ? v.node.children.length + 1: 1); // the number of edges (including stem)

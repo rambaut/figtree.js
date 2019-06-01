@@ -1,8 +1,8 @@
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('constants')) :
-    typeof define === 'function' && define.amd ? define(['exports', 'constants'], factory) :
-    (global = global || self, factory(global.figtree = {}, global.constants));
-}(this, function (exports, constants) { 'use strict';
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+    typeof define === 'function' && define.amd ? define(['exports'], factory) :
+    (global = global || self, factory(global.figtree = {}));
+}(this, function (exports) { 'use strict';
 
     /** @module tree */
 
@@ -836,6 +836,7 @@
             // default ranges - these should be set in layout()
             this._horizontalRange = [0.0, 1.0];
             this._verticalRange = [0, 1.0];
+            this._horizontalTicks= [0,0.5,1];
 
             // create an empty callback function
             this.updateCallback = () => { };
@@ -856,7 +857,9 @@
         get verticalRange() {
             return this._verticalRange;
         }
-
+        get horizontalAxisTicks(){
+            return this._horizontalTicks;
+        }
         /**
          * Updates the tree when it has changed
          */
@@ -1096,6 +1099,41 @@
       if (m) return sum / m;
     }
 
+    function min(values, valueof) {
+      var n = values.length,
+          i = -1,
+          value,
+          min;
+
+      if (valueof == null) {
+        while (++i < n) { // Find the first comparable value.
+          if ((value = values[i]) != null && value >= value) {
+            min = value;
+            while (++i < n) { // Compare the remaining values.
+              if ((value = values[i]) != null && min > value) {
+                min = value;
+              }
+            }
+          }
+        }
+      }
+
+      else {
+        while (++i < n) { // Find the first comparable value.
+          if ((value = valueof(values[i], i, values)) != null && value >= value) {
+            min = value;
+            while (++i < n) { // Compare the remaining values.
+              if ((value = valueof(values[i], i, values)) != null && min > value) {
+                min = value;
+              }
+            }
+          }
+        }
+      }
+
+      return min;
+    }
+
     var slice = Array.prototype.slice;
 
     function identity(x) {
@@ -1260,6 +1298,10 @@
 
     function axisBottom(scale) {
       return axis(bottom, scale);
+    }
+
+    function axisLeft(scale) {
+      return axis(left, scale);
     }
 
     var noop = {value: function() {}};
@@ -7096,7 +7138,8 @@
         static DEFAULT_SETTINGS() {
             return {
                 lengthFormat: format(".2f"),
-                branchCurve: stepBefore
+                branchCurve: stepBefore,
+                horizontalScale: null, // a scale that converts root to tip distance to 0,1 domain. default is 0 = root 1 = highest tip
             };
         }
 
@@ -7137,8 +7180,13 @@
          */
         layout(vertices, edges) {
 
-            this._horizontalRange = [0.0, max([...this.tree.rootToTipLengths()])];
+            this._horizontalRange = [0,1];//[0.0, max([...this.tree.rootToTipLengths()])];
             this._verticalRange = [0, this.tree.externalNodes.length - 1];
+             if(!this.settings.horizontalScale){
+                 this.horizontalScale = linear$1().domain([0,max([...this.tree.rootToTipLengths()])]).range(this._horizontalRange);
+             }else{
+                 this.horizontalScale = this.settings.horizontalScale;
+             }
 
             // get the nodes in post-order
             const nodes = [...this.tree.postorder()];
@@ -7165,7 +7213,7 @@
                 .forEach((n) => {
                     const v = this.nodeMap.get(n);
 
-                    v.x = this.tree.rootToTipLength(v.node);
+                    v.x = this.horizontalScale(this.tree.rootToTipLength(v.node));
                     currentY = this.setYPosition(v, currentY);
 
                     v.degree = (v.node.children ? v.node.children.length + 1: 1); // the number of edges (including stem)
@@ -7384,7 +7432,8 @@
 
     /**
      * The ArcLayout class
-     * note the function in the settings that placed the nodes on the xaxis. the default is the 
+     * note the function in the settings that placed the nodes on the xaxis a 0,1 range. The horizontal range is always 0->1. it is this funciton's job
+     * To map the nodes to that space. the default is the 
      * node's index in the node list.
      */
     class ArcLayout extends Layout {
@@ -7393,7 +7442,7 @@
             return {
                 lengthFormat: format(".2f"),
                 edgeWidth:2,
-                xFunction:(n,i)=>i,
+                xFunction:(n,i,t)=>i/t.length,
                 branchCurve:curveLinear,
                 curve:'arc',
                 
@@ -7409,7 +7458,7 @@
             super();
 
             this.graph = graph;
-
+            this.annotations={};
             // merge the default settings with the supplied settings
             this.settings = {...ArcLayout.DEFAULT_SETTINGS(), ...settings};
 
@@ -7436,14 +7485,13 @@
          * @param edges - objects with v1 (a vertex) and v0 (the parent vertex).
          */
         layout(vertices, edges) {
-
-            this._horizontalRange = [0.0, max(this.graph.nodes,(n,i)=>this.settings.xFunction(n,i))];
+            this._horizontalRange = [0,1];
             this._verticalRange = [-this.graph.nodes.length,this.graph.nodes.length];
 
             // get the nodes in pre-order (starting at first node)
             // const nodes = [...this.graph.preorder(this.graph.nodes[0])];
             const nodes = [...this.graph.nodes];
-
+            nodes.forEach(n=>this.addAnnotations(n));
 
             if (vertices.length === 0) {
                 this.nodeMap = new Map();
@@ -7469,38 +7517,16 @@
                     v.x = this.settings.xFunction(n,i);
                     v.y=0;
                     v.degree = this.graph.getEdges(v.node).length ; // the number of edges 
-
+                    // console.log(v.x)
                     v.classes = [
                         (!this.graph.getOutgoingEdges(v.node).length>0? "external-node" : "internal-node"),
                         (v.node.isSelected ? "selected" : "unselected")];
 
-                    if (v.node.annotations) {
+                    // if (v.node.annotations) {
                         v.classes = [
                             ...v.classes,
-                            ...Object.entries(v.node.annotations)
-                                .filter(([key]) => {
-                                    return this.graph.annotations[key].type === Type.DISCRETE ||
-                                        this.graph.annotations[key].type === Type.BOOLEAN ||
-                                        this.graph.annotations[key].type === Type.INTEGER;
-                                })
-                                .map(([key, value]) => `${key}-${value}`)];
-                    }
-
-                    // either the tip name or the internal node label
-                    if (v.node.children) {
-                        v.leftLabel = (this.internalNodeLabelAnnotationName?
-                            v.node.annotations[this.internalNodeLabelAnnotationName]:
-                            "");
-                        v.rightLabel = "";
-
-                        // should the left node label be above or below the node?
-                        v.labelBelow = (!v.node.parent || v.node.parent.children[0] !== v.node);
-                    } else {
-                        v.leftLabel = "";
-                        v.rightLabel = (this.externalNodeLabelAnnotationName?
-                            v.node.annotations[this.externalNodeLabelAnnotationName]:
-                            v.node.name);
-                    }
+                            ...this.getAnnotations(v.node)];
+                    // }
 
                     this.nodeMap.set(v.node, v);
                 });
@@ -7530,21 +7556,16 @@
             edges
                 .forEach((e) => {
                     e.v1 = this.edgeMap.get(e);
-                    e.v0 = this.nodeMap.get(e.v0.node),
-                        e.classes = [];
+                    e.v0 = this.nodeMap.get(e.v0.node);
+                    e.classes = [];
 
 
-                    if (e.v1.node.annotations) {
+                    // if (e.v1.node.annotations) {
                         e.classes = [
                             ...e.classes,
-                            ...Object.entries(e.v1.node.annotations)
-                                .filter(([key]) => {
-                                    return this.graph.annotations[key].type === Type.DISCRETE ||
-                                        this.graph.annotations[key].type === Type.BOOLEAN ||
-                                        this.graph.annotations[key].type === Type.INTEGER;
-                                })
-                                .map(([key, value]) => `${key}-${value}`)];
-                    }
+                            ...this.getAnnotations(e.v1.node)];
+
+                    // }
                     const length = e.v1.x - e.v0.x;
                     e.length = length;
                     e.label = (this.branchLabelAnnotationName ?
@@ -7603,6 +7624,124 @@
         update() {
             this.updateCallback();
         }
+
+        /* This methods also checks the values are correct and conform to previous annotations
+        * in type.
+        *
+        * @param annotations
+        */
+       addAnnotations(datum) {
+           for (let [key, addValues] of Object.entries(datum)) {
+               if(addValues instanceof Date||  typeof addValues === 'symbol'){
+                   continue; // don't handel dates yet
+               }
+                let annotation = this.annotations[key];
+               if (!annotation) {
+                   annotation = {};
+                   this.annotations[key] = annotation;
+               }
+
+               if(typeof addValues === 'string' || addValues instanceof String){
+                   // fake it as an array
+                   addValues = [addValues];
+               }
+               if (Array.isArray(addValues)) {
+                   // is a set of discrete values or 
+                   const type = Type.DISCRETE;
+
+                   if (annotation.type && annotation.type !== type) {
+                       throw Error(`existing values of the annotation, ${key}, in the tree is not of the same type`);
+                   }
+                   annotation.type = type;
+                   annotation.values = annotation.values? [...annotation.values, ...addValues]:[...addValues];
+               } else if (Object.isExtensible(addValues)) {
+                   // is a set of properties with values               
+                   let type = null;
+
+                   let sum = 0.0;
+                   let keys = [];
+                   for (let [key, value] of Object.entries(addValues)) {
+                       if (keys.includes(key)) {
+                           throw Error(`the states of annotation, ${key}, should be unique`);
+                       }
+                       if (typeof value === typeof 1.0) {
+                           // This is a vector of probabilities of different states
+                           type = (type === undefined) ? Type.PROBABILITIES : type;
+
+                           if (type === Type.DISCRETE) {
+                               throw Error(`the values of annotation, ${key}, should be all boolean or all floats`);
+                           }
+
+                           sum += value;
+                           if (sum > 1.0) {
+                               throw Error(`the values of annotation, ${key}, should be probabilities of states and add to 1.0`);
+                           }
+                       } else if (typeof value === typeof true) {
+                           type = (type === undefined) ? Type.DISCRETE : type;
+
+                           if (type === Type.PROBABILITIES) {
+                               throw Error(`the values of annotation, ${key}, should be all boolean or all floats`);
+                           }
+                       } else {
+                           throw Error(`the values of annotation, ${key}, should be all boolean or all floats`);
+                       }
+                       keys.append(key);
+                   }
+
+                   if (annotation.type && annotation.type !== type) {
+                       throw Error(`existing values of the annotation, ${key}, in the tree is not of the same type`);
+                   }
+
+                   annotation.type = type;
+                   annotation.values = annotation.values? [...annotation.values, ...addValues]:[...addValues];
+               } else {
+                   let type = Type.DISCRETE;
+
+                   if (typeof addValues === typeof true) {
+                       type = Type.BOOLEAN;
+                   } else if (Number(addValues)) {
+                       type = (addValues % 1 === 0 ? Type.INTEGER : Type.FLOAT);
+                   }
+
+                   if (annotation.type && annotation.type !== type) {
+                       if ((type === Type.INTEGER && annotation.type === Type.FLOAT) ||
+                           (type === Type.FLOAT && annotation.type === Type.INTEGER)) {
+                           // upgrade to float
+                           type = Type.FLOAT;
+                       } else {
+                           throw Error(`existing values of the annotation, ${key}, in the tree is not of the same type`);
+                       }
+                   }
+
+                   if (type === Type.DISCRETE) {
+                       if (!annotation.values) {
+                           annotation.values = new Set();
+                       }
+                        annotation.values.add(addValues);
+                    
+                   }
+
+                   annotation.type = type;
+               }
+
+               // overwrite the existing annotation property
+               this.annotations[key] = annotation;
+           }
+       }
+
+       getAnnotations(datum){
+        const annotationClasses=[ ...Object.entries(datum)
+                             .filter(([key]) => {
+                                 if(!this.annotations[key]){
+                                     return false;
+                                 }
+                                 return this.annotations[key].type === Type.DISCRETE ||
+                                     this.annotations[key].type === Type.BOOLEAN ||
+                                     this.annotations[key].type === Type.INTEGER;
+                             })
+                             .map(([key, value]) => `${key}-${value}`)];
+         return annotationClasses
+     }
     // Takes in scales and returns a function that will draw the branch paths given each edge and index as input.
     // branches have been translated so 0,0 is the top left hand corner of the group - 
         branchPathGenerator(scales){
@@ -8744,6 +8883,432 @@
 
     }
 
+    /**
+     * The RootToTipPlot class
+     */
+    class RootToTipPlot {
+
+        static DEFAULT_SETTINGS() {
+            return {
+                xAxisTickArguments: [5, "d"],
+                xAxisTitle: "Time",
+                yAxisTickArguments: [5, "f"],
+                yAxisTitle: "Divergence",
+                nodeRadius: 6,
+                hoverNodeRadius: 8,
+                backgroundBorder: 1,
+                slopeFormat: ",.2f",
+                r2Format: ",.2f"
+            };
+        }
+
+        /**
+         * The constructor.
+         * @param svg
+         * @param tree
+         * @param margins
+         * @param settings
+         */
+        constructor(svg, tree, margins, settings = {}) {
+            this.svg = svg;
+            this.tree = tree;
+
+            // merge the default settings with the supplied settings
+            this.settings = {...RootToTipPlot.DEFAULT_SETTINGS(), ...settings};
+
+            this.points = tree.externalNodes
+                .map((tip) => {
+                    return {
+                        name: tip.name,
+                        node: tip,
+                        x: tip.date,
+                        y: tree.rootToTipLength(tip)
+                    };
+                });
+
+            this.tipNodes = {};
+            tree.externalNodes.forEach((tip) => this.tipNodes[tip.name] = tip );
+
+
+            // call the private methods to create the components of the diagram
+            createElements.call(this, svg, margins);
+        }
+
+        /**
+         * returns slope, intercept and r-square of the line
+         * @param data
+         * @returns {{slope: number, xIntercept: number, yIntercept: number, rSquare: number, y: (function(*): number)}}
+         */
+        leastSquares(data) {
+
+            const xBar = data.reduce((a, b) => (a + b.x), 0.0) / data.length;
+            const yBar = data.reduce((a, b) => (a + b.y), 0.0) / data.length;
+
+            const ssXX = data.map((d) => Math.pow(d.x - xBar, 2))
+                .reduce((a, b) => a + b, 0.0);
+
+            const ssYY = data.map((d) => Math.pow(d.y - yBar, 2))
+                .reduce((a, b) => a + b, 0.0);
+
+            const ssXY = data.map((d) => (d.x - xBar) * (d.y - yBar))
+                .reduce((a, b) => a + b, 0.0);
+
+            const slope = ssXY / ssXX;
+            const yIntercept = yBar - (xBar * slope);
+            const xIntercept = -(yIntercept / slope);
+            const rSquare = Math.pow(ssXY, 2) / (ssXX * ssYY);
+
+            return {
+                slope, xIntercept, yIntercept, rSquare, y: function (x) {
+                    return x * slope + yIntercept
+                }
+            };
+        }
+
+        /**
+         * Updates the plot when the data has changed
+         */
+        update() {
+
+            this.points.forEach((point) => {
+                point.y = this.tree.rootToTipLength(point.node);
+            });
+
+            let x1 = min(this.points, d => d.x);
+            let x2 = max(this.points, d => d.x);
+            let y1 = 0.0;
+            let y2 = max(this.points, d => d.y);
+
+            // least squares regression
+            const selectedPoints = this.points.filter((point) => !point.node.isSelected);
+
+            const regression = this.leastSquares(selectedPoints);
+            if (selectedPoints.length > 1 && regression.slope > 0.0) {
+                x1 = regression.xIntercept;
+                y2 = max([regression.y(x2), y2]);
+            }
+
+            // update the scales for the plot
+            this.scales.x.domain([x1, x2]).nice();
+            this.scales.y.domain([y1, y2]).nice();
+
+            const xAxis = axisBottom(this.scales.x)
+                .tickArguments(this.settings.xAxisTickArguments);
+            const yAxis = axisLeft(this.scales.y)
+                .tickArguments(this.settings.yAxisTickArguments);
+
+            this.svgSelection.select("#x-axis")
+                .transition()
+                .duration(500)
+                .call(xAxis);
+
+            this.svgSelection.select("#y-axis")
+                .transition()
+                .duration(500)
+                .call(yAxis);
+
+            // update trend line
+            const line = this.svgSelection.select("#regression");
+            if (selectedPoints.length > 1) {
+
+                line
+                    .transition()
+                    .duration(500)
+                    .attr("x1", this.scales.x(x1))
+                    .attr("y1", this.scales.y(regression.y(x1)))
+                    .attr("x2", this.scales.x(x2))
+                    .attr("y2", this.scales.y(regression.y(x2)));
+
+                this.svgSelection.select("#statistics-slope")
+                    .text(`Slope: ${format(this.settings.slopeFormat)(regression.slope)}`);
+                this.svgSelection.select("#statistics-r2")
+                    .text(`R^2: ${format(this.settings.r2Format)(regression.rSquare) }`);
+
+            } else {
+                line
+                    .transition()
+                    .duration(500)
+                    .attr("x1", this.scales.x(0))
+                    .attr("y1", this.scales.y(regression.y(0)))
+                    .attr("x2", this.scales.x(0))
+                    .attr("y2", this.scales.y(regression.y(0)));
+
+                this.svgSelection.select("#statistics-slope")
+                    .text(`Slope: n/a`);
+                this.svgSelection.select("#statistics-r2")
+                    .text(`R^2: n/a`);
+
+            }
+
+            if (this.settings.backgroundBorder > 0) {
+                //update node background
+                this.svgSelection.selectAll(".node-background")
+                    .transition()
+                    .duration(500)
+                    .attr("transform", d => {
+                        return `translate(${this.scales.x(d.x)}, ${this.scales.y(d.y)})`;
+                    });
+            }
+
+            //update nodes
+            this.svgSelection.selectAll(".node")
+                .transition()
+                .duration(500)
+                .attr("transform", d => {
+                    return `translate(${this.scales.x(d.x)}, ${this.scales.y(d.y)})`;
+                });
+        }
+
+        selectTips(treeSVG, tips) {
+            const self = this;
+            tips.forEach(tip => {
+                const node = this.tipNodes[tip];
+                const nodeShape1 = select(self.svg).select(`#${node.id}`).select(`.node-shape`);
+                const nodeShape2 = select(treeSVG).select(`#${node.id}`).select(`.node-shape`);
+                nodeShape1.attr("class", "node-shape selected");
+                nodeShape2.attr("class", "node-shape selected");
+                node.isSelected = true;
+
+            });
+            self.update();
+        }
+
+        /**
+         * Registers some text to appear in a popup box when the mouse hovers over the selection.
+         *
+         * @param selection
+         * @param text
+         */
+        addToolTip(selection, text) {
+            this.svgSelection.selectAll(selection).on("mouseover",
+                function (selectedNode) {
+                    let tooltip = document.getElementById("tooltip");
+                    if (typeof text === typeof "") {
+                        tooltip.innerHTML = text;
+                    } else {
+                        tooltip.innerHTML = text(selectedNode);
+                    }
+                    tooltip.style.display = "block";
+                    tooltip.style.left = event.pageX + 10 + "px";
+                    tooltip.style.top = event.pageY + 10 + "px";
+                }
+            );
+            this.svgSelection.selectAll(selection).on("mouseout", function () {
+                let tooltip = document.getElementById("tooltip");
+                tooltip.style.display = "none";
+            });
+        }
+
+        linkWithTree(treeSVG) {
+            const self = this;
+
+            const mouseover = function(d) {
+                select(self.svg).select(`#${d.node.id}`).select(`.node-shape`).attr("r", self.settings.hoverNodeRadius);
+                select(treeSVG).select(`#${d.node.id}`).select(`.node-shape`).attr("r", self.settings.hoverNodeRadius);
+            };
+            const mouseout = function(d) {
+                select(self.svg).select(`#${d.node.id}`).select(`.node-shape`).attr("r", self.settings.nodeRadius);
+                select(treeSVG).select(`#${d.node.id}`).select(`.node-shape`).attr("r", self.settings.nodeRadius);
+            };
+            const clicked = function(d) {
+                // toggle isSelected
+                let tip = d;
+                if (d.node) {
+                    tip = d.node;
+                }
+                tip.isSelected = !tip.isSelected;
+
+                const node1 = select(self.svg).select(`#${tip.id}`).select(`.node-shape`);
+                const node2 = select(treeSVG).select(`#${tip.id}`).select(`.node-shape`);
+
+                if (tip.isSelected) {
+                    node1.attr("class", "node-shape selected");
+                    node2.attr("class", "node-shape selected");
+                } else {
+                    node1.attr("class", "node-shape unselected");
+                    node2.attr("class", "node-shape unselected");
+                }
+
+                self.update();
+            };
+
+            const tips = select(this.svg).selectAll(`.external-node`).selectAll(`.node-shape`);
+            tips.on("mouseover", mouseover);
+            tips.on("mouseout", mouseout);
+            tips.on("click", clicked);
+
+            const points = select(treeSVG).selectAll(`.node-shape`);
+            points.on("mouseover", mouseover);
+            points.on("mouseout", mouseout);
+            points.on("click", clicked);
+        }
+
+        /**
+         * A utility function that will return a HTML string about the node and its
+         * annotations. Can be used with the addLabels() method.
+         *
+         * @param node
+         * @returns {string}
+         */
+        static nodeInfo(point) {
+            const node = point.node;
+            let text = `${node.name ? node.name : node.id }`;
+            Object.entries(node.annotations).forEach(([key, value]) => {
+                text += `<p>${key}: ${value}</p>`;
+            });
+            return text;
+        }
+
+    }
+
+    /*
+     * Private methods, called by the class using the <function>.call(this) function.
+     */
+
+    function createElements(svg, margins) {
+        // get the size of the svg we are drawing on
+        const width = svg.getBoundingClientRect().width;
+        const height = svg.getBoundingClientRect().height;
+
+        select(svg).select("g").remove();
+
+        // add a group which will containt the new tree
+        select(svg).append("g");
+        //.attr("transform", `translate(${margins.left},${margins.top})`);
+
+        //to save on writing later
+        this.svgSelection = select(svg).select("g");
+
+        // least squares regression
+        const regression = this.leastSquares(this.points);
+        const x1 = regression.xIntercept;
+        const y1 = 0.0;
+        const x2 = max(this.points, d => d.x);
+        const y2 = max([regression.y(x2), max(this.points, d => d.y)]);
+
+        this.scales = {
+            x: linear$1()
+                .domain([x1, x2]).nice()
+                .range([margins.left, width - margins.right]),
+            y: linear$1()
+                .domain([y1, y2]).nice()
+                .range([height - margins.bottom, margins.top])
+        };
+
+        const xAxis = axisBottom(this.scales.x)
+            .tickArguments(this.settings.xAxisTickArguments);
+        const yAxis = axisLeft(this.scales.y)
+            .tickArguments(this.settings.yAxisTickArguments);
+
+        const xAxisWidth = width - margins.left - margins.right;
+        const yAxisHeight = height - margins.bottom - margins.top;
+
+        this.svgSelection.append("g")
+            .attr("id", "x-axis")
+            .attr("class", "axis")
+            .attr("transform", `translate(0, ${height - margins.bottom + 5})`)
+            .call(xAxis);
+
+        this.svgSelection.append("g")
+            .attr("id", "x-axis-label")
+            .attr("class", "axis-label")
+            .attr("transform", `translate(${margins.left}, ${height - margins.bottom})`)
+            .append("text")
+            .attr("transform", `translate(${xAxisWidth / 2}, 35)`)
+            .attr("alignment-baseline", "hanging")
+            .style("text-anchor", "middle")
+            .text(this.settings.xAxisTitle);
+
+        this.svgSelection.append("g")
+            .attr("id", "y-axis")
+            .attr("class", "axis")
+            .attr("transform", `translate(${margins.left - 5},0)`)
+            .call(yAxis);
+
+        this.svgSelection.append("g")
+            .attr("id", "y-axis-label")
+            .attr("class", "axis-label")
+            .attr("transform", `translate(${margins.left},${margins.top})`)
+            .append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", 0 - margins.left)
+            .attr("x", 0 - (yAxisHeight / 2))
+            .attr("dy", "1em")
+            .style("text-anchor", "middle")
+            .text(this.settings.yAxisTitle);
+
+        this.svgSelection.append("line")
+            .attr("id", "regression")
+            .attr("class", "trend-line")
+            .attr("x1", this.scales.x(x1))
+            .attr("y1", this.scales.y(y1))
+            .attr("x2", this.scales.x(x1))
+            .attr("y2", this.scales.y(y1));
+
+        if (this.settings.backgroundBorder > 0) {
+            this.svgSelection.append("g")
+                .selectAll("circle")
+                .data(this.points)
+                .enter()
+                .append("circle")
+                .attr("class", (d) => ["node-background", (!d.children ? "external-node" : "internal-node")].join(" "))
+                .attr("transform", `translate(${this.scales.x(x1)}, ${this.scales.y(y1)})`)
+                .attr("cx", 0)
+                .attr("cy", 0)
+                .attr("r", this.settings.nodeRadius + this.settings.backgroundBorder);
+        }
+
+        this.svgSelection.append("g")
+            .selectAll("circle")
+            .data(this.points)
+            .enter()
+            .append("g")
+            .attr("id", d => d.node.id )
+            .attr("class", (d) => {
+                let classes = ["node", "external-node", (d.node.isSelected ? "selected" : "unselected")];
+                if (d.node.annotations) {
+                    classes = [
+                        ...classes,
+                        ...Object.entries(d.node.annotations)
+                            .filter(([key]) => {
+                                return this.tree.annotations[key].type === Type.DISCRETE ||
+                                    this.tree.annotations[key].type === Type.BOOLEAN ||
+                                    this.tree.annotations[key].type === Type.INTEGER;
+                            } )
+                            .map(([key, value]) => `${key}-${value}`)];
+                }
+                return classes.join(" ");
+            })
+            .attr("transform", `translate(${this.scales.x(x1)}, ${this.scales.y(y1)})`)
+            // .attr("transform", d => {
+            //     return `translate(${this.scales.x(d.x)}, ${this.scales.y(d.y)})`;
+            // })
+            .append("circle")
+            .attr("class", "node-shape")
+            .attr("cx", 0)
+            .attr("cy", 0)
+            .attr("r", this.settings.nodeRadius);
+
+        this.svgSelection.append("text")
+            .attr("id", "statistics-slope")
+            .attr("transform", `translate(${margins.left + 20},${margins.top})`)
+            .style("text-anchor", "left")
+            .attr("alignment-baseline", "hanging")
+            .attr("dy", "0")
+            .text(`Slope: -`);
+        this.svgSelection.append("text")
+            .attr("id", "statistics-r2")
+            .attr("transform", `translate(${margins.left + 20},${margins.top})`)
+            .style("text-anchor", "left")
+            .attr("alignment-baseline", "hanging")
+            .attr("dy", "1.5em")
+            .text(`R^2: -`);
+
+        this.update();
+
+        this.tree.treeUpdateCallback = () => this.update();
+    }
+
     exports.ArcLayout = ArcLayout;
     exports.Bauble = Bauble;
     exports.CircleBauble = CircleBauble;
@@ -8752,6 +9317,7 @@
     exports.Layout = Layout;
     exports.RectangularBauble = RectangularBauble;
     exports.RectangularLayout = RectangularLayout;
+    exports.RootToTipPlot = RootToTipPlot;
     exports.TransmissionLayout = TransmissionLayout;
     exports.Tree = Tree;
     exports.Type = Type;
