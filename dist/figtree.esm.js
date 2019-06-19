@@ -85,7 +85,7 @@ class Tree {
      * Returns the sibling of a node (i.e., the first other child of the parent)
      *
      * @param node
-     * @returns {*}
+     * @returns {object}
      */
     getSibling(node) {
         if (!node.parent) {
@@ -98,7 +98,7 @@ class Tree {
      * Returns a node from its id stored.
      *
      * @param id
-     * @returns {*}
+     * @returns {object}
      */
     getNode(id) {
         return this.nodeMap.get(id);
@@ -108,10 +108,24 @@ class Tree {
      * Returns an external node (tip) from its name.
      *
      * @param name
-     * @returns {*}
+     * @returns {object}
      */
     getExternalNode(name) {
         return this.tipMap.get(name);
+    }
+
+    /**
+     * If heights are not currently known then calculate heights for all nodes
+     * then return the height of the specified node.
+     * @param node
+     * @returns {number}
+     */
+    getHeight(node) {
+        if (!this.heightsKnown) {
+
+            calculateHeights.call(this, 0.0);
+        }
+        return node.height;
     }
 
     /**
@@ -248,6 +262,8 @@ class Tree {
             this.getSibling(node).length = rootLength - l;
         }
 
+        this.heightsKnown = false;
+
         this.treeUpdateCallback();
     };
 
@@ -279,9 +295,25 @@ class Tree {
      * @param {boolean} increasing - sorting in increasing node order or decreasing?
      * @returns {number} - the number of tips below this node
      */
-    order(node = this.rootNode, increasing = true) {
-        // orderNodes.call(this, node, increasing, this.treeUpdateCallback);
-        orderNodes.call(this, node, increasing);
+    orderByNodeDensity(increasing = true, node = this.rootNode) {
+        const factor = increasing ? 1 : -1;
+        orderNodes.call(this, node, (nodeA, countA, nodeB, countB) => {
+            return (countA - countB) * factor;
+        }, callback);
+        this.treeUpdateCallback();
+    }
+
+    /**
+     * Sorts the child branches of each node in order given by the function. This operates
+     * recursively from the node given.
+     *
+     * @param node - the node to start sorting from
+     * @param {function} ordering - provides a pairwise sorting order.
+     *  Function signature: (nodeA, childCountNodeA, nodeB, childCountNodeB)
+     * @returns {number} - the number of tips below this node
+     */
+    order(ordering, node = this.rootNode) {
+        orderNodes.call(this, node, ordering);
         this.treeUpdateCallback();
     }
 
@@ -379,7 +411,12 @@ class Tree {
                 midpoint: true
             }
         };
-        node.parent.children[node.parent.children.indexOf(node)] = splitNode;
+        if (node.parent) {
+            node.parent.children[node.parent.children.indexOf(node)] = splitNode;
+        } else {
+            // node is the root so make splitNode the root
+            this.root = splitNode;
+        }
         node.parent = splitNode;
         node.length = splitLocation;
 
@@ -726,24 +763,27 @@ class Tree {
  */
 
 /**
- * A private recursive function that rotates nodes to give an ordering.
+ * A private recursive function that rotates nodes to give an ordering provided
+ * by a function.
  * @param node
- * @param increasing
+ * @param ordering
  * @param callback an optional callback that is called each rotate
  * @returns {number}
  */
-function orderNodes(node, increasing, callback = null) {
-    const factor = increasing ? 1 : -1;
+function orderNodes(node, ordering, callback = null) {
     let count = 0;
     if (node.children) {
+        // count the number of descendents for each child
         const counts = new Map();
         for (const child of node.children) {
-            const value = orderNodes(child, increasing, callback);
+            const value = orderNodes(child, ordering, callback);
             counts.set(child, value);
             count += value;
         }
+
+        // sort the children using the provided function
         node.children.sort((a, b) => {
-            return (counts.get(a) - counts.get(b)) * factor
+            return ordering(a, counts.get(a), b, counts.get(b))
         });
 
         if (callback) callback();
@@ -752,6 +792,34 @@ function orderNodes(node, increasing, callback = null) {
     }
     return count;
 }
+
+/**
+ * A private recursive function that calculates the height of each node (with the most
+ * diverged tip from the root having height given by origin).
+ * @param origin
+ */
+function calculateHeights(origin) {
+    let maxDivergence = [ 0.0 ];
+    calculateDivergence(this.root, origin, maxDivergence);
+
+    this.nodeList.forEach((node) => node.height = maxDivergence[0] - node.divergence );
+    this.heightsKnown = true;
+}
+
+function calculateDivergence(node, divergence, maxDivergence) {
+    let d = divergence + node.length;
+    if (node.children) {
+        // count the number of descendents for each child
+        for (const child of node.children) {
+            calculateDivergence(child, d, maxDivergence);
+        }
+    }
+    if (d > maxDivergence[0]) {
+        maxDivergence[0] = d;
+    }
+    node.divergence = d;
+}
+
 
 /**
  * A private recursive function that uses the Fitch algorithm to assign
@@ -9316,3 +9384,4 @@ function createElements(svg, margins) {
 }
 
 export { ArcLayout, Bauble, CircleBauble, FigTree, Graph, Layout, RectangularBauble, RectangularLayout, RootToTipPlot, TransmissionLayout, Tree, Type };
+//# sourceMappingURL=figtree.esm.js.map
