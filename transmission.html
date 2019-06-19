@@ -132,10 +132,25 @@
 
     const tree = Tree.parseNewick(newickString);
 
-    const splits = {
-        "node11": [[0.01, "node11.1"], [0.03, "node11.2"], [0.05, "node11.3"]]
-    };
-    tree.splitBranches(splits);
+    // const splits = {
+    //     "node11": [[0.01, "node11.1"], [0.03, "node11.2"], [0.05, "node11.3"]]
+    // };
+    // tree.splitBranches(splits);
+
+    tree.splitBranches();
+
+    tree.annotateTips({
+        "virus1": { host: "case1" },
+        "virus2": { host: "case2" },
+        "virus3": { host: "case3" },
+        "virus4": { host: "case4" },
+        "virus5": { host: "case5" },
+        "virus6": { host: "case6" },
+        "virus7": { host: "case7" },
+        "virus8": { host: "case8" },
+        "virus9": { host: "case9" },
+        "virus10": { host: "case10" }
+    });
 
     const treeSVG = document.getElementById('transmission-1');
     const layout = new TransmissionLayout(tree);
