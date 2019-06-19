@@ -25,7 +25,8 @@ class Tree {
      */
     constructor(rootNode = {}) {
         this.root = rootNode;
-
+        // traverse the tree and set the parent value for each node. 
+        setParent(rootNode);
         this.annotations = {};
 
         this.nodeList = [...this.preorder()];
@@ -36,7 +37,9 @@ class Tree {
             } else {
                 node.id = `node_${index}`;
             }
+            if(node.annotations){
             this.addAnnotations(node.annotations);
+            }
         });
         this.nodeMap = new Map(this.nodeList.map( (node) => [node.id, node] ));
         this.tipMap = new Map(this.externalNodes.map( (tip) => [tip.name, tip] ));
@@ -488,7 +491,7 @@ class Tree {
                     throw Error(`existing values of the annotation, ${key}, in the tree is not of the same type`);
                 }
                 annotation.type = type;
-                annotation.values = [...annotation.values, ...addValues];
+                annotation.values = annotation.values? [...annotation.values, ...addValues]:[...addValues];
             } else if (Object.isExtensible(addValues)) {
                 // is a set of properties with values
                 let type = null;
@@ -508,7 +511,7 @@ class Tree {
                         }
 
                         sum += value;
-                        if (sum > 1.0) {
+                        if (sum > 1.01) {
                             throw Error(`the values of annotation, ${key}, should be probabilities of states and add to 1.0`);
                         }
                     } else if (typeof value === typeof true) {
@@ -520,7 +523,7 @@ class Tree {
                     } else {
                         throw Error(`the values of annotation, ${key}, should be all boolean or all floats`);
                     }
-                    keys.append(key);
+                    keys.push(key);
                 }
 
                 if (annotation.type && annotation.type !== type) {
@@ -528,7 +531,7 @@ class Tree {
                 }
 
                 annotation.type = type;
-                annotation.values = [...annotation.values, ...addValues];
+                annotation.values = annotation.values? [...annotation.values, addValues]:[addValues];
             } else {
                 let type = Type.DISCRETE;
 
@@ -815,6 +818,15 @@ function reconstructInternalStates(name, parentStates, acctran, node ) {
     }
 
     return nodeStates;
+}
+
+function setParent(node){
+    if(node.children){
+        for(const child of node.children){
+            child.parent = node;
+            setParent(child);
+        }
+    }
 }
 
 /** @module layout */
