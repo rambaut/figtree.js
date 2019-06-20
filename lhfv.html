@@ -120,10 +120,8 @@
 </div>
 
 <script type="module">
-    import { Tree } from "./src/tree.js";
-    import { TransmissionLayout } from "./src/transmissionlayout.js";
-    import { CircleBauble } from "./src/bauble.js";
-    import { FigTree } from "./src/figtree.js";
+    import { Tree,TransmissionLayout,CircleBauble,FigTree } from "./dist/figtree.esm.js";
+
 
     function annotateTransmissions(tree, transmissions) {
         transmissions.forEach((record) => {
@@ -180,7 +178,7 @@
                 new CircleBauble({ radius: 2, vertexFilter: (v) => v.degree === 2 })
             ]
         });
-
+    figTree.draw();
     figTree.addToolTip('.internal-node', (node) => {
         let text = `${node.name ? node.name : node.id }`;
         text += `<p>case: ${node.annotations.host}</p>`;

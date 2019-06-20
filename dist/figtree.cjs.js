@@ -4442,8 +4442,6 @@ function set$2(object, f) {
   return set;
 }
 
-// TODO Optimize edge cases.
-
 var EOL = {},
     EOF = {},
     QUOTE = 34,
@@ -4496,7 +4494,7 @@ function formatDate(date) {
       seconds = date.getUTCSeconds(),
       milliseconds = date.getUTCMilliseconds();
   return isNaN(date) ? "Invalid Date"
-      : formatYear(date.getUTCFullYear(), 4) + "-" + pad(date.getUTCMonth() + 1, 2) + "-" + pad(date.getUTCDate(), 2)
+      : formatYear(date.getUTCFullYear()) + "-" + pad(date.getUTCMonth() + 1, 2) + "-" + pad(date.getUTCDate(), 2)
       + (milliseconds ? "T" + pad(hours, 2) + ":" + pad(minutes, 2) + ":" + pad(seconds, 2) + "." + pad(milliseconds, 3) + "Z"
       : seconds ? "T" + pad(hours, 2) + ":" + pad(minutes, 2) + ":" + pad(seconds, 2) + "Z"
       : minutes || hours ? "T" + pad(hours, 2) + ":" + pad(minutes, 2) + "Z"
@@ -5382,8 +5380,6 @@ var areaSum$1 = adder(),
     areaRingSum$1 = adder();
 
 var lengthSum$1 = adder();
-
-// Returns the 2D cross product of AB and AC vectors, i.e., the z-component of
 
 function initRange(domain, range) {
   switch (arguments.length) {
