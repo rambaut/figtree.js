@@ -27,7 +27,8 @@
          */
         constructor(rootNode = {}) {
             this.root = rootNode;
-
+            // traverse the tree and set the parent value for each node. 
+            setParent(rootNode);
             this.annotations = {};
 
             this.nodeList = [...this.preorder()];
@@ -38,7 +39,9 @@
                 } else {
                     node.id = `node_${index}`;
                 }
+                if(node.annotations){
                 this.addAnnotations(node.annotations);
+                }
             });
             this.nodeMap = new Map(this.nodeList.map( (node) => [node.id, node] ));
             this.tipMap = new Map(this.externalNodes.map( (tip) => [tip.name, tip] ));
@@ -88,7 +91,7 @@
          * Returns the sibling of a node (i.e., the first other child of the parent)
          *
          * @param node
-         * @returns {*}
+         * @returns {object}
          */
         getSibling(node) {
             if (!node.parent) {
@@ -101,7 +104,7 @@
          * Returns a node from its id stored.
          *
          * @param id
-         * @returns {*}
+         * @returns {object}
          */
         getNode(id) {
             return this.nodeMap.get(id);
@@ -111,10 +114,24 @@
          * Returns an external node (tip) from its name.
          *
          * @param name
-         * @returns {*}
+         * @returns {object}
          */
         getExternalNode(name) {
             return this.tipMap.get(name);
+        }
+
+        /**
+         * If heights are not currently known then calculate heights for all nodes
+         * then return the height of the specified node.
+         * @param node
+         * @returns {number}
+         */
+        getHeight(node) {
+            if (!this.heightsKnown) {
+
+                calculateHeights.call(this, 0.0);
+            }
+            return node.height;
         }
 
         /**
@@ -251,6 +268,8 @@
                 this.getSibling(node).length = rootLength - l;
             }
 
+            this.heightsKnown = false;
+
             this.treeUpdateCallback();
         };
 
@@ -282,9 +301,25 @@
          * @param {boolean} increasing - sorting in increasing node order or decreasing?
          * @returns {number} - the number of tips below this node
          */
-        order(node = this.rootNode, increasing = true) {
-            // orderNodes.call(this, node, increasing, this.treeUpdateCallback);
-            orderNodes.call(this, node, increasing);
+        orderByNodeDensity(increasing = true, node = this.rootNode) {
+            const factor = increasing ? 1 : -1;
+            orderNodes.call(this, node, (nodeA, countA, nodeB, countB) => {
+                return (countA - countB) * factor;
+            }, callback);
+            this.treeUpdateCallback();
+        }
+
+        /**
+         * Sorts the child branches of each node in order given by the function. This operates
+         * recursively from the node given.
+         *
+         * @param node - the node to start sorting from
+         * @param {function} ordering - provides a pairwise sorting order.
+         *  Function signature: (nodeA, childCountNodeA, nodeB, childCountNodeB)
+         * @returns {number} - the number of tips below this node
+         */
+        order(ordering, node = this.rootNode) {
+            orderNodes.call(this, node, ordering);
             this.treeUpdateCallback();
         }
 
@@ -382,7 +417,12 @@
                     midpoint: true
                 }
             };
-            node.parent.children[node.parent.children.indexOf(node)] = splitNode;
+            if (node.parent) {
+                node.parent.children[node.parent.children.indexOf(node)] = splitNode;
+            } else {
+                // node is the root so make splitNode the root
+                this.root = splitNode;
+            }
             node.parent = splitNode;
             node.length = splitLocation;
 
@@ -490,7 +530,7 @@
                         throw Error(`existing values of the annotation, ${key}, in the tree is not of the same type`);
                     }
                     annotation.type = type;
-                    annotation.values = [...annotation.values, ...addValues];
+                    annotation.values = annotation.values? [...annotation.values, ...addValues]:[...addValues];
                 } else if (Object.isExtensible(addValues)) {
                     // is a set of properties with values
                     let type = null;
@@ -510,7 +550,7 @@
                             }
 
                             sum += value;
-                            if (sum > 1.0) {
+                            if (sum > 1.01) {
                                 throw Error(`the values of annotation, ${key}, should be probabilities of states and add to 1.0`);
                             }
                         } else if (typeof value === typeof true) {
@@ -522,7 +562,7 @@
                         } else {
                             throw Error(`the values of annotation, ${key}, should be all boolean or all floats`);
                         }
-                        keys.append(key);
+                        keys.push(key);
                     }
 
                     if (annotation.type && annotation.type !== type) {
@@ -530,7 +570,7 @@
                     }
 
                     annotation.type = type;
-                    annotation.values = [...annotation.values, ...addValues];
+                    annotation.values = annotation.values? [...annotation.values, addValues]:[addValues];
                 } else {
                     let type = Type.DISCRETE;
 
@@ -729,24 +769,27 @@
      */
 
     /**
-     * A private recursive function that rotates nodes to give an ordering.
+     * A private recursive function that rotates nodes to give an ordering provided
+     * by a function.
      * @param node
-     * @param increasing
+     * @param ordering
      * @param callback an optional callback that is called each rotate
      * @returns {number}
      */
-    function orderNodes(node, increasing, callback = null) {
-        const factor = increasing ? 1 : -1;
+    function orderNodes(node, ordering, callback = null) {
         let count = 0;
         if (node.children) {
+            // count the number of descendents for each child
             const counts = new Map();
             for (const child of node.children) {
-                const value = orderNodes(child, increasing, callback);
+                const value = orderNodes(child, ordering, callback);
                 counts.set(child, value);
                 count += value;
             }
+
+            // sort the children using the provided function
             node.children.sort((a, b) => {
-                return (counts.get(a) - counts.get(b)) * factor
+                return ordering(a, counts.get(a), b, counts.get(b))
             });
 
             if (callback) callback();
@@ -755,6 +798,34 @@
         }
         return count;
     }
+
+    /**
+     * A private recursive function that calculates the height of each node (with the most
+     * diverged tip from the root having height given by origin).
+     * @param origin
+     */
+    function calculateHeights(origin) {
+        let maxDivergence = [ 0.0 ];
+        calculateDivergence(this.root, origin, maxDivergence);
+
+        this.nodeList.forEach((node) => node.height = maxDivergence[0] - node.divergence );
+        this.heightsKnown = true;
+    }
+
+    function calculateDivergence(node, divergence, maxDivergence) {
+        let d = divergence + node.length;
+        if (node.children) {
+            // count the number of descendents for each child
+            for (const child of node.children) {
+                calculateDivergence(child, d, maxDivergence);
+            }
+        }
+        if (d > maxDivergence[0]) {
+            maxDivergence[0] = d;
+        }
+        node.divergence = d;
+    }
+
 
     /**
      * A private recursive function that uses the Fitch algorithm to assign
@@ -817,6 +888,15 @@
         }
 
         return nodeStates;
+    }
+
+    function setParent(node){
+        if(node.children){
+            for(const child of node.children){
+                child.parent = node;
+                setParent(child);
+            }
+        }
     }
 
     /** @module layout */
@@ -9325,3 +9405,4 @@
     Object.defineProperty(exports, '__esModule', { value: true });
 
 }));
+//# sourceMappingURL=figtree.umd.js.map

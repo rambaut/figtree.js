@@ -32,7 +32,7 @@
     "build-webpack": "webpack",
     "start:dev": "webpack-dev-server",
     "build": "rollup -c",
-    "dev": "rollup -c -w"
+    "dev": "rollup --sourcemap -c -w"
   },
   "files": [
     "dist"
