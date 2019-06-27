@@ -1,5 +1,210 @@
-/** @module tree */
+function createCommonjsModule(fn, module) {
+	return module = { exports: {} }, fn(module, module.exports), module.exports;
+}
 
+var rngBrowser = createCommonjsModule(function (module) {
+// Unique ID creation requires a high quality random # generator.  In the
+// browser this is a little complicated due to unknown quality of Math.random()
+// and inconsistent support for the `crypto` API.  We do the best we can via
+// feature-detection
+
+// getRandomValues needs to be invoked in a context where "this" is a Crypto
+// implementation. Also, find the complete implementation of crypto on IE11.
+var getRandomValues = (typeof(crypto) != 'undefined' && crypto.getRandomValues && crypto.getRandomValues.bind(crypto)) ||
+                      (typeof(msCrypto) != 'undefined' && typeof window.msCrypto.getRandomValues == 'function' && msCrypto.getRandomValues.bind(msCrypto));
+
+if (getRandomValues) {
+  // WHATWG crypto RNG - http://wiki.whatwg.org/wiki/Crypto
+  var rnds8 = new Uint8Array(16); // eslint-disable-line no-undef
+
+  module.exports = function whatwgRNG() {
+    getRandomValues(rnds8);
+    return rnds8;
+  };
+} else {
+  // Math.random()-based (RNG)
+  //
+  // If all else fails, use Math.random().  It's fast, but is of unspecified
+  // quality.
+  var rnds = new Array(16);
+
+  module.exports = function mathRNG() {
+    for (var i = 0, r; i < 16; i++) {
+      if ((i & 0x03) === 0) r = Math.random() * 0x100000000;
+      rnds[i] = r >>> ((i & 0x03) << 3) & 0xff;
+    }
+
+    return rnds;
+  };
+}
+});
+
+/**
+ * Convert array of 16 byte values to UUID string format of the form:
+ * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+ */
+var byteToHex = [];
+for (var i = 0; i < 256; ++i) {
+  byteToHex[i] = (i + 0x100).toString(16).substr(1);
+}
+
+function bytesToUuid(buf, offset) {
+  var i = offset || 0;
+  var bth = byteToHex;
+  // join used to fix memory issue caused by concatenation: https://bugs.chromium.org/p/v8/issues/detail?id=3175#c4
+  return ([bth[buf[i++]], bth[buf[i++]], 
+	bth[buf[i++]], bth[buf[i++]], '-',
+	bth[buf[i++]], bth[buf[i++]], '-',
+	bth[buf[i++]], bth[buf[i++]], '-',
+	bth[buf[i++]], bth[buf[i++]], '-',
+	bth[buf[i++]], bth[buf[i++]],
+	bth[buf[i++]], bth[buf[i++]],
+	bth[buf[i++]], bth[buf[i++]]]).join('');
+}
+
+var bytesToUuid_1 = bytesToUuid;
+
+// **`v1()` - Generate time-based UUID**
+//
+// Inspired by https://github.com/LiosK/UUID.js
+// and http://docs.python.org/library/uuid.html
+
+var _nodeId;
+var _clockseq;
+
+// Previous uuid creation time
+var _lastMSecs = 0;
+var _lastNSecs = 0;
+
+// See https://github.com/broofa/node-uuid for API details
+function v1(options, buf, offset) {
+  var i = buf && offset || 0;
+  var b = buf || [];
+
+  options = options || {};
+  var node = options.node || _nodeId;
+  var clockseq = options.clockseq !== undefined ? options.clockseq : _clockseq;
+
+  // node and clockseq need to be initialized to random values if they're not
+  // specified.  We do this lazily to minimize issues related to insufficient
+  // system entropy.  See #189
+  if (node == null || clockseq == null) {
+    var seedBytes = rngBrowser();
+    if (node == null) {
+      // Per 4.5, create and 48-bit node id, (47 random bits + multicast bit = 1)
+      node = _nodeId = [
+        seedBytes[0] | 0x01,
+        seedBytes[1], seedBytes[2], seedBytes[3], seedBytes[4], seedBytes[5]
+      ];
+    }
+    if (clockseq == null) {
+      // Per 4.2.2, randomize (14 bit) clockseq
+      clockseq = _clockseq = (seedBytes[6] << 8 | seedBytes[7]) & 0x3fff;
+    }
+  }
+
+  // UUID timestamps are 100 nano-second units since the Gregorian epoch,
+  // (1582-10-15 00:00).  JSNumbers aren't precise enough for this, so
+  // time is handled internally as 'msecs' (integer milliseconds) and 'nsecs'
+  // (100-nanoseconds offset from msecs) since unix epoch, 1970-01-01 00:00.
+  var msecs = options.msecs !== undefined ? options.msecs : new Date().getTime();
+
+  // Per 4.2.1.2, use count of uuid's generated during the current clock
+  // cycle to simulate higher resolution clock
+  var nsecs = options.nsecs !== undefined ? options.nsecs : _lastNSecs + 1;
+
+  // Time since last uuid creation (in msecs)
+  var dt = (msecs - _lastMSecs) + (nsecs - _lastNSecs)/10000;
+
+  // Per 4.2.1.2, Bump clockseq on clock regression
+  if (dt < 0 && options.clockseq === undefined) {
+    clockseq = clockseq + 1 & 0x3fff;
+  }
+
+  // Reset nsecs if clock regresses (new clockseq) or we've moved onto a new
+  // time interval
+  if ((dt < 0 || msecs > _lastMSecs) && options.nsecs === undefined) {
+    nsecs = 0;
+  }
+
+  // Per 4.2.1.2 Throw error if too many uuids are requested
+  if (nsecs >= 10000) {
+    throw new Error('uuid.v1(): Can\'t create more than 10M uuids/sec');
+  }
+
+  _lastMSecs = msecs;
+  _lastNSecs = nsecs;
+  _clockseq = clockseq;
+
+  // Per 4.1.4 - Convert from unix epoch to Gregorian epoch
+  msecs += 12219292800000;
+
+  // `time_low`
+  var tl = ((msecs & 0xfffffff) * 10000 + nsecs) % 0x100000000;
+  b[i++] = tl >>> 24 & 0xff;
+  b[i++] = tl >>> 16 & 0xff;
+  b[i++] = tl >>> 8 & 0xff;
+  b[i++] = tl & 0xff;
+
+  // `time_mid`
+  var tmh = (msecs / 0x100000000 * 10000) & 0xfffffff;
+  b[i++] = tmh >>> 8 & 0xff;
+  b[i++] = tmh & 0xff;
+
+  // `time_high_and_version`
+  b[i++] = tmh >>> 24 & 0xf | 0x10; // include version
+  b[i++] = tmh >>> 16 & 0xff;
+
+  // `clock_seq_hi_and_reserved` (Per 4.2.2 - include variant)
+  b[i++] = clockseq >>> 8 | 0x80;
+
+  // `clock_seq_low`
+  b[i++] = clockseq & 0xff;
+
+  // `node`
+  for (var n = 0; n < 6; ++n) {
+    b[i + n] = node[n];
+  }
+
+  return buf ? buf : bytesToUuid_1(b);
+}
+
+var v1_1 = v1;
+
+function v4(options, buf, offset) {
+  var i = buf && offset || 0;
+
+  if (typeof(options) == 'string') {
+    buf = options === 'binary' ? new Array(16) : null;
+    options = null;
+  }
+  options = options || {};
+
+  var rnds = options.random || (options.rng || rngBrowser)();
+
+  // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
+  rnds[6] = (rnds[6] & 0x0f) | 0x40;
+  rnds[8] = (rnds[8] & 0x3f) | 0x80;
+
+  // Copy bytes to buffer, if provided
+  if (buf) {
+    for (var ii = 0; ii < 16; ++ii) {
+      buf[i + ii] = rnds[ii];
+    }
+  }
+
+  return buf || bytesToUuid_1(rnds);
+}
+
+var v4_1 = v4;
+
+var uuid = v4_1;
+uuid.v1 = v1_1;
+uuid.v4 = v4_1;
+
+var uuid_1 = uuid;
+
+// for unique node ids
 const Type = {
     DISCRETE : Symbol("DISCRETE"),
     BOOLEAN : Symbol("BOOLEAN"),
@@ -20,18 +225,19 @@ class Tree {
      * @param {object} rootNode - The root node of the tree as an object.
      */
     constructor(rootNode = {}) {
-        this.root = rootNode;
-        // traverse the tree and set the parent value for each node. 
-        setParent(rootNode);
-        this.annotations = {};
+        this.heightsKnown = false;
+        this.lengthsKnown = false;
+        this.root = makeNode.call(this,rootNode);
+        // This converts all the json objects to Node instances
+        setUpNodes.call(this,this.root);
 
+        this.origin = 0;
+        this.annotations = {};
         this.nodeList = [...this.preorder()];
         this.nodeList.forEach( (node, index) => {
             if (node.label && node.label.startsWith("#")) {
                 // an id string has been specified in the newick label.
                 node.id = node.label.substring(1);
-            } else {
-                node.id = `node_${index}`;
             }
             if(node.annotations){
             this.addAnnotations(node.annotations);
@@ -123,10 +329,50 @@ class Tree {
     getHeight(node) {
         if (!this.heightsKnown) {
 
-            calculateHeights.call(this, 0.0);
+            calculateHeights.call(this);
         }
         return node.height;
     }
+
+    setHeight(node,height){
+        node.height = height;
+    }
+
+    makeHeightsUnknown(){
+        this.heightsKnown=false;
+    }
+    /**
+     * If branch lengths are not currently known thne calculate the lengths for all nodes
+     * the return the length for the branch below the specified node
+     * @param node
+     * @returns {number}
+     */
+    getLength(node){
+        if(!this.lengthsKnown){
+            calculateLengths.call(this);
+
+        }
+        return node.length;
+
+    }
+
+    setLength(node,length){
+        node.length =length;
+        this.heightsKnown=false;
+    }
+
+    makeLenghtsUnknown(){
+        this.lengthsKnown=false;
+    }
+
+    getOrigin(){
+        return this.origin;
+    }
+    setOrigin(origin){
+        this.origin = origin;
+    }
+
+
 
     /**
      * A generator function that returns the nodes in a pre-order traversal.
@@ -199,7 +445,9 @@ class Tree {
             // the node is the root - nothing to do
             return;
         }
-
+        if(!this.lengthsKnown){
+            calculateLengths.call(this);
+        }
         const rootLength = this.rootNode.children[0].length + this.rootNode.children[1].length;
 
         if (node.parent !== this.rootNode) {
@@ -344,6 +592,17 @@ class Tree {
     }
 
     /**
+     * Adds a collapse flag to the node whose dependents will be collapsed by the layout. How the clade is collapsed depends on the the
+     * style.
+     * @param node - the mrca of the clade that is to be collapsed
+     * @param style -  The style in which to collapse the clade. Can be one of the CollapseStyles. TRIANGLE - returns a triangle,
+     * BRANCH reduces the clade to a single branch which extends to the most recent tip.
+     */
+    collapse(node,style){
+        node.collapse = style;
+    }
+
+    /**
      * Gives the distance from the root to a given tip (external node).
      * @param tip - the external node
      * @returns {number}
@@ -356,7 +615,6 @@ class Tree {
             }
         }
         return length;
-
     }
 
     /**
@@ -392,6 +650,8 @@ class Tree {
                     this.splitBranch(node, node.length / 2.0);
                 }
             });
+        this.treeUpdateCallback();
+
     }
 
     /**
@@ -625,7 +885,6 @@ class Tree {
      */
     static parseNewick(newickString, labelName = "label", datePrefix = undefined ) {
         const tokens = newickString.split(/\s*('[^']+'|"[^"]+"|;|\(|\)|,|:)\s*/);
-
         let level = 0;
         let currentNode = null;
         let nodeStack = [];
@@ -798,12 +1057,25 @@ function orderNodes(node, ordering, callback = null) {
  * diverged tip from the root having height given by origin).
  * @param origin
  */
-function calculateHeights(origin) {
+function calculateHeights(origin=this.origin) {
+    this.setOrigin(origin);
     let maxDivergence = [ 0.0 ];
-    calculateDivergence(this.root, origin, maxDivergence);
+    calculateDivergence(this.root, this.origin, maxDivergence);
 
-    this.nodeList.forEach((node) => node.height = maxDivergence[0] - node.divergence );
+    this.nodeList.forEach((node) => node._height = maxDivergence[0] - node.divergence ); // Setting each one triggers an update we don't want so using _height directly
     this.heightsKnown = true;
+}
+
+/**
+ * A private recursive function that calculates the length of the branch below each node
+ */
+function calculateLengths(){
+
+    this.nodeList.forEach((node)=> node._length =node.parent? node.height - node.parent.height:0); // Setting each one triggers an update we don't want so using _length directly
+
+    this.lengthsKnown=true;
+    this.treeUpdateCallback();
+
 }
 
 function calculateDivergence(node, divergence, maxDivergence) {
@@ -883,15 +1155,142 @@ function reconstructInternalStates(name, parentStates, acctran, node ) {
 
     return nodeStates;
 }
+function makeNode(nodeData){
+    return new Node({...nodeData, tree:this});
+}
 
-function setParent(node){
+/**
+ * A private function that sets up the tree by traversing from the root Node and sets all heights and lenghts
+ * @param node
+ */
+function setUpNodes(node){
     if(node.children){
+        const childrenNodes=[];
         for(const child of node.children){
-            child.parent = node;
-            setParent(child);
+            const childNode = makeNode.call(this,{...child,parent:node});
+            childrenNodes.push(childNode);
+            setUpNodes.call(this,childNode);
         }
+        node.children = childrenNodes;
     }
 }
+
+class Node{
+
+
+
+    static DEFAULT_NODE(){
+        return {
+            height:undefined,
+            length:undefined,
+            name:null,
+            annotations:{},
+            parent:undefined,
+            children:null,
+            label:undefined,
+            level:undefined,
+        }
+
+
+    }
+    constructor(nodeData ={}){
+        const data = {...Node.DEFAULT_NODE(),...nodeData};
+
+        this._id = uuid_1.v4();
+        this._height = data.height;
+        this._length = data.length;
+        this._name = data.name;
+        this._annotations= data.annotations;
+        this._parent = data.parent;
+        this._children = data.children;
+        this._tree = data.tree;
+        this._label = data.label;
+        this._level = data.level;
+
+    }
+    get level() {
+        return this._level;
+    }
+    get name() {
+        return this._name;
+    }
+
+    set level(value) {
+        this._level = value;
+    }
+    get label() {
+        return this._label;
+    }
+
+    set label(value) {
+        this._label = value;
+    }
+    get height() {
+        if(!this._tree.heightsKnown){
+            calculateHeights.call(this._tree);
+        }
+        return this._height;
+    }
+
+    set height(value) {
+        this._height = value;
+        this._tree.lengthsKnown=false;
+        this._tree.treeUpdateCallback();
+
+    }
+
+    get length() {
+        if(!this._tree.lengthsKnown){
+            calculateLengths.call(this._tree);
+        }
+        return this._length;
+    }
+
+    set length(value) {
+        this._length = value;
+        this._tree.heightsKnown = false;
+        this._tree.treeUpdateCallback();
+    }
+
+    get annotations() {
+        return this._annotations;
+    }
+
+    set annotations(value) {
+        this._annotations = value;
+    }
+
+    get children() {
+        return this._children;
+    }
+
+    set children(value) {
+        this._children = value;
+    }
+    addChild(node){
+        if(this._children){
+            this._children.push(node);
+        }else{
+            this._children=[node];
+        }
+    }
+    get parent() {
+        return this._parent;
+    }
+    set parent(node) {
+        this._parent = node;
+        this._parent.addChild(this);
+    }
+    get id(){
+        return this._id;
+    }
+    set id(value){
+        this._id = value;
+    }
+
+
+}
+// TODO make the treeupdatecallback fire asynchonously after the method that triggers it is done so we don't get infinite recursion
 
 /** @module layout */
 

@@ -566,3 +566,10 @@ function addAxis() {
         .text(this.settings.xAxisTitle);
 }
 
+/**
+ * A function to update the annotatation layer of the tree
+ */
+
+function updateAnnotation(){
+
+}

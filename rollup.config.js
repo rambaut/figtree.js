@@ -14,8 +14,12 @@ export default [
 
 		},
 		plugins: [
-			resolve(), // so Rollup can find `d3`
-			commonjs() // so Rollup can convert `d3` to an ES module
+			resolve({
+				jsnext: true,
+				main: true,
+				browser: true
+			}), // so Rollup can find `d3`
+			commonjs({include: ['src/*','node_modules/**']}) // so Rollup can convert `d3` to an ES module
 		]
 	},
 
@@ -38,8 +42,12 @@ export default [
 				sourcemap: true
 			}],
 		plugins: [
-			resolve(), // so Rollup can find `d3`
-			commonjs() // so Rollup can convert `d3` to an ES module
+			resolve({
+				jsnext: true,
+				main: true,
+				browser: true
+			}), // so Rollup can find `d3`
+			commonjs({include: ['src/*','node_modules/**']}) // so Rollup can convert `d3` to an ES module
 		]
 	}
 ];

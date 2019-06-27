@@ -136,7 +136,6 @@
     const treeSVG = document.getElementById('phylogram_1a');
 
     const layout = new RectangularLayout(tree);
-    // layout.setBranchLabels("length");
     layout.setInternalNodeLabels("probability");
 
     const figTree = new FigTree(treeSVG, layout,
@@ -146,7 +145,7 @@
                 new CircleBauble(),
             ]
         });
-        figTree.draw();
+    figTree.draw();
     figTree.hilightInternalNodes();
     figTree.onClickInternalNode(d=>console.log("clicked"));//layout.rotate());
 

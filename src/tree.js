@@ -2,12 +2,19 @@
 
 /** @module tree */
 
+import uuid from "uuid";
+// for unique node ids
 export const Type = {
     DISCRETE : Symbol("DISCRETE"),
     BOOLEAN : Symbol("BOOLEAN"),
     INTEGER : Symbol("INTEGER"),
     FLOAT: Symbol("FLOAT"),
     PROBABILITIES: Symbol("PROBABILITIES")
+};
+
+export const CollapseStyles = {
+    TRIANGLE : Symbol("TRIANGLE"),
+    BRANCH : Symbol("BRANCH"),
 };
 
 /**
@@ -22,18 +29,19 @@ export class Tree {
      * @param {object} rootNode - The root node of the tree as an object.
      */
     constructor(rootNode = {}) {
-        this.root = rootNode;
-        // traverse the tree and set the parent value for each node. 
-        setParent(rootNode);
-        this.annotations = {};
+        this.heightsKnown = false;
+        this.lengthsKnown = false;
+        this.root = makeNode.call(this,rootNode);
+        // This converts all the json objects to Node instances
+        setUpNodes.call(this,this.root)
 
+        this.origin = 0;
+        this.annotations = {};
         this.nodeList = [...this.preorder()];
         this.nodeList.forEach( (node, index) => {
             if (node.label && node.label.startsWith("#")) {
                 // an id string has been specified in the newick label.
                 node.id = node.label.substring(1);
-            } else {
-                node.id = `node_${index}`;
             }
             if(node.annotations){
             this.addAnnotations(node.annotations);
@@ -125,10 +133,50 @@ export class Tree {
     getHeight(node) {
         if (!this.heightsKnown) {
 
-            calculateHeights.call(this, 0.0);
+            calculateHeights.call(this);
         }
         return node.height;
     }
+
+    setHeight(node,height){
+        node.height = height;
+    }
+
+    makeHeightsUnknown(){
+        this.heightsKnown=false;
+    }
+    /**
+     * If branch lengths are not currently known thne calculate the lengths for all nodes
+     * the return the length for the branch below the specified node
+     * @param node
+     * @returns {number}
+     */
+    getLength(node){
+        if(!this.lengthsKnown){
+            calculateLengths.call(this);
+
+        }
+        return node.length;
+
+    }
+
+    setLength(node,length){
+        node.length =length;
+        this.heightsKnown=false;
+    }
+
+    makeLenghtsUnknown(){
+        this.lengthsKnown=false;
+    }
+
+    getOrigin(){
+        return this.origin;
+    }
+    setOrigin(origin){
+        this.origin = origin;
+    }
+
+
 
     /**
      * A generator function that returns the nodes in a pre-order traversal.
@@ -201,7 +249,9 @@ export class Tree {
             // the node is the root - nothing to do
             return;
         }
-
+        if(!this.lengthsKnown){
+            calculateLengths.call(this);
+        }
         const rootLength = this.rootNode.children[0].length + this.rootNode.children[1].length;
 
         if (node.parent !== this.rootNode) {
@@ -350,6 +400,17 @@ export class Tree {
     }
 
     /**
+     * Adds a collapse flag to the node whose dependents will be collapsed by the layout. How the clade is collapsed depends on the the
+     * style.
+     * @param node - the mrca of the clade that is to be collapsed
+     * @param style -  The style in which to collapse the clade. Can be one of the CollapseStyles. TRIANGLE - returns a triangle,
+     * BRANCH reduces the clade to a single branch which extends to the most recent tip.
+     */
+    collapse(node,style){
+        node.collapse = style;
+    }
+
+    /**
      * Gives the distance from the root to a given tip (external node).
      * @param tip - the external node
      * @returns {number}
@@ -362,7 +423,6 @@ export class Tree {
             }
         }
         return length;
-
     }
 
     /**
@@ -398,6 +458,8 @@ export class Tree {
                     this.splitBranch(node, node.length / 2.0);
                 }
             });
+        this.treeUpdateCallback();
+
     }
 
     /**
@@ -631,7 +693,6 @@ export class Tree {
      */
     static parseNewick(newickString, labelName = "label", datePrefix = undefined ) {
         const tokens = newickString.split(/\s*('[^']+'|"[^"]+"|;|\(|\)|,|:)\s*/);
-
         let level = 0;
         let currentNode = null;
         let nodeStack = [];
@@ -804,12 +865,25 @@ function orderNodes(node, ordering, callback = null) {
  * diverged tip from the root having height given by origin).
  * @param origin
  */
-function calculateHeights(origin) {
+function calculateHeights(origin=this.origin) {
+    this.setOrigin(origin);
     let maxDivergence = [ 0.0 ];
-    calculateDivergence(this.root, origin, maxDivergence);
+    calculateDivergence(this.root, this.origin, maxDivergence);
 
-    this.nodeList.forEach((node) => node.height = maxDivergence[0] - node.divergence );
+    this.nodeList.forEach((node) => node._height = maxDivergence[0] - node.divergence ); // Setting each one triggers an update we don't want so using _height directly
     this.heightsKnown = true;
+}
+
+/**
+ * A private recursive function that calculates the length of the branch below each node
+ */
+function calculateLengths(){
+
+    this.nodeList.forEach((node)=> node._length =node.parent? node.height - node.parent.height:0); // Setting each one triggers an update we don't want so using _length directly
+
+    this.lengthsKnown=true;
+    this.treeUpdateCallback();
+
 }
 
 function calculateDivergence(node, divergence, maxDivergence) {
@@ -889,12 +963,139 @@ function reconstructInternalStates(name, parentStates, acctran, node ) {
 
     return nodeStates;
 }
+function makeNode(nodeData){
+    return new Node({...nodeData, tree:this});
+}
 
-function setParent(node){
+/**
+ * A private function that sets up the tree by traversing from the root Node and sets all heights and lenghts
+ * @param node
+ */
+function setUpNodes(node){
     if(node.children){
+        const childrenNodes=[]
         for(const child of node.children){
-            child.parent = node;
-            setParent(child);
+            const childNode = makeNode.call(this,{...child,parent:node})
+            childrenNodes.push(childNode);
+            setUpNodes.call(this,childNode);
         }
+        node.children = childrenNodes;
     }
 }
+
+class Node{
+
+
+
+    static DEFAULT_NODE(){
+        return{
+            height:undefined,
+            length:undefined,
+            name:null,
+            annotations:{},
+            parent:undefined,
+            children:null,
+            label:undefined,
+            level:undefined,
+        }
+
+
+    }
+    constructor(nodeData ={}){
+        const data = {...Node.DEFAULT_NODE(),...nodeData};
+
+        this._id = uuid.v4();
+        this._height = data.height;
+        this._length = data.length;
+        this._name = data.name;
+        this._annotations= data.annotations;
+        this._parent = data.parent;
+        this._children = data.children;
+        this._tree = data.tree;
+        this._label = data.label;
+        this._level = data.level;
+
+    }
+    get level() {
+        return this._level;
+    }
+    get name() {
+        return this._name;
+    }
+
+    set level(value) {
+        this._level = value;
+    }
+    get label() {
+        return this._label;
+    }
+
+    set label(value) {
+        this._label = value;
+    }
+    get height() {
+        if(!this._tree.heightsKnown){
+            calculateHeights.call(this._tree);
+        }
+        return this._height;
+    }
+
+    set height(value) {
+        this._height = value;
+        this._tree.lengthsKnown=false;
+        this._tree.treeUpdateCallback();
+
+    }
+
+    get length() {
+        if(!this._tree.lengthsKnown){
+            calculateLengths.call(this._tree);
+        }
+        return this._length;
+    }
+
+    set length(value) {
+        this._length = value;
+        this._tree.heightsKnown = false;
+        this._tree.treeUpdateCallback();
+    }
+
+    get annotations() {
+        return this._annotations;
+    }
+
+    set annotations(value) {
+        this._annotations = value;
+    }
+
+    get children() {
+        return this._children;
+    }
+
+    set children(value) {
+        this._children = value;
+    }
+    addChild(node){
+        if(this._children){
+            this._children.push(node);
+        }else{
+            this._children=[node];
+        }
+    }
+    get parent() {
+        return this._parent;
+    }
+    set parent(node) {
+        this._parent = node;
+        this._parent.addChild(this);
+    }
+    get id(){
+        return this._id;
+    }
+    set id(value){
+        this._id = value;
+    }
+
+
+}
+// TODO make the treeupdatecallback fire asynchonously after the method that triggers it is done so we don't get infinite recursion

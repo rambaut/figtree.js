@@ -14,7 +14,8 @@
   "dependencies": {
     "d3": "^5.9.1",
     "font-awesome": "4.x",
-    "sphinx": "^0.1.2"
+    "sphinx": "^0.1.2",
+    "uuid": "^3.3.2"
   },
   "devDependencies": {
     "@babel/core": "^7.3.4",
