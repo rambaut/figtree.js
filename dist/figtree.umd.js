@@ -240,7 +240,7 @@
 	        this.origin = 0;
 	        this.annotations = {};
 	        this.nodeList = [...this.preorder()];
-	        this.nodeList.forEach( (node, index) => {
+	        this.nodeList.forEach( (node) => {
 	            if (node.label && node.label.startsWith("#")) {
 	                // an id string has been specified in the newick label.
 	                node.id = node.label.substring(1);
@@ -252,7 +252,6 @@
 	        this.nodeMap = new Map(this.nodeList.map( (node) => [node.id, node] ));
 	        this.tipMap = new Map(this.externalNodes.map( (tip) => [tip.name, tip] ));
 
-	        this.isUpdating = false;
 	        // a callback function that is called whenever the tree is changed
 	        this.treeUpdateCallback = () => {};
 	    };
@@ -333,52 +332,12 @@
 	     * @returns {number}
 	     */
 	    getHeight(node) {
-	        if (!this.heightsKnown) {
-
-	            calculateHeights.call(this);
-	        }
 	        return node.height;
 	    }
 
-	    setHeight(node,height){
-	        node.height = height;
-	    }
-
-	    makeHeightsUnknown(){
-	        this.heightsKnown=false;
-	    }
-	    /**
-	     * If branch lengths are not currently known thne calculate the lengths for all nodes
-	     * the return the length for the branch below the specified node
-	     * @param node
-	     * @returns {number}
-	     */
-	    getLength(node){
-	        if(!this.lengthsKnown){
-	            calculateLengths.call(this);
-
-	        }
-	        return node.length;
-
-	    }
-
-	    setLength(node,length){
-	        node.length =length;
-	        this.heightsKnown=false;
-	    }
-
-	    makeLenghtsUnknown(){
-	        this.lengthsKnown=false;
-	    }
-
-	    getOrigin(){
-	        return this.origin;
-	    }
 	    setOrigin(origin){
 	        this.origin = origin;
 	    }
-
-
 
 	    /**
 	     * A generator function that returns the nodes in a pre-order traversal.
@@ -451,7 +410,7 @@
 	            // the node is the root - nothing to do
 	            return;
 	        }
-	        this.isUpdating=true;
+
 
 	        const rootLength = this.rootNode.children[0].length + this.rootNode.children[1].length;
 
@@ -477,7 +436,7 @@
 	                if (parent.parent === this.rootNode) {
 	                    const sibling = this.getSibling(parent);
 	                    parent.children.push(sibling);
-	                    sibling.length = rootLength;
+	                    sibling._length = rootLength;
 	                } else {
 	                    // swap the parent and parent's parent's length around
 	                    [parent.parent.length, oldLength] = [oldLength, parent.parent.length];
@@ -505,18 +464,18 @@
 	                });
 
 	            const l = rootChild1.length * proportion;
-	            rootChild2.length = l;
-	            rootChild1.length = rootChild1.length - l;
+	            rootChild2._length = l;
+	            rootChild1._length = rootChild1.length - l;
 
 	        } else {
 	            // the root is staying the same, just the position of the root changing
 	            const l = node.length * (1.0 - proportion);
-	            node.length = l;
-	            this.getSibling(node).length = rootLength - l;
+	            node._length = l;
+	            this.getSibling(node)._length = rootLength - l;
 	        }
 
 	        this.heightsKnown = false;
-	        this.isUpdating=false;
+
 
 	        this.treeUpdateCallback();
 	    };
@@ -567,9 +526,9 @@
 	     * @returns {number} - the number of tips below this node
 	     */
 	    order(ordering, node = this.rootNode) {
-	        this.isUpdating=true;
+
 	        orderNodes.call(this, node, ordering);
-	        this.isUpdating.false;
+
 	        this.treeUpdateCallback();
 	    }
 
@@ -671,14 +630,14 @@
 	    splitBranch(node, splitLocation) {
 	        const oldLength = node.length;
 
-	        let splitNode = {
+	        let splitNode = makeNode( {
 	            parent: node.parent,
 	            children: [node],
 	            length: oldLength - splitLocation,
 	            annotations: {
 	                midpoint: true
 	            }
-	        };
+	        });
 	        if (node.parent) {
 	            node.parent.children[node.parent.children.indexOf(node)] = splitNode;
 	        } else {
@@ -686,7 +645,7 @@
 	            this.root = splitNode;
 	        }
 	        node.parent = splitNode;
-	        node.length = splitLocation;
+	        node._length = splitLocation;
 
 	        return splitNode;
 	    }
@@ -1069,7 +1028,7 @@
 	    let maxDivergence = [ 0.0 ];
 	    calculateDivergence(this.root, this.origin, maxDivergence);
 
-	    this.nodeList.forEach((node) => node.height = maxDivergence[0] - node.divergence );
+	    this.nodeList.forEach((node) => node._height = maxDivergence[0] - node.divergence );
 	    this.heightsKnown = true;
 	}
 
@@ -1242,15 +1201,7 @@
 	    set height(value) {
 	        this._height = value;
 	        this._tree.lengthsKnown=false;
-	        if(this._tree.heightsKnown){
-	            // setting a height when the heights are not known should not trigger the call back
-	            // it implies we are just trying to calculate the height. The callback should only be triggered when
-	            // we change a known value
-	            if(!this._tree.isUpdating) {
-	                this._tree.treeUpdateCallback();
-	            }
-	        }
-
+	        this._tree.treeUpdateCallback();
 	    }
 
 	    get length() {
@@ -1263,12 +1214,7 @@
 	    set length(value) {
 	        this._length = value;
 	        this._tree.heightsKnown = false;
-	        if(this._tree.lengthsKnown) {
-	            // The call back should only be triggered when we change a known value
-	            if(!this._tree.isUpdating) {
-	                this._tree.treeUpdateCallback();
-	            }
-	        }
+	        this._tree.treeUpdateCallback();
 	    }
 
 	    get annotations() {
