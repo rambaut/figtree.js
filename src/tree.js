@@ -30,8 +30,8 @@ export class Tree {
      */
     constructor(rootNode = {}) {
         this.heightsKnown = false;
-        this.lengthsKnown = false;
-        this.root = makeNode.call(this,rootNode);
+        this.lengthsKnown = true;
+        this.root = makeNode.call(this,{...rootNode,...{length:0}});
         // This converts all the json objects to Node instances
         setUpNodes.call(this,this.root)
 
@@ -50,7 +50,7 @@ export class Tree {
         this.nodeMap = new Map(this.nodeList.map( (node) => [node.id, node] ));
         this.tipMap = new Map(this.externalNodes.map( (tip) => [tip.name, tip] ));
 
-
+        this.wasUpdated = true;
         // a callback function that is called whenever the tree is changed
         this.treeUpdateCallback = () => {};
     };
@@ -252,6 +252,7 @@ export class Tree {
         if(!this.lengthsKnown){
             calculateLengths.call(this);
         }
+
         const rootLength = this.rootNode.children[0].length + this.rootNode.children[1].length;
 
         if (node.parent !== this.rootNode) {
@@ -870,7 +871,7 @@ function calculateHeights(origin=this.origin) {
     let maxDivergence = [ 0.0 ];
     calculateDivergence(this.root, this.origin, maxDivergence);
 
-    this.nodeList.forEach((node) => node._height = maxDivergence[0] - node.divergence ); // Setting each one triggers an update we don't want so using _height directly
+    this.nodeList.forEach((node) => node.height = maxDivergence[0] - node.divergence );
     this.heightsKnown = true;
 }
 
@@ -879,7 +880,7 @@ function calculateHeights(origin=this.origin) {
  */
 function calculateLengths(){
 
-    this.nodeList.forEach((node)=> node._length =node.parent? node.height - node.parent.height:0); // Setting each one triggers an update we don't want so using _length directly
+    this.nodeList.forEach((node)=> node.length =node.parent? node.height - node.parent.height:0);
 
     this.lengthsKnown=true;
     this.treeUpdateCallback();
@@ -1043,7 +1044,12 @@ class Node{
     set height(value) {
         this._height = value;
         this._tree.lengthsKnown=false;
-        this._tree.treeUpdateCallback();
+        if(this._tree.heightsKnown){
+            // setting a height when the heights are not known should not trigger the call back
+            // it implies we are just trying to calculate the height. The callback should only be triggered when
+            // we change a known value
+            this._tree.treeUpdateCallback();
+        }
 
     }
 
@@ -1055,9 +1061,13 @@ class Node{
     }
 
     set length(value) {
+        const updateDone = new Promise()
         this._length = value;
         this._tree.heightsKnown = false;
-        this._tree.treeUpdateCallback();
+        if(this._tree.lengthsKnown) {
+            // The call back should only be triggered when we change a known value
+            this._tree.treeUpdateCallback();
+        }
     }
 
     get annotations() {
