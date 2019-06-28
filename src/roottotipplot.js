@@ -43,7 +43,7 @@ export class RootToTipPlot {
                 return {
                     name: tip.name,
                     node: tip,
-                    x: tip.date,
+                    x: tip.annotations.date,
                     y: tree.rootToTipLength(tip)
                 };
             });

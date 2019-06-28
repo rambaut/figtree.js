@@ -561,7 +561,9 @@ class Tree {
      * @returns {number} - the number of tips below this node
      */
     order(ordering, node = this.rootNode) {
+        this.isUpdating=true;
         orderNodes.call(this, node, ordering);
+        this.isUpdating.false;
         this.treeUpdateCallback();
     }
 
@@ -996,9 +998,8 @@ class Tree {
 
                     const externalNode = {
                         name: name,
-                        date: date,
                         parent: currentNode,
-                        annotations: {}
+                        annotations: { date: date }
                     };
 
                     if (currentNode) {
@@ -1196,7 +1197,7 @@ class Node{
     constructor(nodeData ={}){
         const data = {...Node.DEFAULT_NODE(),...nodeData};
 
-        this._id = uuid_1.v4();
+        this._id = `node-${uuid_1.v4()}`;
         this._height = data.height;
         this._length = data.length;
         this._name = data.name;
@@ -9399,7 +9400,7 @@ class RootToTipPlot {
                 return {
                     name: tip.name,
                     node: tip,
-                    x: tip.date,
+                    x: tip.annotations.date,
                     y: tree.rootToTipLength(tip)
                 };
             });
