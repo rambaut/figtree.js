@@ -432,7 +432,8 @@ export class Tree {
     splitBranch(node, splitLocation) {
         const oldLength = node.length;
 
-        let splitNode = makeNode( {
+        const splitNode = makeNode.call(this,
+            {
             parent: node.parent,
             children: [node],
             length: oldLength - splitLocation,

@@ -52,29 +52,33 @@
             stroke: rgb(0,0,0);
         }
 
-        #root .node-shape {
-            fill: #e31e58;
-            /*stroke: rgb(255, 255, 255);*/
-            /*stroke-width: 1;*/
+       .host-case1 .node-shape {
+            fill: #e58d48;
+        }
+       .host-case2 .node-shape {
+            fill: #366c9d;
+        }
+        .host-case3 .node-shape {
+            fill: #235a64;
+        }
+       .host-case4 .node-shape {
+            fill: #541753;
         }
 
-        .node-background {
-            fill: rgb(255, 255, 255);
-            /*stroke: rgb(255, 255, 255);*/
-            /*stroke-width: 1;*/
+        .branch.host-case1 {
+            stroke: #e58d48;
+        }
+       .branch.host-case2 {
+            stroke: #366c9d;
+        }
+       .branch.host-case3 {
+            stroke: #235a64;
+        }
+       .branch.host-case4 {
+            stroke: #541753;
         }
 
-        .node-label {
-            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
-            font-size: 14pt;
-            font-weight: 300;
-        }
 
-        .trend-line {
-            stroke: rgb(0,0,0);
-            stroke-width: 2px;
-            stroke-linecap: round;
-        }
 
         .axis text {
             font-family: "helvetica-neue",  "helvetica",  "sans-serif";
@@ -88,14 +92,6 @@
             font-weight: bold;
         }
 
-        .node-label.support {
-            font-size: 10pt;
-        }
-
-        .branch-label.length {
-            display: none;
-            font-size: 8pt;
-        }
 
         #tooltip {
             background: #F6EECA;
@@ -135,20 +131,32 @@
     // };
     // tree.splitBranches(splits);
 
-    tree.splitBranches();
+    // tree.splitBranches();
 
     tree.annotateTips({
         "virus1": { host: "case1" },
-        "virus2": { host: "case2" },
-        "virus3": { host: "case3" },
-        "virus4": { host: "case4" },
-        "virus5": { host: "case5" },
-        "virus6": { host: "case6" },
-        "virus7": { host: "case7" },
-        "virus8": { host: "case8" },
-        "virus9": { host: "case9" },
-        "virus10": { host: "case10" }
+        "virus2": { host: "case1" },
+        "virus3": { host: "case1" },
+        "virus4": { host: "case1" },
+        "virus5": { host: "case2" },
+        "virus6": { host: "case3" },
+        "virus7": { host: "case3" },
+        "virus8": { host: "case2" },
+        "virus9": { host: "case4" },
+        "virus10": { host: "case4" }
     });
+    tree.annotateNodes({
+        "node11":{host:"case1"},
+        "node12":{host:"case1"},
+        "node13":{host:"case1"},
+        "node14":{host:"case1"},
+        "node15":{host:"case3"},
+        "node16":{host:"case2"},
+        "node17":{host:"case2"},
+        "node18":{host:"case4"},
+        "node19":{host:"case4"}
+
+    })
 
     const treeSVG = document.getElementById('transmission-1');
     const layout = new TransmissionLayout(tree);
@@ -162,62 +170,7 @@
     figTree.hilightInternalNodes();
     figTree.onClickInternalNode(layout.rotate())
 </script>
-<script type="module">
-    import { Graph, EconomyLayout, CircleBauble, FigTree } from "./dist/figtree.esm.js";
 
-
-    const nodes = [{id:"host1",onset:0},{id:"host2",onset:10},
-                    {id:"host3",onset:9},{id:"host4",onset:9},
-                    {id:"host5",onset:7},{id:"host6",onset:5},
-                    {id:"host7",onset:6},{id:"host8",onset:4},
-                    {id:"host9",onset:1},{id:"host10",onset:5}]
-    const edges = [{source:"host1",target:"host2"},{source:"host1",target:"host3"},
-                    {source:"host3",target:"host4"},{source:"host1",target:"host5"},
-                    {source:"host1",target:"host6"},{source:"host6",target:"host7"},
-                    {source:"host1",target:"host8"},{source:"host1",target:"host9"},
-                    {source:"host9",target:"host10"}]
-    const graph = new Graph(nodes,edges)
-    const graphSVG = document.getElementById('transmission-2');
-    const layout = new EconomyLayout(graph);
-    const figTree = new FigTree(graphSVG, layout, { top: 10, bottom: 60, left: 10, right: 150},
-        { hoverBorder: 2, backgroundBorder: 2,
-            baubles: [
-                new CircleBauble(),
-            ],
-            xAxisTitle:"Onset"
-        });
-
-    figTree.hilightInternalNodes();
-    figTree.onClickInternalNode(layout.rotate())
-</script>
-<script type="module">
-    import { Graph, ArcLayout, CircleBauble, FigTree } from "./dist/figtree.esm.js";
-
-
-    const nodes = [{id:"host1",onset:0},{id:"host2",onset:10},
-                    {id:"host3",onset:9},{id:"host4",onset:9},
-                    {id:"host5",onset:7},{id:"host6",onset:5},
-                    {id:"host7",onset:6},{id:"host8",onset:4},
-                    {id:"host9",onset:1},{id:"host10",onset:5}]
-    const edges = [{source:"host1",target:"host2"},{source:"host1",target:"host3"},
-                    {source:"host3",target:"host4"},{source:"host1",target:"host5"},
-                    {source:"host1",target:"host6"},{source:"host6",target:"host7"},
-                    {source:"host1",target:"host8"},{source:"host1",target:"host9"},
-                    {source:"host9",target:"host10"}]
-    const graph = new Graph(nodes,edges)
-    const graphSVG = document.getElementById('transmission-3');
-    const layout = new ArcLayout(graph);
-    const figTree = new FigTree(graphSVG, layout, { top: 10, bottom: 60, left: 10, right: 150},
-        { hoverBorder: 2, backgroundBorder: 2,
-            baubles: [
-                new CircleBauble(),
-            ],
-            xAxisTitle:"Onset"
-        });
-    figTree.draw();
-    figTree.hilightInternalNodes();
-    figTree.onClickInternalNode(layout.rotate())
-</script>
 
 </body>
 
