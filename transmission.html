@@ -151,14 +151,30 @@
         "node13":{host:"case1"},
         "node14":{host:"case1"},
         "node15":{host:"case3"},
-        "node16":{host:"case3"},
+        "node16":{host:"case2"},
         "node17":{host:"case2"},
         "node18":{host:"case4"},
-        "node19":{host:"case4"}
+        "node19":{host:"case2"}
 
     })
 
     const treeSVG = document.getElementById('transmission-1');
+
+    tree.order((nodeA, countA, nodeB, countB) => {
+        if (nodeA.parent && nodeA.parent.annotations.host) {
+            // attempt to order by whether the host annotation is the same as the
+            // parent.
+            const parentHost = nodeA.parent.annotations.host;
+            if (nodeA.annotations.host === parentHost) {
+                return 1;
+            }
+            if (nodeB.annotations.host === parentHost) {
+                return -1;
+            }
+        }
+        // otherwise just order by increasing node density
+        return (countA - countB);
+    });
     const layout = new TransmissionLayout(tree);
     const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150},
         { hoverBorder: 2, backgroundBorder: 2,
@@ -169,6 +185,7 @@
     figTree.draw();
     figTree.hilightInternalNodes();
     figTree.onClickInternalNode(layout.rotate())
+
 </script>
 
 

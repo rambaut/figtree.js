@@ -7826,13 +7826,12 @@
 	     * @param tree
 	     * @param settings
 	     */
-	    constructor(tree, settings = { _groupingAnnotation: "host"}) {
+	    constructor(tree, settings = { groupingAnnotation: "host"}) {
 	        super(tree, settings);
 
 	        this._direction = Direction.DOWN;
-	        this.groupingAnnotation = this.settings._groupingAnnotation;
+	        this.groupingAnnotation = this.settings.groupingAnnotation;
 	    }
-
 	    /**
 	     * Set the direction to draw transmission (up or down).
 	     * @param direction
@@ -7867,7 +7866,16 @@
 	    setYPosition(vertex, currentY) {
 	        // check if there are children that that are in the same group and set position to mean
 	        // if do something else
-	        vertex.y = (vertex.node.children ? mean(vertex.node.children.filter(child => child.annotations[this._groupingAnnotation]===vertex.node.annotations[this._groupingAnnotation]), (child) => this.nodeMap.get(child).y) : currentY += 1);
+
+	        const localKids = vertex.node.children? vertex.node.children.filter(child => child.annotations[this._groupingAnnotation]===vertex.node.annotations[this._groupingAnnotation]):[];
+	        if(localKids.length>0){
+	            vertex.y = mean(localKids,(child) => this.nodeMap.get(child).y);
+	        }
+	        else{
+	            currentY+=1;
+	            vertex.y = currentY;
+	        }
+	        // vertex.y = (vertex.node.children ? mean(vertex.node.children.filter(child => child.annotations[this._groupingAnnotation]===vertex.node.annotations[this._groupingAnnotation]), (child) => this.nodeMap.get(child).y) : currentY += 1);
 	        return currentY;
 	    }
 
