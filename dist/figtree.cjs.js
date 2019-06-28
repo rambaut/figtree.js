@@ -250,7 +250,7 @@ class Tree {
         this.nodeMap = new Map(this.nodeList.map( (node) => [node.id, node] ));
         this.tipMap = new Map(this.externalNodes.map( (tip) => [tip.name, tip] ));
 
-        this.wasUpdated = true;
+        this.isUpdating = false;
         // a callback function that is called whenever the tree is changed
         this.treeUpdateCallback = () => {};
     };
@@ -449,9 +449,7 @@ class Tree {
             // the node is the root - nothing to do
             return;
         }
-        if(!this.lengthsKnown){
-            calculateLengths.call(this);
-        }
+        this.isUpdating=true;
 
         const rootLength = this.rootNode.children[0].length + this.rootNode.children[1].length;
 
@@ -516,6 +514,7 @@ class Tree {
         }
 
         this.heightsKnown = false;
+        this.isUpdating=false;
 
         this.treeUpdateCallback();
     };
@@ -1244,7 +1243,9 @@ class Node{
             // setting a height when the heights are not known should not trigger the call back
             // it implies we are just trying to calculate the height. The callback should only be triggered when
             // we change a known value
-            this._tree.treeUpdateCallback();
+            if(!this._tree.isUpdating) {
+                this._tree.treeUpdateCallback();
+            }
         }
 
     }
@@ -1257,12 +1258,13 @@ class Node{
     }
 
     set length(value) {
-        const updateDone = new Promise();
         this._length = value;
         this._tree.heightsKnown = false;
         if(this._tree.lengthsKnown) {
             // The call back should only be triggered when we change a known value
-            this._tree.treeUpdateCallback();
+            if(!this._tree.isUpdating) {
+                this._tree.treeUpdateCallback();
+            }
         }
     }
 
@@ -1280,12 +1282,8 @@ class Node{
 
     set children(value) {
         this._children = value;
-    }
-    addChild(node){
-        if(this._children){
-            this._children.push(node);
-        }else{
-            this._children=[node];
+        for(const child of this._children){
+            child.parent=this;
         }
     }
     get parent() {
@@ -1293,7 +1291,9 @@ class Node{
     }
     set parent(node) {
         this._parent = node;
-        this._parent.addChild(this);
+        if(this._parent.children.filter(c=>c===this).length===0){
+            this._parent.children.append(this);
+        }
     }
     get id(){
         return this._id;
@@ -1304,7 +1304,6 @@ class Node{
 
 
 }
-// TODO make the treeupdatecallback fire asynchonously after the method that triggers it is done so we don't get infinite recursion
 
 /** @module layout */
 
