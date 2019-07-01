@@ -1137,8 +1137,9 @@
 	    setUpNodes.call(this, this.root);
 	    this.origin = 0;
 	    this.annotations = {};
-	    this.nodeList = toConsumableArray(this.preorder());
-	    this.nodeList.forEach(function (node) {
+	    this._nodeList = toConsumableArray(this.preorder());
+
+	    this._nodeList.forEach(function (node) {
 	      if (node.label && node.label.startsWith("#")) {
 	        // an id string has been specified in the newick label.
 	        node.id = node.label.substring(1);
@@ -1148,12 +1149,14 @@
 	        _this.addAnnotations(node.annotations);
 	      }
 	    });
-	    this.nodeMap = new Map(this.nodeList.map(function (node) {
+
+	    this._nodeMap = new Map(this.nodeList.map(function (node) {
 	      return [node.id, node];
 	    }));
-	    this.tipMap = new Map(this.externalNodes.map(function (tip) {
+	    this._tipMap = new Map(this.externalNodes.map(function (tip) {
 	      return [tip.name, tip];
-	    })); // a callback function that is called whenever the tree is changed
+	    }));
+	    this.nodesUpdated = false; // a callback function that is called whenever the tree is changed
 
 	    this.treeUpdateCallback = function () {};
 	  }
@@ -1784,7 +1787,7 @@
 
 	      node.parent = splitNode;
 	      node._length = oldLength - splitNode.length;
-	      setUpArraysAndMaps.call(this);
+	      this.nodesUpdated = true;
 	      return splitNode;
 	    }
 	    /**
@@ -2040,17 +2043,34 @@
 	     * @returns {*}
 	     */
 	    get: function get() {
-	      return toConsumableArray(this.nodeList);
+	      if (this.nodesUpdated) {
+	        setUpArraysAndMaps.call(this);
+	      }
+
+	      return toConsumableArray(this.preorder());
 	    }
 	  }, {
-	    key: "externalNodes",
+	    key: "nodeList",
+	    get: function get() {
+	      if (this.nodesUpdated) {
+	        setUpArraysAndMaps.call(this);
+	      }
 
+	      return this.nodes;
+	    }
 	    /**
 	     * Gets an array containing all the external node objects
 	     *
 	     * @returns {*}
 	     */
+
+	  }, {
+	    key: "externalNodes",
 	    get: function get() {
+	      if (this.nodesUpdated) {
+	        setUpArraysAndMaps.call(this);
+	      }
+
 	      return this.nodes.filter(function (node) {
 	        return !node.children;
 	      });
@@ -2064,9 +2084,31 @@
 	     * @returns {*}
 	     */
 	    get: function get() {
+	      if (this.nodesUpdated) {
+	        setUpArraysAndMaps.call(this);
+	      }
+
 	      return this.nodes.filter(function (node) {
 	        return node.children;
 	      });
+	    }
+	  }, {
+	    key: "nodeMap",
+	    get: function get() {
+	      if (this.nodesUpdated) {
+	        setUpArraysAndMaps.call(this);
+	      }
+
+	      return this._nodeMap;
+	    }
+	  }, {
+	    key: "tipMap",
+	    get: function get() {
+	      if (this.nodesUpdated) {
+	        setUpArraysAndMaps.call(this);
+	      }
+
+	      return this._tipMap;
 	    }
 	  }], [{
 	    key: "pathToRoot",
@@ -2326,28 +2368,6 @@
 
 	  return count;
 	}
-
-	function setUpArraysAndMaps() {
-	  var _this6 = this;
-
-	  this.nodeList = toConsumableArray(this.preorder());
-	  this.nodeList.forEach(function (node) {
-	    if (node.label && node.label.startsWith("#")) {
-	      // an id string has been specified in the newick label.
-	      node.id = node.label.substring(1);
-	    }
-
-	    if (node.annotations) {
-	      _this6.addAnnotations(node.annotations);
-	    }
-	  });
-	  this.nodeMap = new Map(this.nodeList.map(function (node) {
-	    return [node.id, node];
-	  }));
-	  this.tipMap = new Map(this.externalNodes.map(function (tip) {
-	    return [tip.name, tip];
-	  }));
-	}
 	/**
 	 * A private recursive function that calculates the height of each node (with the most
 	 * diverged tip from the root having height given by origin).
@@ -2537,6 +2557,31 @@
 
 	    node.children = childrenNodes;
 	  }
+	}
+
+	function setUpArraysAndMaps() {
+	  var _this6 = this;
+
+	  this._nodeList = toConsumableArray(this.preorder());
+	  this.nodesUpdated = false;
+
+	  this._nodeList.forEach(function (node) {
+	    if (node.label && node.label.startsWith("#")) {
+	      // an id string has been specified in the newick label.
+	      node.id = node.label.substring(1);
+	    }
+
+	    if (node.annotations) {
+	      _this6.addAnnotations(node.annotations);
+	    }
+	  });
+
+	  this._nodeMap = new Map(this.nodeList.map(function (node) {
+	    return [node.id, node];
+	  }));
+	  this._tipMap = new Map(this.externalNodes.map(function (tip) {
+	    return [tip.name, tip];
+	  }));
 	}
 
 	var Node =
@@ -9716,7 +9761,7 @@
 	      newNodeInLocation.annotations[groupingAnnotation] = finalLocation;
 	      var newNodeFromLocation = tree.splitBranch(newNodeInLocation, 1.0);
 	      newNodeFromLocation.annotations[groupingAnnotation] = originalLocation;
-	    });
+	    }); // tree.setup
 
 	    var includedInVerticalRange = function includedInVerticalRange(node) {
 	      return !node.children || node.children.length === 1 && node.annotations[groupingAnnotation] !== node.children[0].annotations[groupingAnnotation];

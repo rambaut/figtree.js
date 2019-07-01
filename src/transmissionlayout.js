@@ -3,7 +3,7 @@
 /** @module layout */
 
 import { RectangularLayout } from "./rectangularLayout.js";
-
+import {Tree} from "./tree"
 
 export const Direction = {
     UP : Symbol("UP"),
@@ -41,7 +41,7 @@ export class TransmissionLayout extends RectangularLayout {
             const newNodeFromLocation = tree.splitBranch(newNodeInLocation,1.0);
             newNodeFromLocation.annotations[groupingAnnotation] = originalLocation;
         })
-
+        // tree.setup
         const includedInVerticalRange = node  => !node.children || (node.children.length===1 && node.annotations[groupingAnnotation]!==node.children[0].annotations[groupingAnnotation])
         super(tree, {...TransmissionLayout.DEFAULT_SETTINGS(),...{includedInVerticalRange:includedInVerticalRange}, ...settings});
 

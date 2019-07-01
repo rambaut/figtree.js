@@ -237,8 +237,8 @@ class Tree {
 
         this.origin = 0;
         this.annotations = {};
-        this.nodeList = [...this.preorder()];
-        this.nodeList.forEach( (node) => {
+        this._nodeList = [...this.preorder()];
+        this._nodeList.forEach( (node) => {
             if (node.label && node.label.startsWith("#")) {
                 // an id string has been specified in the newick label.
                 node.id = node.label.substring(1);
@@ -247,9 +247,10 @@ class Tree {
             this.addAnnotations(node.annotations);
             }
         });
-        this.nodeMap = new Map(this.nodeList.map( (node) => [node.id, node] ));
-        this.tipMap = new Map(this.externalNodes.map( (tip) => [tip.name, tip] ));
+        this._nodeMap = new Map(this.nodeList.map( (node) => [node.id, node] ));
+        this._tipMap = new Map(this.externalNodes.map( (tip) => [tip.name, tip] ));
 
+        this.nodesUpdated = false;
         // a callback function that is called whenever the tree is changed
         this.treeUpdateCallback = () => {};
     };
@@ -269,8 +270,18 @@ class Tree {
      * @returns {*}
      */
     get nodes() {
-        return [...this.nodeList];
+        if(this.nodesUpdated){
+            setUpArraysAndMaps.call(this);
+        }
+        return [...this.preorder()];
     };
+    get nodeList(){
+        if(this.nodesUpdated){
+            setUpArraysAndMaps.call(this);
+
+        }
+        return this.nodes
+    }
 
     /**
      * Gets an array containing all the external node objects
@@ -278,8 +289,13 @@ class Tree {
      * @returns {*}
      */
     get externalNodes() {
+        if(this.nodesUpdated){
+            setUpArraysAndMaps.call(this);
+        }
         return this.nodes.filter((node) => !node.children);
     };
+
+
 
     /**
      * Gets an array containing all the internal node objects
@@ -287,8 +303,24 @@ class Tree {
      * @returns {*}
      */
     get internalNodes() {
+        if(this.nodesUpdated){
+            setUpArraysAndMaps.call(this);
+        }
         return this.nodes.filter((node) => node.children );
     };
+
+    get nodeMap(){
+        if(this.nodesUpdated){
+            setUpArraysAndMaps.call(this);
+        }
+        return this._nodeMap ;
+    }
+    get tipMap(){
+        if(this.nodesUpdated){
+            setUpArraysAndMaps.call(this);
+        }
+        return this._tipMap ;
+    }
 
     /**
      * Returns the sibling of a node (i.e., the first other child of the parent)
@@ -645,7 +677,7 @@ class Tree {
         }
         node.parent = splitNode;
         node._length = oldLength-splitNode.length;
-        setUpArraysAndMaps.call(this);
+        this.nodesUpdated=true;
         return splitNode;
     }
 
@@ -1016,20 +1048,7 @@ function orderNodes(node, ordering, callback = null) {
     }
     return count;
 }
-function setUpArraysAndMaps() {
-    this.nodeList = [...this.preorder()];
-    this.nodeList.forEach((node) => {
-        if (node.label && node.label.startsWith("#")) {
-            // an id string has been specified in the newick label.
-            node.id = node.label.substring(1);
-        }
-        if (node.annotations) {
-            this.addAnnotations(node.annotations);
-        }
-    });
-    this.nodeMap = new Map(this.nodeList.map((node) => [node.id, node]));
-    this.tipMap = new Map(this.externalNodes.map((tip) => [tip.name, tip]));
-}
+
 /**
  * A private recursive function that calculates the height of each node (with the most
  * diverged tip from the root having height given by origin).
@@ -1151,6 +1170,22 @@ function setUpNodes(node){
         }
         node.children = childrenNodes;
     }
+}
+
+function setUpArraysAndMaps() {
+    this._nodeList = [...this.preorder()];
+    this.nodesUpdated=false;
+    this._nodeList.forEach((node) => {
+        if (node.label && node.label.startsWith("#")) {
+            // an id string has been specified in the newick label.
+            node.id = node.label.substring(1);
+        }
+        if (node.annotations) {
+            this.addAnnotations(node.annotations);
+        }
+    });
+    this._nodeMap = new Map(this.nodeList.map((node) => [node.id, node]));
+    this._tipMap = new Map(this.externalNodes.map((tip) => [tip.name, tip]));
 }
 
 class Node{
@@ -8128,7 +8163,7 @@ class TransmissionLayout extends RectangularLayout$1 {
             const newNodeFromLocation = tree.splitBranch(newNodeInLocation,1.0);
             newNodeFromLocation.annotations[groupingAnnotation] = originalLocation;
         });
-
+        // tree.setup
         const includedInVerticalRange = node  => !node.children || (node.children.length===1 && node.annotations[groupingAnnotation]!==node.children[0].annotations[groupingAnnotation]);
         super(tree, {...TransmissionLayout.DEFAULT_SETTINGS(),...{includedInVerticalRange:includedInVerticalRange}, ...settings});
 
