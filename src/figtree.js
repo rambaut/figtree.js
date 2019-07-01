@@ -604,7 +604,7 @@ function updateNodeStyles(){
         nodes
             // .transition()
             // .duration(this.settings.transitionDuration)
-            .attr(key,d=>nodeAttrMap.get(key)(d))
+            .attr(key,d=>nodeAttrMap.get(key)(d.node))
     }
 
 
@@ -622,7 +622,7 @@ function updateNodeBackgroundStyles(){
         nodes
             // .transition()
             // .duration(this.settings.transitionDuration)
-            .attr(key,d=>nodeBackgroundsAttrMap.get(key)(d))
+            .attr(key,d=>nodeBackgroundsAttrMap.get(key)(d.node))
     }
 
 }
@@ -639,7 +639,7 @@ function updateBranchStyles(){
         branches
             // .transition()
             // .duration(this.settings.transitionDuration)
-            .attr(key,d=>branchAttrMap.get(key)(d))
+            .attr(key,d=>branchAttrMap.get(key)(d.v1.node))
     }
 
 }

@@ -3,8 +3,6 @@
 /** @module layout */
 
 import { RectangularLayout } from "./rectangularLayout.js";
-import {Type} from "./tree";
-import {format,curveStepBefore,max,line,mean,scaleLinear} from "d3";
 
 
 export const Direction = {
@@ -18,66 +16,48 @@ export const Direction = {
  */
 export class TransmissionLayout extends RectangularLayout {
 
+    static DEFAULT_SETTINGS() {
+        return {
+            groupingAnnotation:"host"
+        }
+    };
+
     /**
      * The constructor.
      * @param tree
      * @param settings
      */
-    constructor(tree, settings = { groupingAnnotation: "host"}) {
-        super(tree, settings);
+    constructor(tree, settings = {}) {
+        
+        //order the tree or something here. add internal nodes ect.
+        const groupingAnnotation = {...TransmissionLayout.DEFAULT_SETTINGS(),...settings}['groupingAnnotation'];
+        const locationChanges = tree.nodeList.filter(n=>n.parent && n.parent.annotations[groupingAnnotation]!==n.annotations[groupingAnnotation]);
 
-        this._direction = Direction.DOWN;
-        this.groupingAnnotation = this.settings.groupingAnnotation;
+        locationChanges.forEach(node =>{
+            const originalLocation = node.parent.annotations[groupingAnnotation];
+            const finalLocation = node.annotations[groupingAnnotation];
+            const newNodeInLocation = tree.splitBranch(node);
+            newNodeInLocation.annotations[groupingAnnotation] = finalLocation;
+            const newNodeFromLocation = tree.splitBranch(newNodeInLocation,1.0);
+            newNodeFromLocation.annotations[groupingAnnotation] = originalLocation;
+        })
+
+        const includedInVerticalRange = node  => !node.children || (node.children.length===1 && node.annotations[groupingAnnotation]!==node.children[0].annotations[groupingAnnotation])
+        super(tree, {...TransmissionLayout.DEFAULT_SETTINGS(),...{includedInVerticalRange:includedInVerticalRange}, ...settings});
+
     }
+
+
     /**
      * Set the direction to draw transmission (up or down).
      * @param direction
      */
     set direction(direction) {
-        this._direction = direction;
         this.update();
     }
 
-    set groupingAnnotation(annotation){
-        if(Object.keys(this.tree.annotations).indexOf(annotation)===-1){
-            throw(new Error(`tree is not annotated with : ${annotation} `))
-        }
-        this._groupingAnnotation = annotation;
-    }
-
-    /**
-     * Inherited method overwritten to set the y-position of an internal node to the same as its
-     * first child which gives a visual directionality to the tree.
-     * @param vertex
-     * @param currentY
-     * @returns {*}
-     */
-    // setYPosition(vertex, currentY) {
-    //     if (this._direction === Direction.UP) {
-    //         throw new Error("Up direction drawing not implemented yet");
-    //     }
-    //
-    //     vertex.y = (vertex.node.children ? this.nodeMap.get(vertex.node.children[0]).y : currentY += 1);
-    //     return currentY;
-    // }
-    setYPosition(vertex, currentY) {
-        // check if there are children that that are in the same group and set position to mean
-        // if do something else
-
-        const localKids = vertex.node.children? vertex.node.children.filter(child => child.annotations[this._groupingAnnotation]===vertex.node.annotations[this._groupingAnnotation]):[];
-        if(localKids.length>0){
-            vertex.y = mean(localKids,(child) => this.nodeMap.get(child).y)
-        }
-        else{
-            currentY+=1;
-            vertex.y = currentY;
-        }
-        // vertex.y = (vertex.node.children ? mean(vertex.node.children.filter(child => child.annotations[this._groupingAnnotation]===vertex.node.annotations[this._groupingAnnotation]), (child) => this.nodeMap.get(child).y) : currentY += 1);
-        return currentY;
-    }
 
 }
-/*
- * Private methods, called by the class using the <function>.call(this) function.
- */
+
+
 

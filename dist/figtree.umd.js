@@ -1748,7 +1748,7 @@
 	          }
 	        } else {
 	          // if no splitLocations are given then split it in the middle.
-	          _this5.splitBranch(node, node.length / 2.0);
+	          _this5.splitBranch(node, 0.5);
 	        }
 	      });
 
@@ -1758,19 +1758,20 @@
 	     * Splits a branch in two inserting a new degree 2 node. The splitLocation should be less than
 	     * the orginal branch length.
 	     * @param node
-	     * @param splitLocation
+	     * @param splitLocation - proportion of branch to split at.
 	     */
 
 	  }, {
 	    key: "splitBranch",
-	    value: function splitBranch(node, splitLocation) {
+	    value: function splitBranch(node) {
+	      var splitLocation = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0.5;
 	      var oldLength = node.length;
 	      var splitNode = makeNode.call(this, {
 	        parent: node.parent,
 	        children: [node],
-	        length: oldLength - splitLocation,
+	        length: oldLength * splitLocation,
 	        annotations: {
-	          midpoint: true
+	          insertedNode: true
 	        }
 	      });
 
@@ -1782,7 +1783,8 @@
 	      }
 
 	      node.parent = splitNode;
-	      node._length = splitLocation;
+	      node._length = oldLength - splitNode.length;
+	      setUpArraysAndMaps.call(this);
 	      return splitNode;
 	    }
 	    /**
@@ -2324,6 +2326,28 @@
 
 	  return count;
 	}
+
+	function setUpArraysAndMaps() {
+	  var _this6 = this;
+
+	  this.nodeList = toConsumableArray(this.preorder());
+	  this.nodeList.forEach(function (node) {
+	    if (node.label && node.label.startsWith("#")) {
+	      // an id string has been specified in the newick label.
+	      node.id = node.label.substring(1);
+	    }
+
+	    if (node.annotations) {
+	      _this6.addAnnotations(node.annotations);
+	    }
+	  });
+	  this.nodeMap = new Map(this.nodeList.map(function (node) {
+	    return [node.id, node];
+	  }));
+	  this.tipMap = new Map(this.externalNodes.map(function (tip) {
+	    return [tip.name, tip];
+	  }));
+	}
 	/**
 	 * A private recursive function that calculates the height of each node (with the most
 	 * diverged tip from the root having height given by origin).
@@ -2649,12 +2673,12 @@
 	      return this._parent;
 	    },
 	    set: function set(node) {
-	      var _this6 = this;
+	      var _this7 = this;
 
 	      this._parent = node;
 
 	      if (this._parent.children.filter(function (c) {
-	        return c === _this6;
+	        return c === _this7;
 	      }).length === 0) {
 	        this._parent.children.append(this);
 	      }
@@ -9086,8 +9110,11 @@
 	      return {
 	        lengthFormat: format(".2f"),
 	        branchCurve: stepBefore,
-	        horizontalScale: null // a scale that converts root to tip distance to 0,1 domain. default is 0 = root 1 = highest tip
-
+	        horizontalScale: null,
+	        // a scale that converts root to tip distance to 0,1 domain. default is 0 = root 1 = highest tip
+	        includedInVerticalRange: function includedInVerticalRange(node) {
+	          return !node.children;
+	        }
 	      };
 	    }
 	    /**
@@ -9140,7 +9167,7 @@
 
 	      this._horizontalRange = [0, 1]; //[0.0, max([...this.tree.rootToTipLengths()])];
 
-	      this._verticalRange = [0, this.tree.externalNodes.length - 1];
+	      this._verticalRange = [0, this.tree.nodeList.filter(this.settings.includedInVerticalRange).length - 1];
 
 	      if (!this.settings.horizontalScale) {
 	        this.horizontalScale = linear$1().domain([0, max(toConsumableArray(this.tree.rootToTipLengths()))]).range(this._horizontalRange);
@@ -9303,9 +9330,19 @@
 	    value: function setYPosition(vertex, currentY) {
 	      var _this3 = this;
 
-	      vertex.y = vertex.node.children ? mean(vertex.node.children, function (child) {
-	        return _this3.nodeMap.get(child).y;
-	      }) : currentY += 1;
+	      // check if there are children that that are in the same group and set position to mean
+	      // if do something else
+	      var includedInVertical = this.settings.includedInVerticalRange(vertex.node);
+
+	      if (!includedInVertical) {
+	        vertex.y = mean(vertex.node.children, function (child) {
+	          return _this3.nodeMap.get(child).y;
+	        });
+	      } else {
+	        currentY += 1;
+	        vertex.y = currentY;
+	      }
+
 	      return currentY;
 	    }
 	  }, {
@@ -9347,10 +9384,296 @@
 	 * Private methods, called by the class using the <function>.call(this) function.
 	 */
 
-	var Direction = {
-	  UP: Symbol("UP"),
-	  DOWN: Symbol("DOWN")
-	};
+	/**
+	 * The Layout class
+	 *
+	 */
+
+	var RectangularLayout$1 =
+	/*#__PURE__*/
+	function (_Layout) {
+	  inherits(RectangularLayout, _Layout);
+
+	  createClass(RectangularLayout, null, [{
+	    key: "DEFAULT_SETTINGS",
+	    value: function DEFAULT_SETTINGS() {
+	      return {
+	        lengthFormat: format(".2f"),
+	        branchCurve: stepBefore,
+	        horizontalScale: null,
+	        // a scale that converts root to tip distance to 0,1 domain. default is 0 = root 1 = highest tip
+	        includedInVerticalRange: function includedInVerticalRange(node) {
+	          return !node.children;
+	        }
+	      };
+	    }
+	    /**
+	     * The constructor.
+	     * @param tree
+	     * @param settings
+	     */
+
+	  }]);
+
+	  function RectangularLayout(tree) {
+	    var _this;
+
+	    var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
+	    classCallCheck(this, RectangularLayout);
+
+	    _this = possibleConstructorReturn(this, getPrototypeOf(RectangularLayout).call(this));
+	    _this.tree = tree; // merge the default settings with the supplied settings
+
+	    _this.settings = objectSpread({}, RectangularLayout.DEFAULT_SETTINGS(), settings);
+	    _this.branchLabelAnnotationName = null;
+	    _this.internalNodeLabelAnnotationName = null;
+	    _this.externalNodeLabelAnnotationName = null; // called whenever the tree changes...
+
+	    _this.tree.treeUpdateCallback = function () {
+	      _this.update();
+	    };
+
+	    return _this;
+	  }
+	  /**
+	   * Lays out the tree in a standard rectangular format.
+	   *
+	   * This function is called by the FigTree class and is used to layout the nodes of the tree. It
+	   * populates the vertices array with vertex objects that wrap the nodes and have coordinates and
+	   * populates the edges array with edge objects that have two vertices.
+	   *
+	   * It encapsulates the tree object to keep it abstract
+	   *
+	   * @param vertices - objects with an x, y coordinates and a reference to the original node
+	   * @param edges - objects with v1 (a vertex) and v0 (the parent vertex).
+	   */
+
+
+	  createClass(RectangularLayout, [{
+	    key: "layout",
+	    value: function layout(vertices, edges) {
+	      var _this2 = this;
+
+	      this._horizontalRange = [0, 1]; //[0.0, max([...this.tree.rootToTipLengths()])];
+
+	      this._verticalRange = [0, this.tree.nodeList.filter(this.settings.includedInVerticalRange).length - 1];
+
+	      if (!this.settings.horizontalScale) {
+	        this.horizontalScale = linear$1().domain([0, max(toConsumableArray(this.tree.rootToTipLengths()))]).range(this._horizontalRange);
+	      } else {
+	        this.horizontalScale = this.settings.horizontalScale;
+	      } // get the nodes in post-order
+
+
+	      var nodes = toConsumableArray(this.tree.postorder());
+
+	      var currentY = -1;
+
+	      if (vertices.length === 0) {
+	        this.nodeMap = new Map(); // create the vertices (only done if the array is empty)
+
+	        nodes.forEach(function (n, i) {
+	          var vertex = {
+	            node: n,
+	            key: n.id // key: Symbol(n.id).toString()
+
+	          };
+	          vertices.push(vertex);
+
+	          _this2.nodeMap.set(n, vertex);
+	        });
+	      } // update the node locations (vertices)
+
+
+	      nodes.forEach(function (n) {
+	        var v = _this2.nodeMap.get(n);
+
+	        v.x = _this2.horizontalScale(_this2.tree.rootToTipLength(v.node));
+	        currentY = _this2.setYPosition(v, currentY);
+	        v.degree = v.node.children ? v.node.children.length + 1 : 1; // the number of edges (including stem)
+
+	        v.id = n.id;
+	        v.classes = [!v.node.children ? "external-node" : "internal-node", v.node.isSelected ? "selected" : "unselected"];
+
+	        if (v.node.annotations) {
+	          v.classes = [].concat(toConsumableArray(v.classes), toConsumableArray(Object.entries(v.node.annotations).filter(function (_ref) {
+	            var _ref2 = slicedToArray(_ref, 1),
+	                key = _ref2[0];
+
+	            return _this2.tree.annotations[key] && (_this2.tree.annotations[key].type === Type.DISCRETE || _this2.tree.annotations[key].type === Type.BOOLEAN || _this2.tree.annotations[key].type === Type.INTEGER);
+	          }).map(function (_ref3) {
+	            var _ref4 = slicedToArray(_ref3, 2),
+	                key = _ref4[0],
+	                value = _ref4[1];
+
+	            return "".concat(key, "-").concat(value);
+	          })));
+	        } // either the tip name or the internal node label
+
+
+	        if (v.node.children) {
+	          v.leftLabel = _this2.internalNodeLabelAnnotationName ? v.node.annotations[_this2.internalNodeLabelAnnotationName] : "";
+	          v.rightLabel = ""; // should the left node label be above or below the node?
+
+	          v.labelBelow = !v.node.parent || v.node.parent.children[0] !== v.node;
+	        } else {
+	          v.leftLabel = "";
+	          v.rightLabel = _this2.externalNodeLabelAnnotationName ? v.node.annotations[_this2.externalNodeLabelAnnotationName] : v.node.name;
+	        }
+
+	        _this2.nodeMap.set(v.node, v);
+	      });
+
+	      if (edges.length === 0) {
+	        this.edgeMap = new Map(); // create the edges (only done if the array is empty)
+
+	        nodes.filter(function (n) {
+	          return n.parent;
+	        }) // exclude the root
+	        .forEach(function (n, i) {
+	          var edge = {
+	            v0: _this2.nodeMap.get(n.parent),
+	            v1: _this2.nodeMap.get(n),
+	            key: n.id // key: Symbol(n.id).toString()
+
+	          };
+	          edges.push(edge);
+
+	          _this2.edgeMap.set(edge, edge.v1);
+	        });
+	      } // update the edges
+
+
+	      edges.forEach(function (e) {
+	        e.v1 = _this2.edgeMap.get(e);
+	        e.v0 = _this2.nodeMap.get(e.v1.node.parent), e.classes = [];
+
+	        if (e.v1.node.annotations) {
+	          e.classes = [].concat(toConsumableArray(e.classes), toConsumableArray(Object.entries(e.v1.node.annotations).filter(function (_ref5) {
+	            var _ref6 = slicedToArray(_ref5, 1),
+	                key = _ref6[0];
+
+	            return _this2.tree.annotations[key] && (_this2.tree.annotations[key].type === Type.DISCRETE || _this2.tree.annotations[key].type === Type.BOOLEAN || _this2.tree.annotations[key].type === Type.INTEGER);
+	          }).map(function (_ref7) {
+	            var _ref8 = slicedToArray(_ref7, 2),
+	                key = _ref8[0],
+	                value = _ref8[1];
+
+	            return "".concat(key, "-").concat(value);
+	          })));
+	        }
+
+	        var length = e.v1.x - e.v0.x;
+	        e.length = length;
+	        e.label = _this2.branchLabelAnnotationName ? _this2.branchLabelAnnotationName === 'length' ? _this2.settings.lengthFormat(length) : e.v1.node.annotations[_this2.branchLabelAnnotationName] : null;
+	        e.labelBelow = e.v1.node.parent.children[0] !== e.v1.node;
+	      });
+	    }
+	  }, {
+	    key: "setInternalNodeLabels",
+
+	    /**
+	     * Sets the annotation to use as the node labels.
+	     *
+	     * @param annotationName
+	     */
+	    value: function setInternalNodeLabels(annotationName) {
+	      this.internalNodeLabelAnnotationName = annotationName;
+	      this.update();
+	    }
+	    /**
+	     * Sets the annotation to use as the node labels.
+	     *
+	     * @param annotationName
+	     */
+
+	  }, {
+	    key: "setExternalNodeLabels",
+	    value: function setExternalNodeLabels(annotationName) {
+	      this.externalNodeLabelAnnotationName = annotationName;
+	      this.update();
+	    }
+	    /**
+	     * Sets the annotation to use as the node labels.
+	     *
+	     * @param annotationName
+	     */
+
+	  }, {
+	    key: "setBranchLabels",
+	    value: function setBranchLabels(annotationName) {
+	      this.branchLabelAnnotationName = annotationName;
+	      this.update();
+	    }
+	    /**
+	     * Updates the tree when it has changed
+	     */
+
+	  }, {
+	    key: "update",
+	    value: function update() {
+	      this.updateCallback();
+	    }
+	  }, {
+	    key: "setYPosition",
+	    value: function setYPosition(vertex, currentY) {
+	      var _this3 = this;
+
+	      // check if there are children that that are in the same group and set position to mean
+	      // if do something else
+	      var includedInVertical = this.settings.includedInVerticalRange(vertex.node);
+
+	      if (!includedInVertical) {
+	        vertex.y = mean(vertex.node.children, function (child) {
+	          return _this3.nodeMap.get(child).y;
+	        });
+	      } else {
+	        currentY += 1;
+	        vertex.y = currentY;
+	      }
+
+	      return currentY;
+	    }
+	  }, {
+	    key: "branchPathGenerator",
+	    value: function branchPathGenerator(scales) {
+	      var _this4 = this;
+
+	      var branchPath = function branchPath(e, i) {
+	        var branchLine = line().x(function (v) {
+	          return v.x;
+	        }).y(function (v) {
+	          return v.y;
+	        }).curve(_this4.branchCurve);
+	        return branchLine([{
+	          x: 0,
+	          y: scales.y(e.v0.y) - scales.y(e.v1.y)
+	        }, {
+	          x: scales.x(e.v1.x) - scales.x(e.v0.x),
+	          y: 0
+	        }]);
+	      };
+
+	      return branchPath;
+	    }
+	  }, {
+	    key: "branchCurve",
+	    set: function set(curve) {
+	      this.settings.branchCurve = curve;
+	      this.update();
+	    },
+	    get: function get() {
+	      return this.settings.branchCurve;
+	    }
+	  }]);
+
+	  return RectangularLayout;
+	}(Layout);
+	/*
+	 * Private methods, called by the class using the <function>.call(this) function.
+	 */
+
 	/**
 	 * The TransmissionLayout class
 	 *
@@ -9361,24 +9684,47 @@
 	function (_RectangularLayout) {
 	  inherits(TransmissionLayout, _RectangularLayout);
 
+	  createClass(TransmissionLayout, null, [{
+	    key: "DEFAULT_SETTINGS",
+	    value: function DEFAULT_SETTINGS() {
+	      return {
+	        groupingAnnotation: "host"
+	      };
+	    }
+	  }]);
+
 	  /**
 	   * The constructor.
 	   * @param tree
 	   * @param settings
 	   */
 	  function TransmissionLayout(tree) {
-	    var _this;
-
-	    var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {
-	      groupingAnnotation: "host"
-	    };
+	    var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
 	    classCallCheck(this, TransmissionLayout);
 
-	    _this = possibleConstructorReturn(this, getPrototypeOf(TransmissionLayout).call(this, tree, settings));
-	    _this._direction = Direction.DOWN;
-	    _this.groupingAnnotation = _this.settings.groupingAnnotation;
-	    return _this;
+	    //order the tree or something here. add internal nodes ect.
+	    var groupingAnnotation = objectSpread({}, TransmissionLayout.DEFAULT_SETTINGS(), settings)['groupingAnnotation'];
+
+	    var locationChanges = tree.nodeList.filter(function (n) {
+	      return n.parent && n.parent.annotations[groupingAnnotation] !== n.annotations[groupingAnnotation];
+	    });
+	    locationChanges.forEach(function (node) {
+	      var originalLocation = node.parent.annotations[groupingAnnotation];
+	      var finalLocation = node.annotations[groupingAnnotation];
+	      var newNodeInLocation = tree.splitBranch(node);
+	      newNodeInLocation.annotations[groupingAnnotation] = finalLocation;
+	      var newNodeFromLocation = tree.splitBranch(newNodeInLocation, 1.0);
+	      newNodeFromLocation.annotations[groupingAnnotation] = originalLocation;
+	    });
+
+	    var includedInVerticalRange = function includedInVerticalRange(node) {
+	      return !node.children || node.children.length === 1 && node.annotations[groupingAnnotation] !== node.children[0].annotations[groupingAnnotation];
+	    };
+
+	    return possibleConstructorReturn(this, getPrototypeOf(TransmissionLayout).call(this, tree, objectSpread({}, TransmissionLayout.DEFAULT_SETTINGS(), {
+	      includedInVerticalRange: includedInVerticalRange
+	    }, settings)));
 	  }
 	  /**
 	   * Set the direction to draw transmission (up or down).
@@ -9387,66 +9733,14 @@
 
 
 	  createClass(TransmissionLayout, [{
-	    key: "setYPosition",
-
-	    /**
-	     * Inherited method overwritten to set the y-position of an internal node to the same as its
-	     * first child which gives a visual directionality to the tree.
-	     * @param vertex
-	     * @param currentY
-	     * @returns {*}
-	     */
-	    // setYPosition(vertex, currentY) {
-	    //     if (this._direction === Direction.UP) {
-	    //         throw new Error("Up direction drawing not implemented yet");
-	    //     }
-	    //
-	    //     vertex.y = (vertex.node.children ? this.nodeMap.get(vertex.node.children[0]).y : currentY += 1);
-	    //     return currentY;
-	    // }
-	    value: function setYPosition(vertex, currentY) {
-	      var _this2 = this;
-
-	      // check if there are children that that are in the same group and set position to mean
-	      // if do something else
-	      var localKids = vertex.node.children ? vertex.node.children.filter(function (child) {
-	        return child.annotations[_this2._groupingAnnotation] === vertex.node.annotations[_this2._groupingAnnotation];
-	      }) : [];
-
-	      if (localKids.length > 0) {
-	        vertex.y = mean(localKids, function (child) {
-	          return _this2.nodeMap.get(child).y;
-	        });
-	      } else {
-	        currentY += 1;
-	        vertex.y = currentY;
-	      } // vertex.y = (vertex.node.children ? mean(vertex.node.children.filter(child => child.annotations[this._groupingAnnotation]===vertex.node.annotations[this._groupingAnnotation]), (child) => this.nodeMap.get(child).y) : currentY += 1);
-
-
-	      return currentY;
-	    }
-	  }, {
 	    key: "direction",
 	    set: function set(direction) {
-	      this._direction = direction;
 	      this.update();
-	    }
-	  }, {
-	    key: "groupingAnnotation",
-	    set: function set(annotation) {
-	      if (Object.keys(this.tree.annotations).indexOf(annotation) === -1) {
-	        throw new Error("tree is not annotated with : ".concat(annotation, " "));
-	      }
-
-	      this._groupingAnnotation = annotation;
 	    }
 	  }]);
 
 	  return TransmissionLayout;
-	}(RectangularLayout);
-	/*
-	 * Private methods, called by the class using the <function>.call(this) function.
-	 */
+	}(RectangularLayout$1);
 
 	/**
 	 * The ArcLayout class
@@ -10608,7 +10902,7 @@
 	      nodes // .transition()
 	      // .duration(this.settings.transitionDuration)
 	      .attr(key, function (d) {
-	        return nodeAttrMap.get(key)(d);
+	        return nodeAttrMap.get(key)(d.node);
 	      });
 	    };
 
@@ -10647,7 +10941,7 @@
 	      nodes // .transition()
 	      // .duration(this.settings.transitionDuration)
 	      .attr(key, function (d) {
-	        return nodeBackgroundsAttrMap.get(key)(d);
+	        return nodeBackgroundsAttrMap.get(key)(d.node);
 	      });
 	    };
 
@@ -10686,7 +10980,7 @@
 	      branches // .transition()
 	      // .duration(this.settings.transitionDuration)
 	      .attr(key, function (d) {
-	        return branchAttrMap.get(key)(d);
+	        return branchAttrMap.get(key)(d.v1.node);
 	      });
 	    };
 

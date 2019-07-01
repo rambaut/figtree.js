@@ -416,7 +416,7 @@ export class Tree {
                     }
                 } else {
                     // if no splitLocations are given then split it in the middle.
-                    this.splitBranch(node, node.length / 2.0);
+                    this.splitBranch(node, 0.5);
                 }
             });
         this.treeUpdateCallback();
@@ -427,18 +427,18 @@ export class Tree {
      * Splits a branch in two inserting a new degree 2 node. The splitLocation should be less than
      * the orginal branch length.
      * @param node
-     * @param splitLocation
+     * @param splitLocation - proportion of branch to split at.
      */
-    splitBranch(node, splitLocation) {
+    splitBranch(node, splitLocation=0.5) {
         const oldLength = node.length;
 
         const splitNode = makeNode.call(this,
             {
             parent: node.parent,
             children: [node],
-            length: oldLength - splitLocation,
+            length: oldLength*splitLocation,
             annotations: {
-                midpoint: true
+                insertedNode: true
             }
         });
         if (node.parent) {
@@ -448,8 +448,8 @@ export class Tree {
             this.root = splitNode;
         }
         node.parent = splitNode;
-        node._length = splitLocation;
-
+        node._length = oldLength-splitNode.length;
+        setUpArraysAndMaps.call(this);
         return splitNode;
     }
 
@@ -820,7 +820,20 @@ function orderNodes(node, ordering, callback = null) {
     }
     return count;
 }
-
+function setUpArraysAndMaps() {
+    this.nodeList = [...this.preorder()];
+    this.nodeList.forEach((node) => {
+        if (node.label && node.label.startsWith("#")) {
+            // an id string has been specified in the newick label.
+            node.id = node.label.substring(1);
+        }
+        if (node.annotations) {
+            this.addAnnotations(node.annotations);
+        }
+    });
+    this.nodeMap = new Map(this.nodeList.map((node) => [node.id, node]));
+    this.tipMap = new Map(this.externalNodes.map((tip) => [tip.name, tip]));
+}
 /**
  * A private recursive function that calculates the height of each node (with the most
  * diverged tip from the root having height given by origin).

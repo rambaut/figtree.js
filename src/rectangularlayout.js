@@ -18,6 +18,7 @@ export class RectangularLayout extends Layout {
             lengthFormat: format(".2f"),
             branchCurve: curveStepBefore,
             horizontalScale: null, // a scale that converts root to tip distance to 0,1 domain. default is 0 = root 1 = highest tip
+            includedInVerticalRange:node => !node.children,
         };
     }
 
@@ -59,7 +60,8 @@ export class RectangularLayout extends Layout {
     layout(vertices, edges) {
 
         this._horizontalRange = [0,1];//[0.0, max([...this.tree.rootToTipLengths()])];
-        this._verticalRange = [0, this.tree.externalNodes.length - 1];
+        this._verticalRange = [0, this.tree.nodeList.filter(this.settings.includedInVerticalRange).length - 1];
+
          if(!this.settings.horizontalScale){
              this.horizontalScale = scaleLinear().domain([0,max([...this.tree.rootToTipLengths()])]).range(this._horizontalRange);
          }else{
@@ -231,9 +233,20 @@ export class RectangularLayout extends Layout {
     }
 
     setYPosition(vertex, currentY) {
-        vertex.y = (vertex.node.children ? mean(vertex.node.children, (child) => this.nodeMap.get(child).y) : currentY += 1);
+        // check if there are children that that are in the same group and set position to mean
+        // if do something else
+
+        const includedInVertical = this.settings.includedInVerticalRange(vertex.node);
+        if(!includedInVertical){
+            vertex.y = mean(vertex.node.children,(child) => this.nodeMap.get(child).y)
+        }
+        else{
+            currentY+=1;
+            vertex.y = currentY;
+        }
         return currentY;
     }
+
     branchPathGenerator(scales){
         const branchPath =(e,i)=>{
             const branchLine = line()
