@@ -1907,6 +1907,8 @@
 	        }
 
 	        if (Array.isArray(addValues)) {
+	          var _annotation$values;
+
 	          // is a set of discrete values
 	          var type = Type.DISCRETE;
 
@@ -1915,7 +1917,13 @@
 	          }
 
 	          annotation.type = type;
-	          annotation.values = annotation.values ? [].concat(toConsumableArray(annotation.values), toConsumableArray(addValues)) : toConsumableArray(addValues);
+
+	          if (!annotation.values) {
+	            annotation.values = new Set();
+	          }
+
+	          (_annotation$values = annotation.values).add.apply(_annotation$values, toConsumableArray(addValues)); // annotation.values = annotation.values? [...annotation.values, ...addValues]:[...addValues]
+
 	        } else if (Object.isExtensible(addValues)) {
 	          // is a set of properties with values
 	          var _type = null;

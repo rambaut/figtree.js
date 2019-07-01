@@ -586,7 +586,11 @@ export class Tree {
                     throw Error(`existing values of the annotation, ${key}, in the tree is not of the same type`);
                 }
                 annotation.type = type;
-                annotation.values = annotation.values? [...annotation.values, ...addValues]:[...addValues]
+                if (!annotation.values) {
+                    annotation.values = new Set();
+                }
+                annotation.values.add(...addValues);
+                // annotation.values = annotation.values? [...annotation.values, ...addValues]:[...addValues]
             } else if (Object.isExtensible(addValues)) {
                 // is a set of properties with values
                 let type = null;
