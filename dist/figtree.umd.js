@@ -2152,12 +2152,16 @@
 	    value: function parseNewick(newickString) {
 	      var labelName = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "label";
 	      var datePrefix = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : undefined;
-	      var tokens = newickString.split(/\s*('[^']+'|"[^"]+"|;|\(|\)|,|:)\s*/);
+	      var tokens = newickString.split(/\s*('[^']+'|"[^"]+"|;|\(|\)|,|:|=|\[&|\]|\{|\})\s*/);
 	      var level = 0;
 	      var currentNode = null;
 	      var nodeStack = [];
 	      var labelNext = false;
 	      var lengthNext = false;
+	      var inAnnotation = false;
+	      var annotationKeyNext = true;
+	      var annotationKey;
+	      var isAnnotationARange = false;
 	      var _iteratorNormalCompletion5 = true;
 	      var _didIteratorError5 = false;
 	      var _iteratorError5 = undefined;
@@ -2169,7 +2173,46 @@
 	          var token = _step5.value;
 
 	          // console.log(`Token ${i}: ${token}, level: ${level}`);
-	          if (token === "(") {
+	          if (inAnnotation) {
+	            if (token === "=") {
+	              annotationKeyNext = false;
+	            } else if (token === ",") {
+	              if (!isAnnotationARange) {
+	                annotationKeyNext = true;
+	              }
+	            } else if (token === "{") {
+	              isAnnotationARange = true;
+	              currentNode.annotations[annotationKey] = [];
+	            } else if (token === "}") {
+	              isAnnotationARange = false;
+	            } else if (token === "]") {
+	              // close BEAST annotation
+	              inAnnotation = false;
+	              annotationKeyNext = true;
+	            } else {
+	              // must be annotation
+	              // remove any quoting and then trim whitespace
+	              var annotationToken = token;
+
+	              if (annotationToken.startsWith("\"") || annotationToken.startsWith("'")) {
+	                annotationToken = annotationToken.substr(1);
+	              }
+
+	              if (annotationToken.endsWith("\"") || annotationToken.endsWith("'")) {
+	                annotationToken = annotationToken.substr(0, annotationToken.length - 1);
+	              }
+
+	              if (annotationKeyNext) {
+	                annotationKey = annotationToken.replace(".", "_");
+	              } else {
+	                if (isAnnotationARange) {
+	                  currentNode.annotations[annotationKey].push(annotationToken);
+	                } else {
+	                  currentNode.annotations[annotationKey] = annotationToken;
+	                }
+	              }
+	            }
+	          } else if (token === "(") {
 	            // an internal node
 	            if (labelNext) {
 	              // if labelNext is set then the last bracket has just closed
@@ -2228,6 +2271,8 @@
 	            }
 
 	            break;
+	          } else if (token === "[&") {
+	            inAnnotation = true;
 	          } else {
 	            // not any specific token so may be a label, a length, or an external node name
 	            if (lengthNext) {

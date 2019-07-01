@@ -886,16 +886,58 @@ class Tree {
      * @returns {Tree} - an instance of the Tree class
      */
     static parseNewick(newickString, labelName = "label", datePrefix = undefined ) {
-        const tokens = newickString.split(/\s*('[^']+'|"[^"]+"|;|\(|\)|,|:)\s*/);
+        const tokens = newickString.split(/\s*('[^']+'|"[^"]+"|;|\(|\)|,|:|=|\[&|\]|\{|\})\s*/);
         let level = 0;
         let currentNode = null;
         let nodeStack = [];
         let labelNext = false;
         let lengthNext = false;
+        let inAnnotation = false;
+        let annotationKeyNext = true;
+        let annotationKey;
+        let isAnnotationARange=false;
 
         for (const token of tokens.filter(token => token.length > 0)) {
             // console.log(`Token ${i}: ${token}, level: ${level}`);
-            if (token === "(") {
+            if(inAnnotation){
+                if(token==="="){
+                    annotationKeyNext=false;
+                }else if(token===","){
+                    if(!isAnnotationARange){
+                        annotationKeyNext=true;
+                    }
+                }else if (token==="{"){
+                    isAnnotationARange=true;
+                    currentNode.annotations[annotationKey]=[];
+                }else if (token==="}"){
+                    isAnnotationARange=false;
+                }
+                else if(token ==="]"){
+                    // close BEAST annotation
+                    inAnnotation = false;
+                    annotationKeyNext = true;
+                } else{
+                    // must be annotation
+                    // remove any quoting and then trim whitespace
+                    let annotationToken = token;
+                    if (annotationToken.startsWith("\"") || annotationToken.startsWith("'")) {
+                        annotationToken = annotationToken.substr(1);
+                    }
+                    if (annotationToken.endsWith("\"") || annotationToken.endsWith("'")) {
+                        annotationToken = annotationToken.substr(0, annotationToken.length - 1);
+                    }
+                    if(annotationKeyNext) {
+                        annotationKey = annotationToken.replace(".","_");
+                    }else{
+                        if(isAnnotationARange){
+                            currentNode.annotations[annotationKey].push(annotationToken);
+                        }else{
+                            currentNode.annotations[annotationKey]=annotationToken;
+                        }
+                    }
+                }
+
+            } else if (token === "(") {
                 // an internal node
 
                 if (labelNext) {
@@ -953,7 +995,10 @@ class Tree {
                     throw new Error("unexpected semi-colon in tree")
                 }
                 break;
-            } else {
+            } else if(token ==="[&") {
+                inAnnotation=true;
+            }
+            else {
                 // not any specific token so may be a label, a length, or an external node name
                 if (lengthNext) {
                     currentNode.length = parseFloat(token);
