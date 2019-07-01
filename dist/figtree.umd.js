@@ -9370,14 +9370,14 @@
 	    var _this;
 
 	    var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {
-	      _groupingAnnotation: "host"
+	      groupingAnnotation: "host"
 	    };
 
 	    classCallCheck(this, TransmissionLayout);
 
 	    _this = possibleConstructorReturn(this, getPrototypeOf(TransmissionLayout).call(this, tree, settings));
 	    _this._direction = Direction.DOWN;
-	    _this.groupingAnnotation = _this.settings._groupingAnnotation;
+	    _this.groupingAnnotation = _this.settings.groupingAnnotation;
 	    return _this;
 	  }
 	  /**
@@ -9409,11 +9409,20 @@
 
 	      // check if there are children that that are in the same group and set position to mean
 	      // if do something else
-	      vertex.y = vertex.node.children ? mean(vertex.node.children.filter(function (child) {
+	      var localKids = vertex.node.children ? vertex.node.children.filter(function (child) {
 	        return child.annotations[_this2._groupingAnnotation] === vertex.node.annotations[_this2._groupingAnnotation];
-	      }), function (child) {
-	        return _this2.nodeMap.get(child).y;
-	      }) : currentY += 1;
+	      }) : [];
+
+	      if (localKids.length > 0) {
+	        vertex.y = mean(localKids, function (child) {
+	          return _this2.nodeMap.get(child).y;
+	        });
+	      } else {
+	        currentY += 1;
+	        vertex.y = currentY;
+	      } // vertex.y = (vertex.node.children ? mean(vertex.node.children.filter(child => child.annotations[this._groupingAnnotation]===vertex.node.annotations[this._groupingAnnotation]), (child) => this.nodeMap.get(child).y) : currentY += 1);
+
+
 	      return currentY;
 	    }
 	  }, {
@@ -10047,6 +10056,21 @@
 	        transitionDuration: 500
 	      };
 	    }
+	  }, {
+	    key: "DEFAULT_STYLES",
+	    value: function DEFAULT_STYLES() {
+	      return {
+	        "nodes": new Map(),
+	        "nodeBackgrounds": new Map(),
+	        "branches": new Map([["fill", function (d) {
+	          return "none";
+	        }], ["stroke-width", function (d) {
+	          return "2";
+	        }], ["stroke", function (d) {
+	          return "black";
+	        }]])
+	      };
+	    }
 	    /**
 	     * The constructor.
 	     * @param svg
@@ -10065,7 +10089,21 @@
 	    this.layout = layout;
 	    this.margins = margins; // merge the default settings with the supplied settings
 
-	    this.settings = objectSpread({}, FigTree.DEFAULT_SETTINGS(), settings);
+	    var styles = FigTree.DEFAULT_STYLES(); //update style maps
+
+	    if (settings.styles) {
+	      for (var _i = 0, _Object$keys = Object.keys(styles); _i < _Object$keys.length; _i++) {
+	        var key = _Object$keys[_i];
+
+	        if (settings.styles[key]) {
+	          styles[key] = new Map([].concat(toConsumableArray(styles[key]), toConsumableArray(settings.styles[key])));
+	        }
+	      }
+	    }
+
+	    this.settings = objectSpread({}, FigTree.DEFAULT_SETTINGS(), settings, {
+	      styles: styles
+	    });
 	    this.svg = svg;
 	  }
 
@@ -10441,6 +10479,7 @@
 	  // Remove old elements as needed.
 
 	  nodes.exit().remove();
+	  updateNodeStyles.call(this);
 	}
 
 	function updateNodeBackgrounds() {
@@ -10472,6 +10511,7 @@
 	  // Remove old elements as needed.
 
 	  nodes.exit().remove();
+	  updateNodeBackgroundStyles.call(this);
 	}
 	/**
 	 * Adds or updates branch lines
@@ -10533,6 +10573,7 @@
 	  // Remove old elements as needed.
 
 	  branches.exit().remove();
+	  updateBranchStyles.call(this);
 	}
 	/**
 	 * Add axis
@@ -10545,6 +10586,127 @@
 	  var axesLayer = this.svgSelection.select(".axes-layer");
 	  axesLayer.append("g").attr("id", "x-axis").attr("class", "axis").attr("transform", "translate(0, ".concat(this.scales.height - this.margins.bottom + 5, ")")).call(xAxis);
 	  axesLayer.append("g").attr("id", "x-axis-label").attr("class", "axis-label").attr("transform", "translate(".concat(this.margins.left, ", ").concat(this.scales.height - this.margins.bottom, ")")).append("text").attr("transform", "translate(".concat(xAxisWidth / 2, ", 35)")).attr("alignment-baseline", "hanging").style("text-anchor", "middle").text(this.settings.xAxisTitle);
+	}
+	/**
+	 * A function to update the annotatation layer of the tree
+	 */
+
+
+	function updateNodeStyles() {
+	  var nodesLayer = select(this.svg).select(".nodes-layer"); // DATA JOIN
+	  // Join new data with old elements, if any.
+
+	  var nodes = nodesLayer.selectAll(".node .node-shape");
+	  var nodeAttrMap = this.settings.styles.nodes;
+	  var _iteratorNormalCompletion = true;
+	  var _didIteratorError = false;
+	  var _iteratorError = undefined;
+
+	  try {
+	    var _loop = function _loop() {
+	      var key = _step.value;
+	      nodes // .transition()
+	      // .duration(this.settings.transitionDuration)
+	      .attr(key, function (d) {
+	        return nodeAttrMap.get(key)(d);
+	      });
+	    };
+
+	    for (var _iterator = nodeAttrMap.keys()[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	      _loop();
+	    }
+	  } catch (err) {
+	    _didIteratorError = true;
+	    _iteratorError = err;
+	  } finally {
+	    try {
+	      if (!_iteratorNormalCompletion && _iterator["return"] != null) {
+	        _iterator["return"]();
+	      }
+	    } finally {
+	      if (_didIteratorError) {
+	        throw _iteratorError;
+	      }
+	    }
+	  }
+	}
+
+	function updateNodeBackgroundStyles() {
+	  var nodesBackgroundLayer = this.svgSelection.select(".nodes-background-layer"); // DATA JOIN
+	  // Join new data with old elements, if any.
+
+	  var nodes = nodesBackgroundLayer.selectAll(".node-background");
+	  var nodeBackgroundsAttrMap = this.settings.styles.nodeBackgrounds;
+	  var _iteratorNormalCompletion2 = true;
+	  var _didIteratorError2 = false;
+	  var _iteratorError2 = undefined;
+
+	  try {
+	    var _loop2 = function _loop2() {
+	      var key = _step2.value;
+	      nodes // .transition()
+	      // .duration(this.settings.transitionDuration)
+	      .attr(key, function (d) {
+	        return nodeBackgroundsAttrMap.get(key)(d);
+	      });
+	    };
+
+	    for (var _iterator2 = nodeBackgroundsAttrMap.keys()[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+	      _loop2();
+	    }
+	  } catch (err) {
+	    _didIteratorError2 = true;
+	    _iteratorError2 = err;
+	  } finally {
+	    try {
+	      if (!_iteratorNormalCompletion2 && _iterator2["return"] != null) {
+	        _iterator2["return"]();
+	      }
+	    } finally {
+	      if (_didIteratorError2) {
+	        throw _iteratorError2;
+	      }
+	    }
+	  }
+	}
+
+	function updateBranchStyles() {
+	  var branchesLayer = this.svgSelection.select(".branches-layer"); // DATA JOIN
+	  // Join new data with old elements, if any.
+
+	  var branches = branchesLayer.selectAll("g .branch .branch-path");
+	  var branchAttrMap = this.settings.styles["branches"];
+	  var _iteratorNormalCompletion3 = true;
+	  var _didIteratorError3 = false;
+	  var _iteratorError3 = undefined;
+
+	  try {
+	    var _loop3 = function _loop3() {
+	      var key = _step3.value;
+	      branches // .transition()
+	      // .duration(this.settings.transitionDuration)
+	      .attr(key, function (d) {
+	        return branchAttrMap.get(key)(d);
+	      });
+	    };
+
+	    for (var _iterator3 = branchAttrMap.keys()[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+	      _loop3();
+	    }
+	  } catch (err) {
+	    _didIteratorError3 = true;
+	    _iteratorError3 = err;
+	  } finally {
+	    try {
+	      if (!_iteratorNormalCompletion3 && _iterator3["return"] != null) {
+	        _iterator3["return"]();
+	      }
+	    } finally {
+	      if (_didIteratorError3) {
+	        throw _iteratorError3;
+	      }
+	    }
+	  }
 	}
 
 	var Graph =

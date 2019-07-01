@@ -8394,6 +8394,9 @@ class FigTree {
             transitionDuration:500,
         };
     }
+    static DEFAULT_STYLES(){
+        return {"nodes":new Map(),"nodeBackgrounds":new Map(),"branches":new Map([["fill",d=>"none"],["stroke-width",d=>"2"],["stroke",d=>"black"]])}
+    }
 
     /**
      * The constructor.
@@ -8407,7 +8410,18 @@ class FigTree {
         this.margins = margins;
 
         // merge the default settings with the supplied settings
-        this.settings = {...FigTree.DEFAULT_SETTINGS(), ...settings};
+        const styles = FigTree.DEFAULT_STYLES();
+        //update style maps
+        if(settings.styles) {
+            for (const key of Object.keys(styles)) {
+                if (settings.styles[key]) {
+                    styles[key] = new Map([...styles[key], ...settings.styles[key]]);
+                }
+            }
+        }
+
+        this.settings = {...FigTree.DEFAULT_SETTINGS(), ...settings,...{styles:styles}};
+
         this.svg=svg;
 
     }
@@ -8761,6 +8775,8 @@ function updateNodes() {
             return `translate(${this.scales.x(v.x)}, ${this.scales.y(v.y)})`;
         });
 
+
+
     // update all the baubles
     this.settings.baubles.forEach((bauble) => {
         const d = nodes.select(".node-shape")
@@ -8793,6 +8809,9 @@ function updateNodes() {
     // EXIT
     // Remove old elements as needed.
     nodes.exit().remove();
+
+    updateNodeStyles.call(this);
+
 
 }
 
@@ -8837,6 +8856,8 @@ function updateNodeBackgrounds() {
     // Remove old elements as needed.
     nodes.exit().remove();
 
+    updateNodeBackgroundStyles.call(this);
+
 }
 
 
@@ -8867,7 +8888,6 @@ function updateBranches() {
         .attr("transform", (e) => {
             return `translate(${this.scales.x(e.v0.x)}, ${this.scales.y(e.v1.y)})`;
         });
-
     newBranches.append("path")
         .attr("class", "branch-path")
         .attr("d", (e,i) => branchPath(e,i));
@@ -8904,6 +8924,8 @@ function updateBranches() {
     // Remove old elements as needed.
     branches
         .exit().remove();
+
+    updateBranchStyles.call(this);
 }
 
 /**
@@ -8934,6 +8956,62 @@ function addAxis() {
         .attr("alignment-baseline", "hanging")
         .style("text-anchor", "middle")
         .text(this.settings.xAxisTitle);
+}
+
+/**
+ * A function to update the annotatation layer of the tree
+ */
+
+
+function updateNodeStyles(){
+    const nodesLayer = select(this.svg).select(".nodes-layer");
+
+    // DATA JOIN
+    // Join new data with old elements, if any.
+    const nodes = nodesLayer.selectAll(".node .node-shape");
+    const nodeAttrMap = this.settings.styles.nodes;
+    for(const key of nodeAttrMap.keys()){
+        nodes
+            // .transition()
+            // .duration(this.settings.transitionDuration)
+            .attr(key,d=>nodeAttrMap.get(key)(d));
+    }
+
+
+}
+
+function updateNodeBackgroundStyles(){
+    const nodesBackgroundLayer = this.svgSelection.select(".nodes-background-layer");
+
+    // DATA JOIN
+    // Join new data with old elements, if any.
+    const nodes = nodesBackgroundLayer.selectAll(".node-background");
+
+    const nodeBackgroundsAttrMap = this.settings.styles.nodeBackgrounds;
+    for(const key of nodeBackgroundsAttrMap.keys()){
+        nodes
+            // .transition()
+            // .duration(this.settings.transitionDuration)
+            .attr(key,d=>nodeBackgroundsAttrMap.get(key)(d));
+    }
+
+}
+
+function updateBranchStyles(){
+    const branchesLayer = this.svgSelection.select(".branches-layer");
+
+    // DATA JOIN
+    // Join new data with old elements, if any.
+    const branches = branchesLayer.selectAll("g .branch .branch-path");
+
+    const branchAttrMap = this.settings.styles["branches"];
+    for(const key of branchAttrMap.keys()){
+        branches
+            // .transition()
+            // .duration(this.settings.transitionDuration)
+            .attr(key,d=>branchAttrMap.get(key)(d));
+    }
+
 }
 
 /** @module Graph */
