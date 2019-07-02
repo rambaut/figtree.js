@@ -3,7 +3,9 @@
 /** @module layout */
 
 import { RectangularLayout } from "./rectangularLayout.js";
-import {Tree} from "./tree"
+import {format,curveStepBefore,max,line,mean,scaleLinear} from "d3";
+
+import {Tree, Type} from "./tree"
 
 export const Direction = {
     UP : Symbol("UP"),
@@ -12,13 +14,15 @@ export const Direction = {
 
 /**
  * The TransmissionLayout class
+ * Only works for 'up' directions
  *
  */
 export class TransmissionLayout extends RectangularLayout {
 
     static DEFAULT_SETTINGS() {
         return {
-            groupingAnnotation:"host"
+            groupingAnnotation:"host",
+            direction:"up"
         }
     };
 
@@ -28,8 +32,11 @@ export class TransmissionLayout extends RectangularLayout {
      * @param settings
      */
     constructor(tree, settings = {}) {
-        
-        //order the tree or something here. add internal nodes ect.
+        tree.order((nodeA, countA, nodeB, countB) => {
+            // otherwise just order by increasing node density
+            return (countB - countA);
+        });
+
         const groupingAnnotation = {...TransmissionLayout.DEFAULT_SETTINGS(),...settings}['groupingAnnotation'];
         const locationChanges = tree.nodeList.filter(n=>n.parent && n.parent.annotations[groupingAnnotation]!==n.annotations[groupingAnnotation]);
 
@@ -41,21 +48,23 @@ export class TransmissionLayout extends RectangularLayout {
             const newNodeFromLocation = tree.splitBranch(newNodeInLocation,1.0);
             newNodeFromLocation.annotations[groupingAnnotation] = originalLocation;
         })
-        // tree.setup
+
+
+
         const includedInVerticalRange = node  => !node.children || (node.children.length===1 && node.annotations[groupingAnnotation]!==node.children[0].annotations[groupingAnnotation])
         super(tree, {...TransmissionLayout.DEFAULT_SETTINGS(),...{includedInVerticalRange:includedInVerticalRange}, ...settings});
 
-    }
 
+
+    }
 
     /**
      * Set the direction to draw transmission (up or down).
      * @param direction
      */
-    set direction(direction) {
-        this.update();
-    }
-
+    // set direction(direction) {
+    //     this.update();
+    // }
 
 }
 

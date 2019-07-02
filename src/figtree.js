@@ -16,7 +16,7 @@ export class FigTree {
     static DEFAULT_SETTINGS() {
         return {
             xAxisTickArguments: [5, "f"],
-            xAxisTitle: "Divergence",
+            xAxisTitle: "Height",
             // nodeRadius: 6,
             hoverBorder: 2,
             backgroundBorder: 0,
@@ -136,14 +136,14 @@ export class FigTree {
         this.scales.width=width;
         this.scales.height=height;
 
-        // updateAxis.call(this);
-        const xAxis = axisBottom(this.scales.x)
-            .tickArguments(this.settings.xAxisTickArguments);
-
-        this.svgSelection.select("#x-axis")
-            .transition()
-            .duration(this.settings.transitionDuration)
-            .call(xAxis);
+        addAxis.call(this);
+        // const xAxis = axisBottom(this.scales.x)
+        //     .tickArguments(this.settings.xAxisTickArguments);
+        //
+        // this.svgSelection.select("#x-axis")
+        //     .transition()
+        //     .duration(this.settings.transitionDuration)
+        //     .call(xAxis);
 
 
         // call the private methods to create the components of the diagram
@@ -562,7 +562,9 @@ function updateBranches() {
  * Add axis
  */
 function addAxis() {
-    const xAxis = axisBottom(this.scales.x)
+
+
+    const xAxis = axisBottom( scaleLinear().domain(this.layout.horizontalScale.domain()).range(this.scales.x.range()))
         .tickArguments(this.settings.xAxisTickArguments);
 
     const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;

@@ -17,7 +17,7 @@ export class RectangularLayout extends Layout {
         return {
             lengthFormat: format(".2f"),
             branchCurve: curveStepBefore,
-            horizontalScale: null, // a scale that converts root to tip distance to 0,1 domain. default is 0 = root 1 = highest tip
+            horizontalScale: null, // a scale that converts height to 0,1  domain. default is 0 = heighest tip
             includedInVerticalRange:node => !node.children,
         };
     }
@@ -39,6 +39,15 @@ export class RectangularLayout extends Layout {
         this.internalNodeLabelAnnotationName = null;
         this.externalNodeLabelAnnotationName = null;
 
+        this._horizontalRange = [0,1];//[0.0, max([...this.tree.rootToTipLengths()])];
+        this._verticalRange = [0, this.tree.nodeList.filter(this.settings.includedInVerticalRange).length - 1];
+
+        if(!this.settings.horizontalScale){
+            this.horizontalScale = scaleLinear().domain([this.tree.rootNode.height,this.tree.origin]).range(this._horizontalRange);
+        }else{
+            this.horizontalScale = this.settings.horizontalScale;
+        }
+
         // called whenever the tree changes...
         this.tree.treeUpdateCallback = () => {
             this.update();
@@ -59,14 +68,6 @@ export class RectangularLayout extends Layout {
      */
     layout(vertices, edges) {
 
-        this._horizontalRange = [0,1];//[0.0, max([...this.tree.rootToTipLengths()])];
-        this._verticalRange = [0, this.tree.nodeList.filter(this.settings.includedInVerticalRange).length - 1];
-
-         if(!this.settings.horizontalScale){
-             this.horizontalScale = scaleLinear().domain([0,max([...this.tree.rootToTipLengths()])]).range(this._horizontalRange);
-         }else{
-             this.horizontalScale = this.settings.horizontalScale;
-         }
 
         // get the nodes in post-order
         const nodes = [...this.tree.postorder()];
@@ -93,7 +94,7 @@ export class RectangularLayout extends Layout {
             .forEach((n) => {
                 const v = this.nodeMap.get(n);
 
-                v.x = this.horizontalScale(this.tree.rootToTipLength(v.node));
+                v.x = this.horizontalScale(v.node.height);
                 currentY = this.setYPosition(v, currentY)
 
                 v.degree = (v.node.children ? v.node.children.length + 1: 1); // the number of edges (including stem)

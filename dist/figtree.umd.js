@@ -1100,1936 +1100,6 @@
 
 	var uuid_1 = uuid;
 
-	var Type = {
-	  DISCRETE: Symbol("DISCRETE"),
-	  BOOLEAN: Symbol("BOOLEAN"),
-	  INTEGER: Symbol("INTEGER"),
-	  FLOAT: Symbol("FLOAT"),
-	  PROBABILITIES: Symbol("PROBABILITIES")
-	};
-	/**
-	 * The Tree class
-	 */
-
-	var Tree =
-	/*#__PURE__*/
-	function () {
-	  /**
-	   * The constructor takes an object for the root node. The tree structure is
-	   * defined as nested node objects.
-	   *
-	   * @constructor
-	   * @param {object} rootNode - The root node of the tree as an object.
-	   */
-	  function Tree() {
-	    var _this = this;
-
-	    var rootNode = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
-	    classCallCheck(this, Tree);
-
-	    this.heightsKnown = false;
-	    this.lengthsKnown = true;
-	    this.root = makeNode.call(this, objectSpread({}, rootNode)); // This converts all the json objects to Node instances
-
-	    setUpNodes.call(this, this.root);
-	    this.origin = 0;
-	    this.annotations = {};
-	    this._nodeList = toConsumableArray(this.preorder());
-
-	    this._nodeList.forEach(function (node) {
-	      if (node.label && node.label.startsWith("#")) {
-	        // an id string has been specified in the newick label.
-	        node.id = node.label.substring(1);
-	      }
-
-	      if (node.annotations) {
-	        _this.addAnnotations(node.annotations);
-	      }
-	    });
-
-	    this._nodeMap = new Map(this.nodeList.map(function (node) {
-	      return [node.id, node];
-	    }));
-	    this._tipMap = new Map(this.externalNodes.map(function (tip) {
-	      return [tip.name, tip];
-	    }));
-	    this.nodesUpdated = false; // a callback function that is called whenever the tree is changed
-
-	    this.treeUpdateCallback = function () {};
-	  }
-
-	  createClass(Tree, [{
-	    key: "getSibling",
-
-	    /**
-	     * Returns the sibling of a node (i.e., the first other child of the parent)
-	     *
-	     * @param node
-	     * @returns {object}
-	     */
-	    value: function getSibling(node) {
-	      if (!node.parent) {
-	        return null;
-	      }
-
-	      return node.parent.children.find(function (child) {
-	        return child !== node;
-	      });
-	    }
-	    /**
-	     * Returns a node from its id stored.
-	     *
-	     * @param id
-	     * @returns {object}
-	     */
-
-	  }, {
-	    key: "getNode",
-	    value: function getNode(id) {
-	      return this.nodeMap.get(id);
-	    }
-	    /**
-	     * Returns an external node (tip) from its name.
-	     *
-	     * @param name
-	     * @returns {object}
-	     */
-
-	  }, {
-	    key: "getExternalNode",
-	    value: function getExternalNode(name) {
-	      return this.tipMap.get(name);
-	    }
-	    /**
-	     * If heights are not currently known then calculate heights for all nodes
-	     * then return the height of the specified node.
-	     * @param node
-	     * @returns {number}
-	     */
-
-	  }, {
-	    key: "getHeight",
-	    value: function getHeight(node) {
-	      return node.height;
-	    }
-	  }, {
-	    key: "setOrigin",
-	    value: function setOrigin(origin) {
-	      this.origin = origin;
-	    }
-	    /**
-	     * A generator function that returns the nodes in a pre-order traversal.
-	     *
-	     * @returns {IterableIterator<IterableIterator<*|*>>}
-	     */
-
-	  }, {
-	    key: "preorder",
-	    value:
-	    /*#__PURE__*/
-	    regenerator.mark(function preorder() {
-	      var traverse;
-	      return regenerator.wrap(function preorder$(_context2) {
-	        while (1) {
-	          switch (_context2.prev = _context2.next) {
-	            case 0:
-	              traverse =
-	              /*#__PURE__*/
-	              regenerator.mark(function traverse(node) {
-	                var _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, child;
-
-	                return regenerator.wrap(function traverse$(_context) {
-	                  while (1) {
-	                    switch (_context.prev = _context.next) {
-	                      case 0:
-	                        _context.next = 2;
-	                        return node;
-
-	                      case 2:
-	                        if (!node.children) {
-	                          _context.next = 28;
-	                          break;
-	                        }
-
-	                        _iteratorNormalCompletion = true;
-	                        _didIteratorError = false;
-	                        _iteratorError = undefined;
-	                        _context.prev = 6;
-	                        _iterator = node.children[Symbol.iterator]();
-
-	                      case 8:
-	                        if (_iteratorNormalCompletion = (_step = _iterator.next()).done) {
-	                          _context.next = 14;
-	                          break;
-	                        }
-
-	                        child = _step.value;
-	                        return _context.delegateYield(traverse(child), "t0", 11);
-
-	                      case 11:
-	                        _iteratorNormalCompletion = true;
-	                        _context.next = 8;
-	                        break;
-
-	                      case 14:
-	                        _context.next = 20;
-	                        break;
-
-	                      case 16:
-	                        _context.prev = 16;
-	                        _context.t1 = _context["catch"](6);
-	                        _didIteratorError = true;
-	                        _iteratorError = _context.t1;
-
-	                      case 20:
-	                        _context.prev = 20;
-	                        _context.prev = 21;
-
-	                        if (!_iteratorNormalCompletion && _iterator["return"] != null) {
-	                          _iterator["return"]();
-	                        }
-
-	                      case 23:
-	                        _context.prev = 23;
-
-	                        if (!_didIteratorError) {
-	                          _context.next = 26;
-	                          break;
-	                        }
-
-	                        throw _iteratorError;
-
-	                      case 26:
-	                        return _context.finish(23);
-
-	                      case 27:
-	                        return _context.finish(20);
-
-	                      case 28:
-	                      case "end":
-	                        return _context.stop();
-	                    }
-	                  }
-	                }, traverse, null, [[6, 16, 20, 28], [21,, 23, 27]]);
-	              });
-	              return _context2.delegateYield(traverse(this.root), "t0", 2);
-
-	            case 2:
-	            case "end":
-	              return _context2.stop();
-	          }
-	        }
-	      }, preorder, this);
-	    })
-	    /**
-	     * A generator function that returns the nodes in a post-order traversal
-	     *
-	     * @returns {IterableIterator<IterableIterator<*|*>>}
-	     */
-
-	  }, {
-	    key: "postorder",
-	    value:
-	    /*#__PURE__*/
-	    regenerator.mark(function postorder() {
-	      var traverse;
-	      return regenerator.wrap(function postorder$(_context4) {
-	        while (1) {
-	          switch (_context4.prev = _context4.next) {
-	            case 0:
-	              traverse =
-	              /*#__PURE__*/
-	              regenerator.mark(function traverse(node) {
-	                var _iteratorNormalCompletion2, _didIteratorError2, _iteratorError2, _iterator2, _step2, child;
-
-	                return regenerator.wrap(function traverse$(_context3) {
-	                  while (1) {
-	                    switch (_context3.prev = _context3.next) {
-	                      case 0:
-	                        if (!node.children) {
-	                          _context3.next = 26;
-	                          break;
-	                        }
-
-	                        _iteratorNormalCompletion2 = true;
-	                        _didIteratorError2 = false;
-	                        _iteratorError2 = undefined;
-	                        _context3.prev = 4;
-	                        _iterator2 = node.children[Symbol.iterator]();
-
-	                      case 6:
-	                        if (_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done) {
-	                          _context3.next = 12;
-	                          break;
-	                        }
-
-	                        child = _step2.value;
-	                        return _context3.delegateYield(traverse(child), "t0", 9);
-
-	                      case 9:
-	                        _iteratorNormalCompletion2 = true;
-	                        _context3.next = 6;
-	                        break;
-
-	                      case 12:
-	                        _context3.next = 18;
-	                        break;
-
-	                      case 14:
-	                        _context3.prev = 14;
-	                        _context3.t1 = _context3["catch"](4);
-	                        _didIteratorError2 = true;
-	                        _iteratorError2 = _context3.t1;
-
-	                      case 18:
-	                        _context3.prev = 18;
-	                        _context3.prev = 19;
-
-	                        if (!_iteratorNormalCompletion2 && _iterator2["return"] != null) {
-	                          _iterator2["return"]();
-	                        }
-
-	                      case 21:
-	                        _context3.prev = 21;
-
-	                        if (!_didIteratorError2) {
-	                          _context3.next = 24;
-	                          break;
-	                        }
-
-	                        throw _iteratorError2;
-
-	                      case 24:
-	                        return _context3.finish(21);
-
-	                      case 25:
-	                        return _context3.finish(18);
-
-	                      case 26:
-	                        _context3.next = 28;
-	                        return node;
-
-	                      case 28:
-	                      case "end":
-	                        return _context3.stop();
-	                    }
-	                  }
-	                }, traverse, null, [[4, 14, 18, 26], [19,, 21, 25]]);
-	              });
-	              return _context4.delegateYield(traverse(this.root), "t0", 2);
-
-	            case 2:
-	            case "end":
-	              return _context4.stop();
-	          }
-	        }
-	      }, postorder, this);
-	    })
-	    /**
-	     * A generator function that returns the nodes in a path to the root
-	     *
-	     * @returns {IterableIterator<IterableIterator<*|*>>}
-	     */
-
-	  }, {
-	    key: "toNewick",
-
-	    /**
-	     * An instance method to return a Newick format string for the Tree. Can be called without a parameter to
-	     * start at the root node. Providing another node will generate a subtree. Labels and branch lengths are
-	     * included if available.
-	     *
-	     * @param {object} node - The node of the tree to be written (defaults as the rootNode).
-	     * @returns {string}
-	     */
-	    value: function toNewick() {
-	      var _this2 = this;
-
-	      var node = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.rootNode;
-	      return (node.children ? "(".concat(node.children.map(function (child) {
-	        return _this2.toNewick(child);
-	      }).join(","), ")").concat(node.label ? node.label : "") : node.name) + (node.length ? ":".concat(node.length) : "");
-	    }
-	  }, {
-	    key: "reroot",
-
-	    /**
-	     * Re-roots the tree at the midway point on the branch above the given node.
-	     *
-	     * @param {object} node - The node to be rooted on.
-	     * @param proportion - proportion along the branch to place the root (default 0.5)
-	     */
-	    value: function reroot(node) {
-	      var _this3 = this;
-
-	      var proportion = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0.5;
-
-	      if (node === this.rootNode) {
-	        // the node is the root - nothing to do
-	        return;
-	      }
-
-	      var rootLength = this.rootNode.children[0].length + this.rootNode.children[1].length;
-
-	      if (node.parent !== this.rootNode) {
-	        (function () {
-	          // the node is not a child of the existing root so the root is actually changing
-	          var node0 = node;
-	          var parent = node.parent;
-	          var lineage = []; // was the node the first child in the parent's children?
-
-	          var nodeAtTop = parent.children[0] === node;
-	          var rootChild1 = node;
-	          var rootChild2 = parent;
-	          var oldLength = parent.length;
-
-	          while (parent.parent) {
-	            // remove the node that will becoming the parent from the children
-	            parent.children = parent.children.filter(function (child) {
-	              return child !== node0;
-	            });
-
-	            if (parent.parent === _this3.rootNode) {
-	              var sibling = _this3.getSibling(parent);
-
-	              parent.children.push(sibling);
-	              sibling._length = rootLength;
-	            } else {
-	              // swap the parent and parent's parent's length around
-	              var _ref = [oldLength, parent.parent.length];
-	              parent.parent.length = _ref[0];
-	              oldLength = _ref[1];
-	              // add the new child
-	              parent.children.push(parent.parent);
-	            }
-
-	            lineage = [parent].concat(toConsumableArray(lineage));
-	            node0 = parent;
-	            parent = parent.parent;
-	          } // Reuse the root node as root...
-	          // Set the order of the children to be the same as for the original parent of the node.
-	          // This makes for a more visually consistent rerooting graphically.
-
-
-	          _this3.rootNode.children = nodeAtTop ? [rootChild1, rootChild2] : [rootChild2, rootChild1]; // connect all the children to their parents
-
-	          _this3.internalNodes.forEach(function (node) {
-	            node.children.forEach(function (child) {
-	              child.parent = node;
-	            });
-	          });
-
-	          var l = rootChild1.length * proportion;
-	          rootChild2._length = l;
-	          rootChild1._length = rootChild1.length - l;
-	        })();
-	      } else {
-	        // the root is staying the same, just the position of the root changing
-	        var l = node.length * (1.0 - proportion);
-	        node._length = l;
-	        this.getSibling(node)._length = rootLength - l;
-	      }
-
-	      this.heightsKnown = false;
-	      this.treeUpdateCallback();
-	    }
-	  }, {
-	    key: "rotate",
-
-	    /**
-	     * Reverses the order of the children of the given node. If 'recursive=true' then it will
-	     * descend down the subtree reversing all the sub nodes.
-	     *
-	     * @param node
-	     * @param recursive
-	     */
-	    value: function rotate(node) {
-	      var recursive = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-
-	      if (node.children) {
-	        if (recursive) {
-	          var _iteratorNormalCompletion3 = true;
-	          var _didIteratorError3 = false;
-	          var _iteratorError3 = undefined;
-
-	          try {
-	            for (var _iterator3 = node.children[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-	              var child = _step3.value;
-	              this.rotate(child, recursive);
-	            }
-	          } catch (err) {
-	            _didIteratorError3 = true;
-	            _iteratorError3 = err;
-	          } finally {
-	            try {
-	              if (!_iteratorNormalCompletion3 && _iterator3["return"] != null) {
-	                _iterator3["return"]();
-	              }
-	            } finally {
-	              if (_didIteratorError3) {
-	                throw _iteratorError3;
-	              }
-	            }
-	          }
-	        }
-
-	        node.children.reverse();
-	      }
-
-	      this.treeUpdateCallback();
-	    }
-	  }, {
-	    key: "orderByNodeDensity",
-
-	    /**
-	     * Sorts the child branches of each node in order of increasing or decreasing number
-	     * of tips. This operates recursively from the node given.
-	     *
-	     * @param node - the node to start sorting from
-	     * @param {boolean} increasing - sorting in increasing node order or decreasing?
-	     * @returns {number} - the number of tips below this node
-	     */
-	    value: function orderByNodeDensity() {
-	      var increasing = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
-	      var node = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.rootNode;
-	      var factor = increasing ? 1 : -1;
-	      orderNodes.call(this, node, function (nodeA, countA, nodeB, countB) {
-	        return (countA - countB) * factor;
-	      }, callback);
-	      this.treeUpdateCallback();
-	    }
-	    /**
-	     * Sorts the child branches of each node in order given by the function. This operates
-	     * recursively from the node given.
-	     *
-	     * @param node - the node to start sorting from
-	     * @param {function} ordering - provides a pairwise sorting order.
-	     *  Function signature: (nodeA, childCountNodeA, nodeB, childCountNodeB)
-	     * @returns {number} - the number of tips below this node
-	     */
-
-	  }, {
-	    key: "order",
-	    value: function order(ordering) {
-	      var node = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.rootNode;
-	      orderNodes.call(this, node, ordering);
-	      this.treeUpdateCallback();
-	    }
-	  }, {
-	    key: "lastCommonAncestor",
-	    value: function lastCommonAncestor(node1, node2) {
-	      var path1 = toConsumableArray(Tree.pathToRoot(node1));
-
-	      var path2 = toConsumableArray(Tree.pathToRoot(node2));
-
-	      var sharedAncestors = path1.filter(function (n1) {
-	        return path2.map(function (n2) {
-	          return n2.id;
-	        }).indexOf(n1.id) > -1;
-	      });
-	      var lastSharedAncestor = sharedAncestors.reduce(function (acc, curr) {
-	        return acc = acc.level > curr.level ? acc : curr;
-	      });
-	      return lastSharedAncestor;
-	    }
-	  }, {
-	    key: "pathLength",
-	    value: function pathLength(node1, node2) {
-	      var sum = 0;
-	      var mrca = this.lastCommonAncestor(node1, node2);
-
-	      for (var _i = 0, _arr = [node1, node2]; _i < _arr.length; _i++) {
-	        var node = _arr[_i];
-
-	        while (node != mrca) {
-	          sum += node.length;
-	          node = node.parent;
-	        }
-	      }
-
-	      return sum;
-	    }
-	    /**
-	     * Adds a collapse flag to the node whose dependents will be collapsed by the layout. How the clade is collapsed depends on the the
-	     * style.
-	     * @param node - the mrca of the clade that is to be collapsed
-	     * @param style -  The style in which to collapse the clade. Can be one of the CollapseStyles. TRIANGLE - returns a triangle,
-	     * BRANCH reduces the clade to a single branch which extends to the most recent tip.
-	     */
-
-	  }, {
-	    key: "collapse",
-	    value: function collapse(node, style) {
-	      node.collapse = style;
-	    }
-	    /**
-	     * Gives the distance from the root to a given tip (external node).
-	     * @param tip - the external node
-	     * @returns {number}
-	     */
-
-	  }, {
-	    key: "rootToTipLength",
-	    value: function rootToTipLength(tip) {
-	      var length = 0.0;
-	      var _iteratorNormalCompletion4 = true;
-	      var _didIteratorError4 = false;
-	      var _iteratorError4 = undefined;
-
-	      try {
-	        for (var _iterator4 = Tree.pathToRoot(tip)[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-	          var node = _step4.value;
-
-	          if (node.length) {
-	            length += node.length;
-	          }
-	        }
-	      } catch (err) {
-	        _didIteratorError4 = true;
-	        _iteratorError4 = err;
-	      } finally {
-	        try {
-	          if (!_iteratorNormalCompletion4 && _iterator4["return"] != null) {
-	            _iterator4["return"]();
-	          }
-	        } finally {
-	          if (_didIteratorError4) {
-	            throw _iteratorError4;
-	          }
-	        }
-	      }
-
-	      return length;
-	    }
-	    /**
-	     * Returns an array of root-to-tip distances for each tip in the tree.
-	     * @returns {*}
-	     */
-
-	  }, {
-	    key: "rootToTipLengths",
-	    value: function rootToTipLengths() {
-	      var _this4 = this;
-
-	      return this.externalNodes.map(function (tip) {
-	        return _this4.rootToTipLength(tip);
-	      });
-	    }
-	    /**
-	     * Splits each branch in multiple segments inserting a new degree 2 nodes. If splitLocations is
-	     * null then it splits each in two at the mid-point
-	     * @param splits
-	     */
-
-	  }, {
-	    key: "splitBranches",
-	    value: function splitBranches() {
-	      var _this5 = this;
-
-	      var splits = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-
-	      // split each branch into sections, with a node of
-	      // degree two in the middle. This allows annotation
-	      // of part of a branch.
-	      toConsumableArray(this.preorder()).filter(function (node) {
-	        return node.parent;
-	      }).forEach(function (node) {
-	        if (splits !== null) {
-	          if (splits[node.id]) {
-	            var splitNode = node;
-	            splits[node.id].forEach(function (_ref2) {
-	              var _ref3 = slicedToArray(_ref2, 2),
-	                  time = _ref3[0],
-	                  id = _ref3[1];
-
-	              splitNode = _this5.splitBranch(splitNode, time);
-	              splitNode.id = id;
-	            });
-	          }
-	        } else {
-	          // if no splitLocations are given then split it in the middle.
-	          _this5.splitBranch(node, 0.5);
-	        }
-	      });
-
-	      this.treeUpdateCallback();
-	    }
-	    /**
-	     * Splits a branch in two inserting a new degree 2 node. The splitLocation should be less than
-	     * the orginal branch length.
-	     * @param node
-	     * @param splitLocation - proportion of branch to split at.
-	     */
-
-	  }, {
-	    key: "splitBranch",
-	    value: function splitBranch(node) {
-	      var splitLocation = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0.5;
-	      var oldLength = node.length;
-	      var splitNode = makeNode.call(this, {
-	        parent: node.parent,
-	        children: [node],
-	        length: oldLength * splitLocation,
-	        annotations: {
-	          insertedNode: true
-	        }
-	      });
-
-	      if (node.parent) {
-	        node.parent.children[node.parent.children.indexOf(node)] = splitNode;
-	      } else {
-	        // node is the root so make splitNode the root
-	        this.root = splitNode;
-	      }
-
-	      node.parent = splitNode;
-	      node._length = oldLength - splitNode.length;
-	      this.nodesUpdated = true;
-	      return splitNode;
-	    }
-	    /**
-	     * Set one or more annotations for the tips.
-	     *
-	     * See annotateNode for a description of the annotation structure.
-	     *
-	     * @param annotations a dictionary of annotations keyed by tip label
-	     */
-
-	  }, {
-	    key: "annotateTips",
-	    value: function annotateTips(annotations) {
-	      for (var _i2 = 0, _Object$entries = Object.entries(annotations); _i2 < _Object$entries.length; _i2++) {
-	        var _Object$entries$_i = slicedToArray(_Object$entries[_i2], 2),
-	            key = _Object$entries$_i[0],
-	            values = _Object$entries$_i[1];
-
-	        var tip = this.getExternalNode(key);
-
-	        if (!tip) {
-	          throw new Error("tip with label ".concat(key, " not found in tree"));
-	        }
-
-	        this.annotateNode(tip, values);
-	      }
-	    }
-	    /**
-	     * This is similar to annotateTips but the annotation objects are keyed by node
-	     * keys (Symbols).
-	     *
-	     * @param annotations a dictionary of annotations keyed by node key
-	     */
-
-	  }, {
-	    key: "annotateNodes",
-	    value: function annotateNodes(annotations) {
-	      for (var _i3 = 0, _Object$entries2 = Object.entries(annotations); _i3 < _Object$entries2.length; _i3++) {
-	        var _Object$entries2$_i = slicedToArray(_Object$entries2[_i3], 2),
-	            key = _Object$entries2$_i[0],
-	            values = _Object$entries2$_i[1];
-
-	        var node = this.getNode(key);
-
-	        if (!node) {
-	          throw new Error("tip with key ".concat(key, " not found in tree"));
-	        }
-
-	        this.annotateNode(node, values);
-	      }
-	    }
-	    /**
-	     * Adds the given annotations to a particular node object.
-	     *
-	     * The annotations is an object with properties keyed by external node labels each
-	     * of which is an object with key value pairs for the annotations. The
-	     * key value pairs will be added to a property called 'annotations' in the node.
-	     *
-	     * Boolean or Numerical traits are given as a single value.
-	     * Sets of values with probabilities should be given as an object.
-	     * Discrete values should be given as an array (even if containing only one value)
-	     * or an object with booleans to give the full set of possible trait values.
-	     *
-	     * For example:
-	     *
-	     * {
-	     *     'tip_1': {
-	     *         'trait_1' : true,
-	     *         'trait_4' : 3.141592,
-	     *         'trait_2' : [1, 2], // discrete trait
-	     *         'trait_3' : ["London", "Paris", "New York"], // discrete trait
-	     *         'trait_3' : {"London" : true, "Paris" : false, "New York": false], // discrete trait with full set of values
-	     *         'trait_4' : {"London" : 0.75, "Paris" : 0.20, "New York": 0.05} // probability set
-	     *     },
-	     *     'tip_2': {...}
-	     * }
-	     *
-	     * The annotation labels, type and possible values are also added to the tree in a property called 'annotations'.
-	     *
-	     * A reconstruction method such as annotateNodesFromTips can then be used to provide reconstructed values
-	     * for internal nodes. Or annotateNodes can provide annotations for any node in the tree.
-	     *
-	     * @param node
-	     * @param annotations a dictionary of annotations keyed by the annotation name.
-	     */
-
-	  }, {
-	    key: "annotateNode",
-	    value: function annotateNode(node, annotations) {
-	      this.addAnnotations(annotations); // add the annotations to the existing annotations object for the node object
-
-	      node.annotations = objectSpread({}, node.annotations === undefined ? {} : node.annotations, annotations);
-	    }
-	    /**
-	     * Adds the annotation information to the tree. This stores the type and possible values
-	     * for each annotation seen in the nodes of the tree.
-	     *
-	     * This methods also checks the values are correct and conform to previous annotations
-	     * in type.
-	     *
-	     * @param annotations
-	     */
-
-	  }, {
-	    key: "addAnnotations",
-	    value: function addAnnotations(annotations) {
-	      for (var _i4 = 0, _Object$entries3 = Object.entries(annotations); _i4 < _Object$entries3.length; _i4++) {
-	        var _Object$entries3$_i = slicedToArray(_Object$entries3[_i4], 2),
-	            key = _Object$entries3$_i[0],
-	            addValues = _Object$entries3$_i[1];
-
-	        var annotation = this.annotations[key];
-
-	        if (!annotation) {
-	          annotation = {};
-	          this.annotations[key] = annotation;
-	        }
-
-	        if (Array.isArray(addValues)) {
-	          // is a set of  values
-	          var type = void 0;
-
-	          if (addValues.map(function (v) {
-	            return isNaN(v);
-	          }).reduce(function (acc, curr) {
-	            return acc && curr;
-	          }, true)) {
-	            var _annotation$values;
-
-	            type = Type.DISCRETE;
-	            annotation.type = type;
-
-	            if (!annotation.values) {
-	              annotation.values = new Set();
-	            }
-
-	            (_annotation$values = annotation.values).add.apply(_annotation$values, toConsumableArray(addValues));
-	          } else if (addValues.map(function (v) {
-	            return parseFloat(v);
-	          }).reduce(function (acc, curr) {
-	            return acc && Number.isInteger(curr);
-	          }, true)) {
-	            type = Type.INTEGER;
-	          } else if (addValues.map(function (v) {
-	            return parseFloat(v);
-	          }).reduce(function (acc, curr) {
-	            return acc && !Number.isInteger(curr);
-	          }, true)) {
-	            type = Type.FLOAT;
-	          }
-
-	          if (annotation.type && annotation.type !== type) {
-	            if (type === Type.INTEGER && annotation.type === Type.FLOAT || type === Type.FLOAT && annotation.type === Type.INTEGER) {
-	              // upgrade to float
-	              type = Type.FLOAT;
-	              annotation.type = Type.FLOAT;
-
-	              if (annotation.values) {
-	                delete annotation.values;
-	              } else {
-	                throw Error("existing values of the annotation, ".concat(key, ", in the tree is discrete."));
-	              }
-	            }
-	          } // annotation.values = annotation.values? [...annotation.values, ...addValues]:[...addValues]
-
-	        } else if (Object.isExtensible(addValues)) {
-	          // is a set of properties with values
-	          var _type = null;
-	          var sum = 0.0;
-	          var keys = [];
-
-	          for (var _i5 = 0, _Object$entries4 = Object.entries(addValues); _i5 < _Object$entries4.length; _i5++) {
-	            var _Object$entries4$_i = slicedToArray(_Object$entries4[_i5], 2),
-	                _key = _Object$entries4$_i[0],
-	                value = _Object$entries4$_i[1];
-
-	            if (keys.includes(_key)) {
-	              throw Error("the states of annotation, ".concat(_key, ", should be unique"));
-	            }
-
-	            if (_typeof_1(value) === _typeof_1(1.0)) {
-	              // This is a vector of probabilities of different states
-	              _type = _type === undefined ? Type.PROBABILITIES : _type;
-
-	              if (_type === Type.DISCRETE) {
-	                throw Error("the values of annotation, ".concat(_key, ", should be all boolean or all floats"));
-	              }
-
-	              sum += value;
-
-	              if (sum > 1.01) {
-	                throw Error("the values of annotation, ".concat(_key, ", should be probabilities of states and add to 1.0"));
-	              }
-	            } else if (_typeof_1(value) === _typeof_1(true)) {
-	              _type = _type === undefined ? Type.DISCRETE : _type;
-
-	              if (_type === Type.PROBABILITIES) {
-	                throw Error("the values of annotation, ".concat(_key, ", should be all boolean or all floats"));
-	              }
-	            } else {
-	              throw Error("the values of annotation, ".concat(_key, ", should be all boolean or all floats"));
-	            }
-
-	            keys.push(_key);
-	          }
-
-	          if (annotation.type && annotation.type !== _type) {
-	            throw Error("existing values of the annotation, ".concat(key, ", in the tree is not of the same type"));
-	          }
-
-	          annotation.type = _type;
-	          annotation.values = annotation.values ? [].concat(toConsumableArray(annotation.values), [addValues]) : [addValues];
-	        } else {
-	          var _type2 = Type.DISCRETE;
-
-	          if (_typeof_1(addValues) === _typeof_1(true)) {
-	            _type2 = Type.BOOLEAN;
-	          } else if (!isNaN(addValues)) {
-	            _type2 = addValues % 1 === 0 ? Type.INTEGER : Type.FLOAT;
-	          }
-
-	          if (annotation.type && annotation.type !== _type2) {
-	            if (_type2 === Type.INTEGER && annotation.type === Type.FLOAT || _type2 === Type.FLOAT && annotation.type === Type.INTEGER) {
-	              // upgrade to float
-	              _type2 = Type.FLOAT;
-	            } else {
-	              throw Error("existing values of the annotation, ".concat(key, ", in the tree is not of the same type"));
-	            }
-	          }
-
-	          if (_type2 === Type.DISCRETE) {
-	            if (!annotation.values) {
-	              annotation.values = new Set();
-	            }
-
-	            annotation.values.add(addValues);
-	          }
-
-	          annotation.type = _type2;
-	        } // overwrite the existing annotation property
-
-
-	        this.annotations[key] = annotation;
-	      }
-	    }
-	    /**
-	     * Uses parsimony to label internal nodes to reconstruct the internal node states
-	     * for the annotation 'name'.
-	     *
-	     * @param name
-	     * @param acctrans Use acctrans reconstruction if true, deltrans otherwise
-	     * @param node
-	     */
-
-	  }, {
-	    key: "annotateNodesFromTips",
-	    value: function annotateNodesFromTips(name) {
-	      var acctran = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-	      fitchParsimony(name, this.rootNode);
-	      reconstructInternalStates(name, [], acctran, this.rootNode);
-	    }
-	    /**
-	     * A class method to create a Tree instance from a Newick format string (potentially with node
-	     * labels and branch lengths). Taxon labels should be quoted (either " or ') if they contain whitespace
-	     * or any of the tree definitition characters '(),:;' - the quotes (and any whitespace immediately within)
-	     * will be removed.
-	     * @param newickString - the Newick format tree as a string
-	     * @param labelName
-	     * @param datePrefix
-	     * @returns {Tree} - an instance of the Tree class
-	     */
-
-	  }, {
-	    key: "rootNode",
-
-	    /**
-	     * Gets the root node of the Tree
-	     *
-	     * @returns {Object|*}
-	     */
-	    get: function get() {
-	      return this.root;
-	    }
-	  }, {
-	    key: "nodes",
-
-	    /**
-	     * Gets an array containing all the node objects
-	     *
-	     * @returns {*}
-	     */
-	    get: function get() {
-	      if (this.nodesUpdated) {
-	        setUpArraysAndMaps.call(this);
-	      }
-
-	      return toConsumableArray(this.preorder());
-	    }
-	  }, {
-	    key: "nodeList",
-	    get: function get() {
-	      if (this.nodesUpdated) {
-	        setUpArraysAndMaps.call(this);
-	      }
-
-	      return this.nodes;
-	    }
-	    /**
-	     * Gets an array containing all the external node objects
-	     *
-	     * @returns {*}
-	     */
-
-	  }, {
-	    key: "externalNodes",
-	    get: function get() {
-	      if (this.nodesUpdated) {
-	        setUpArraysAndMaps.call(this);
-	      }
-
-	      return this.nodes.filter(function (node) {
-	        return !node.children;
-	      });
-	    }
-	  }, {
-	    key: "internalNodes",
-
-	    /**
-	     * Gets an array containing all the internal node objects
-	     *
-	     * @returns {*}
-	     */
-	    get: function get() {
-	      if (this.nodesUpdated) {
-	        setUpArraysAndMaps.call(this);
-	      }
-
-	      return this.nodes.filter(function (node) {
-	        return node.children;
-	      });
-	    }
-	  }, {
-	    key: "nodeMap",
-	    get: function get() {
-	      if (this.nodesUpdated) {
-	        setUpArraysAndMaps.call(this);
-	      }
-
-	      return this._nodeMap;
-	    }
-	  }, {
-	    key: "tipMap",
-	    get: function get() {
-	      if (this.nodesUpdated) {
-	        setUpArraysAndMaps.call(this);
-	      }
-
-	      return this._tipMap;
-	    }
-	  }], [{
-	    key: "pathToRoot",
-	    value:
-	    /*#__PURE__*/
-	    regenerator.mark(function pathToRoot(node) {
-	      return regenerator.wrap(function pathToRoot$(_context5) {
-	        while (1) {
-	          switch (_context5.prev = _context5.next) {
-	            case 0:
-	              if (!node) {
-	                _context5.next = 6;
-	                break;
-	              }
-
-	              _context5.next = 3;
-	              return node;
-
-	            case 3:
-	              node = node.parent;
-	              _context5.next = 0;
-	              break;
-
-	            case 6:
-	            case "end":
-	              return _context5.stop();
-	          }
-	        }
-	      }, pathToRoot);
-	    })
-	  }, {
-	    key: "parseNewick",
-	    value: function parseNewick(newickString) {
-	      var labelName = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "label";
-	      var datePrefix = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : undefined;
-	      var tokens = newickString.split(/\s*('[^']+'|"[^"]+"|;|\(|\)|,|:|=|\[&|\]|\{|\})\s*/);
-	      var level = 0;
-	      var currentNode = null;
-	      var nodeStack = [];
-	      var labelNext = false;
-	      var lengthNext = false;
-	      var inAnnotation = false;
-	      var annotationKeyNext = true;
-	      var annotationKey;
-	      var isAnnotationARange = false;
-	      var _iteratorNormalCompletion5 = true;
-	      var _didIteratorError5 = false;
-	      var _iteratorError5 = undefined;
-
-	      try {
-	        for (var _iterator5 = tokens.filter(function (token) {
-	          return token.length > 0;
-	        })[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-	          var token = _step5.value;
-
-	          // console.log(`Token ${i}: ${token}, level: ${level}`);
-	          if (inAnnotation) {
-	            if (token === "=") {
-	              annotationKeyNext = false;
-	            } else if (token === ",") {
-	              if (!isAnnotationARange) {
-	                annotationKeyNext = true;
-	              }
-	            } else if (token === "{") {
-	              isAnnotationARange = true;
-	              currentNode.annotations[annotationKey] = [];
-	            } else if (token === "}") {
-	              isAnnotationARange = false;
-	            } else if (token === "]") {
-	              // close BEAST annotation
-	              inAnnotation = false;
-	              annotationKeyNext = true;
-	            } else {
-	              // must be annotation
-	              // remove any quoting and then trim whitespace
-	              var annotationToken = token;
-
-	              if (annotationToken.startsWith("\"") || annotationToken.startsWith("'")) {
-	                annotationToken = annotationToken.substr(1);
-	              }
-
-	              if (annotationToken.endsWith("\"") || annotationToken.endsWith("'")) {
-	                annotationToken = annotationToken.substr(0, annotationToken.length - 1);
-	              }
-
-	              if (annotationKeyNext) {
-	                annotationKey = annotationToken.replace(".", "_");
-	              } else {
-	                if (isAnnotationARange) {
-	                  currentNode.annotations[annotationKey].push(annotationToken);
-	                } else {
-	                  if (isNaN(annotationToken)) {
-	                    currentNode.annotations[annotationKey] = annotationToken;
-	                  } else {
-	                    currentNode.annotations[annotationKey] = parseFloat(annotationToken);
-	                  }
-	                }
-	              }
-	            }
-	          } else if (token === "(") {
-	            // an internal node
-	            if (labelNext) {
-	              // if labelNext is set then the last bracket has just closed
-	              // so there shouldn't be an open bracket.
-	              throw new Error("expecting a comma");
-	            }
-
-	            var node = {
-	              level: level,
-	              parent: currentNode,
-	              children: [],
-	              annotations: {}
-	            };
-	            level += 1;
-
-	            if (currentNode) {
-	              nodeStack.push(currentNode);
-	            }
-
-	            currentNode = node;
-	          } else if (token === ",") {
-	            // another branch in an internal node
-	            labelNext = false; // labels are optional
-
-	            if (lengthNext) {
-	              throw new Error("branch length missing");
-	            }
-
-	            var parent = nodeStack.pop();
-	            parent.children.push(currentNode);
-	            currentNode = parent;
-	          } else if (token === ")") {
-	            // finished an internal node
-	            labelNext = false; // labels are optional
-
-	            if (lengthNext) {
-	              throw new Error("branch length missing");
-	            } // the end of an internal node
-
-
-	            var _parent = nodeStack.pop();
-
-	            _parent.children.push(currentNode);
-
-	            level -= 1;
-	            currentNode = _parent;
-	            labelNext = true;
-	          } else if (token === ":") {
-	            labelNext = false; // labels are optional
-
-	            lengthNext = true;
-	          } else if (token === ";") {
-	            // end of the tree, check that we are back at level 0
-	            if (level > 0) {
-	              throw new Error("unexpected semi-colon in tree");
-	            }
-
-	            break;
-	          } else if (token === "[&") {
-	            inAnnotation = true;
-	          } else {
-	            // not any specific token so may be a label, a length, or an external node name
-	            if (lengthNext) {
-	              currentNode.length = parseFloat(token);
-	              lengthNext = false;
-	            } else if (labelNext) {
-	              currentNode.label = token;
-
-	              if (!currentNode.label.startsWith("#")) {
-	                var value = parseFloat(currentNode.label);
-
-	                if (isNaN(value)) {
-	                  value = currentNode.label;
-	                }
-
-	                currentNode.annotations[labelName] = value;
-	              } else {
-	                currentNode.id = currentNode.label.substring(1);
-	              }
-
-	              labelNext = false;
-	            } else {
-	              // an external node
-	              if (!currentNode.children) {
-	                currentNode.children = [];
-	              }
-
-	              var name = token; // remove any quoting and then trim whitespace
-
-	              if (name.startsWith("\"") || name.startsWith("'")) {
-	                name = name.substr(1);
-	              }
-
-	              if (name.endsWith("\"") || name.endsWith("'")) {
-	                name = name.substr(0, name.length - 1);
-	              }
-
-	              name = name.trim();
-	              var date = undefined;
-
-	              if (datePrefix) {
-	                var parts = name.split(datePrefix);
-
-	                if (parts.length === 0) {
-	                  throw new Error("the tip, ".concat(name, ", doesn't have a date separated by the prefix, '").concat(datePrefix, "'"));
-	                }
-
-	                date = parseFloat(parts[parts.length - 1]);
-	              }
-
-	              var externalNode = {
-	                name: name,
-	                parent: currentNode,
-	                annotations: {
-	                  date: date
-	                }
-	              };
-
-	              if (currentNode) {
-	                nodeStack.push(currentNode);
-	              }
-
-	              currentNode = externalNode;
-	            }
-	          }
-	        }
-	      } catch (err) {
-	        _didIteratorError5 = true;
-	        _iteratorError5 = err;
-	      } finally {
-	        try {
-	          if (!_iteratorNormalCompletion5 && _iterator5["return"] != null) {
-	            _iterator5["return"]();
-	          }
-	        } finally {
-	          if (_didIteratorError5) {
-	            throw _iteratorError5;
-	          }
-	        }
-	      }
-
-	      if (level > 0) {
-	        throw new Error("the brackets in the newick file are not balanced");
-	      }
-
-	      return new Tree(currentNode);
-	    }
-	  }]);
-
-	  return Tree;
-	}();
-	/*
-	 * Private methods, called by the class using the <function>.call(this) function.
-	 */
-
-	/**
-	 * A private recursive function that rotates nodes to give an ordering provided
-	 * by a function.
-	 * @param node
-	 * @param ordering
-	 * @param callback an optional callback that is called each rotate
-	 * @returns {number}
-	 */
-
-	function orderNodes(node, ordering) {
-	  var callback = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-	  var count = 0;
-
-	  if (node.children) {
-	    // count the number of descendents for each child
-	    var counts = new Map();
-	    var _iteratorNormalCompletion6 = true;
-	    var _didIteratorError6 = false;
-	    var _iteratorError6 = undefined;
-
-	    try {
-	      for (var _iterator6 = node.children[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-	        var child = _step6.value;
-	        var value = orderNodes(child, ordering, callback);
-	        counts.set(child, value);
-	        count += value;
-	      } // sort the children using the provided function
-
-	    } catch (err) {
-	      _didIteratorError6 = true;
-	      _iteratorError6 = err;
-	    } finally {
-	      try {
-	        if (!_iteratorNormalCompletion6 && _iterator6["return"] != null) {
-	          _iterator6["return"]();
-	        }
-	      } finally {
-	        if (_didIteratorError6) {
-	          throw _iteratorError6;
-	        }
-	      }
-	    }
-
-	    node.children.sort(function (a, b) {
-	      return ordering(a, counts.get(a), b, counts.get(b));
-	    });
-	    if (callback) callback();
-	  } else {
-	    count = 1;
-	  }
-
-	  return count;
-	}
-	/**
-	 * A private recursive function that calculates the height of each node (with the most
-	 * diverged tip from the root having height given by origin).
-	 * @param origin
-	 */
-
-
-	function calculateHeights() {
-	  var origin = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.origin;
-	  this.setOrigin(origin);
-	  var maxDivergence = [0.0];
-	  calculateDivergence(this.root, this.origin, maxDivergence);
-	  this.nodeList.forEach(function (node) {
-	    return node._height = maxDivergence[0] - node.divergence;
-	  });
-	  this.heightsKnown = true;
-	}
-	/**
-	 * A private recursive function that calculates the length of the branch below each node
-	 */
-
-
-	function calculateLengths() {
-	  this.nodeList.forEach(function (node) {
-	    return node.length = node.parent ? node.height - node.parent.height : 0;
-	  });
-	  this.lengthsKnown = true;
-	  this.treeUpdateCallback();
-	}
-
-	function calculateDivergence(node, divergence, maxDivergence) {
-	  var d = divergence + node.length;
-
-	  if (node.children) {
-	    // count the number of descendents for each child
-	    var _iteratorNormalCompletion7 = true;
-	    var _didIteratorError7 = false;
-	    var _iteratorError7 = undefined;
-
-	    try {
-	      for (var _iterator7 = node.children[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-	        var child = _step7.value;
-	        calculateDivergence(child, d, maxDivergence);
-	      }
-	    } catch (err) {
-	      _didIteratorError7 = true;
-	      _iteratorError7 = err;
-	    } finally {
-	      try {
-	        if (!_iteratorNormalCompletion7 && _iterator7["return"] != null) {
-	          _iterator7["return"]();
-	        }
-	      } finally {
-	        if (_didIteratorError7) {
-	          throw _iteratorError7;
-	        }
-	      }
-	    }
-	  }
-
-	  if (d > maxDivergence[0]) {
-	    maxDivergence[0] = d;
-	  }
-
-	  node.divergence = d;
-	}
-	/**
-	 * A private recursive function that uses the Fitch algorithm to assign
-	 * states to nodes using parsimony. An acctrans or deltrans algorithm can
-	 * then be used to reconstruct internal node states.
-	 * @param name
-	 * @param node
-	 * @returns {*}
-	 */
-
-
-	function fitchParsimony(name, node) {
-	  if (!node.children) {
-	    if (!node.annotations[name]) {
-	      return []; // annotation not defined so return an empty set
-	    }
-
-	    return Array.isArray(node.annotations[name]) ? node.annotations[name] : [node.annotations[name]];
-	  }
-
-	  var I;
-	  var U = [];
-	  node.children.forEach(function (child) {
-	    var childStates = fitchParsimony(name, child);
-	    U = [].concat(toConsumableArray(U), toConsumableArray(childStates.filter(function (state) {
-	      return !U.includes(state);
-	    }))); // take the union
-
-	    I = I === undefined ? childStates : childStates.filter(function (state) {
-	      return I.includes(state);
-	    }); // take the intersection
-	  });
-	  node.annotations = node.annotations === undefined ? {} : node.annotations; // set the node annotation to the intersection if not empty, the union otherwise
-
-	  node.annotations[name] = toConsumableArray(I.length > 0 ? I : U);
-	  return node.annotations[name];
-	}
-
-	function reconstructInternalStates(name, parentStates, acctran, node) {
-	  var nodeStates = node.annotations[name];
-
-	  if (!Array.isArray(nodeStates)) {
-	    nodeStates = [nodeStates];
-	  }
-
-	  if (node.children) {
-	    var stateCounts = {};
-	    nodeStates.forEach(function (state) {
-	      return stateCounts[state] = stateCounts[state] ? stateCounts[state] += 1 : 1;
-	    });
-	    parentStates.forEach(function (state) {
-	      return stateCounts[state] = stateCounts[state] ? stateCounts[state] += 1 : 1;
-	    });
-	    node.children.forEach(function (child) {
-	      reconstructInternalStates(name, nodeStates, acctran, child).forEach(function (state) {
-	        return stateCounts[state] = stateCounts[state] ? stateCounts[state] += 1 : 1;
-	      });
-	    });
-	    var max = Object.entries(stateCounts).reduce(function (prev, current) {
-	      return prev[1] > current[1] ? prev : current;
-	    })[1];
-	    nodeStates = Object.entries(stateCounts).filter(function (_ref4) {
-	      var _ref5 = slicedToArray(_ref4, 2),
-	          state = _ref5[0],
-	          count = _ref5[1];
-
-	      return count === max;
-	    }).map(function (_ref6) {
-	      var _ref7 = slicedToArray(_ref6, 2),
-	          state = _ref7[0],
-	          count = _ref7[1];
-
-	      return state;
-	    });
-	    node.annotations[name] = nodeStates.length === 1 ? nodeStates[0] : nodeStates;
-	  }
-
-	  return nodeStates;
-	}
-
-	function makeNode(nodeData) {
-	  return new Node(objectSpread({}, nodeData, {
-	    tree: this
-	  }));
-	}
-	/**
-	 * A private function that sets up the tree by traversing from the root Node and sets all heights and lenghts
-	 * @param node
-	 */
-
-
-	function setUpNodes(node) {
-	  if (node.children) {
-	    var childrenNodes = [];
-	    var _iteratorNormalCompletion8 = true;
-	    var _didIteratorError8 = false;
-	    var _iteratorError8 = undefined;
-
-	    try {
-	      for (var _iterator8 = node.children[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-	        var child = _step8.value;
-	        var childNode = makeNode.call(this, objectSpread({}, child, {
-	          parent: node
-	        }));
-	        childrenNodes.push(childNode);
-	        setUpNodes.call(this, childNode);
-	      }
-	    } catch (err) {
-	      _didIteratorError8 = true;
-	      _iteratorError8 = err;
-	    } finally {
-	      try {
-	        if (!_iteratorNormalCompletion8 && _iterator8["return"] != null) {
-	          _iterator8["return"]();
-	        }
-	      } finally {
-	        if (_didIteratorError8) {
-	          throw _iteratorError8;
-	        }
-	      }
-	    }
-
-	    node.children = childrenNodes;
-	  }
-	}
-
-	function setUpArraysAndMaps() {
-	  var _this6 = this;
-
-	  this._nodeList = toConsumableArray(this.preorder());
-	  this.nodesUpdated = false;
-
-	  this._nodeList.forEach(function (node) {
-	    if (node.label && node.label.startsWith("#")) {
-	      // an id string has been specified in the newick label.
-	      node.id = node.label.substring(1);
-	    }
-
-	    if (node.annotations) {
-	      _this6.addAnnotations(node.annotations);
-	    }
-	  });
-
-	  this._nodeMap = new Map(this.nodeList.map(function (node) {
-	    return [node.id, node];
-	  }));
-	  this._tipMap = new Map(this.externalNodes.map(function (tip) {
-	    return [tip.name, tip];
-	  }));
-	}
-
-	var Node =
-	/*#__PURE__*/
-	function () {
-	  createClass(Node, null, [{
-	    key: "DEFAULT_NODE",
-	    value: function DEFAULT_NODE() {
-	      return {
-	        height: undefined,
-	        length: undefined,
-	        name: null,
-	        annotations: {},
-	        parent: undefined,
-	        children: null,
-	        label: undefined,
-	        level: undefined
-	      };
-	    }
-	  }]);
-
-	  function Node() {
-	    var nodeData = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
-	    classCallCheck(this, Node);
-
-	    var data = objectSpread({}, Node.DEFAULT_NODE(), nodeData);
-
-	    this._id = "node-".concat(uuid_1.v4());
-	    this._height = data.height;
-	    this._length = data.length;
-	    this._name = data.name;
-	    this._annotations = data.annotations;
-	    this._parent = data.parent;
-	    this._children = data.children;
-	    this._tree = data.tree;
-	    this._label = data.label;
-	    this._level = data.level;
-	  }
-
-	  createClass(Node, [{
-	    key: "level",
-	    get: function get() {
-	      return this._level;
-	    },
-	    set: function set(value) {
-	      this._level = value;
-	    }
-	  }, {
-	    key: "name",
-	    get: function get() {
-	      return this._name;
-	    }
-	  }, {
-	    key: "label",
-	    get: function get() {
-	      return this._label;
-	    },
-	    set: function set(value) {
-	      this._label = value;
-	    }
-	  }, {
-	    key: "height",
-	    get: function get() {
-	      if (!this._tree.heightsKnown) {
-	        calculateHeights.call(this._tree);
-	      }
-
-	      return this._height;
-	    },
-	    set: function set(value) {
-	      this._height = value;
-	      this._tree.lengthsKnown = false;
-
-	      this._tree.treeUpdateCallback();
-	    }
-	  }, {
-	    key: "length",
-	    get: function get() {
-	      if (!this._tree.lengthsKnown) {
-	        calculateLengths.call(this._tree);
-	      }
-
-	      return this._length;
-	    },
-	    set: function set(value) {
-	      this._length = value;
-	      this._tree.heightsKnown = false;
-
-	      this._tree.treeUpdateCallback();
-	    }
-	  }, {
-	    key: "annotations",
-	    get: function get() {
-	      return this._annotations;
-	    },
-	    set: function set(value) {
-	      this._annotations = value;
-	    }
-	  }, {
-	    key: "children",
-	    get: function get() {
-	      return this._children;
-	    },
-	    set: function set(value) {
-	      this._children = value;
-	      var _iteratorNormalCompletion9 = true;
-	      var _didIteratorError9 = false;
-	      var _iteratorError9 = undefined;
-
-	      try {
-	        for (var _iterator9 = this._children[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-	          var child = _step9.value;
-	          child.parent = this;
-	        }
-	      } catch (err) {
-	        _didIteratorError9 = true;
-	        _iteratorError9 = err;
-	      } finally {
-	        try {
-	          if (!_iteratorNormalCompletion9 && _iterator9["return"] != null) {
-	            _iterator9["return"]();
-	          }
-	        } finally {
-	          if (_didIteratorError9) {
-	            throw _iteratorError9;
-	          }
-	        }
-	      }
-	    }
-	  }, {
-	    key: "parent",
-	    get: function get() {
-	      return this._parent;
-	    },
-	    set: function set(node) {
-	      var _this7 = this;
-
-	      this._parent = node;
-
-	      if (this._parent.children.filter(function (c) {
-	        return c === _this7;
-	      }).length === 0) {
-	        this._parent.children.append(this);
-	      }
-	    }
-	  }, {
-	    key: "id",
-	    get: function get() {
-	      return this._id;
-	    },
-	    set: function set(value) {
-	      this._id = value;
-	    }
-	  }]);
-
-	  return Node;
-	}();
-
-	var Layout =
-	/*#__PURE__*/
-	function () {
-	  /**
-	   * The constructor.
-	   */
-	  function Layout() {
-	    classCallCheck(this, Layout);
-
-	    // default ranges - these should be set in layout()
-	    this._horizontalRange = [0.0, 1.0];
-	    this._verticalRange = [0, 1.0];
-	    this._horizontalTicks = [0, 0.5, 1]; // create an empty callback function
-
-	    this.updateCallback = function () {};
-	  }
-	  /**
-	   * An abstract base class for a layout class. The aim is to describe the API of the class.
-	   *
-	   * @param vertices - objects with an x, y coordinates and a reference to the original node
-	   * @param edges - objects with v1 (a vertex) and v0 (the parent vertex).
-	   */
-
-
-	  createClass(Layout, [{
-	    key: "layout",
-	    value: function layout(vertices, edges) {}
-	  }, {
-	    key: "update",
-
-	    /**
-	     * Updates the tree when it has changed
-	     */
-	    value: function update() {
-	      this.updateCallback();
-	    }
-	    /**
-	     * A utility function for rotating a node
-	     * @returns {rotate}
-	     */
-
-	  }, {
-	    key: "rotate",
-	    value: function rotate() {
-	      var _this = this;
-
-	      return function (vertex) {
-	        _this.tree.rotate(vertex.node);
-
-	        _this.update();
-	      };
-	    }
-	    /**
-	     * A utility function for ordering a subtree with increasing tip density
-	     * @returns {orderIncreasing}
-	     */
-
-	  }, {
-	    key: "orderIncreasing",
-	    value: function orderIncreasing() {
-	      var _this2 = this;
-
-	      return function (vertex) {
-	        _this2.tree.rotate(vertex.node);
-
-	        _this2.update();
-	      };
-	    }
-	    /**
-	     * A utility function for ordering a subtree with decreasing tip density
-	     * @returns {orderIncreasing}
-	     */
-
-	  }, {
-	    key: "orderDecreasing",
-	    value: function orderDecreasing() {
-	      var _this3 = this;
-
-	      return function (vertex) {
-	        _this3.tree.rotate(vertex.node);
-
-	        _this3.update();
-	      };
-	    }
-	    /**
-	     * A utility function for rerooting the tree
-	     * @returns {reroot}
-	     */
-
-	  }, {
-	    key: "reroot",
-	    value: function reroot() {
-	      var _this4 = this;
-
-	      return function (edge, position) {
-	        _this4.tree.reroot(edge.v1.node, position);
-
-	        _this4.update();
-	      };
-	    }
-	    /**
-	     * A utility function that will return a HTML string about the node and its
-	     * annotations. Can be used with the addLabels() method.
-	     *
-	     * @param node
-	     * @returns {string}
-	     */
-
-	  }, {
-	    key: "horizontalRange",
-	    get: function get() {
-	      return this._horizontalRange;
-	    }
-	  }, {
-	    key: "verticalRange",
-	    get: function get() {
-	      return this._verticalRange;
-	    }
-	  }, {
-	    key: "horizontalAxisTicks",
-	    get: function get() {
-	      return this._horizontalTicks;
-	    }
-	  }], [{
-	    key: "nodeInfo",
-	    value: function nodeInfo(node) {
-	      var text = "".concat(node.name ? node.name : node.id);
-	      Object.entries(node.annotations).forEach(function (_ref) {
-	        var _ref2 = slicedToArray(_ref, 2),
-	            key = _ref2[0],
-	            value = _ref2[1];
-
-	        text += "<p>".concat(key, ": ").concat(value, "</p>");
-	      });
-	      return text;
-	    }
-	  }]);
-
-	  return Layout;
-	}();
-	/*
-	 * Private methods, called by the class using the <function>.call(this) function.
-	 */
-
-	function _assertThisInitialized(self) {
-	  if (self === void 0) {
-	    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
-	  }
-
-	  return self;
-	}
-
-	var assertThisInitialized = _assertThisInitialized;
-
-	function _possibleConstructorReturn(self, call) {
-	  if (call && (_typeof_1(call) === "object" || typeof call === "function")) {
-	    return call;
-	  }
-
-	  return assertThisInitialized(self);
-	}
-
-	var possibleConstructorReturn = _possibleConstructorReturn;
-
-	var getPrototypeOf = createCommonjsModule(function (module) {
-	function _getPrototypeOf(o) {
-	  module.exports = _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
-	    return o.__proto__ || Object.getPrototypeOf(o);
-	  };
-	  return _getPrototypeOf(o);
-	}
-
-	module.exports = _getPrototypeOf;
-	});
-
-	var setPrototypeOf = createCommonjsModule(function (module) {
-	function _setPrototypeOf(o, p) {
-	  module.exports = _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
-	    o.__proto__ = p;
-	    return o;
-	  };
-
-	  return _setPrototypeOf(o, p);
-	}
-
-	module.exports = _setPrototypeOf;
-	});
-
-	function _inherits(subClass, superClass) {
-	  if (typeof superClass !== "function" && superClass !== null) {
-	    throw new TypeError("Super expression must either be null or a function");
-	  }
-
-	  subClass.prototype = Object.create(superClass && superClass.prototype, {
-	    constructor: {
-	      value: subClass,
-	      writable: true,
-	      configurable: true
-	    }
-	  });
-	  if (superClass) setPrototypeOf(subClass, superClass);
-	}
-
-	var inherits = _inherits;
-
 	function ascending(a, b) {
 	  return a < b ? -1 : a > b ? 1 : a >= b ? 0 : NaN;
 	}
@@ -9223,6 +7293,1997 @@
 	  return new Step(context, 0);
 	}
 
+	var Type = {
+	  DISCRETE: Symbol("DISCRETE"),
+	  BOOLEAN: Symbol("BOOLEAN"),
+	  INTEGER: Symbol("INTEGER"),
+	  FLOAT: Symbol("FLOAT"),
+	  PROBABILITIES: Symbol("PROBABILITIES")
+	};
+	/**
+	 * The Tree class
+	 */
+
+	var Tree =
+	/*#__PURE__*/
+	function () {
+	  /**
+	   * The constructor takes an object for the root node. The tree structure is
+	   * defined as nested node objects.
+	   *
+	   * @constructor
+	   * @param {object} rootNode - The root node of the tree as an object.
+	   */
+	  function Tree() {
+	    var _this = this;
+
+	    var rootNode = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+	    classCallCheck(this, Tree);
+
+	    this.heightsKnown = false;
+	    this.lengthsKnown = true;
+	    this.root = makeNode.call(this, objectSpread({}, rootNode, {
+	      length: 0
+	    })); // This converts all the json objects to Node instances
+
+	    setUpNodes.call(this, this.root);
+	    this._origin = 0;
+	    this.annotations = {};
+	    this._nodeList = toConsumableArray(this.preorder());
+
+	    this._nodeList.forEach(function (node) {
+	      if (node.label && node.label.startsWith("#")) {
+	        // an id string has been specified in the newick label.
+	        node.id = node.label.substring(1);
+	      }
+
+	      if (node.annotations) {
+	        _this.addAnnotations(node.annotations);
+	      }
+	    });
+
+	    this._nodeMap = new Map(this.nodeList.map(function (node) {
+	      return [node.id, node];
+	    }));
+	    this._tipMap = new Map(this.externalNodes.map(function (tip) {
+	      return [tip.name, tip];
+	    }));
+	    this.nodesUpdated = false; // a callback function that is called whenever the tree is changed
+
+	    this.treeUpdateCallback = function () {};
+	  }
+
+	  createClass(Tree, [{
+	    key: "getSibling",
+
+	    /**
+	     * Returns the sibling of a node (i.e., the first other child of the parent)
+	     *
+	     * @param node
+	     * @returns {object}
+	     */
+	    value: function getSibling(node) {
+	      if (!node.parent) {
+	        return null;
+	      }
+
+	      return node.parent.children.find(function (child) {
+	        return child !== node;
+	      });
+	    }
+	    /**
+	     * Returns a node from its id stored.
+	     *
+	     * @param id
+	     * @returns {object}
+	     */
+
+	  }, {
+	    key: "getNode",
+	    value: function getNode(id) {
+	      return this.nodeMap.get(id);
+	    }
+	    /**
+	     * Returns an external node (tip) from its name.
+	     *
+	     * @param name
+	     * @returns {object}
+	     */
+
+	  }, {
+	    key: "getExternalNode",
+	    value: function getExternalNode(name) {
+	      return this.tipMap.get(name);
+	    }
+	    /**
+	     * If heights are not currently known then calculate heights for all nodes
+	     * then return the height of the specified node.
+	     * @param node
+	     * @returns {number}
+	     */
+
+	  }, {
+	    key: "getHeight",
+	    value: function getHeight(node) {
+	      return node.height;
+	    }
+	  }, {
+	    key: "preorder",
+
+	    /**
+	     * A generator function that returns the nodes in a pre-order traversal.
+	     *
+	     * @returns {IterableIterator<IterableIterator<*|*>>}
+	     */
+	    value:
+	    /*#__PURE__*/
+	    regenerator.mark(function preorder() {
+	      var traverse;
+	      return regenerator.wrap(function preorder$(_context2) {
+	        while (1) {
+	          switch (_context2.prev = _context2.next) {
+	            case 0:
+	              traverse =
+	              /*#__PURE__*/
+	              regenerator.mark(function traverse(node) {
+	                var _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, child;
+
+	                return regenerator.wrap(function traverse$(_context) {
+	                  while (1) {
+	                    switch (_context.prev = _context.next) {
+	                      case 0:
+	                        _context.next = 2;
+	                        return node;
+
+	                      case 2:
+	                        if (!node.children) {
+	                          _context.next = 28;
+	                          break;
+	                        }
+
+	                        _iteratorNormalCompletion = true;
+	                        _didIteratorError = false;
+	                        _iteratorError = undefined;
+	                        _context.prev = 6;
+	                        _iterator = node.children[Symbol.iterator]();
+
+	                      case 8:
+	                        if (_iteratorNormalCompletion = (_step = _iterator.next()).done) {
+	                          _context.next = 14;
+	                          break;
+	                        }
+
+	                        child = _step.value;
+	                        return _context.delegateYield(traverse(child), "t0", 11);
+
+	                      case 11:
+	                        _iteratorNormalCompletion = true;
+	                        _context.next = 8;
+	                        break;
+
+	                      case 14:
+	                        _context.next = 20;
+	                        break;
+
+	                      case 16:
+	                        _context.prev = 16;
+	                        _context.t1 = _context["catch"](6);
+	                        _didIteratorError = true;
+	                        _iteratorError = _context.t1;
+
+	                      case 20:
+	                        _context.prev = 20;
+	                        _context.prev = 21;
+
+	                        if (!_iteratorNormalCompletion && _iterator["return"] != null) {
+	                          _iterator["return"]();
+	                        }
+
+	                      case 23:
+	                        _context.prev = 23;
+
+	                        if (!_didIteratorError) {
+	                          _context.next = 26;
+	                          break;
+	                        }
+
+	                        throw _iteratorError;
+
+	                      case 26:
+	                        return _context.finish(23);
+
+	                      case 27:
+	                        return _context.finish(20);
+
+	                      case 28:
+	                      case "end":
+	                        return _context.stop();
+	                    }
+	                  }
+	                }, traverse, null, [[6, 16, 20, 28], [21,, 23, 27]]);
+	              });
+	              return _context2.delegateYield(traverse(this.root), "t0", 2);
+
+	            case 2:
+	            case "end":
+	              return _context2.stop();
+	          }
+	        }
+	      }, preorder, this);
+	    })
+	    /**
+	     * A generator function that returns the nodes in a post-order traversal
+	     *
+	     * @returns {IterableIterator<IterableIterator<*|*>>}
+	     */
+
+	  }, {
+	    key: "postorder",
+	    value:
+	    /*#__PURE__*/
+	    regenerator.mark(function postorder() {
+	      var traverse;
+	      return regenerator.wrap(function postorder$(_context4) {
+	        while (1) {
+	          switch (_context4.prev = _context4.next) {
+	            case 0:
+	              traverse =
+	              /*#__PURE__*/
+	              regenerator.mark(function traverse(node) {
+	                var _iteratorNormalCompletion2, _didIteratorError2, _iteratorError2, _iterator2, _step2, child;
+
+	                return regenerator.wrap(function traverse$(_context3) {
+	                  while (1) {
+	                    switch (_context3.prev = _context3.next) {
+	                      case 0:
+	                        if (!node.children) {
+	                          _context3.next = 26;
+	                          break;
+	                        }
+
+	                        _iteratorNormalCompletion2 = true;
+	                        _didIteratorError2 = false;
+	                        _iteratorError2 = undefined;
+	                        _context3.prev = 4;
+	                        _iterator2 = node.children[Symbol.iterator]();
+
+	                      case 6:
+	                        if (_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done) {
+	                          _context3.next = 12;
+	                          break;
+	                        }
+
+	                        child = _step2.value;
+	                        return _context3.delegateYield(traverse(child), "t0", 9);
+
+	                      case 9:
+	                        _iteratorNormalCompletion2 = true;
+	                        _context3.next = 6;
+	                        break;
+
+	                      case 12:
+	                        _context3.next = 18;
+	                        break;
+
+	                      case 14:
+	                        _context3.prev = 14;
+	                        _context3.t1 = _context3["catch"](4);
+	                        _didIteratorError2 = true;
+	                        _iteratorError2 = _context3.t1;
+
+	                      case 18:
+	                        _context3.prev = 18;
+	                        _context3.prev = 19;
+
+	                        if (!_iteratorNormalCompletion2 && _iterator2["return"] != null) {
+	                          _iterator2["return"]();
+	                        }
+
+	                      case 21:
+	                        _context3.prev = 21;
+
+	                        if (!_didIteratorError2) {
+	                          _context3.next = 24;
+	                          break;
+	                        }
+
+	                        throw _iteratorError2;
+
+	                      case 24:
+	                        return _context3.finish(21);
+
+	                      case 25:
+	                        return _context3.finish(18);
+
+	                      case 26:
+	                        _context3.next = 28;
+	                        return node;
+
+	                      case 28:
+	                      case "end":
+	                        return _context3.stop();
+	                    }
+	                  }
+	                }, traverse, null, [[4, 14, 18, 26], [19,, 21, 25]]);
+	              });
+	              return _context4.delegateYield(traverse(this.root), "t0", 2);
+
+	            case 2:
+	            case "end":
+	              return _context4.stop();
+	          }
+	        }
+	      }, postorder, this);
+	    })
+	    /**
+	     * A generator function that returns the nodes in a path to the root
+	     *
+	     * @returns {IterableIterator<IterableIterator<*|*>>}
+	     */
+
+	  }, {
+	    key: "toNewick",
+
+	    /**
+	     * An instance method to return a Newick format string for the Tree. Can be called without a parameter to
+	     * start at the root node. Providing another node will generate a subtree. Labels and branch lengths are
+	     * included if available.
+	     *
+	     * @param {object} node - The node of the tree to be written (defaults as the rootNode).
+	     * @returns {string}
+	     */
+	    value: function toNewick() {
+	      var _this2 = this;
+
+	      var node = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.rootNode;
+	      return (node.children ? "(".concat(node.children.map(function (child) {
+	        return _this2.toNewick(child);
+	      }).join(","), ")").concat(node.label ? node.label : "") : node.name) + (node.length ? ":".concat(node.length) : "");
+	    }
+	  }, {
+	    key: "reroot",
+
+	    /**
+	     * Re-roots the tree at the midway point on the branch above the given node.
+	     *
+	     * @param {object} node - The node to be rooted on.
+	     * @param proportion - proportion along the branch to place the root (default 0.5)
+	     */
+	    value: function reroot(node) {
+	      var _this3 = this;
+
+	      var proportion = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0.5;
+
+	      if (node === this.rootNode) {
+	        // the node is the root - nothing to do
+	        return;
+	      }
+
+	      var rootLength = this.rootNode.children[0].length + this.rootNode.children[1].length;
+
+	      if (node.parent !== this.rootNode) {
+	        (function () {
+	          // the node is not a child of the existing root so the root is actually changing
+	          var node0 = node;
+	          var parent = node.parent;
+	          var lineage = []; // was the node the first child in the parent's children?
+
+	          var nodeAtTop = parent.children[0] === node;
+	          var rootChild1 = node;
+	          var rootChild2 = parent;
+	          var oldLength = parent.length;
+
+	          while (parent.parent) {
+	            // remove the node that will becoming the parent from the children
+	            parent.children = parent.children.filter(function (child) {
+	              return child !== node0;
+	            });
+
+	            if (parent.parent === _this3.rootNode) {
+	              var sibling = _this3.getSibling(parent);
+
+	              parent.children.push(sibling);
+	              sibling._length = rootLength;
+	            } else {
+	              // swap the parent and parent's parent's length around
+	              var _ref = [oldLength, parent.parent.length];
+	              parent.parent.length = _ref[0];
+	              oldLength = _ref[1];
+	              // add the new child
+	              parent.children.push(parent.parent);
+	            }
+
+	            lineage = [parent].concat(toConsumableArray(lineage));
+	            node0 = parent;
+	            parent = parent.parent;
+	          } // Reuse the root node as root...
+	          // Set the order of the children to be the same as for the original parent of the node.
+	          // This makes for a more visually consistent rerooting graphically.
+
+
+	          _this3.rootNode.children = nodeAtTop ? [rootChild1, rootChild2] : [rootChild2, rootChild1]; // connect all the children to their parents
+
+	          _this3.internalNodes.forEach(function (node) {
+	            node.children.forEach(function (child) {
+	              child.parent = node;
+	            });
+	          });
+
+	          var l = rootChild1.length * proportion;
+	          rootChild2._length = l;
+	          rootChild1._length = rootChild1.length - l;
+	        })();
+	      } else {
+	        // the root is staying the same, just the position of the root changing
+	        var l = node.length * (1.0 - proportion);
+	        node._length = l;
+	        this.getSibling(node)._length = rootLength - l;
+	      }
+
+	      this.heightsKnown = false;
+	      this.treeUpdateCallback();
+	    }
+	  }, {
+	    key: "rotate",
+
+	    /**
+	     * Reverses the order of the children of the given node. If 'recursive=true' then it will
+	     * descend down the subtree reversing all the sub nodes.
+	     *
+	     * @param node
+	     * @param recursive
+	     */
+	    value: function rotate(node) {
+	      var recursive = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
+	      if (node.children) {
+	        if (recursive) {
+	          var _iteratorNormalCompletion3 = true;
+	          var _didIteratorError3 = false;
+	          var _iteratorError3 = undefined;
+
+	          try {
+	            for (var _iterator3 = node.children[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+	              var child = _step3.value;
+	              this.rotate(child, recursive);
+	            }
+	          } catch (err) {
+	            _didIteratorError3 = true;
+	            _iteratorError3 = err;
+	          } finally {
+	            try {
+	              if (!_iteratorNormalCompletion3 && _iterator3["return"] != null) {
+	                _iterator3["return"]();
+	              }
+	            } finally {
+	              if (_didIteratorError3) {
+	                throw _iteratorError3;
+	              }
+	            }
+	          }
+	        }
+
+	        node.children.reverse();
+	      }
+
+	      this.treeUpdateCallback();
+	    }
+	  }, {
+	    key: "orderByNodeDensity",
+
+	    /**
+	     * Sorts the child branches of each node in order of increasing or decreasing number
+	     * of tips. This operates recursively from the node given.
+	     *
+	     * @param node - the node to start sorting from
+	     * @param {boolean} increasing - sorting in increasing node order or decreasing?
+	     * @returns {number} - the number of tips below this node
+	     */
+	    value: function orderByNodeDensity() {
+	      var increasing = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+	      var node = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.rootNode;
+	      var factor = increasing ? 1 : -1;
+	      orderNodes.call(this, node, function (nodeA, countA, nodeB, countB) {
+	        return (countA - countB) * factor;
+	      }, callback);
+	      this.treeUpdateCallback();
+	    }
+	    /**
+	     * Sorts the child branches of each node in order given by the function. This operates
+	     * recursively from the node given.
+	     *
+	     * @param node - the node to start sorting from
+	     * @param {function} ordering - provides a pairwise sorting order.
+	     *  Function signature: (nodeA, childCountNodeA, nodeB, childCountNodeB)
+	     * @returns {number} - the number of tips below this node
+	     */
+
+	  }, {
+	    key: "order",
+	    value: function order(ordering) {
+	      var node = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.rootNode;
+	      orderNodes.call(this, node, ordering);
+	      this.treeUpdateCallback();
+	    }
+	  }, {
+	    key: "lastCommonAncestor",
+	    value: function lastCommonAncestor(node1, node2) {
+	      var path1 = toConsumableArray(Tree.pathToRoot(node1));
+
+	      var path2 = toConsumableArray(Tree.pathToRoot(node2));
+
+	      var sharedAncestors = path1.filter(function (n1) {
+	        return path2.map(function (n2) {
+	          return n2.id;
+	        }).indexOf(n1.id) > -1;
+	      });
+	      var lastSharedAncestor = sharedAncestors.reduce(function (acc, curr) {
+	        return acc = acc.level > curr.level ? acc : curr;
+	      });
+	      return lastSharedAncestor;
+	    }
+	  }, {
+	    key: "pathLength",
+	    value: function pathLength(node1, node2) {
+	      var sum = 0;
+	      var mrca = this.lastCommonAncestor(node1, node2);
+
+	      for (var _i = 0, _arr = [node1, node2]; _i < _arr.length; _i++) {
+	        var node = _arr[_i];
+
+	        while (node != mrca) {
+	          sum += node.length;
+	          node = node.parent;
+	        }
+	      }
+
+	      return sum;
+	    }
+	    /**
+	     * Adds a collapse flag to the node whose dependents will be collapsed by the layout. How the clade is collapsed depends on the the
+	     * style.
+	     * @param node - the mrca of the clade that is to be collapsed
+	     * @param style -  The style in which to collapse the clade. Can be one of the CollapseStyles. TRIANGLE - returns a triangle,
+	     * BRANCH reduces the clade to a single branch which extends to the most recent tip.
+	     */
+
+	  }, {
+	    key: "collapse",
+	    value: function collapse(node, style) {
+	      node.collapse = style;
+	    }
+	    /**
+	     * Gives the distance from the root to a given tip (external node).
+	     * @param tip - the external node
+	     * @returns {number}
+	     */
+
+	  }, {
+	    key: "rootToTipLength",
+	    value: function rootToTipLength(tip) {
+	      var length = 0.0;
+	      var _iteratorNormalCompletion4 = true;
+	      var _didIteratorError4 = false;
+	      var _iteratorError4 = undefined;
+
+	      try {
+	        for (var _iterator4 = Tree.pathToRoot(tip)[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+	          var node = _step4.value;
+
+	          if (node.length) {
+	            length += node.length;
+	          }
+	        }
+	      } catch (err) {
+	        _didIteratorError4 = true;
+	        _iteratorError4 = err;
+	      } finally {
+	        try {
+	          if (!_iteratorNormalCompletion4 && _iterator4["return"] != null) {
+	            _iterator4["return"]();
+	          }
+	        } finally {
+	          if (_didIteratorError4) {
+	            throw _iteratorError4;
+	          }
+	        }
+	      }
+
+	      return length;
+	    }
+	    /**
+	     * Returns an array of root-to-tip distances for each tip in the tree.
+	     * @returns {*}
+	     */
+
+	  }, {
+	    key: "rootToTipLengths",
+	    value: function rootToTipLengths() {
+	      var _this4 = this;
+
+	      return this.externalNodes.map(function (tip) {
+	        return _this4.rootToTipLength(tip);
+	      });
+	    }
+	    /**
+	     * Splits each branch in multiple segments inserting a new degree 2 nodes. If splitLocations is
+	     * null then it splits each in two at the mid-point
+	     * @param splits
+	     */
+
+	  }, {
+	    key: "splitBranches",
+	    value: function splitBranches() {
+	      var _this5 = this;
+
+	      var splits = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+	      // split each branch into sections, with a node of
+	      // degree two in the middle. This allows annotation
+	      // of part of a branch.
+	      toConsumableArray(this.preorder()).filter(function (node) {
+	        return node.parent;
+	      }).forEach(function (node) {
+	        if (splits !== null) {
+	          if (splits[node.id]) {
+	            var splitNode = node;
+	            splits[node.id].forEach(function (_ref2) {
+	              var _ref3 = slicedToArray(_ref2, 2),
+	                  time = _ref3[0],
+	                  id = _ref3[1];
+
+	              splitNode = _this5.splitBranch(splitNode, time);
+	              splitNode.id = id;
+	            });
+	          }
+	        } else {
+	          // if no splitLocations are given then split it in the middle.
+	          _this5.splitBranch(node, 0.5);
+	        }
+	      });
+
+	      this.treeUpdateCallback();
+	    }
+	    /**
+	     * Splits a branch in two inserting a new degree 2 node. The splitLocation should be less than
+	     * the orginal branch length.
+	     * @param node
+	     * @param splitLocation - proportion of branch to split at.
+	     */
+
+	  }, {
+	    key: "splitBranch",
+	    value: function splitBranch(node) {
+	      var splitLocation = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0.5;
+	      var oldLength = node.length;
+	      var splitNode = makeNode.call(this, {
+	        parent: node.parent,
+	        children: [node],
+	        length: oldLength * splitLocation,
+	        annotations: {
+	          insertedNode: true
+	        }
+	      });
+
+	      if (node.parent) {
+	        node.parent.children[node.parent.children.indexOf(node)] = splitNode;
+	      } else {
+	        // node is the root so make splitNode the root
+	        this.root = splitNode;
+	      }
+
+	      node.parent = splitNode;
+	      node._length = oldLength - splitNode.length;
+	      this.nodesUpdated = true;
+	      return splitNode;
+	    }
+	    /**
+	     * Set one or more annotations for the tips.
+	     *
+	     * See annotateNode for a description of the annotation structure.
+	     *
+	     * @param annotations a dictionary of annotations keyed by tip label
+	     */
+
+	  }, {
+	    key: "annotateTips",
+	    value: function annotateTips(annotations) {
+	      for (var _i2 = 0, _Object$entries = Object.entries(annotations); _i2 < _Object$entries.length; _i2++) {
+	        var _Object$entries$_i = slicedToArray(_Object$entries[_i2], 2),
+	            key = _Object$entries$_i[0],
+	            values = _Object$entries$_i[1];
+
+	        var tip = this.getExternalNode(key);
+
+	        if (!tip) {
+	          throw new Error("tip with label ".concat(key, " not found in tree"));
+	        }
+
+	        this.annotateNode(tip, values);
+	      }
+	    }
+	    /**
+	     * This is similar to annotateTips but the annotation objects are keyed by node
+	     * keys (Symbols).
+	     *
+	     * @param annotations a dictionary of annotations keyed by node key
+	     */
+
+	  }, {
+	    key: "annotateNodes",
+	    value: function annotateNodes(annotations) {
+	      for (var _i3 = 0, _Object$entries2 = Object.entries(annotations); _i3 < _Object$entries2.length; _i3++) {
+	        var _Object$entries2$_i = slicedToArray(_Object$entries2[_i3], 2),
+	            key = _Object$entries2$_i[0],
+	            values = _Object$entries2$_i[1];
+
+	        var node = this.getNode(key);
+
+	        if (!node) {
+	          throw new Error("tip with key ".concat(key, " not found in tree"));
+	        }
+
+	        this.annotateNode(node, values);
+	      }
+	    }
+	    /**
+	     * Adds the given annotations to a particular node object.
+	     *
+	     * The annotations is an object with properties keyed by external node labels each
+	     * of which is an object with key value pairs for the annotations. The
+	     * key value pairs will be added to a property called 'annotations' in the node.
+	     *
+	     * Boolean or Numerical traits are given as a single value.
+	     * Sets of values with probabilities should be given as an object.
+	     * Discrete values should be given as an array (even if containing only one value)
+	     * or an object with booleans to give the full set of possible trait values.
+	     *
+	     * For example:
+	     *
+	     * {
+	     *     'tip_1': {
+	     *         'trait_1' : true,
+	     *         'trait_4' : 3.141592,
+	     *         'trait_2' : [1, 2], // discrete trait
+	     *         'trait_3' : ["London", "Paris", "New York"], // discrete trait
+	     *         'trait_3' : {"London" : true, "Paris" : false, "New York": false], // discrete trait with full set of values
+	     *         'trait_4' : {"London" : 0.75, "Paris" : 0.20, "New York": 0.05} // probability set
+	     *     },
+	     *     'tip_2': {...}
+	     * }
+	     *
+	     * The annotation labels, type and possible values are also added to the tree in a property called 'annotations'.
+	     *
+	     * A reconstruction method such as annotateNodesFromTips can then be used to provide reconstructed values
+	     * for internal nodes. Or annotateNodes can provide annotations for any node in the tree.
+	     *
+	     * @param node
+	     * @param annotations a dictionary of annotations keyed by the annotation name.
+	     */
+
+	  }, {
+	    key: "annotateNode",
+	    value: function annotateNode(node, annotations) {
+	      this.addAnnotations(annotations); // add the annotations to the existing annotations object for the node object
+
+	      node.annotations = objectSpread({}, node.annotations === undefined ? {} : node.annotations, annotations);
+	    }
+	    /**
+	     * Adds the annotation information to the tree. This stores the type and possible values
+	     * for each annotation seen in the nodes of the tree.
+	     *
+	     * This methods also checks the values are correct and conform to previous annotations
+	     * in type.
+	     *
+	     * @param annotations
+	     */
+
+	  }, {
+	    key: "addAnnotations",
+	    value: function addAnnotations(annotations) {
+	      for (var _i4 = 0, _Object$entries3 = Object.entries(annotations); _i4 < _Object$entries3.length; _i4++) {
+	        var _Object$entries3$_i = slicedToArray(_Object$entries3[_i4], 2),
+	            key = _Object$entries3$_i[0],
+	            addValues = _Object$entries3$_i[1];
+
+	        var annotation = this.annotations[key];
+
+	        if (!annotation) {
+	          annotation = {};
+	          this.annotations[key] = annotation;
+	        }
+
+	        if (Array.isArray(addValues)) {
+	          // is a set of  values
+	          var type = void 0;
+
+	          if (addValues.map(function (v) {
+	            return isNaN(v);
+	          }).reduce(function (acc, curr) {
+	            return acc && curr;
+	          }, true)) {
+	            var _annotation$values;
+
+	            type = Type.DISCRETE;
+	            annotation.type = type;
+
+	            if (!annotation.values) {
+	              annotation.values = new Set();
+	            }
+
+	            (_annotation$values = annotation.values).add.apply(_annotation$values, toConsumableArray(addValues));
+	          } else if (addValues.map(function (v) {
+	            return parseFloat(v);
+	          }).reduce(function (acc, curr) {
+	            return acc && Number.isInteger(curr);
+	          }, true)) {
+	            type = Type.INTEGER;
+	          } else if (addValues.map(function (v) {
+	            return parseFloat(v);
+	          }).reduce(function (acc, curr) {
+	            return acc && !Number.isInteger(curr);
+	          }, true)) {
+	            type = Type.FLOAT;
+	          }
+
+	          if (annotation.type && annotation.type !== type) {
+	            if (type === Type.INTEGER && annotation.type === Type.FLOAT || type === Type.FLOAT && annotation.type === Type.INTEGER) {
+	              // upgrade to float
+	              type = Type.FLOAT;
+	              annotation.type = Type.FLOAT;
+
+	              if (annotation.values) {
+	                delete annotation.values;
+	              } else {
+	                throw Error("existing values of the annotation, ".concat(key, ", in the tree is discrete."));
+	              }
+	            }
+	          } // annotation.values = annotation.values? [...annotation.values, ...addValues]:[...addValues]
+
+	        } else if (Object.isExtensible(addValues)) {
+	          // is a set of properties with values
+	          var _type = null;
+	          var sum = 0.0;
+	          var keys = [];
+
+	          for (var _i5 = 0, _Object$entries4 = Object.entries(addValues); _i5 < _Object$entries4.length; _i5++) {
+	            var _Object$entries4$_i = slicedToArray(_Object$entries4[_i5], 2),
+	                _key = _Object$entries4$_i[0],
+	                value = _Object$entries4$_i[1];
+
+	            if (keys.includes(_key)) {
+	              throw Error("the states of annotation, ".concat(_key, ", should be unique"));
+	            }
+
+	            if (_typeof_1(value) === _typeof_1(1.0)) {
+	              // This is a vector of probabilities of different states
+	              _type = _type === undefined ? Type.PROBABILITIES : _type;
+
+	              if (_type === Type.DISCRETE) {
+	                throw Error("the values of annotation, ".concat(_key, ", should be all boolean or all floats"));
+	              }
+
+	              sum += value;
+
+	              if (sum > 1.01) {
+	                throw Error("the values of annotation, ".concat(_key, ", should be probabilities of states and add to 1.0"));
+	              }
+	            } else if (_typeof_1(value) === _typeof_1(true)) {
+	              _type = _type === undefined ? Type.DISCRETE : _type;
+
+	              if (_type === Type.PROBABILITIES) {
+	                throw Error("the values of annotation, ".concat(_key, ", should be all boolean or all floats"));
+	              }
+	            } else {
+	              throw Error("the values of annotation, ".concat(_key, ", should be all boolean or all floats"));
+	            }
+
+	            keys.push(_key);
+	          }
+
+	          if (annotation.type && annotation.type !== _type) {
+	            throw Error("existing values of the annotation, ".concat(key, ", in the tree is not of the same type"));
+	          }
+
+	          annotation.type = _type;
+	          annotation.values = annotation.values ? [].concat(toConsumableArray(annotation.values), [addValues]) : [addValues];
+	        } else {
+	          var _type2 = Type.DISCRETE;
+
+	          if (_typeof_1(addValues) === _typeof_1(true)) {
+	            _type2 = Type.BOOLEAN;
+	          } else if (!isNaN(addValues)) {
+	            _type2 = addValues % 1 === 0 ? Type.INTEGER : Type.FLOAT;
+	          }
+
+	          if (annotation.type && annotation.type !== _type2) {
+	            if (_type2 === Type.INTEGER && annotation.type === Type.FLOAT || _type2 === Type.FLOAT && annotation.type === Type.INTEGER) {
+	              // upgrade to float
+	              _type2 = Type.FLOAT;
+	            } else {
+	              throw Error("existing values of the annotation, ".concat(key, ", in the tree is not of the same type"));
+	            }
+	          }
+
+	          if (_type2 === Type.DISCRETE) {
+	            if (!annotation.values) {
+	              annotation.values = new Set();
+	            }
+
+	            annotation.values.add(addValues);
+	          }
+
+	          annotation.type = _type2;
+	        } // overwrite the existing annotation property
+
+
+	        this.annotations[key] = annotation;
+	      }
+	    }
+	    /**
+	     * Uses parsimony to label internal nodes to reconstruct the internal node states
+	     * for the annotation 'name'.
+	     *
+	     * @param name
+	     * @param acctrans Use acctrans reconstruction if true, deltrans otherwise
+	     * @param node
+	     */
+
+	  }, {
+	    key: "annotateNodesFromTips",
+	    value: function annotateNodesFromTips(name) {
+	      var acctran = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+	      fitchParsimony(name, this.rootNode);
+	      reconstructInternalStates(name, [], acctran, this.rootNode);
+	    }
+	    /**
+	     * A class method to create a Tree instance from a Newick format string (potentially with node
+	     * labels and branch lengths). Taxon labels should be quoted (either " or ') if they contain whitespace
+	     * or any of the tree definitition characters '(),:;' - the quotes (and any whitespace immediately within)
+	     * will be removed.
+	     * @param newickString - the Newick format tree as a string
+	     * @param labelName
+	     * @param datePrefix
+	     * @returns {Tree} - an instance of the Tree class
+	     */
+
+	  }, {
+	    key: "rootNode",
+
+	    /**
+	     * Gets the root node of the Tree
+	     *
+	     * @returns {Object|*}
+	     */
+	    get: function get() {
+	      return this.root;
+	    }
+	  }, {
+	    key: "nodes",
+
+	    /**
+	     * Gets an array containing all the node objects
+	     *
+	     * @returns {*}
+	     */
+	    get: function get() {
+	      if (this.nodesUpdated) {
+	        setUpArraysAndMaps.call(this);
+	      }
+
+	      return toConsumableArray(this.preorder());
+	    }
+	  }, {
+	    key: "nodeList",
+	    get: function get() {
+	      if (this.nodesUpdated) {
+	        setUpArraysAndMaps.call(this);
+	      }
+
+	      return this.nodes;
+	    }
+	    /**
+	     * Gets an array containing all the external node objects
+	     *
+	     * @returns {*}
+	     */
+
+	  }, {
+	    key: "externalNodes",
+	    get: function get() {
+	      if (this.nodesUpdated) {
+	        setUpArraysAndMaps.call(this);
+	      }
+
+	      return this.nodes.filter(function (node) {
+	        return !node.children;
+	      });
+	    }
+	  }, {
+	    key: "internalNodes",
+
+	    /**
+	     * Gets an array containing all the internal node objects
+	     *
+	     * @returns {*}
+	     */
+	    get: function get() {
+	      if (this.nodesUpdated) {
+	        setUpArraysAndMaps.call(this);
+	      }
+
+	      return this.nodes.filter(function (node) {
+	        return node.children;
+	      });
+	    }
+	  }, {
+	    key: "nodeMap",
+	    get: function get() {
+	      if (this.nodesUpdated) {
+	        setUpArraysAndMaps.call(this);
+	      }
+
+	      return this._nodeMap;
+	    }
+	  }, {
+	    key: "tipMap",
+	    get: function get() {
+	      if (this.nodesUpdated) {
+	        setUpArraysAndMaps.call(this);
+	      }
+
+	      return this._tipMap;
+	    }
+	  }, {
+	    key: "origin",
+	    set: function set(value) {
+	      this._origin = value;
+	      this.heightsKnown = false;
+	    },
+	    get: function get() {
+	      return this._origin;
+	    }
+	  }], [{
+	    key: "pathToRoot",
+	    value:
+	    /*#__PURE__*/
+	    regenerator.mark(function pathToRoot(node) {
+	      return regenerator.wrap(function pathToRoot$(_context5) {
+	        while (1) {
+	          switch (_context5.prev = _context5.next) {
+	            case 0:
+	              if (!node) {
+	                _context5.next = 6;
+	                break;
+	              }
+
+	              _context5.next = 3;
+	              return node;
+
+	            case 3:
+	              node = node.parent;
+	              _context5.next = 0;
+	              break;
+
+	            case 6:
+	            case "end":
+	              return _context5.stop();
+	          }
+	        }
+	      }, pathToRoot);
+	    })
+	  }, {
+	    key: "parseNewick",
+	    value: function parseNewick(newickString) {
+	      var labelName = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "label";
+	      var datePrefix = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : undefined;
+	      var tokens = newickString.split(/\s*('[^']+'|"[^"]+"|;|\(|\)|,|:|=|\[&|\]|\{|\})\s*/);
+	      var level = 0;
+	      var currentNode = null;
+	      var nodeStack = [];
+	      var labelNext = false;
+	      var lengthNext = false;
+	      var inAnnotation = false;
+	      var annotationKeyNext = true;
+	      var annotationKey;
+	      var isAnnotationARange = false;
+	      var _iteratorNormalCompletion5 = true;
+	      var _didIteratorError5 = false;
+	      var _iteratorError5 = undefined;
+
+	      try {
+	        for (var _iterator5 = tokens.filter(function (token) {
+	          return token.length > 0;
+	        })[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+	          var token = _step5.value;
+
+	          // console.log(`Token ${i}: ${token}, level: ${level}`);
+	          if (inAnnotation) {
+	            if (token === "=") {
+	              annotationKeyNext = false;
+	            } else if (token === ",") {
+	              if (!isAnnotationARange) {
+	                annotationKeyNext = true;
+	              }
+	            } else if (token === "{") {
+	              isAnnotationARange = true;
+	              currentNode.annotations[annotationKey] = [];
+	            } else if (token === "}") {
+	              isAnnotationARange = false;
+	            } else if (token === "]") {
+	              // close BEAST annotation
+	              inAnnotation = false;
+	              annotationKeyNext = true;
+	            } else {
+	              // must be annotation
+	              // remove any quoting and then trim whitespace
+	              var annotationToken = token;
+
+	              if (annotationToken.startsWith("\"") || annotationToken.startsWith("'")) {
+	                annotationToken = annotationToken.substr(1);
+	              }
+
+	              if (annotationToken.endsWith("\"") || annotationToken.endsWith("'")) {
+	                annotationToken = annotationToken.substr(0, annotationToken.length - 1);
+	              }
+
+	              if (annotationKeyNext) {
+	                annotationKey = annotationToken.replace(".", "_");
+	              } else {
+	                if (isAnnotationARange) {
+	                  currentNode.annotations[annotationKey].push(annotationToken);
+	                } else {
+	                  if (isNaN(annotationToken)) {
+	                    currentNode.annotations[annotationKey] = annotationToken;
+	                  } else {
+	                    currentNode.annotations[annotationKey] = parseFloat(annotationToken);
+	                  }
+	                }
+	              }
+	            }
+	          } else if (token === "(") {
+	            // an internal node
+	            if (labelNext) {
+	              // if labelNext is set then the last bracket has just closed
+	              // so there shouldn't be an open bracket.
+	              throw new Error("expecting a comma");
+	            }
+
+	            var node = {
+	              level: level,
+	              parent: currentNode,
+	              children: [],
+	              annotations: {}
+	            };
+	            level += 1;
+
+	            if (currentNode) {
+	              nodeStack.push(currentNode);
+	            }
+
+	            currentNode = node;
+	          } else if (token === ",") {
+	            // another branch in an internal node
+	            labelNext = false; // labels are optional
+
+	            if (lengthNext) {
+	              throw new Error("branch length missing");
+	            }
+
+	            var parent = nodeStack.pop();
+	            parent.children.push(currentNode);
+	            currentNode = parent;
+	          } else if (token === ")") {
+	            // finished an internal node
+	            labelNext = false; // labels are optional
+
+	            if (lengthNext) {
+	              throw new Error("branch length missing");
+	            } // the end of an internal node
+
+
+	            var _parent = nodeStack.pop();
+
+	            _parent.children.push(currentNode);
+
+	            level -= 1;
+	            currentNode = _parent;
+	            labelNext = true;
+	          } else if (token === ":") {
+	            labelNext = false; // labels are optional
+
+	            lengthNext = true;
+	          } else if (token === ";") {
+	            // end of the tree, check that we are back at level 0
+	            if (level > 0) {
+	              throw new Error("unexpected semi-colon in tree");
+	            }
+
+	            break;
+	          } else if (token === "[&") {
+	            inAnnotation = true;
+	          } else {
+	            // not any specific token so may be a label, a length, or an external node name
+	            if (lengthNext) {
+	              currentNode.length = parseFloat(token);
+	              lengthNext = false;
+	            } else if (labelNext) {
+	              currentNode.label = token;
+
+	              if (!currentNode.label.startsWith("#")) {
+	                var value = parseFloat(currentNode.label);
+
+	                if (isNaN(value)) {
+	                  value = currentNode.label;
+	                }
+
+	                currentNode.annotations[labelName] = value;
+	              } else {
+	                currentNode.id = currentNode.label.substring(1);
+	              }
+
+	              labelNext = false;
+	            } else {
+	              // an external node
+	              if (!currentNode.children) {
+	                currentNode.children = [];
+	              }
+
+	              var name = token; // remove any quoting and then trim whitespace
+
+	              if (name.startsWith("\"") || name.startsWith("'")) {
+	                name = name.substr(1);
+	              }
+
+	              if (name.endsWith("\"") || name.endsWith("'")) {
+	                name = name.substr(0, name.length - 1);
+	              }
+
+	              name = name.trim();
+	              var date = undefined;
+
+	              if (datePrefix) {
+	                var parts = name.split(datePrefix);
+
+	                if (parts.length === 0) {
+	                  throw new Error("the tip, ".concat(name, ", doesn't have a date separated by the prefix, '").concat(datePrefix, "'"));
+	                }
+
+	                date = parseFloat(parts[parts.length - 1]);
+	              }
+
+	              var externalNode = {
+	                name: name,
+	                parent: currentNode,
+	                annotations: {
+	                  date: date
+	                }
+	              };
+
+	              if (currentNode) {
+	                nodeStack.push(currentNode);
+	              }
+
+	              currentNode = externalNode;
+	            }
+	          }
+	        }
+	      } catch (err) {
+	        _didIteratorError5 = true;
+	        _iteratorError5 = err;
+	      } finally {
+	        try {
+	          if (!_iteratorNormalCompletion5 && _iterator5["return"] != null) {
+	            _iterator5["return"]();
+	          }
+	        } finally {
+	          if (_didIteratorError5) {
+	            throw _iteratorError5;
+	          }
+	        }
+	      }
+
+	      if (level > 0) {
+	        throw new Error("the brackets in the newick file are not balanced");
+	      }
+
+	      return new Tree(currentNode);
+	    }
+	  }, {
+	    key: "parseNexus",
+
+	    /*
+	      */
+	    value: function parseNexus(nexus) {
+	      var trees = [];
+	      var nexusTokens = nexus.split(/\s*Begin|begin|end|End|BEGIN|END\s*/);
+	      var firstToken = nexusTokens.shift();
+
+	      if (firstToken.toLowerCase() !== '#nexus') {
+	        throw Error("File does not begin with #NEXUS is it a nexus file?");
+	      }
+
+	      var _iteratorNormalCompletion6 = true;
+	      var _didIteratorError6 = false;
+	      var _iteratorError6 = undefined;
+
+	      try {
+	        for (var _iterator6 = nexusTokens[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+	          var section = _step6.value;
+	          var workingSection = section.split(/\n/);
+	          var sectionTitle = workingSection.shift();
+
+	          if (sectionTitle.toLowerCase().trim() === "trees;") {
+	            (function () {
+	              var inTaxaMap = false;
+	              var tipNameMap = new Map();
+	              var _iteratorNormalCompletion7 = true;
+	              var _didIteratorError7 = false;
+	              var _iteratorError7 = undefined;
+
+	              try {
+	                for (var _iterator7 = workingSection[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+	                  var token = _step7.value;
+
+	                  if (token.trim().toLowerCase() === "translate") {
+	                    inTaxaMap = true;
+	                  } else {
+	                    if (inTaxaMap) {
+	                      if (token.trim() === ";") {
+	                        inTaxaMap = false;
+	                      } else {
+	                        var taxaData = token.trim().replace(",", "").split(/\s*\s\s*/);
+	                        tipNameMap.set(taxaData[0], taxaData[1]);
+	                      }
+	                    } else {
+	                      var treeString = token.substring(token.indexOf("("));
+	                      var thisTree = Tree.parseNewick(treeString);
+	                      thisTree.externalNodes.forEach(function (tip) {
+	                        return tip.name = tipNameMap.get(tip.name);
+	                      });
+	                      trees.push(thisTree);
+	                    }
+	                  }
+	                }
+	              } catch (err) {
+	                _didIteratorError7 = true;
+	                _iteratorError7 = err;
+	              } finally {
+	                try {
+	                  if (!_iteratorNormalCompletion7 && _iterator7["return"] != null) {
+	                    _iterator7["return"]();
+	                  }
+	                } finally {
+	                  if (_didIteratorError7) {
+	                    throw _iteratorError7;
+	                  }
+	                }
+	              }
+	            })();
+	          }
+	        }
+	      } catch (err) {
+	        _didIteratorError6 = true;
+	        _iteratorError6 = err;
+	      } finally {
+	        try {
+	          if (!_iteratorNormalCompletion6 && _iterator6["return"] != null) {
+	            _iterator6["return"]();
+	          }
+	        } finally {
+	          if (_didIteratorError6) {
+	            throw _iteratorError6;
+	          }
+	        }
+	      }
+
+	      return trees;
+	    }
+	  }]);
+
+	  return Tree;
+	}();
+	/*
+	 * Private methods, called by the class using the <function>.call(this) function.
+	 */
+
+	/**
+	 * A private recursive function that rotates nodes to give an ordering provided
+	 * by a function.
+	 * @param node
+	 * @param ordering
+	 * @param callback an optional callback that is called each rotate
+	 * @returns {number}
+	 */
+
+	function orderNodes(node, ordering) {
+	  var callback = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+	  var count = 0;
+
+	  if (node.children) {
+	    // count the number of descendents for each child
+	    var counts = new Map();
+	    var _iteratorNormalCompletion8 = true;
+	    var _didIteratorError8 = false;
+	    var _iteratorError8 = undefined;
+
+	    try {
+	      for (var _iterator8 = node.children[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+	        var child = _step8.value;
+	        var value = orderNodes(child, ordering, callback);
+	        counts.set(child, value);
+	        count += value;
+	      } // sort the children using the provided function
+
+	    } catch (err) {
+	      _didIteratorError8 = true;
+	      _iteratorError8 = err;
+	    } finally {
+	      try {
+	        if (!_iteratorNormalCompletion8 && _iterator8["return"] != null) {
+	          _iterator8["return"]();
+	        }
+	      } finally {
+	        if (_didIteratorError8) {
+	          throw _iteratorError8;
+	        }
+	      }
+	    }
+
+	    node.children.sort(function (a, b) {
+	      return ordering(a, counts.get(a), b, counts.get(b));
+	    });
+	    if (callback) callback();
+	  } else {
+	    count = 1;
+	  }
+
+	  return count;
+	}
+	/**
+	 * A private recursive function that calculates the height of each node (with the most
+	 * diverged tip from the root having height given by origin).
+	 * @param origin
+	 */
+
+
+	function calculateHeights() {
+	  var _this6 = this;
+
+	  var maxRTT = max(this.rootToTipLengths());
+	  this.nodeList.forEach(function (node) {
+	    return node._height = _this6.origin - (maxRTT - _this6.rootToTipLength(node));
+	  });
+	  this.heightsKnown = true;
+	}
+	/**
+	 * A private recursive function that calculates the length of the branch below each node
+	 */
+
+
+	function calculateLengths() {
+	  this.nodeList.forEach(function (node) {
+	    return node.length = node.parent ? node.height - node.parent.height : 0;
+	  });
+	  this.lengthsKnown = true;
+	  this.treeUpdateCallback();
+	}
+	/**
+	 * A private recursive function that uses the Fitch algorithm to assign
+	 * states to nodes using parsimony. An acctrans or deltrans algorithm can
+	 * then be used to reconstruct internal node states.
+	 * @param name
+	 * @param node
+	 * @returns {*}
+	 */
+
+
+	function fitchParsimony(name, node) {
+	  if (!node.children) {
+	    if (!node.annotations[name]) {
+	      return []; // annotation not defined so return an empty set
+	    }
+
+	    return Array.isArray(node.annotations[name]) ? node.annotations[name] : [node.annotations[name]];
+	  }
+
+	  var I;
+	  var U = [];
+	  node.children.forEach(function (child) {
+	    var childStates = fitchParsimony(name, child);
+	    U = [].concat(toConsumableArray(U), toConsumableArray(childStates.filter(function (state) {
+	      return !U.includes(state);
+	    }))); // take the union
+
+	    I = I === undefined ? childStates : childStates.filter(function (state) {
+	      return I.includes(state);
+	    }); // take the intersection
+	  });
+	  node.annotations = node.annotations === undefined ? {} : node.annotations; // set the node annotation to the intersection if not empty, the union otherwise
+
+	  node.annotations[name] = toConsumableArray(I.length > 0 ? I : U);
+	  return node.annotations[name];
+	}
+
+	function reconstructInternalStates(name, parentStates, acctran, node) {
+	  var nodeStates = node.annotations[name];
+
+	  if (!Array.isArray(nodeStates)) {
+	    nodeStates = [nodeStates];
+	  }
+
+	  if (node.children) {
+	    var stateCounts = {};
+	    nodeStates.forEach(function (state) {
+	      return stateCounts[state] = stateCounts[state] ? stateCounts[state] += 1 : 1;
+	    });
+	    parentStates.forEach(function (state) {
+	      return stateCounts[state] = stateCounts[state] ? stateCounts[state] += 1 : 1;
+	    });
+	    node.children.forEach(function (child) {
+	      reconstructInternalStates(name, nodeStates, acctran, child).forEach(function (state) {
+	        return stateCounts[state] = stateCounts[state] ? stateCounts[state] += 1 : 1;
+	      });
+	    });
+	    var _max = Object.entries(stateCounts).reduce(function (prev, current) {
+	      return prev[1] > current[1] ? prev : current;
+	    })[1];
+	    nodeStates = Object.entries(stateCounts).filter(function (_ref4) {
+	      var _ref5 = slicedToArray(_ref4, 2),
+	          state = _ref5[0],
+	          count = _ref5[1];
+
+	      return count === _max;
+	    }).map(function (_ref6) {
+	      var _ref7 = slicedToArray(_ref6, 2),
+	          state = _ref7[0],
+	          count = _ref7[1];
+
+	      return state;
+	    });
+	    node.annotations[name] = nodeStates.length === 1 ? nodeStates[0] : nodeStates;
+	  }
+
+	  return nodeStates;
+	}
+
+	function makeNode(nodeData) {
+	  return new Node(objectSpread({}, nodeData, {
+	    tree: this
+	  }));
+	}
+	/**
+	 * A private function that sets up the tree by traversing from the root Node and sets all heights and lenghts
+	 * @param node
+	 */
+
+
+	function setUpNodes(node) {
+	  if (node.children) {
+	    var childrenNodes = [];
+	    var _iteratorNormalCompletion10 = true;
+	    var _didIteratorError10 = false;
+	    var _iteratorError10 = undefined;
+
+	    try {
+	      for (var _iterator10 = node.children[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+	        var child = _step10.value;
+	        var childNode = makeNode.call(this, objectSpread({}, child, {
+	          parent: node
+	        }));
+	        childrenNodes.push(childNode);
+	        setUpNodes.call(this, childNode);
+	      }
+	    } catch (err) {
+	      _didIteratorError10 = true;
+	      _iteratorError10 = err;
+	    } finally {
+	      try {
+	        if (!_iteratorNormalCompletion10 && _iterator10["return"] != null) {
+	          _iterator10["return"]();
+	        }
+	      } finally {
+	        if (_didIteratorError10) {
+	          throw _iteratorError10;
+	        }
+	      }
+	    }
+
+	    node.children = childrenNodes;
+	  }
+	}
+
+	function setUpArraysAndMaps() {
+	  var _this7 = this;
+
+	  this._nodeList = toConsumableArray(this.preorder());
+	  this.nodesUpdated = false;
+
+	  this._nodeList.forEach(function (node) {
+	    if (node.label && node.label.startsWith("#")) {
+	      // an id string has been specified in the newick label.
+	      node.id = node.label.substring(1);
+	    }
+
+	    if (node.annotations) {
+	      _this7.addAnnotations(node.annotations);
+	    }
+	  });
+
+	  this._nodeMap = new Map(this.nodeList.map(function (node) {
+	    return [node.id, node];
+	  }));
+	  this._tipMap = new Map(this.externalNodes.map(function (tip) {
+	    return [tip.name, tip];
+	  }));
+	}
+
+	var Node =
+	/*#__PURE__*/
+	function () {
+	  createClass(Node, null, [{
+	    key: "DEFAULT_NODE",
+	    value: function DEFAULT_NODE() {
+	      return {
+	        height: undefined,
+	        length: undefined,
+	        name: null,
+	        annotations: {},
+	        parent: undefined,
+	        children: null,
+	        label: undefined,
+	        level: undefined
+	      };
+	    }
+	  }]);
+
+	  function Node() {
+	    var nodeData = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+	    classCallCheck(this, Node);
+
+	    var data = objectSpread({}, Node.DEFAULT_NODE(), nodeData);
+
+	    this._id = "node-".concat(uuid_1.v4());
+	    this._height = data.height;
+	    this._length = data.length;
+	    this._name = data.name;
+	    this._annotations = data.annotations;
+	    this._parent = data.parent;
+	    this._children = data.children;
+	    this._tree = data.tree;
+	    this._label = data.label;
+	    this._level = data.level;
+	  }
+
+	  createClass(Node, [{
+	    key: "level",
+	    get: function get() {
+	      return this._level;
+	    },
+	    set: function set(value) {
+	      this._level = value;
+	    }
+	  }, {
+	    key: "name",
+	    get: function get() {
+	      return this._name;
+	    },
+	    set: function set(value) {
+	      this._name = value;
+	    }
+	  }, {
+	    key: "label",
+	    get: function get() {
+	      return this._label;
+	    },
+	    set: function set(value) {
+	      this._label = value;
+	    }
+	  }, {
+	    key: "height",
+	    get: function get() {
+	      if (!this._tree.heightsKnown) {
+	        calculateHeights.call(this._tree);
+	      }
+
+	      return this._height;
+	    },
+	    set: function set(value) {
+	      this._height = value;
+	      this._tree.lengthsKnown = false;
+
+	      this._tree.treeUpdateCallback();
+	    }
+	  }, {
+	    key: "length",
+	    get: function get() {
+	      if (!this._tree.lengthsKnown) {
+	        calculateLengths.call(this._tree);
+	      }
+
+	      return this._length;
+	    },
+	    set: function set(value) {
+	      this._length = value;
+	      this._tree.heightsKnown = false;
+
+	      this._tree.treeUpdateCallback();
+	    }
+	  }, {
+	    key: "annotations",
+	    get: function get() {
+	      return this._annotations;
+	    },
+	    set: function set(value) {
+	      this._annotations = value;
+	    }
+	  }, {
+	    key: "children",
+	    get: function get() {
+	      return this._children;
+	    },
+	    set: function set(value) {
+	      this._children = value;
+	      var _iteratorNormalCompletion11 = true;
+	      var _didIteratorError11 = false;
+	      var _iteratorError11 = undefined;
+
+	      try {
+	        for (var _iterator11 = this._children[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+	          var child = _step11.value;
+	          child.parent = this;
+	        }
+	      } catch (err) {
+	        _didIteratorError11 = true;
+	        _iteratorError11 = err;
+	      } finally {
+	        try {
+	          if (!_iteratorNormalCompletion11 && _iterator11["return"] != null) {
+	            _iterator11["return"]();
+	          }
+	        } finally {
+	          if (_didIteratorError11) {
+	            throw _iteratorError11;
+	          }
+	        }
+	      }
+	    }
+	  }, {
+	    key: "parent",
+	    get: function get() {
+	      return this._parent;
+	    },
+	    set: function set(node) {
+	      var _this8 = this;
+
+	      this._parent = node;
+
+	      if (this._parent.children.filter(function (c) {
+	        return c === _this8;
+	      }).length === 0) {
+	        this._parent.children.append(this);
+	      }
+	    }
+	  }, {
+	    key: "id",
+	    get: function get() {
+	      return this._id;
+	    },
+	    set: function set(value) {
+	      this._id = value;
+	    }
+	  }]);
+
+	  return Node;
+	}();
+
+	var Layout =
+	/*#__PURE__*/
+	function () {
+	  /**
+	   * The constructor.
+	   */
+	  function Layout() {
+	    classCallCheck(this, Layout);
+
+	    // default ranges - these should be set in layout()
+	    this._horizontalRange = [0.0, 1.0];
+	    this._verticalRange = [0, 1.0];
+	    this._horizontalTicks = [0, 0.5, 1]; // create an empty callback function
+
+	    this.updateCallback = function () {};
+	  }
+	  /**
+	   * An abstract base class for a layout class. The aim is to describe the API of the class.
+	   *
+	   * @param vertices - objects with an x, y coordinates and a reference to the original node
+	   * @param edges - objects with v1 (a vertex) and v0 (the parent vertex).
+	   */
+
+
+	  createClass(Layout, [{
+	    key: "layout",
+	    value: function layout(vertices, edges) {}
+	  }, {
+	    key: "update",
+
+	    /**
+	     * Updates the tree when it has changed
+	     */
+	    value: function update() {
+	      this.updateCallback();
+	    }
+	    /**
+	     * A utility function for rotating a node
+	     * @returns {rotate}
+	     */
+
+	  }, {
+	    key: "rotate",
+	    value: function rotate() {
+	      var _this = this;
+
+	      return function (vertex) {
+	        _this.tree.rotate(vertex.node);
+
+	        _this.update();
+	      };
+	    }
+	    /**
+	     * A utility function for ordering a subtree with increasing tip density
+	     * @returns {orderIncreasing}
+	     */
+
+	  }, {
+	    key: "orderIncreasing",
+	    value: function orderIncreasing() {
+	      var _this2 = this;
+
+	      return function (vertex) {
+	        _this2.tree.rotate(vertex.node);
+
+	        _this2.update();
+	      };
+	    }
+	    /**
+	     * A utility function for ordering a subtree with decreasing tip density
+	     * @returns {orderIncreasing}
+	     */
+
+	  }, {
+	    key: "orderDecreasing",
+	    value: function orderDecreasing() {
+	      var _this3 = this;
+
+	      return function (vertex) {
+	        _this3.tree.rotate(vertex.node);
+
+	        _this3.update();
+	      };
+	    }
+	    /**
+	     * A utility function for rerooting the tree
+	     * @returns {reroot}
+	     */
+
+	  }, {
+	    key: "reroot",
+	    value: function reroot() {
+	      var _this4 = this;
+
+	      return function (edge, position) {
+	        _this4.tree.reroot(edge.v1.node, position);
+
+	        _this4.update();
+	      };
+	    }
+	    /**
+	     * A utility function that will return a HTML string about the node and its
+	     * annotations. Can be used with the addLabels() method.
+	     *
+	     * @param node
+	     * @returns {string}
+	     */
+
+	  }, {
+	    key: "horizontalRange",
+	    get: function get() {
+	      return this._horizontalRange;
+	    }
+	  }, {
+	    key: "verticalRange",
+	    get: function get() {
+	      return this._verticalRange;
+	    }
+	  }, {
+	    key: "horizontalAxisTicks",
+	    get: function get() {
+	      return this._horizontalTicks;
+	    }
+	  }], [{
+	    key: "nodeInfo",
+	    value: function nodeInfo(node) {
+	      var text = "".concat(node.name ? node.name : node.id);
+	      Object.entries(node.annotations).forEach(function (_ref) {
+	        var _ref2 = slicedToArray(_ref, 2),
+	            key = _ref2[0],
+	            value = _ref2[1];
+
+	        text += "<p>".concat(key, ": ").concat(value, "</p>");
+	      });
+	      return text;
+	    }
+	  }]);
+
+	  return Layout;
+	}();
+	/*
+	 * Private methods, called by the class using the <function>.call(this) function.
+	 */
+
+	function _assertThisInitialized(self) {
+	  if (self === void 0) {
+	    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+	  }
+
+	  return self;
+	}
+
+	var assertThisInitialized = _assertThisInitialized;
+
+	function _possibleConstructorReturn(self, call) {
+	  if (call && (_typeof_1(call) === "object" || typeof call === "function")) {
+	    return call;
+	  }
+
+	  return assertThisInitialized(self);
+	}
+
+	var possibleConstructorReturn = _possibleConstructorReturn;
+
+	var getPrototypeOf = createCommonjsModule(function (module) {
+	function _getPrototypeOf(o) {
+	  module.exports = _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
+	    return o.__proto__ || Object.getPrototypeOf(o);
+	  };
+	  return _getPrototypeOf(o);
+	}
+
+	module.exports = _getPrototypeOf;
+	});
+
+	var setPrototypeOf = createCommonjsModule(function (module) {
+	function _setPrototypeOf(o, p) {
+	  module.exports = _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
+	    o.__proto__ = p;
+	    return o;
+	  };
+
+	  return _setPrototypeOf(o, p);
+	}
+
+	module.exports = _setPrototypeOf;
+	});
+
+	function _inherits(subClass, superClass) {
+	  if (typeof superClass !== "function" && superClass !== null) {
+	    throw new TypeError("Super expression must either be null or a function");
+	  }
+
+	  subClass.prototype = Object.create(superClass && superClass.prototype, {
+	    constructor: {
+	      value: subClass,
+	      writable: true,
+	      configurable: true
+	    }
+	  });
+	  if (superClass) setPrototypeOf(subClass, superClass);
+	}
+
+	var inherits = _inherits;
+
 	/**
 	 * The Layout class
 	 *
@@ -9240,7 +9301,7 @@
 	        lengthFormat: format(".2f"),
 	        branchCurve: stepBefore,
 	        horizontalScale: null,
-	        // a scale that converts root to tip distance to 0,1 domain. default is 0 = root 1 = highest tip
+	        // a scale that converts height to 0,1  domain. default is 0 = heighest tip
 	        includedInVerticalRange: function includedInVerticalRange(node) {
 	          return !node.children;
 	        }
@@ -9267,7 +9328,17 @@
 	    _this.settings = objectSpread({}, RectangularLayout.DEFAULT_SETTINGS(), settings);
 	    _this.branchLabelAnnotationName = null;
 	    _this.internalNodeLabelAnnotationName = null;
-	    _this.externalNodeLabelAnnotationName = null; // called whenever the tree changes...
+	    _this.externalNodeLabelAnnotationName = null;
+	    _this._horizontalRange = [0, 1]; //[0.0, max([...this.tree.rootToTipLengths()])];
+
+	    _this._verticalRange = [0, _this.tree.nodeList.filter(_this.settings.includedInVerticalRange).length - 1];
+
+	    if (!_this.settings.horizontalScale) {
+	      _this.horizontalScale = linear$1().domain([_this.tree.rootNode.height, _this.tree.origin]).range(_this._horizontalRange);
+	    } else {
+	      _this.horizontalScale = _this.settings.horizontalScale;
+	    } // called whenever the tree changes...
+
 
 	    _this.tree.treeUpdateCallback = function () {
 	      _this.update();
@@ -9294,17 +9365,7 @@
 	    value: function layout(vertices, edges) {
 	      var _this2 = this;
 
-	      this._horizontalRange = [0, 1]; //[0.0, max([...this.tree.rootToTipLengths()])];
-
-	      this._verticalRange = [0, this.tree.nodeList.filter(this.settings.includedInVerticalRange).length - 1];
-
-	      if (!this.settings.horizontalScale) {
-	        this.horizontalScale = linear$1().domain([0, max(toConsumableArray(this.tree.rootToTipLengths()))]).range(this._horizontalRange);
-	      } else {
-	        this.horizontalScale = this.settings.horizontalScale;
-	      } // get the nodes in post-order
-
-
+	      // get the nodes in post-order
 	      var nodes = toConsumableArray(this.tree.postorder());
 
 	      var currentY = -1;
@@ -9328,7 +9389,7 @@
 	      nodes.forEach(function (n) {
 	        var v = _this2.nodeMap.get(n);
 
-	        v.x = _this2.horizontalScale(_this2.tree.rootToTipLength(v.node));
+	        v.x = _this2.horizontalScale(v.node.height);
 	        currentY = _this2.setYPosition(v, currentY);
 	        v.degree = v.node.children ? v.node.children.length + 1 : 1; // the number of edges (including stem)
 
@@ -9530,7 +9591,7 @@
 	        lengthFormat: format(".2f"),
 	        branchCurve: stepBefore,
 	        horizontalScale: null,
-	        // a scale that converts root to tip distance to 0,1 domain. default is 0 = root 1 = highest tip
+	        // a scale that converts height to 0,1  domain. default is 0 = heighest tip
 	        includedInVerticalRange: function includedInVerticalRange(node) {
 	          return !node.children;
 	        }
@@ -9557,7 +9618,17 @@
 	    _this.settings = objectSpread({}, RectangularLayout.DEFAULT_SETTINGS(), settings);
 	    _this.branchLabelAnnotationName = null;
 	    _this.internalNodeLabelAnnotationName = null;
-	    _this.externalNodeLabelAnnotationName = null; // called whenever the tree changes...
+	    _this.externalNodeLabelAnnotationName = null;
+	    _this._horizontalRange = [0, 1]; //[0.0, max([...this.tree.rootToTipLengths()])];
+
+	    _this._verticalRange = [0, _this.tree.nodeList.filter(_this.settings.includedInVerticalRange).length - 1];
+
+	    if (!_this.settings.horizontalScale) {
+	      _this.horizontalScale = linear$1().domain([_this.tree.rootNode.height, _this.tree.origin]).range(_this._horizontalRange);
+	    } else {
+	      _this.horizontalScale = _this.settings.horizontalScale;
+	    } // called whenever the tree changes...
+
 
 	    _this.tree.treeUpdateCallback = function () {
 	      _this.update();
@@ -9584,17 +9655,7 @@
 	    value: function layout(vertices, edges) {
 	      var _this2 = this;
 
-	      this._horizontalRange = [0, 1]; //[0.0, max([...this.tree.rootToTipLengths()])];
-
-	      this._verticalRange = [0, this.tree.nodeList.filter(this.settings.includedInVerticalRange).length - 1];
-
-	      if (!this.settings.horizontalScale) {
-	        this.horizontalScale = linear$1().domain([0, max(toConsumableArray(this.tree.rootToTipLengths()))]).range(this._horizontalRange);
-	      } else {
-	        this.horizontalScale = this.settings.horizontalScale;
-	      } // get the nodes in post-order
-
-
+	      // get the nodes in post-order
 	      var nodes = toConsumableArray(this.tree.postorder());
 
 	      var currentY = -1;
@@ -9618,7 +9679,7 @@
 	      nodes.forEach(function (n) {
 	        var v = _this2.nodeMap.get(n);
 
-	        v.x = _this2.horizontalScale(_this2.tree.rootToTipLength(v.node));
+	        v.x = _this2.horizontalScale(v.node.height);
 	        currentY = _this2.setYPosition(v, currentY);
 	        v.degree = v.node.children ? v.node.children.length + 1 : 1; // the number of edges (including stem)
 
@@ -9805,6 +9866,7 @@
 
 	/**
 	 * The TransmissionLayout class
+	 * Only works for 'up' directions
 	 *
 	 */
 
@@ -9817,7 +9879,8 @@
 	    key: "DEFAULT_SETTINGS",
 	    value: function DEFAULT_SETTINGS() {
 	      return {
-	        groupingAnnotation: "host"
+	        groupingAnnotation: "host",
+	        direction: "up"
 	      };
 	    }
 	  }]);
@@ -9832,7 +9895,11 @@
 
 	    classCallCheck(this, TransmissionLayout);
 
-	    //order the tree or something here. add internal nodes ect.
+	    tree.order(function (nodeA, countA, nodeB, countB) {
+	      // otherwise just order by increasing node density
+	      return countB - countA;
+	    });
+
 	    var groupingAnnotation = objectSpread({}, TransmissionLayout.DEFAULT_SETTINGS(), settings)['groupingAnnotation'];
 
 	    var locationChanges = tree.nodeList.filter(function (n) {
@@ -9845,7 +9912,7 @@
 	      newNodeInLocation.annotations[groupingAnnotation] = finalLocation;
 	      var newNodeFromLocation = tree.splitBranch(newNodeInLocation, 1.0);
 	      newNodeFromLocation.annotations[groupingAnnotation] = originalLocation;
-	    }); // tree.setup
+	    });
 
 	    var includedInVerticalRange = function includedInVerticalRange(node) {
 	      return !node.children || node.children.length === 1 && node.annotations[groupingAnnotation] !== node.children[0].annotations[groupingAnnotation];
@@ -9859,14 +9926,10 @@
 	   * Set the direction to draw transmission (up or down).
 	   * @param direction
 	   */
+	  // set direction(direction) {
+	  //     this.update();
+	  // }
 
-
-	  createClass(TransmissionLayout, [{
-	    key: "direction",
-	    set: function set(direction) {
-	      this.update();
-	    }
-	  }]);
 
 	  return TransmissionLayout;
 	}(RectangularLayout$1);
@@ -10471,7 +10534,7 @@
 	    value: function DEFAULT_SETTINGS() {
 	      return {
 	        xAxisTickArguments: [5, "f"],
-	        xAxisTitle: "Divergence",
+	        xAxisTitle: "Height",
 	        // nodeRadius: 6,
 	        hoverBorder: 2,
 	        backgroundBorder: 0,
@@ -10611,10 +10674,15 @@
 	      this.scales.x.domain(this.layout.horizontalRange).range([this.margins.left, width - this.margins.right]);
 	      this.scales.y.domain(this.layout.verticalRange).range([this.margins.top + 20, height - this.margins.bottom - 20]);
 	      this.scales.width = width;
-	      this.scales.height = height; // updateAxis.call(this);
-
-	      var xAxis = axisBottom(this.scales.x).tickArguments(this.settings.xAxisTickArguments);
-	      this.svgSelection.select("#x-axis").transition().duration(this.settings.transitionDuration).call(xAxis); // call the private methods to create the components of the diagram
+	      this.scales.height = height;
+	      addAxis.call(this); // const xAxis = axisBottom(this.scales.x)
+	      //     .tickArguments(this.settings.xAxisTickArguments);
+	      //
+	      // this.svgSelection.select("#x-axis")
+	      //     .transition()
+	      //     .duration(this.settings.transitionDuration)
+	      //     .call(xAxis);
+	      // call the private methods to create the components of the diagram
 
 	      updateBranches.call(this);
 
@@ -11002,7 +11070,7 @@
 
 
 	function addAxis() {
-	  var xAxis = axisBottom(this.scales.x).tickArguments(this.settings.xAxisTickArguments);
+	  var xAxis = axisBottom(linear$1().domain(this.layout.horizontalScale.domain()).range(this.scales.x.range())).tickArguments(this.settings.xAxisTickArguments);
 	  var xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
 	  var axesLayer = this.svgSelection.select(".axes-layer");
 	  axesLayer.append("g").attr("id", "x-axis").attr("class", "axis").attr("transform", "translate(0, ".concat(this.scales.height - this.margins.bottom + 5, ")")).call(xAxis);

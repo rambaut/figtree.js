@@ -3,6 +3,7 @@
 /** @module tree */
 
 import uuid from "uuid";
+import {max} from "d3";
 // for unique node ids
 export const Type = {
     DISCRETE : Symbol("DISCRETE"),
@@ -31,11 +32,11 @@ export class Tree {
     constructor(rootNode = {}) {
         this.heightsKnown = false;
         this.lengthsKnown = true;
-        this.root = makeNode.call(this,{...rootNode});
+        this.root = makeNode.call(this,{...rootNode,...{length:0}});
         // This converts all the json objects to Node instances
         setUpNodes.call(this,this.root);
 
-        this.origin = 0;
+        this._origin = 0;
         this.annotations = {};
         this._nodeList = [...this.preorder()];
         this._nodeList.forEach( (node) => {
@@ -165,8 +166,12 @@ export class Tree {
         return node.height;
     }
 
-    setOrigin(origin){
-        this.origin = origin;
+    set origin(value){
+        this._origin = value;
+        this.heightsKnown=false;
+    }
+    get origin(){
+        return this._origin;
     }
 
     /**
@@ -887,6 +892,50 @@ export class Tree {
         }
         return new Tree(currentNode);
     };
+
+    /*
+
+     */
+   static  parseNexus(nexus){
+
+        const trees=[];
+
+        const nexusTokens = nexus.split(/\s*Begin|begin|end|End|BEGIN|END\s*/);
+        const firstToken = nexusTokens.shift();
+        if(firstToken.toLowerCase()!=='#nexus'){
+            throw Error("File does not begin with #NEXUS is it a nexus file?")
+        }
+
+        for(const section of nexusTokens){
+            const workingSection = section.split(/\n/);
+            const sectionTitle = workingSection.shift();
+            if(sectionTitle.toLowerCase().trim() ==="trees;"){
+                let inTaxaMap=false;
+                const tipNameMap = new Map();
+                for(const token of workingSection){
+                    if(token.trim().toLowerCase()==="translate"){
+                        inTaxaMap=true;
+                    }else{
+                        if(inTaxaMap){
+                            if(token.trim()===";"){
+                                inTaxaMap=false;
+                            }else{
+                                const taxaData = token.trim().replace(",","").split(/\s*\s\s*/);
+                                tipNameMap.set(taxaData[0],taxaData[1]);
+                            }
+                        }else{
+                            const treeString = token.substring(token.indexOf("("));
+                            const thisTree = Tree.parseNewick(treeString);
+                            thisTree.externalNodes.forEach(tip=>tip.name = tipNameMap.get(tip.name))
+                            trees.push(thisTree);
+                        }
+                    }
+                }
+            }
+
+        }
+        return trees;
+    }
 }
 
 /*
@@ -929,12 +978,10 @@ function orderNodes(node, ordering, callback = null) {
  * diverged tip from the root having height given by origin).
  * @param origin
  */
-function calculateHeights(origin=this.origin) {
-    this.setOrigin(origin);
-    let maxDivergence = [ 0.0 ];
-    calculateDivergence(this.root, this.origin, maxDivergence);
+function calculateHeights() {
 
-    this.nodeList.forEach((node) => node._height = maxDivergence[0] - node.divergence );
+    const maxRTT = max(this.rootToTipLengths());
+    this.nodeList.forEach((node) => node._height = this.origin - (maxRTT - this.rootToTipLength(node)) );
     this.heightsKnown = true;
 }
 
@@ -1101,6 +1148,9 @@ class Node{
     }
     get name() {
         return this._name;
+    }
+    set name(value){
+        this._name = value;
     }
 
     set level(value) {
