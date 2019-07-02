@@ -199,9 +199,9 @@ export class FigTree {
         selected.on("mouseover", function (d, i) {
             const node = select(this).select(".node-shape");
             self.settings.baubles.forEach((bauble) => {
-                if (bauble.vertexFilter(node)) {
+                // if (bauble.vertexFilter(node)) {
                     bauble.updateShapes(node, self.settings.hoverBorder);
-                }
+                // }
             });
 
             node.classed("hovered", true);
@@ -210,9 +210,9 @@ export class FigTree {
             const node = select(this).select(".node-shape");
 
             self.settings.baubles.forEach((bauble) => {
-                if (bauble.vertexFilter(node)) {
+                // if (bauble.vertexFilter(node)) {
                     bauble.updateShapes(node, 0);
-                }
+                // }
             });
 
             node.classed("hovered", false);

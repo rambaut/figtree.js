@@ -210,7 +210,7 @@ const Type = {
     BOOLEAN : Symbol("BOOLEAN"),
     INTEGER : Symbol("INTEGER"),
     FLOAT: Symbol("FLOAT"),
-    PROBABILITIES: Symbol("PROBABILITIES")
+    PROBABILITIES: Symbol("PROBABILITIES"),
 };
 
 /**
@@ -227,7 +227,7 @@ class Tree {
     constructor(rootNode = {}) {
         this.heightsKnown = false;
         this.lengthsKnown = true;
-        this.root = makeNode.call(this,{...rootNode,...{length:0}});
+        this.root = makeNode.call(this,{...rootNode});
         // This converts all the json objects to Node instances
         setUpNodes.call(this,this.root);
 
@@ -771,17 +771,35 @@ class Tree {
             }
 
             if (Array.isArray(addValues)) {
-                // is a set of discrete values
-                const type = Type.DISCRETE;
+                // is a set of  values
+                let type;
+                if(addValues.map(v=>isNaN(v)).reduce((acc,curr)=>acc&&curr,true)) {
+                    type = Type.DISCRETE;
+                    annotation.type = type;
+                    if (!annotation.values) {
+                        annotation.values = new Set();
+                    }
+                    annotation.values.add(...addValues);
+                }else if(addValues.map(v=>parseFloat(v)).reduce((acc,curr)=>acc&&Number.isInteger(curr),true)){
+                    type =Type.INTEGER;
+                }else if(addValues.map(v=>parseFloat(v)).reduce((acc,curr)=>acc&&!Number.isInteger(curr),true)){
+                    type = Type.FLOAT;
+                }
 
                 if (annotation.type && annotation.type !== type) {
-                    throw Error(`existing values of the annotation, ${key}, in the tree is not of the same type`);
+                    if ((type === Type.INTEGER && annotation.type === Type.FLOAT) ||
+                        (type === Type.FLOAT && annotation.type === Type.INTEGER)) {
+                        // upgrade to float
+                        type = Type.FLOAT;
+                        annotation.type = Type.FLOAT;
+                        if(annotation.values){
+                            delete annotation.values;
+                    }else{
+                            throw Error(`existing values of the annotation, ${key}, in the tree is discrete.`);
+                        }
+                    }
                 }
-                annotation.type = type;
-                if (!annotation.values) {
-                    annotation.values = new Set();
-                }
-                annotation.values.add(...addValues);
+
                 // annotation.values = annotation.values? [...annotation.values, ...addValues]:[...addValues]
             } else if (Object.isExtensible(addValues)) {
                 // is a set of properties with values
@@ -828,7 +846,7 @@ class Tree {
 
                 if (typeof addValues === typeof true) {
                     type = Type.BOOLEAN;
-                } else if (Number(addValues)) {
+                } else if (!isNaN(addValues)) {
                     type = (addValues % 1 === 0 ? Type.INTEGER : Type.FLOAT);
                 }
 
@@ -928,7 +946,12 @@ class Tree {
                         if(isAnnotationARange){
                             currentNode.annotations[annotationKey].push(annotationToken);
                         }else{
-                            currentNode.annotations[annotationKey]=annotationToken;
+                            if(isNaN(annotationToken)){
+                                currentNode.annotations[annotationKey]=annotationToken;
+
+                            }else{
+                                currentNode.annotations[annotationKey] = parseFloat((annotationToken));
+                            }
                         }
                     }
                 }
@@ -1054,7 +1077,6 @@ class Tree {
         if (level > 0) {
             throw new Error("the brackets in the newick file are not balanced")
         }
-
         return new Tree(currentNode);
     };
 }
@@ -8913,9 +8935,9 @@ class FigTree {
         selected.on("mouseover", function (d, i) {
             const node = select(this).select(".node-shape");
             self.settings.baubles.forEach((bauble) => {
-                if (bauble.vertexFilter(node)) {
+                // if (bauble.vertexFilter(node)) {
                     bauble.updateShapes(node, self.settings.hoverBorder);
-                }
+                // }
             });
 
             node.classed("hovered", true);
@@ -8924,9 +8946,9 @@ class FigTree {
             const node = select(this).select(".node-shape");
 
             self.settings.baubles.forEach((bauble) => {
-                if (bauble.vertexFilter(node)) {
+                // if (bauble.vertexFilter(node)) {
                     bauble.updateShapes(node, 0);
-                }
+                // }
             });
 
             node.classed("hovered", false);

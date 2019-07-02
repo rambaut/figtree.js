@@ -1130,9 +1130,7 @@
 
 	    this.heightsKnown = false;
 	    this.lengthsKnown = true;
-	    this.root = makeNode.call(this, objectSpread({}, rootNode, {
-	      length: 0
-	    })); // This converts all the json objects to Node instances
+	    this.root = makeNode.call(this, objectSpread({}, rootNode)); // This converts all the json objects to Node instances
 
 	    setUpNodes.call(this, this.root);
 	    this.origin = 0;
@@ -1907,22 +1905,51 @@
 	        }
 
 	        if (Array.isArray(addValues)) {
-	          var _annotation$values;
+	          // is a set of  values
+	          var type = void 0;
 
-	          // is a set of discrete values
-	          var type = Type.DISCRETE;
+	          if (addValues.map(function (v) {
+	            return isNaN(v);
+	          }).reduce(function (acc, curr) {
+	            return acc && curr;
+	          }, true)) {
+	            var _annotation$values;
+
+	            type = Type.DISCRETE;
+	            annotation.type = type;
+
+	            if (!annotation.values) {
+	              annotation.values = new Set();
+	            }
+
+	            (_annotation$values = annotation.values).add.apply(_annotation$values, toConsumableArray(addValues));
+	          } else if (addValues.map(function (v) {
+	            return parseFloat(v);
+	          }).reduce(function (acc, curr) {
+	            return acc && Number.isInteger(curr);
+	          }, true)) {
+	            type = Type.INTEGER;
+	          } else if (addValues.map(function (v) {
+	            return parseFloat(v);
+	          }).reduce(function (acc, curr) {
+	            return acc && !Number.isInteger(curr);
+	          }, true)) {
+	            type = Type.FLOAT;
+	          }
 
 	          if (annotation.type && annotation.type !== type) {
-	            throw Error("existing values of the annotation, ".concat(key, ", in the tree is not of the same type"));
-	          }
+	            if (type === Type.INTEGER && annotation.type === Type.FLOAT || type === Type.FLOAT && annotation.type === Type.INTEGER) {
+	              // upgrade to float
+	              type = Type.FLOAT;
+	              annotation.type = Type.FLOAT;
 
-	          annotation.type = type;
-
-	          if (!annotation.values) {
-	            annotation.values = new Set();
-	          }
-
-	          (_annotation$values = annotation.values).add.apply(_annotation$values, toConsumableArray(addValues)); // annotation.values = annotation.values? [...annotation.values, ...addValues]:[...addValues]
+	              if (annotation.values) {
+	                delete annotation.values;
+	              } else {
+	                throw Error("existing values of the annotation, ".concat(key, ", in the tree is discrete."));
+	              }
+	            }
+	          } // annotation.values = annotation.values? [...annotation.values, ...addValues]:[...addValues]
 
 	        } else if (Object.isExtensible(addValues)) {
 	          // is a set of properties with values
@@ -1976,7 +2003,7 @@
 
 	          if (_typeof_1(addValues) === _typeof_1(true)) {
 	            _type2 = Type.BOOLEAN;
-	          } else if (Number(addValues)) {
+	          } else if (!isNaN(addValues)) {
 	            _type2 = addValues % 1 === 0 ? Type.INTEGER : Type.FLOAT;
 	          }
 
@@ -2208,7 +2235,11 @@
 	                if (isAnnotationARange) {
 	                  currentNode.annotations[annotationKey].push(annotationToken);
 	                } else {
-	                  currentNode.annotations[annotationKey] = annotationToken;
+	                  if (isNaN(annotationToken)) {
+	                    currentNode.annotations[annotationKey] = annotationToken;
+	                  } else {
+	                    currentNode.annotations[annotationKey] = parseFloat(annotationToken);
+	                  }
 	                }
 	              }
 	            }
@@ -10642,18 +10673,16 @@
 	      selected.on("mouseover", function (d, i) {
 	        var node = select(this).select(".node-shape");
 	        self.settings.baubles.forEach(function (bauble) {
-	          if (bauble.vertexFilter(node)) {
-	            bauble.updateShapes(node, self.settings.hoverBorder);
-	          }
+	          // if (bauble.vertexFilter(node)) {
+	          bauble.updateShapes(node, self.settings.hoverBorder); // }
 	        });
 	        node.classed("hovered", true);
 	      });
 	      selected.on("mouseout", function (d, i) {
 	        var node = select(this).select(".node-shape");
 	        self.settings.baubles.forEach(function (bauble) {
-	          if (bauble.vertexFilter(node)) {
-	            bauble.updateShapes(node, 0);
-	          }
+	          // if (bauble.vertexFilter(node)) {
+	          bauble.updateShapes(node, 0); // }
 	        });
 	        node.classed("hovered", false);
 	      });
