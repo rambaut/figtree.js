@@ -6567,7 +6567,7 @@ class Tree {
      *
      * @returns {IterableIterator<IterableIterator<*|*>>}
      */
-    *preorder() {
+    *preorder(startNode=this.root) {
         const traverse = function *(node) {
             yield node;
             if (node.children) {
@@ -6577,7 +6577,7 @@ class Tree {
             }
         };
 
-        yield* traverse(this.root);
+        yield* traverse(startNode);
     }
 
     /**
@@ -6585,7 +6585,7 @@ class Tree {
      *
      * @returns {IterableIterator<IterableIterator<*|*>>}
      */
-    *postorder() {
+    *postorder(startNode=this.root) {
         const traverse = function *(node) {
             if (node.children) {
                 for (const child of node.children) {
@@ -6595,7 +6595,7 @@ class Tree {
             yield node;
         };
 
-        yield* traverse(this.root);
+        yield* traverse(startNode);
     }
 
     /**
@@ -7698,8 +7698,11 @@ class Layout {
      * A utility function to cartoon a clade into a triangle
      * @param vertex
      */
-    cartoon(vertex){
-        vertex.cartoon = true;
+    cartoon(node){
+        const vertex=this._nodeMap.get(node);
+        vertex.cartoon = vertex.cartoon? !vertex.cartoon:true;
+        this.layoutKnown=false;
+        this.update();
     }
 
     /**
@@ -7776,9 +7779,11 @@ class RectangularLayout extends Layout {
         this.layoutKnown = false;
         this._edges = [];
         this._vertices=[];
+        this._cartoons = [];
 
         this._nodeMap = new Map();
         this._edgeMap = new Map();
+        this._cartoonMap = new Map();
 
 
     }
@@ -7829,6 +7834,7 @@ class RectangularLayout extends Layout {
 
                 v.id = n.id;
 
+                v.masked = false;
                 v.classes = [
                     (!v.node.children ? "external-node" : "internal-node"),
                     (v.node.isSelected ? "selected" : "unselected")];
@@ -7912,6 +7918,35 @@ class RectangularLayout extends Layout {
             });
 
         // Now do the annotation stuff
+        // remake evertime;
+
+        this._cartoons = [];
+
+        const cartoonVertices = this._vertices.filter(v=>v.cartoon);
+
+
+        for(const cartoonVertex of cartoonVertices){
+            const cartoonNodeDecedents = [...this.tree.postorder(cartoonVertex.node)].filter(n=>n!==cartoonVertex.node);
+
+            const cartoonVertexDecedents = cartoonNodeDecedents.map(n=>this._nodeMap.get(n));
+            cartoonVertexDecedents.forEach(v=>v.masked=true);
+            const newTopVertex = {
+                x: max(cartoonVertexDecedents, d => d.x),
+                y: max(cartoonVertexDecedents, d => d.y),
+                id: `${cartoonVertex.id}-top`,
+                node: cartoonVertex.node,
+                classes: cartoonVertex.classes
+            };
+            const newBottomVertex = {
+                ...newTopVertex,...{y:min(cartoonVertexDecedents, d => d.y),id: `${cartoonVertex.id}-bottom`}
+            };
+
+
+            this._cartoons.push({vertices:[cartoonVertex,newTopVertex,newBottomVertex],
+                classes : cartoonVertex.classes,
+            id:`${cartoonVertex.id}-cartoon`});
+        }
+
 
         this.layoutKnown=true;
 
@@ -8000,14 +8035,20 @@ class RectangularLayout extends Layout {
         if(!this.layoutKnown){
             this.layout();
         }
-        return this._edges;
+        return this._edges.filter(e=>!e.v1.masked);
     }
 
     get vertices(){
         if(!this.layoutKnown){
             this.layout();
         }
-        return this._vertices;
+        return this._vertices.filter(v=>!v.masked);
+    }
+    get cartoons(){
+        if(!this.layoutKnown){
+            this.layout();
+        }
+        return this._cartoons;
     }
 
     get nodeMap(){
@@ -8082,9 +8123,11 @@ class RectangularLayout$1 extends Layout {
         this.layoutKnown = false;
         this._edges = [];
         this._vertices=[];
+        this._cartoons = [];
 
         this._nodeMap = new Map();
         this._edgeMap = new Map();
+        this._cartoonMap = new Map();
 
 
     }
@@ -8135,6 +8178,7 @@ class RectangularLayout$1 extends Layout {
 
                 v.id = n.id;
 
+                v.masked = false;
                 v.classes = [
                     (!v.node.children ? "external-node" : "internal-node"),
                     (v.node.isSelected ? "selected" : "unselected")];
@@ -8218,6 +8262,35 @@ class RectangularLayout$1 extends Layout {
             });
 
         // Now do the annotation stuff
+        // remake evertime;
+
+        this._cartoons = [];
+
+        const cartoonVertices = this._vertices.filter(v=>v.cartoon);
+
+
+        for(const cartoonVertex of cartoonVertices){
+            const cartoonNodeDecedents = [...this.tree.postorder(cartoonVertex.node)].filter(n=>n!==cartoonVertex.node);
+
+            const cartoonVertexDecedents = cartoonNodeDecedents.map(n=>this._nodeMap.get(n));
+            cartoonVertexDecedents.forEach(v=>v.masked=true);
+            const newTopVertex = {
+                x: max(cartoonVertexDecedents, d => d.x),
+                y: max(cartoonVertexDecedents, d => d.y),
+                id: `${cartoonVertex.id}-top`,
+                node: cartoonVertex.node,
+                classes: cartoonVertex.classes
+            };
+            const newBottomVertex = {
+                ...newTopVertex,...{y:min(cartoonVertexDecedents, d => d.y),id: `${cartoonVertex.id}-bottom`}
+            };
+
+
+            this._cartoons.push({vertices:[cartoonVertex,newTopVertex,newBottomVertex],
+                classes : cartoonVertex.classes,
+            id:`${cartoonVertex.id}-cartoon`});
+        }
+
 
         this.layoutKnown=true;
 
@@ -8306,14 +8379,20 @@ class RectangularLayout$1 extends Layout {
         if(!this.layoutKnown){
             this.layout();
         }
-        return this._edges;
+        return this._edges.filter(e=>!e.v1.masked);
     }
 
     get vertices(){
         if(!this.layoutKnown){
             this.layout();
         }
-        return this._vertices;
+        return this._vertices.filter(v=>!v.masked);
+    }
+    get cartoons(){
+        if(!this.layoutKnown){
+            this.layout();
+        }
+        return this._cartoons;
     }
 
     get nodeMap(){
@@ -8911,7 +8990,10 @@ class FigTree {
         };
     }
     static DEFAULT_STYLES(){
-        return {"nodes":new Map(),"nodeBackgrounds":new Map(),"branches":new Map([["fill",d=>"none"],["stroke-width",d=>"2"],["stroke",d=>"black"]])}
+        return {"nodes":new Map(),
+            "nodeBackgrounds":new Map(),
+            "branches":new Map([["fill",d=>"none"],["stroke-width",d=>"2"],["stroke",d=>"black"]]),
+        "cartoons":new Map([["fill",d=>"none"],["stroke-width",d=>"2"],["stroke",d=>"black"]])}
     }
 
     /**
@@ -8972,6 +9054,8 @@ class FigTree {
             this.svgSelection.append("g").attr("class", "nodes-background-layer");
         }
         this.svgSelection.append("g").attr("class", "nodes-layer");
+        this.svgSelection.append("g").attr("class", "cartoon-layer");
+
 
         // create the scales
         const xScale = linear$1()
@@ -9035,6 +9119,7 @@ class FigTree {
         }
 
         updateNodes.call(this);
+        updateCartoons.call(this);
 
     }
 
@@ -9394,7 +9479,10 @@ function updateBranches() {
     // ENTER
     // Create new elements as needed.
     const newBranches = branches.enter().append("g")
-        .attr("id", (e) => e.id)
+        .attr("id", (e) => {
+            return e.key;
+
+        })
         .attr("class", (e) => ["branch", ...e.classes].join(" "))
         .attr("transform", (e) => {
             return `translate(${this.scales.x(e.v0.x)}, ${this.scales.y(e.v1.y)})`;
@@ -9437,6 +9525,48 @@ function updateBranches() {
         .exit().remove();
 
     updateBranchStyles.call(this);
+}
+
+function updateCartoons(){
+    const cartoonLayer = this.svgSelection.select(".cartoon-layer");
+
+    // DATA JOIN
+    // Join new data with old elements, if any.
+    const cartoons = cartoonLayer.selectAll("g .cartoon")
+        .data(this.layout.cartoons, (c) => `c_${c.id}`);
+
+    // ENTER
+    // Create new elements as needed.
+    const newCartoons = cartoons.enter().append("g")
+        .attr("id", (c) => `cartoon-${c.id}`)
+        .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
+        .attr("transform", (c) => {
+            return `translate(${this.scales.x(c.vertices[0].x)}, ${this.scales.y(c.vertices[0].y)})`;
+        });
+
+    newCartoons.append("path")
+        .attr("class", "cartoon-path")
+        .attr("d", (e,i) => pointToPoint.call(this,e.vertices));
+
+
+
+    // update the existing elements
+    cartoons
+        .transition()
+        .duration(this.settings.transitionDuration)
+        .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
+        .attr("transform", (c) => {
+            return `translate(${this.scales.x(c.vertices[0].x)}, ${this.scales.y(c.vertices[0].y)})`
+        })
+        .select("path")
+        .attr("d", (c) => pointToPoint.call(this,c.vertices));
+
+
+    // EXIT
+    // Remove old elements as needed.
+    cartoons.exit().remove();
+
+    updateCartoonStyles.call(this);
 }
 
 /**
@@ -9486,9 +9616,6 @@ function updateAxis(){
 }
 
 
-/**
- * A function to update the annotatation layer of the tree
- */
 
 
 function updateNodeStyles(){
@@ -9540,6 +9667,38 @@ function updateBranchStyles(){
             .attr(key,d=>branchAttrMap.get(key)(d.v1.node));
     }
 
+}
+
+function updateCartoonStyles(){
+    const cartoonLayer = this.svgSelection.select(".cartoon-layer");
+
+    // DATA JOIN
+    // Join new data with old elements, if any.
+    const cartoons = cartoonLayer.selectAll(".cartoon path");
+    const CartoonAttrMap = this.settings.styles.cartoons;
+    for(const key of CartoonAttrMap.keys()){
+        cartoons
+        // .transition()
+        // .duration(this.settings.transitionDuration)
+            .attr(key,c=>CartoonAttrMap.get(key)(c.vertices[0].node));
+        // attributes are set by the "root" node
+    }
+
+
+}
+
+function pointToPoint(points){
+    let path = [];
+    const origin = points[0];
+    const pathPoints =points.reverse();
+    let currentPoint =origin;
+    for(const point of pathPoints){
+        const xdiff = this.scales.x(point.x)-this.scales.x(currentPoint.x);
+        const ydiff = this.scales.y(point.y)- this.scales.y(currentPoint.y);
+        path.push(`${xdiff} ${ydiff}`);
+        currentPoint = point;
+    }
+    return `M 0 0 ${path.join(" l ")} z`;
 }
 
 /** @module Graph */

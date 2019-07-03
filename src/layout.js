@@ -96,8 +96,11 @@ export class Layout {
      * A utility function to cartoon a clade into a triangle
      * @param vertex
      */
-    cartoon(vertex){
-        vertex.cartoon = true;
+    cartoon(node){
+        const vertex=this._nodeMap.get(node);
+        vertex.cartoon = vertex.cartoon? !vertex.cartoon:true;
+        this.layoutKnown=false;
+        this.update();
     }
 
     /**

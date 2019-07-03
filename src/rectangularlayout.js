@@ -4,7 +4,7 @@
 
 import { Layout } from "./layout.js";
 import { Type } from "./tree.js";
-import {format,curveStepBefore,max,line,mean,scaleLinear} from "d3";
+import {format,curveStepBefore,max,min,line,mean,scaleLinear,curveLinear} from "d3";
 
 // const d3 = require("d3");
 /**
@@ -52,9 +52,11 @@ export class RectangularLayout extends Layout {
         this.layoutKnown = false;
         this._edges = [];
         this._vertices=[];
+        this._cartoons = [];
 
         this._nodeMap = new Map();
         this._edgeMap = new Map();
+        this._cartoonMap = new Map();
 
 
     }
@@ -105,6 +107,7 @@ export class RectangularLayout extends Layout {
 
                 v.id = n.id;
 
+                v.masked = false;
                 v.classes = [
                     (!v.node.children ? "external-node" : "internal-node"),
                     (v.node.isSelected ? "selected" : "unselected")];
@@ -188,6 +191,35 @@ export class RectangularLayout extends Layout {
             });
 
         // Now do the annotation stuff
+        // remake evertime;
+
+        this._cartoons = [];
+
+        const cartoonVertices = this._vertices.filter(v=>v.cartoon);
+
+
+        for(const cartoonVertex of cartoonVertices){
+            const cartoonNodeDecedents = [...this.tree.postorder(cartoonVertex.node)].filter(n=>n!==cartoonVertex.node);
+
+            const cartoonVertexDecedents = cartoonNodeDecedents.map(n=>this._nodeMap.get(n));
+            cartoonVertexDecedents.forEach(v=>v.masked=true)
+            const newTopVertex = {
+                x: max(cartoonVertexDecedents, d => d.x),
+                y: max(cartoonVertexDecedents, d => d.y),
+                id: `${cartoonVertex.id}-top`,
+                node: cartoonVertex.node,
+                classes: cartoonVertex.classes
+            };
+            const newBottomVertex = {
+                ...newTopVertex,...{y:min(cartoonVertexDecedents, d => d.y),id: `${cartoonVertex.id}-bottom`}
+            };
+
+
+            this._cartoons.push({vertices:[cartoonVertex,newTopVertex,newBottomVertex],
+                classes : cartoonVertex.classes,
+            id:`${cartoonVertex.id}-cartoon`})
+        }
+
 
         this.layoutKnown=true;
 
@@ -276,14 +308,20 @@ export class RectangularLayout extends Layout {
         if(!this.layoutKnown){
             this.layout();
         }
-        return this._edges;
+        return this._edges.filter(e=>!e.v1.masked);
     }
 
     get vertices(){
         if(!this.layoutKnown){
             this.layout();
         }
-        return this._vertices;
+        return this._vertices.filter(v=>!v.masked);
+    }
+    get cartoons(){
+        if(!this.layoutKnown){
+            this.layout();
+        }
+        return this._cartoons;
     }
 
     get nodeMap(){

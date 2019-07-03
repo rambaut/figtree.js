@@ -431,6 +431,7 @@
     figTree.draw();
 
     layout.setInternalNodeLabels("probability");
+    layout.cartoon(tree.tipMap.get("virus1").parent);
 
     // figTree.addLabels('.external-node', FigTree.nodeInfo);
     figTree.addToolTip('.node', layout.nodeInfo);
@@ -438,9 +439,9 @@
     figTree.hilightBranches();
     figTree.onClickBranch(layout.reroot());
     figTree.hilightInternalNodes();
-    figTree.onClickNode(layout.rotate());
+    figTree.onClickNode((v)=>layout.cartoon(v.node));
 
-    tree.annotateNodesFromTips("host");
+    // tree.annotateNodesFromTips("host");
 
     figTree.update();
 

@@ -25,7 +25,10 @@ export class FigTree {
         };
     }
     static DEFAULT_STYLES(){
-        return {"nodes":new Map(),"nodeBackgrounds":new Map(),"branches":new Map([["fill",d=>"none"],["stroke-width",d=>"2"],["stroke",d=>"black"]])}
+        return {"nodes":new Map(),
+            "nodeBackgrounds":new Map(),
+            "branches":new Map([["fill",d=>"none"],["stroke-width",d=>"2"],["stroke",d=>"black"]]),
+        "cartoons":new Map([["fill",d=>"none"],["stroke-width",d=>"2"],["stroke",d=>"black"]])}
     }
 
     /**
@@ -86,6 +89,8 @@ export class FigTree {
             this.svgSelection.append("g").attr("class", "nodes-background-layer");
         }
         this.svgSelection.append("g").attr("class", "nodes-layer");
+        this.svgSelection.append("g").attr("class", "cartoon-layer");
+
 
         // create the scales
         const xScale = scaleLinear()
@@ -149,6 +154,7 @@ export class FigTree {
         }
 
         updateNodes.call(this);
+        updateCartoons.call(this);
 
     }
 
@@ -508,7 +514,10 @@ function updateBranches() {
     // ENTER
     // Create new elements as needed.
     const newBranches = branches.enter().append("g")
-        .attr("id", (e) => e.id)
+        .attr("id", (e) => {
+            return e.key;
+
+        })
         .attr("class", (e) => ["branch", ...e.classes].join(" "))
         .attr("transform", (e) => {
             return `translate(${this.scales.x(e.v0.x)}, ${this.scales.y(e.v1.y)})`;
@@ -551,6 +560,48 @@ function updateBranches() {
         .exit().remove();
 
     updateBranchStyles.call(this);
+}
+
+function updateCartoons(){
+    const cartoonLayer = this.svgSelection.select(".cartoon-layer");
+
+    // DATA JOIN
+    // Join new data with old elements, if any.
+    const cartoons = cartoonLayer.selectAll("g .cartoon")
+        .data(this.layout.cartoons, (c) => `c_${c.id}`);
+
+    // ENTER
+    // Create new elements as needed.
+    const newCartoons = cartoons.enter().append("g")
+        .attr("id", (c) => `cartoon-${c.id}`)
+        .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
+        .attr("transform", (c) => {
+            return `translate(${this.scales.x(c.vertices[0].x)}, ${this.scales.y(c.vertices[0].y)})`;
+        });
+
+    newCartoons.append("path")
+        .attr("class", "cartoon-path")
+        .attr("d", (e,i) => pointToPoint.call(this,e.vertices));
+
+
+
+    // update the existing elements
+    cartoons
+        .transition()
+        .duration(this.settings.transitionDuration)
+        .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
+        .attr("transform", (c) => {
+            return `translate(${this.scales.x(c.vertices[0].x)}, ${this.scales.y(c.vertices[0].y)})`
+        })
+        .select("path")
+        .attr("d", (c) => pointToPoint.call(this,c.vertices));
+
+
+    // EXIT
+    // Remove old elements as needed.
+    cartoons.exit().remove();
+
+    updateCartoonStyles.call(this);
 }
 
 /**
@@ -600,9 +651,6 @@ function updateAxis(){
 }
 
 
-/**
- * A function to update the annotatation layer of the tree
- */
 
 
 function updateNodeStyles(){
@@ -654,4 +702,36 @@ function updateBranchStyles(){
             .attr(key,d=>branchAttrMap.get(key)(d.v1.node))
     }
 
+}
+
+function updateCartoonStyles(){
+    const cartoonLayer = this.svgSelection.select(".cartoon-layer");
+
+    // DATA JOIN
+    // Join new data with old elements, if any.
+    const cartoons = cartoonLayer.selectAll(".cartoon path");
+    const CartoonAttrMap = this.settings.styles.cartoons;
+    for(const key of CartoonAttrMap.keys()){
+        cartoons
+        // .transition()
+        // .duration(this.settings.transitionDuration)
+            .attr(key,c=>CartoonAttrMap.get(key)(c.vertices[0].node))
+        // attributes are set by the "root" node
+    }
+
+
+}
+
+function pointToPoint(points){
+    let path = [];
+    const origin = points[0];
+    const pathPoints =points.reverse();
+    let currentPoint =origin;
+    for(const point of pathPoints){
+        const xdiff = this.scales.x(point.x)-this.scales.x(currentPoint.x);
+        const ydiff = this.scales.y(point.y)- this.scales.y(currentPoint.y);
+        path.push(`${xdiff} ${ydiff}`)
+        currentPoint = point;
+    }
+    return `M 0 0 ${path.join(" l ")} z`;
 }

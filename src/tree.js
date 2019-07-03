@@ -179,7 +179,7 @@ export class Tree {
      *
      * @returns {IterableIterator<IterableIterator<*|*>>}
      */
-    *preorder() {
+    *preorder(startNode=this.root) {
         const traverse = function *(node) {
             yield node;
             if (node.children) {
@@ -189,7 +189,7 @@ export class Tree {
             }
         };
 
-        yield* traverse(this.root);
+        yield* traverse(startNode);
     }
 
     /**
@@ -197,7 +197,7 @@ export class Tree {
      *
      * @returns {IterableIterator<IterableIterator<*|*>>}
      */
-    *postorder() {
+    *postorder(startNode=this.root) {
         const traverse = function *(node) {
             if (node.children) {
                 for (const child of node.children) {
@@ -207,7 +207,7 @@ export class Tree {
             yield node;
         };
 
-        yield* traverse(this.root);
+        yield* traverse(startNode);
     }
 
     /**

@@ -7419,11 +7419,14 @@
 	    value:
 	    /*#__PURE__*/
 	    regenerator.mark(function preorder() {
-	      var traverse;
+	      var startNode,
+	          traverse,
+	          _args2 = arguments;
 	      return regenerator.wrap(function preorder$(_context2) {
 	        while (1) {
 	          switch (_context2.prev = _context2.next) {
 	            case 0:
+	              startNode = _args2.length > 0 && _args2[0] !== undefined ? _args2[0] : this.root;
 	              traverse =
 	              /*#__PURE__*/
 	              regenerator.mark(function traverse(node) {
@@ -7503,9 +7506,9 @@
 	                  }
 	                }, traverse, null, [[6, 16, 20, 28], [21,, 23, 27]]);
 	              });
-	              return _context2.delegateYield(traverse(this.root), "t0", 2);
+	              return _context2.delegateYield(traverse(startNode), "t0", 3);
 
-	            case 2:
+	            case 3:
 	            case "end":
 	              return _context2.stop();
 	          }
@@ -7523,11 +7526,14 @@
 	    value:
 	    /*#__PURE__*/
 	    regenerator.mark(function postorder() {
-	      var traverse;
+	      var startNode,
+	          traverse,
+	          _args4 = arguments;
 	      return regenerator.wrap(function postorder$(_context4) {
 	        while (1) {
 	          switch (_context4.prev = _context4.next) {
 	            case 0:
+	              startNode = _args4.length > 0 && _args4[0] !== undefined ? _args4[0] : this.root;
 	              traverse =
 	              /*#__PURE__*/
 	              regenerator.mark(function traverse(node) {
@@ -7607,9 +7613,9 @@
 	                  }
 	                }, traverse, null, [[4, 14, 18, 26], [19,, 21, 25]]);
 	              });
-	              return _context4.delegateYield(traverse(this.root), "t0", 2);
+	              return _context4.delegateYield(traverse(startNode), "t0", 3);
 
-	            case 2:
+	            case 3:
 	            case "end":
 	              return _context4.stop();
 	          }
@@ -9191,8 +9197,12 @@
 
 	  }, {
 	    key: "cartoon",
-	    value: function cartoon(vertex) {
-	      vertex.cartoon = true;
+	    value: function cartoon(node) {
+	      var vertex = this._nodeMap.get(node);
+
+	      vertex.cartoon = vertex.cartoon ? !vertex.cartoon : true;
+	      this.layoutKnown = false;
+	      this.update();
 	    }
 	    /**
 	     * A utitlity function to callapse a clade into a single branch and tip.
@@ -9365,8 +9375,10 @@
 	    _this.layoutKnown = false;
 	    _this._edges = [];
 	    _this._vertices = [];
+	    _this._cartoons = [];
 	    _this._nodeMap = new Map();
 	    _this._edgeMap = new Map();
+	    _this._cartoonMap = new Map();
 	    return _this;
 	  }
 	  /**
@@ -9418,6 +9430,7 @@
 	        v.degree = v.node.children ? v.node.children.length + 1 : 1; // the number of edges (including stem)
 
 	        v.id = n.id;
+	        v.masked = false;
 	        v.classes = [!v.node.children ? "external-node" : "internal-node", v.node.isSelected ? "selected" : "unselected"];
 
 	        if (v.node.annotations) {
@@ -9493,7 +9506,76 @@
 	        e.label = _this2.branchLabelAnnotationName ? _this2.branchLabelAnnotationName === 'length' ? _this2.settings.lengthFormat(length) : e.v1.node.annotations[_this2.branchLabelAnnotationName] : null;
 	        e.labelBelow = e.v1.node.parent.children[0] !== e.v1.node;
 	      }); // Now do the annotation stuff
+	      // remake evertime;
 
+
+	      this._cartoons = [];
+
+	      var cartoonVertices = this._vertices.filter(function (v) {
+	        return v.cartoon;
+	      });
+
+	      var _iteratorNormalCompletion = true;
+	      var _didIteratorError = false;
+	      var _iteratorError = undefined;
+
+	      try {
+	        var _loop = function _loop() {
+	          var cartoonVertex = _step.value;
+
+	          var cartoonNodeDecedents = toConsumableArray(_this2.tree.postorder(cartoonVertex.node)).filter(function (n) {
+	            return n !== cartoonVertex.node;
+	          });
+
+	          var cartoonVertexDecedents = cartoonNodeDecedents.map(function (n) {
+	            return _this2._nodeMap.get(n);
+	          });
+	          cartoonVertexDecedents.forEach(function (v) {
+	            return v.masked = true;
+	          });
+	          var newTopVertex = {
+	            x: max(cartoonVertexDecedents, function (d) {
+	              return d.x;
+	            }),
+	            y: max(cartoonVertexDecedents, function (d) {
+	              return d.y;
+	            }),
+	            id: "".concat(cartoonVertex.id, "-top"),
+	            node: cartoonVertex.node,
+	            classes: cartoonVertex.classes
+	          };
+
+	          var newBottomVertex = objectSpread({}, newTopVertex, {
+	            y: min(cartoonVertexDecedents, function (d) {
+	              return d.y;
+	            }),
+	            id: "".concat(cartoonVertex.id, "-bottom")
+	          });
+
+	          _this2._cartoons.push({
+	            vertices: [cartoonVertex, newTopVertex, newBottomVertex],
+	            classes: cartoonVertex.classes,
+	            id: "".concat(cartoonVertex.id, "-cartoon")
+	          });
+	        };
+
+	        for (var _iterator = cartoonVertices[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	          _loop();
+	        }
+	      } catch (err) {
+	        _didIteratorError = true;
+	        _iteratorError = err;
+	      } finally {
+	        try {
+	          if (!_iteratorNormalCompletion && _iterator["return"] != null) {
+	            _iterator["return"]();
+	          }
+	        } finally {
+	          if (_didIteratorError) {
+	            throw _iteratorError;
+	          }
+	        }
+	      }
 
 	      this.layoutKnown = true;
 	    }
@@ -9605,7 +9687,9 @@
 	        this.layout();
 	      }
 
-	      return this._edges;
+	      return this._edges.filter(function (e) {
+	        return !e.v1.masked;
+	      });
 	    }
 	  }, {
 	    key: "vertices",
@@ -9614,7 +9698,18 @@
 	        this.layout();
 	      }
 
-	      return this._vertices;
+	      return this._vertices.filter(function (v) {
+	        return !v.masked;
+	      });
+	    }
+	  }, {
+	    key: "cartoons",
+	    get: function get() {
+	      if (!this.layoutKnown) {
+	        this.layout();
+	      }
+
+	      return this._cartoons;
 	    }
 	  }, {
 	    key: "nodeMap",
@@ -9709,8 +9804,10 @@
 	    _this.layoutKnown = false;
 	    _this._edges = [];
 	    _this._vertices = [];
+	    _this._cartoons = [];
 	    _this._nodeMap = new Map();
 	    _this._edgeMap = new Map();
+	    _this._cartoonMap = new Map();
 	    return _this;
 	  }
 	  /**
@@ -9762,6 +9859,7 @@
 	        v.degree = v.node.children ? v.node.children.length + 1 : 1; // the number of edges (including stem)
 
 	        v.id = n.id;
+	        v.masked = false;
 	        v.classes = [!v.node.children ? "external-node" : "internal-node", v.node.isSelected ? "selected" : "unselected"];
 
 	        if (v.node.annotations) {
@@ -9837,7 +9935,76 @@
 	        e.label = _this2.branchLabelAnnotationName ? _this2.branchLabelAnnotationName === 'length' ? _this2.settings.lengthFormat(length) : e.v1.node.annotations[_this2.branchLabelAnnotationName] : null;
 	        e.labelBelow = e.v1.node.parent.children[0] !== e.v1.node;
 	      }); // Now do the annotation stuff
+	      // remake evertime;
 
+
+	      this._cartoons = [];
+
+	      var cartoonVertices = this._vertices.filter(function (v) {
+	        return v.cartoon;
+	      });
+
+	      var _iteratorNormalCompletion = true;
+	      var _didIteratorError = false;
+	      var _iteratorError = undefined;
+
+	      try {
+	        var _loop = function _loop() {
+	          var cartoonVertex = _step.value;
+
+	          var cartoonNodeDecedents = toConsumableArray(_this2.tree.postorder(cartoonVertex.node)).filter(function (n) {
+	            return n !== cartoonVertex.node;
+	          });
+
+	          var cartoonVertexDecedents = cartoonNodeDecedents.map(function (n) {
+	            return _this2._nodeMap.get(n);
+	          });
+	          cartoonVertexDecedents.forEach(function (v) {
+	            return v.masked = true;
+	          });
+	          var newTopVertex = {
+	            x: max(cartoonVertexDecedents, function (d) {
+	              return d.x;
+	            }),
+	            y: max(cartoonVertexDecedents, function (d) {
+	              return d.y;
+	            }),
+	            id: "".concat(cartoonVertex.id, "-top"),
+	            node: cartoonVertex.node,
+	            classes: cartoonVertex.classes
+	          };
+
+	          var newBottomVertex = objectSpread({}, newTopVertex, {
+	            y: min(cartoonVertexDecedents, function (d) {
+	              return d.y;
+	            }),
+	            id: "".concat(cartoonVertex.id, "-bottom")
+	          });
+
+	          _this2._cartoons.push({
+	            vertices: [cartoonVertex, newTopVertex, newBottomVertex],
+	            classes: cartoonVertex.classes,
+	            id: "".concat(cartoonVertex.id, "-cartoon")
+	          });
+	        };
+
+	        for (var _iterator = cartoonVertices[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	          _loop();
+	        }
+	      } catch (err) {
+	        _didIteratorError = true;
+	        _iteratorError = err;
+	      } finally {
+	        try {
+	          if (!_iteratorNormalCompletion && _iterator["return"] != null) {
+	            _iterator["return"]();
+	          }
+	        } finally {
+	          if (_didIteratorError) {
+	            throw _iteratorError;
+	          }
+	        }
+	      }
 
 	      this.layoutKnown = true;
 	    }
@@ -9949,7 +10116,9 @@
 	        this.layout();
 	      }
 
-	      return this._edges;
+	      return this._edges.filter(function (e) {
+	        return !e.v1.masked;
+	      });
 	    }
 	  }, {
 	    key: "vertices",
@@ -9958,7 +10127,18 @@
 	        this.layout();
 	      }
 
-	      return this._vertices;
+	      return this._vertices.filter(function (v) {
+	        return !v.masked;
+	      });
+	    }
+	  }, {
+	    key: "cartoons",
+	    get: function get() {
+	      if (!this.layoutKnown) {
+	        this.layout();
+	      }
+
+	      return this._cartoons;
 	    }
 	  }, {
 	    key: "nodeMap",
@@ -10685,6 +10865,13 @@
 	          return "2";
 	        }], ["stroke", function (d) {
 	          return "black";
+	        }]]),
+	        "cartoons": new Map([["fill", function (d) {
+	          return "none";
+	        }], ["stroke-width", function (d) {
+	          return "2";
+	        }], ["stroke", function (d) {
+	          return "black";
 	        }]])
 	      };
 	    }
@@ -10757,7 +10944,8 @@
 	        this.svgSelection.append("g").attr("class", "nodes-background-layer");
 	      }
 
-	      this.svgSelection.append("g").attr("class", "nodes-layer"); // create the scales
+	      this.svgSelection.append("g").attr("class", "nodes-layer");
+	      this.svgSelection.append("g").attr("class", "cartoon-layer"); // create the scales
 
 	      var xScale = linear$1().domain(this.layout.horizontalRange).range([this.margins.left, width - this.margins.right]);
 	      var yScale = linear$1().domain(this.layout.verticalRange).range([this.margins.top + 20, height - this.margins.bottom - 20]);
@@ -10817,6 +11005,7 @@
 	      }
 
 	      updateNodes.call(this);
+	      updateCartoons.call(this);
 	    }
 	    /**
 	     * set mouseover highlighting of branches
@@ -11151,7 +11340,7 @@
 	  // Create new elements as needed.
 
 	  var newBranches = branches.enter().append("g").attr("id", function (e) {
-	    return e.id;
+	    return e.key;
 	  }).attr("class", function (e) {
 	    return ["branch"].concat(toConsumableArray(e.classes)).join(" ");
 	  }).attr("transform", function (e) {
@@ -11190,6 +11379,41 @@
 	  branches.exit().remove();
 	  updateBranchStyles.call(this);
 	}
+
+	function updateCartoons() {
+	  var _this5 = this;
+
+	  var cartoonLayer = this.svgSelection.select(".cartoon-layer"); // DATA JOIN
+	  // Join new data with old elements, if any.
+
+	  var cartoons = cartoonLayer.selectAll("g .cartoon").data(this.layout.cartoons, function (c) {
+	    return "c_".concat(c.id);
+	  }); // ENTER
+	  // Create new elements as needed.
+
+	  var newCartoons = cartoons.enter().append("g").attr("id", function (c) {
+	    return "cartoon-".concat(c.id);
+	  }).attr("class", function (c) {
+	    return ["cartoon"].concat(toConsumableArray(c.classes)).join(" ");
+	  }).attr("transform", function (c) {
+	    return "translate(".concat(_this5.scales.x(c.vertices[0].x), ", ").concat(_this5.scales.y(c.vertices[0].y), ")");
+	  });
+	  newCartoons.append("path").attr("class", "cartoon-path").attr("d", function (e, i) {
+	    return pointToPoint.call(_this5, e.vertices);
+	  }); // update the existing elements
+
+	  cartoons.transition().duration(this.settings.transitionDuration).attr("class", function (c) {
+	    return ["cartoon"].concat(toConsumableArray(c.classes)).join(" ");
+	  }).attr("transform", function (c) {
+	    return "translate(".concat(_this5.scales.x(c.vertices[0].x), ", ").concat(_this5.scales.y(c.vertices[0].y), ")");
+	  }).select("path").attr("d", function (c) {
+	    return pointToPoint.call(_this5, c.vertices);
+	  }); // EXIT
+	  // Remove old elements as needed.
+
+	  cartoons.exit().remove();
+	  updateCartoonStyles.call(this);
+	}
 	/**
 	 * Add axis
 	 */
@@ -11209,10 +11433,6 @@
 	  var axesLayer = this.svgSelection.select(".axes-layer");
 	  axesLayer.select("#x-axis").call(xAxis);
 	}
-	/**
-	 * A function to update the annotatation layer of the tree
-	 */
-
 
 	function updateNodeStyles() {
 	  var nodesLayer = select(this.svg).select(".nodes-layer"); // DATA JOIN
@@ -11329,6 +11549,80 @@
 	      }
 	    }
 	  }
+	}
+
+	function updateCartoonStyles() {
+	  var cartoonLayer = this.svgSelection.select(".cartoon-layer"); // DATA JOIN
+	  // Join new data with old elements, if any.
+
+	  var cartoons = cartoonLayer.selectAll(".cartoon path");
+	  var CartoonAttrMap = this.settings.styles.cartoons;
+	  var _iteratorNormalCompletion4 = true;
+	  var _didIteratorError4 = false;
+	  var _iteratorError4 = undefined;
+
+	  try {
+	    var _loop4 = function _loop4() {
+	      var key = _step4.value;
+	      cartoons // .transition()
+	      // .duration(this.settings.transitionDuration)
+	      .attr(key, function (c) {
+	        return CartoonAttrMap.get(key)(c.vertices[0].node);
+	      }); // attributes are set by the "root" node
+	    };
+
+	    for (var _iterator4 = CartoonAttrMap.keys()[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+	      _loop4();
+	    }
+	  } catch (err) {
+	    _didIteratorError4 = true;
+	    _iteratorError4 = err;
+	  } finally {
+	    try {
+	      if (!_iteratorNormalCompletion4 && _iterator4["return"] != null) {
+	        _iterator4["return"]();
+	      }
+	    } finally {
+	      if (_didIteratorError4) {
+	        throw _iteratorError4;
+	      }
+	    }
+	  }
+	}
+
+	function pointToPoint(points) {
+	  var path = [];
+	  var origin = points[0];
+	  var pathPoints = points.reverse();
+	  var currentPoint = origin;
+	  var _iteratorNormalCompletion5 = true;
+	  var _didIteratorError5 = false;
+	  var _iteratorError5 = undefined;
+
+	  try {
+	    for (var _iterator5 = pathPoints[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+	      var point = _step5.value;
+	      var xdiff = this.scales.x(point.x) - this.scales.x(currentPoint.x);
+	      var ydiff = this.scales.y(point.y) - this.scales.y(currentPoint.y);
+	      path.push("".concat(xdiff, " ").concat(ydiff));
+	      currentPoint = point;
+	    }
+	  } catch (err) {
+	    _didIteratorError5 = true;
+	    _iteratorError5 = err;
+	  } finally {
+	    try {
+	      if (!_iteratorNormalCompletion5 && _iterator5["return"] != null) {
+	        _iterator5["return"]();
+	      }
+	    } finally {
+	      if (_didIteratorError5) {
+	        throw _iteratorError5;
+	      }
+	    }
+	  }
+
+	  return "M 0 0 ".concat(path.join(" l "), " z");
 	}
 
 	var Graph =
