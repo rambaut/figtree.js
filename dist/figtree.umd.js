@@ -8002,6 +8002,8 @@
 
 	        this.annotateNode(tip, values);
 	      }
+
+	      this.treeUpdateCallback();
 	    }
 	    /**
 	     * This is similar to annotateTips but the annotation objects are keyed by node
@@ -8026,6 +8028,8 @@
 
 	        this.annotateNode(node, values);
 	      }
+
+	      this.treeUpdateCallback();
 	    }
 	    /**
 	     * Adds the given annotations to a particular node object.
@@ -8236,6 +8240,7 @@
 	      var acctran = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
 	      fitchParsimony(name, this.rootNode);
 	      reconstructInternalStates(name, [], acctran, this.rootNode);
+	      this.treeUpdateCallback();
 	    }
 	    /**
 	     * A class method to create a Tree instance from a Newick format string (potentially with node
@@ -9105,7 +9110,7 @@
 
 	  createClass(Layout, [{
 	    key: "layout",
-	    value: function layout(vertices, edges) {}
+	    value: function layout() {}
 	  }, {
 	    key: "update",
 
@@ -9179,6 +9184,24 @@
 	        _this4.update();
 	      };
 	    }
+	    /**
+	     * A utility function to cartoon a clade into a triangle
+	     * @param vertex
+	     */
+
+	  }, {
+	    key: "cartoon",
+	    value: function cartoon(vertex) {
+	      vertex.cartoon = true;
+	    }
+	    /**
+	     * A utitlity function to callapse a clade into a single branch and tip.
+	     * @param vertex
+	     */
+
+	  }, {
+	    key: "callapse",
+	    value: function callapse(vertex) {}
 	    /**
 	     * A utility function that will return a HTML string about the node and its
 	     * annotations. Can be used with the addLabels() method.
@@ -9331,19 +9354,19 @@
 	    _this.externalNodeLabelAnnotationName = null;
 	    _this._horizontalRange = [0, 1]; //[0.0, max([...this.tree.rootToTipLengths()])];
 
-	    _this._verticalRange = [0, _this.tree.nodeList.filter(_this.settings.includedInVerticalRange).length - 1];
-
-	    if (!_this.settings.horizontalScale) {
-	      _this.horizontalScale = linear$1().domain([_this.tree.rootNode.height, _this.tree.origin]).range(_this._horizontalRange);
-	    } else {
-	      _this.horizontalScale = _this.settings.horizontalScale;
-	    } // called whenever the tree changes...
-
+	    _this._verticalRange = [0, _this.tree.nodeList.filter(_this.settings.includedInVerticalRange).length - 1]; // called whenever the tree changes...
 
 	    _this.tree.treeUpdateCallback = function () {
+	      _this.layoutKnown = false;
+
 	      _this.update();
 	    };
 
+	    _this.layoutKnown = false;
+	    _this._edges = [];
+	    _this._vertices = [];
+	    _this._nodeMap = new Map();
+	    _this._edgeMap = new Map();
 	    return _this;
 	  }
 	  /**
@@ -9353,43 +9376,44 @@
 	   * populates the vertices array with vertex objects that wrap the nodes and have coordinates and
 	   * populates the edges array with edge objects that have two vertices.
 	   *
-	   * It encapsulates the tree object to keep it abstract
-	   *
-	   * @param vertices - objects with an x, y coordinates and a reference to the original node
-	   * @param edges - objects with v1 (a vertex) and v0 (the parent vertex).
 	   */
 
 
 	  createClass(RectangularLayout, [{
 	    key: "layout",
-	    value: function layout(vertices, edges) {
+	    value: function layout() {
 	      var _this2 = this;
 
-	      // get the nodes in post-order
-	      var nodes = toConsumableArray(this.tree.postorder());
+	      if (!this.settings.horizontalScale) {
+	        this._horizontalScale = linear$1().domain([this.tree.rootNode.height, this.tree.origin]).range(this._horizontalRange);
+	      } else {
+	        this._horizontalScale = this.settings.horizontalScale;
+	      } // get the nodes in post-order
 
+
+	      var nodes = this.getTreeNodes();
 	      var currentY = -1;
 
-	      if (vertices.length === 0) {
-	        this.nodeMap = new Map(); // create the vertices (only done if the array is empty)
-
+	      if (this._vertices.length === 0) {
+	        // create the vertices (only done if the array is empty)
 	        nodes.forEach(function (n, i) {
 	          var vertex = {
 	            node: n,
 	            key: n.id // key: Symbol(n.id).toString()
 
 	          };
-	          vertices.push(vertex);
 
-	          _this2.nodeMap.set(n, vertex);
+	          _this2._vertices.push(vertex);
+
+	          _this2._nodeMap.set(n, vertex);
 	        });
 	      } // update the node locations (vertices)
 
 
 	      nodes.forEach(function (n) {
-	        var v = _this2.nodeMap.get(n);
+	        var v = _this2._nodeMap.get(n);
 
-	        v.x = _this2.horizontalScale(v.node.height);
+	        v.x = _this2._horizontalScale(v.node.height);
 	        currentY = _this2.setYPosition(v, currentY);
 	        v.degree = v.node.children ? v.node.children.length + 1 : 1; // the number of edges (including stem)
 
@@ -9422,32 +9446,32 @@
 	          v.rightLabel = _this2.externalNodeLabelAnnotationName ? v.node.annotations[_this2.externalNodeLabelAnnotationName] : v.node.name;
 	        }
 
-	        _this2.nodeMap.set(v.node, v);
+	        _this2._nodeMap.set(v.node, v);
 	      });
 
-	      if (edges.length === 0) {
-	        this.edgeMap = new Map(); // create the edges (only done if the array is empty)
-
+	      if (this._edges.length === 0) {
+	        // create the edges (only done if the array is empty)
 	        nodes.filter(function (n) {
 	          return n.parent;
 	        }) // exclude the root
 	        .forEach(function (n, i) {
 	          var edge = {
-	            v0: _this2.nodeMap.get(n.parent),
-	            v1: _this2.nodeMap.get(n),
+	            v0: _this2._nodeMap.get(n.parent),
+	            v1: _this2._nodeMap.get(n),
 	            key: n.id // key: Symbol(n.id).toString()
 
 	          };
-	          edges.push(edge);
 
-	          _this2.edgeMap.set(edge, edge.v1);
+	          _this2._edges.push(edge);
+
+	          _this2._edgeMap.set(edge, edge.v1);
 	        });
 	      } // update the edges
 
 
-	      edges.forEach(function (e) {
-	        e.v1 = _this2.edgeMap.get(e);
-	        e.v0 = _this2.nodeMap.get(e.v1.node.parent), e.classes = [];
+	      this._edges.forEach(function (e) {
+	        e.v1 = _this2._edgeMap.get(e);
+	        e.v0 = _this2._nodeMap.get(e.v1.node.parent), e.classes = [];
 
 	        if (e.v1.node.annotations) {
 	          e.classes = [].concat(toConsumableArray(e.classes), toConsumableArray(Object.entries(e.v1.node.annotations).filter(function (_ref5) {
@@ -9468,7 +9492,10 @@
 	        e.length = length;
 	        e.label = _this2.branchLabelAnnotationName ? _this2.branchLabelAnnotationName === 'length' ? _this2.settings.lengthFormat(length) : e.v1.node.annotations[_this2.branchLabelAnnotationName] : null;
 	        e.labelBelow = e.v1.node.parent.children[0] !== e.v1.node;
-	      });
+	      }); // Now do the annotation stuff
+
+
+	      this.layoutKnown = true;
 	    }
 	  }, {
 	    key: "setInternalNodeLabels",
@@ -9526,7 +9553,7 @@
 
 	      if (!includedInVertical) {
 	        vertex.y = mean(vertex.node.children, function (child) {
-	          return _this3.nodeMap.get(child).y;
+	          return _this3._nodeMap.get(child).y;
 	        });
 	      } else {
 	        currentY += 1;
@@ -9558,6 +9585,11 @@
 	      return branchPath;
 	    }
 	  }, {
+	    key: "getTreeNodes",
+	    value: function getTreeNodes() {
+	      return toConsumableArray(this.tree.postorder());
+	    }
+	  }, {
 	    key: "branchCurve",
 	    set: function set(curve) {
 	      this.settings.branchCurve = curve;
@@ -9565,6 +9597,51 @@
 	    },
 	    get: function get() {
 	      return this.settings.branchCurve;
+	    }
+	  }, {
+	    key: "edges",
+	    get: function get() {
+	      if (!this.layoutKnown) {
+	        this.layout();
+	      }
+
+	      return this._edges;
+	    }
+	  }, {
+	    key: "vertices",
+	    get: function get() {
+	      if (!this.layoutKnown) {
+	        this.layout();
+	      }
+
+	      return this._vertices;
+	    }
+	  }, {
+	    key: "nodeMap",
+	    get: function get() {
+	      if (!this.layoutKnown) {
+	        this.layout();
+	      }
+
+	      return this._nodeMap;
+	    }
+	  }, {
+	    key: "edgeMap",
+	    get: function get() {
+	      if (!this.layoutKnown) {
+	        this.layout();
+	      }
+
+	      return this._edgeMap;
+	    }
+	  }, {
+	    key: "horizontalScale",
+	    get: function get() {
+	      if (!this.layoutKnown) {
+	        this.layout();
+	      }
+
+	      return this._horizontalScale;
 	    }
 	  }]);
 
@@ -9621,19 +9698,19 @@
 	    _this.externalNodeLabelAnnotationName = null;
 	    _this._horizontalRange = [0, 1]; //[0.0, max([...this.tree.rootToTipLengths()])];
 
-	    _this._verticalRange = [0, _this.tree.nodeList.filter(_this.settings.includedInVerticalRange).length - 1];
-
-	    if (!_this.settings.horizontalScale) {
-	      _this.horizontalScale = linear$1().domain([_this.tree.rootNode.height, _this.tree.origin]).range(_this._horizontalRange);
-	    } else {
-	      _this.horizontalScale = _this.settings.horizontalScale;
-	    } // called whenever the tree changes...
-
+	    _this._verticalRange = [0, _this.tree.nodeList.filter(_this.settings.includedInVerticalRange).length - 1]; // called whenever the tree changes...
 
 	    _this.tree.treeUpdateCallback = function () {
+	      _this.layoutKnown = false;
+
 	      _this.update();
 	    };
 
+	    _this.layoutKnown = false;
+	    _this._edges = [];
+	    _this._vertices = [];
+	    _this._nodeMap = new Map();
+	    _this._edgeMap = new Map();
 	    return _this;
 	  }
 	  /**
@@ -9643,43 +9720,44 @@
 	   * populates the vertices array with vertex objects that wrap the nodes and have coordinates and
 	   * populates the edges array with edge objects that have two vertices.
 	   *
-	   * It encapsulates the tree object to keep it abstract
-	   *
-	   * @param vertices - objects with an x, y coordinates and a reference to the original node
-	   * @param edges - objects with v1 (a vertex) and v0 (the parent vertex).
 	   */
 
 
 	  createClass(RectangularLayout, [{
 	    key: "layout",
-	    value: function layout(vertices, edges) {
+	    value: function layout() {
 	      var _this2 = this;
 
-	      // get the nodes in post-order
-	      var nodes = toConsumableArray(this.tree.postorder());
+	      if (!this.settings.horizontalScale) {
+	        this._horizontalScale = linear$1().domain([this.tree.rootNode.height, this.tree.origin]).range(this._horizontalRange);
+	      } else {
+	        this._horizontalScale = this.settings.horizontalScale;
+	      } // get the nodes in post-order
 
+
+	      var nodes = this.getTreeNodes();
 	      var currentY = -1;
 
-	      if (vertices.length === 0) {
-	        this.nodeMap = new Map(); // create the vertices (only done if the array is empty)
-
+	      if (this._vertices.length === 0) {
+	        // create the vertices (only done if the array is empty)
 	        nodes.forEach(function (n, i) {
 	          var vertex = {
 	            node: n,
 	            key: n.id // key: Symbol(n.id).toString()
 
 	          };
-	          vertices.push(vertex);
 
-	          _this2.nodeMap.set(n, vertex);
+	          _this2._vertices.push(vertex);
+
+	          _this2._nodeMap.set(n, vertex);
 	        });
 	      } // update the node locations (vertices)
 
 
 	      nodes.forEach(function (n) {
-	        var v = _this2.nodeMap.get(n);
+	        var v = _this2._nodeMap.get(n);
 
-	        v.x = _this2.horizontalScale(v.node.height);
+	        v.x = _this2._horizontalScale(v.node.height);
 	        currentY = _this2.setYPosition(v, currentY);
 	        v.degree = v.node.children ? v.node.children.length + 1 : 1; // the number of edges (including stem)
 
@@ -9712,32 +9790,32 @@
 	          v.rightLabel = _this2.externalNodeLabelAnnotationName ? v.node.annotations[_this2.externalNodeLabelAnnotationName] : v.node.name;
 	        }
 
-	        _this2.nodeMap.set(v.node, v);
+	        _this2._nodeMap.set(v.node, v);
 	      });
 
-	      if (edges.length === 0) {
-	        this.edgeMap = new Map(); // create the edges (only done if the array is empty)
-
+	      if (this._edges.length === 0) {
+	        // create the edges (only done if the array is empty)
 	        nodes.filter(function (n) {
 	          return n.parent;
 	        }) // exclude the root
 	        .forEach(function (n, i) {
 	          var edge = {
-	            v0: _this2.nodeMap.get(n.parent),
-	            v1: _this2.nodeMap.get(n),
+	            v0: _this2._nodeMap.get(n.parent),
+	            v1: _this2._nodeMap.get(n),
 	            key: n.id // key: Symbol(n.id).toString()
 
 	          };
-	          edges.push(edge);
 
-	          _this2.edgeMap.set(edge, edge.v1);
+	          _this2._edges.push(edge);
+
+	          _this2._edgeMap.set(edge, edge.v1);
 	        });
 	      } // update the edges
 
 
-	      edges.forEach(function (e) {
-	        e.v1 = _this2.edgeMap.get(e);
-	        e.v0 = _this2.nodeMap.get(e.v1.node.parent), e.classes = [];
+	      this._edges.forEach(function (e) {
+	        e.v1 = _this2._edgeMap.get(e);
+	        e.v0 = _this2._nodeMap.get(e.v1.node.parent), e.classes = [];
 
 	        if (e.v1.node.annotations) {
 	          e.classes = [].concat(toConsumableArray(e.classes), toConsumableArray(Object.entries(e.v1.node.annotations).filter(function (_ref5) {
@@ -9758,7 +9836,10 @@
 	        e.length = length;
 	        e.label = _this2.branchLabelAnnotationName ? _this2.branchLabelAnnotationName === 'length' ? _this2.settings.lengthFormat(length) : e.v1.node.annotations[_this2.branchLabelAnnotationName] : null;
 	        e.labelBelow = e.v1.node.parent.children[0] !== e.v1.node;
-	      });
+	      }); // Now do the annotation stuff
+
+
+	      this.layoutKnown = true;
 	    }
 	  }, {
 	    key: "setInternalNodeLabels",
@@ -9816,7 +9897,7 @@
 
 	      if (!includedInVertical) {
 	        vertex.y = mean(vertex.node.children, function (child) {
-	          return _this3.nodeMap.get(child).y;
+	          return _this3._nodeMap.get(child).y;
 	        });
 	      } else {
 	        currentY += 1;
@@ -9848,6 +9929,11 @@
 	      return branchPath;
 	    }
 	  }, {
+	    key: "getTreeNodes",
+	    value: function getTreeNodes() {
+	      return toConsumableArray(this.tree.postorder());
+	    }
+	  }, {
 	    key: "branchCurve",
 	    set: function set(curve) {
 	      this.settings.branchCurve = curve;
@@ -9855,6 +9941,51 @@
 	    },
 	    get: function get() {
 	      return this.settings.branchCurve;
+	    }
+	  }, {
+	    key: "edges",
+	    get: function get() {
+	      if (!this.layoutKnown) {
+	        this.layout();
+	      }
+
+	      return this._edges;
+	    }
+	  }, {
+	    key: "vertices",
+	    get: function get() {
+	      if (!this.layoutKnown) {
+	        this.layout();
+	      }
+
+	      return this._vertices;
+	    }
+	  }, {
+	    key: "nodeMap",
+	    get: function get() {
+	      if (!this.layoutKnown) {
+	        this.layout();
+	      }
+
+	      return this._nodeMap;
+	    }
+	  }, {
+	    key: "edgeMap",
+	    get: function get() {
+	      if (!this.layoutKnown) {
+	        this.layout();
+	      }
+
+	      return this._edgeMap;
+	    }
+	  }, {
+	    key: "horizontalScale",
+	    get: function get() {
+	      if (!this.layoutKnown) {
+	        this.layout();
+	      }
+
+	      return this._horizontalScale;
 	    }
 	  }]);
 
@@ -10636,9 +10767,7 @@
 	        width: width,
 	        height: height
 	      };
-	      addAxis.call(this, this.margins);
-	      this.vertices = [];
-	      this.edges = []; // Called whenever the layout changes...
+	      addAxis.call(this, this.margins); // Called whenever the layout changes...
 
 	      this.layout.updateCallback = function () {
 	        _this.update();
@@ -10653,9 +10782,6 @@
 	  }, {
 	    key: "update",
 	    value: function update() {
-	      // get new positions
-	      this.layout.layout(this.vertices, this.edges); // svg may have changed sizes
-
 	      var width, height;
 
 	      if (Object.keys(this.settings).indexOf("width") > -1) {
@@ -10675,7 +10801,7 @@
 	      this.scales.y.domain(this.layout.verticalRange).range([this.margins.top + 20, height - this.margins.bottom - 20]);
 	      this.scales.width = width;
 	      this.scales.height = height;
-	      addAxis.call(this); // const xAxis = axisBottom(this.scales.x)
+	      updateAxis.call(this); // const xAxis = axisBottom(this.scales.x)
 	      //     .tickArguments(this.settings.xAxisTickArguments);
 	      //
 	      // this.svgSelection.select("#x-axis")
@@ -10917,7 +11043,7 @@
 	  var nodesLayer = select(this.svg).select(".nodes-layer"); // DATA JOIN
 	  // Join new data with old elements, if any.
 
-	  var nodes = nodesLayer.selectAll(".node").data(this.vertices, function (v) {
+	  var nodes = nodesLayer.selectAll(".node").data(this.layout.vertices, function (v) {
 	    return "n_".concat(v.key);
 	  }); // ENTER
 	  // Create new elements as needed.
@@ -10977,7 +11103,7 @@
 	  var nodesBackgroundLayer = this.svgSelection.select(".nodes-background-layer"); // DATA JOIN
 	  // Join new data with old elements, if any.
 
-	  var nodes = nodesBackgroundLayer.selectAll(".node-background").data(this.vertices, function (v) {
+	  var nodes = nodesBackgroundLayer.selectAll(".node-background").data(this.layout.vertices, function (v) {
 	    return "nb_".concat(v.key);
 	  }); // ENTER
 	  // Create new elements as needed.
@@ -11019,7 +11145,7 @@
 	  var branchPath = this.layout.branchPathGenerator(this.scales); // DATA JOIN
 	  // Join new data with old elements, if any.
 
-	  var branches = branchesLayer.selectAll("g .branch").data(this.edges, function (e) {
+	  var branches = branchesLayer.selectAll("g .branch").data(this.layout.edges, function (e) {
 	    return "b_".concat(e.key);
 	  }); // ENTER
 	  // Create new elements as needed.
@@ -11075,6 +11201,13 @@
 	  var axesLayer = this.svgSelection.select(".axes-layer");
 	  axesLayer.append("g").attr("id", "x-axis").attr("class", "axis").attr("transform", "translate(0, ".concat(this.scales.height - this.margins.bottom + 5, ")")).call(xAxis);
 	  axesLayer.append("g").attr("id", "x-axis-label").attr("class", "axis-label").attr("transform", "translate(".concat(this.margins.left, ", ").concat(this.scales.height - this.margins.bottom, ")")).append("text").attr("transform", "translate(".concat(xAxisWidth / 2, ", 35)")).attr("alignment-baseline", "hanging").style("text-anchor", "middle").text(this.settings.xAxisTitle);
+	}
+
+	function updateAxis() {
+	  var xAxis = axisBottom(linear$1().domain(this.layout.horizontalScale.domain()).range(this.scales.x.range())).tickArguments(this.settings.xAxisTickArguments);
+	  var xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
+	  var axesLayer = this.svgSelection.select(".axes-layer");
+	  axesLayer.select("#x-axis").call(xAxis);
 	}
 	/**
 	 * A function to update the annotatation layer of the tree

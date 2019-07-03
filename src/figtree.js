@@ -99,8 +99,6 @@ export class FigTree {
         this.scales = {x:xScale, y:yScale, width, height};
         addAxis.call(this, this.margins);
 
-        this.vertices = [];
-        this.edges = [];
 
         // Called whenever the layout changes...
         this.layout.updateCallback = () => {
@@ -115,9 +113,6 @@ export class FigTree {
      */
     update() {
 
-        // get new positions
-        this.layout.layout(this.vertices, this.edges);
-        // svg may have changed sizes
         let width,height;
         if(Object.keys(this.settings).indexOf("width")>-1){
             width =this. settings.width;
@@ -136,7 +131,7 @@ export class FigTree {
         this.scales.width=width;
         this.scales.height=height;
 
-        addAxis.call(this);
+        updateAxis.call(this);
         // const xAxis = axisBottom(this.scales.x)
         //     .tickArguments(this.settings.xAxisTickArguments);
         //
@@ -361,7 +356,7 @@ function updateNodes() {
     // DATA JOIN
     // Join new data with old elements, if any.
     const nodes = nodesLayer.selectAll(".node")
-        .data(this.vertices, (v) => `n_${v.key}`);
+        .data(this.layout.vertices, (v) => `n_${v.key}`);
 
     // ENTER
     // Create new elements as needed.
@@ -452,7 +447,7 @@ function updateNodeBackgrounds() {
     // DATA JOIN
     // Join new data with old elements, if any.
     const nodes = nodesBackgroundLayer.selectAll(".node-background")
-        .data(this.vertices, (v) => `nb_${v.key}`);
+        .data(this.layout.vertices, (v) => `nb_${v.key}`);
 
     // ENTER
     // Create new elements as needed.
@@ -508,7 +503,7 @@ function updateBranches() {
     // DATA JOIN
     // Join new data with old elements, if any.
     const branches = branchesLayer.selectAll("g .branch")
-        .data(this.edges, (e) => `b_${e.key}`);
+        .data(this.layout.edges, (e) => `b_${e.key}`);
 
     // ENTER
     // Create new elements as needed.
@@ -589,6 +584,21 @@ function addAxis() {
         .style("text-anchor", "middle")
         .text(this.settings.xAxisTitle);
 }
+
+function updateAxis(){
+    const xAxis = axisBottom( scaleLinear().domain(this.layout.horizontalScale.domain()).range(this.scales.x.range()))
+        .tickArguments(this.settings.xAxisTickArguments);
+
+    const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
+
+    const axesLayer = this.svgSelection.select(".axes-layer");
+
+    axesLayer
+        .select("#x-axis")
+        .call(xAxis);
+
+}
+
 
 /**
  * A function to update the annotatation layer of the tree

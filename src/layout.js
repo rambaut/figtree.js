@@ -29,7 +29,7 @@ export class Layout {
      * @param vertices - objects with an x, y coordinates and a reference to the original node
      * @param edges - objects with v1 (a vertex) and v0 (the parent vertex).
      */
-    layout(vertices, edges) { }
+    layout() { }
 
     get horizontalRange() {
         return this._horizontalRange;
@@ -90,6 +90,22 @@ export class Layout {
             this.tree.reroot(edge.v1.node, position);
             this.update();
         };
+    }
+
+    /**
+     * A utility function to cartoon a clade into a triangle
+     * @param vertex
+     */
+    cartoon(vertex){
+        vertex.cartoon = true;
+    }
+
+    /**
+     * A utitlity function to callapse a clade into a single branch and tip.
+     * @param vertex
+     */
+    callapse(vertex){
+
     }
 
     /**

@@ -506,6 +506,7 @@ export class Tree {
 
             this.annotateNode(tip, values);
         }
+        this.treeUpdateCallback();
     }
 
     /**
@@ -523,6 +524,8 @@ export class Tree {
 
             this.annotateNode(node, values);
         }
+        this.treeUpdateCallback();
+
     }
 
     /**
@@ -700,6 +703,9 @@ export class Tree {
         fitchParsimony(name, this.rootNode);
 
         reconstructInternalStates(name, [], acctran, this.rootNode);
+
+        this.treeUpdateCallback();
+
     }
 
     /**

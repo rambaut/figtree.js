@@ -6894,6 +6894,7 @@ class Tree {
 
             this.annotateNode(tip, values);
         }
+        this.treeUpdateCallback();
     }
 
     /**
@@ -6911,6 +6912,8 @@ class Tree {
 
             this.annotateNode(node, values);
         }
+        this.treeUpdateCallback();
+
     }
 
     /**
@@ -7088,6 +7091,9 @@ class Tree {
         fitchParsimony(name, this.rootNode);
 
         reconstructInternalStates(name, [], acctran, this.rootNode);
+
+        this.treeUpdateCallback();
+
     }
 
     /**
@@ -7629,7 +7635,7 @@ class Layout {
      * @param vertices - objects with an x, y coordinates and a reference to the original node
      * @param edges - objects with v1 (a vertex) and v0 (the parent vertex).
      */
-    layout(vertices, edges) { }
+    layout() { }
 
     get horizontalRange() {
         return this._horizontalRange;
@@ -7693,6 +7699,22 @@ class Layout {
     }
 
     /**
+     * A utility function to cartoon a clade into a triangle
+     * @param vertex
+     */
+    cartoon(vertex){
+        vertex.cartoon = true;
+    }
+
+    /**
+     * A utitlity function to callapse a clade into a single branch and tip.
+     * @param vertex
+     */
+    callapse(vertex){
+
+    }
+
+    /**
      * A utility function that will return a HTML string about the node and its
      * annotations. Can be used with the addLabels() method.
      *
@@ -7748,16 +7770,21 @@ class RectangularLayout extends Layout {
         this._horizontalRange = [0,1];//[0.0, max([...this.tree.rootToTipLengths()])];
         this._verticalRange = [0, this.tree.nodeList.filter(this.settings.includedInVerticalRange).length - 1];
 
-        if(!this.settings.horizontalScale){
-            this.horizontalScale = linear$1().domain([this.tree.rootNode.height,this.tree.origin]).range(this._horizontalRange);
-        }else{
-            this.horizontalScale = this.settings.horizontalScale;
-        }
 
         // called whenever the tree changes...
         this.tree.treeUpdateCallback = () => {
+            this.layoutKnown = false;
             this.update();
         };
+
+        this.layoutKnown = false;
+        this._edges = [];
+        this._vertices=[];
+
+        this._nodeMap = new Map();
+        this._edgeMap = new Map();
+
+
     }
 
     /**
@@ -7767,22 +7794,21 @@ class RectangularLayout extends Layout {
      * populates the vertices array with vertex objects that wrap the nodes and have coordinates and
      * populates the edges array with edge objects that have two vertices.
      *
-     * It encapsulates the tree object to keep it abstract
-     *
-     * @param vertices - objects with an x, y coordinates and a reference to the original node
-     * @param edges - objects with v1 (a vertex) and v0 (the parent vertex).
      */
-    layout(vertices, edges) {
 
+    layout() {
 
+        if(!this.settings.horizontalScale){
+            this._horizontalScale = linear$1().domain([this.tree.rootNode.height,this.tree.origin]).range(this._horizontalRange);
+        }else{
+            this._horizontalScale = this.settings.horizontalScale;
+        }
         // get the nodes in post-order
-        const nodes = [...this.tree.postorder()];
+        const nodes = this.getTreeNodes();
 
         let currentY = -1;
 
-        if (vertices.length === 0) {
-            this.nodeMap = new Map();
-
+        if (this._vertices.length === 0) {
             // create the vertices (only done if the array is empty)
             nodes.forEach((n, i) => {
                 const vertex = {
@@ -7790,17 +7816,17 @@ class RectangularLayout extends Layout {
                     key: n.id
                     // key: Symbol(n.id).toString()
                 };
-                vertices.push(vertex);
-                this.nodeMap.set(n, vertex);
+                this._vertices.push(vertex);
+                this._nodeMap.set(n, vertex);
             });
         }
 
         // update the node locations (vertices)
         nodes
             .forEach((n) => {
-                const v = this.nodeMap.get(n);
+                const v = this._nodeMap.get(n);
 
-                v.x = this.horizontalScale(v.node.height);
+                v.x = this._horizontalScale(v.node.height);
                 currentY = this.setYPosition(v, currentY);
 
                 v.degree = (v.node.children ? v.node.children.length + 1: 1); // the number of edges (including stem)
@@ -7840,32 +7866,31 @@ class RectangularLayout extends Layout {
                         v.node.name);
                 }
 
-                this.nodeMap.set(v.node, v);
+                this._nodeMap.set(v.node, v);
             });
 
-        if (edges.length === 0) {
-            this.edgeMap = new Map();
+        if (this._edges.length === 0) {
 
             // create the edges (only done if the array is empty)
             nodes
                 .filter((n) => n.parent) // exclude the root
                 .forEach((n, i) => {
                     const edge = {
-                        v0: this.nodeMap.get(n.parent),
-                        v1: this.nodeMap.get(n),
+                        v0: this._nodeMap.get(n.parent),
+                        v1: this._nodeMap.get(n),
                         key: n.id
                         // key: Symbol(n.id).toString()
                     };
-                    edges.push(edge);
-                    this.edgeMap.set(edge, edge.v1);
+                    this._edges.push(edge);
+                    this._edgeMap.set(edge, edge.v1);
                 });
         }
 
         // update the edges
-        edges
+        this._edges
             .forEach((e) => {
-                e.v1 = this.edgeMap.get(e);
-                e.v0 = this.nodeMap.get(e.v1.node.parent),
+                e.v1 = this._edgeMap.get(e);
+                e.v0 = this._nodeMap.get(e.v1.node.parent),
                     e.classes = [];
 
                 if (e.v1.node.annotations) {
@@ -7889,6 +7914,11 @@ class RectangularLayout extends Layout {
                     null );
                 e.labelBelow = e.v1.node.parent.children[0] !== e.v1.node;
             });
+
+        // Now do the annotation stuff
+
+        this.layoutKnown=true;
+
     }
 
     set branchCurve(curve) {
@@ -7945,7 +7975,7 @@ class RectangularLayout extends Layout {
 
         const includedInVertical = this.settings.includedInVerticalRange(vertex.node);
         if(!includedInVertical){
-            vertex.y = mean(vertex.node.children,(child) => this.nodeMap.get(child).y);
+            vertex.y = mean(vertex.node.children,(child) => this._nodeMap.get(child).y);
         }
         else{
             currentY+=1;
@@ -7970,6 +8000,40 @@ class RectangularLayout extends Layout {
         };
         return branchPath;
     }
+    get edges(){
+        if(!this.layoutKnown){
+            this.layout();
+        }
+        return this._edges;
+    }
+
+    get vertices(){
+        if(!this.layoutKnown){
+            this.layout();
+        }
+        return this._vertices;
+    }
+
+    get nodeMap(){
+        if(!this.layoutKnown){
+            this.layout();
+        }
+        return this._nodeMap;
+    }
+    get edgeMap(){
+        if(!this.layoutKnown){
+            this.layout();
+        }
+        return this._edgeMap;
+    }
+    get horizontalScale(){
+        if(!this.layoutKnown){
+            this.layout();
+        }
+        return this._horizontalScale;
+    }
+
+    getTreeNodes(){ return [...this.tree.postorder()]};
 }
 
 /*
@@ -8012,16 +8076,21 @@ class RectangularLayout$1 extends Layout {
         this._horizontalRange = [0,1];//[0.0, max([...this.tree.rootToTipLengths()])];
         this._verticalRange = [0, this.tree.nodeList.filter(this.settings.includedInVerticalRange).length - 1];
 
-        if(!this.settings.horizontalScale){
-            this.horizontalScale = linear$1().domain([this.tree.rootNode.height,this.tree.origin]).range(this._horizontalRange);
-        }else{
-            this.horizontalScale = this.settings.horizontalScale;
-        }
 
         // called whenever the tree changes...
         this.tree.treeUpdateCallback = () => {
+            this.layoutKnown = false;
             this.update();
         };
+
+        this.layoutKnown = false;
+        this._edges = [];
+        this._vertices=[];
+
+        this._nodeMap = new Map();
+        this._edgeMap = new Map();
+
+
     }
 
     /**
@@ -8031,22 +8100,21 @@ class RectangularLayout$1 extends Layout {
      * populates the vertices array with vertex objects that wrap the nodes and have coordinates and
      * populates the edges array with edge objects that have two vertices.
      *
-     * It encapsulates the tree object to keep it abstract
-     *
-     * @param vertices - objects with an x, y coordinates and a reference to the original node
-     * @param edges - objects with v1 (a vertex) and v0 (the parent vertex).
      */
-    layout(vertices, edges) {
 
+    layout() {
 
+        if(!this.settings.horizontalScale){
+            this._horizontalScale = linear$1().domain([this.tree.rootNode.height,this.tree.origin]).range(this._horizontalRange);
+        }else{
+            this._horizontalScale = this.settings.horizontalScale;
+        }
         // get the nodes in post-order
-        const nodes = [...this.tree.postorder()];
+        const nodes = this.getTreeNodes();
 
         let currentY = -1;
 
-        if (vertices.length === 0) {
-            this.nodeMap = new Map();
-
+        if (this._vertices.length === 0) {
             // create the vertices (only done if the array is empty)
             nodes.forEach((n, i) => {
                 const vertex = {
@@ -8054,17 +8122,17 @@ class RectangularLayout$1 extends Layout {
                     key: n.id
                     // key: Symbol(n.id).toString()
                 };
-                vertices.push(vertex);
-                this.nodeMap.set(n, vertex);
+                this._vertices.push(vertex);
+                this._nodeMap.set(n, vertex);
             });
         }
 
         // update the node locations (vertices)
         nodes
             .forEach((n) => {
-                const v = this.nodeMap.get(n);
+                const v = this._nodeMap.get(n);
 
-                v.x = this.horizontalScale(v.node.height);
+                v.x = this._horizontalScale(v.node.height);
                 currentY = this.setYPosition(v, currentY);
 
                 v.degree = (v.node.children ? v.node.children.length + 1: 1); // the number of edges (including stem)
@@ -8104,32 +8172,31 @@ class RectangularLayout$1 extends Layout {
                         v.node.name);
                 }
 
-                this.nodeMap.set(v.node, v);
+                this._nodeMap.set(v.node, v);
             });
 
-        if (edges.length === 0) {
-            this.edgeMap = new Map();
+        if (this._edges.length === 0) {
 
             // create the edges (only done if the array is empty)
             nodes
                 .filter((n) => n.parent) // exclude the root
                 .forEach((n, i) => {
                     const edge = {
-                        v0: this.nodeMap.get(n.parent),
-                        v1: this.nodeMap.get(n),
+                        v0: this._nodeMap.get(n.parent),
+                        v1: this._nodeMap.get(n),
                         key: n.id
                         // key: Symbol(n.id).toString()
                     };
-                    edges.push(edge);
-                    this.edgeMap.set(edge, edge.v1);
+                    this._edges.push(edge);
+                    this._edgeMap.set(edge, edge.v1);
                 });
         }
 
         // update the edges
-        edges
+        this._edges
             .forEach((e) => {
-                e.v1 = this.edgeMap.get(e);
-                e.v0 = this.nodeMap.get(e.v1.node.parent),
+                e.v1 = this._edgeMap.get(e);
+                e.v0 = this._nodeMap.get(e.v1.node.parent),
                     e.classes = [];
 
                 if (e.v1.node.annotations) {
@@ -8153,6 +8220,11 @@ class RectangularLayout$1 extends Layout {
                     null );
                 e.labelBelow = e.v1.node.parent.children[0] !== e.v1.node;
             });
+
+        // Now do the annotation stuff
+
+        this.layoutKnown=true;
+
     }
 
     set branchCurve(curve) {
@@ -8209,7 +8281,7 @@ class RectangularLayout$1 extends Layout {
 
         const includedInVertical = this.settings.includedInVerticalRange(vertex.node);
         if(!includedInVertical){
-            vertex.y = mean(vertex.node.children,(child) => this.nodeMap.get(child).y);
+            vertex.y = mean(vertex.node.children,(child) => this._nodeMap.get(child).y);
         }
         else{
             currentY+=1;
@@ -8234,6 +8306,40 @@ class RectangularLayout$1 extends Layout {
         };
         return branchPath;
     }
+    get edges(){
+        if(!this.layoutKnown){
+            this.layout();
+        }
+        return this._edges;
+    }
+
+    get vertices(){
+        if(!this.layoutKnown){
+            this.layout();
+        }
+        return this._vertices;
+    }
+
+    get nodeMap(){
+        if(!this.layoutKnown){
+            this.layout();
+        }
+        return this._nodeMap;
+    }
+    get edgeMap(){
+        if(!this.layoutKnown){
+            this.layout();
+        }
+        return this._edgeMap;
+    }
+    get horizontalScale(){
+        if(!this.layoutKnown){
+            this.layout();
+        }
+        return this._horizontalScale;
+    }
+
+    getTreeNodes(){ return [...this.tree.postorder()]};
 }
 
 /*
@@ -8883,8 +8989,6 @@ class FigTree {
         this.scales = {x:xScale, y:yScale, width, height};
         addAxis.call(this, this.margins);
 
-        this.vertices = [];
-        this.edges = [];
 
         // Called whenever the layout changes...
         this.layout.updateCallback = () => {
@@ -8899,9 +9003,6 @@ class FigTree {
      */
     update() {
 
-        // get new positions
-        this.layout.layout(this.vertices, this.edges);
-        // svg may have changed sizes
         let width,height;
         if(Object.keys(this.settings).indexOf("width")>-1){
             width =this. settings.width;
@@ -8920,7 +9021,7 @@ class FigTree {
         this.scales.width=width;
         this.scales.height=height;
 
-        addAxis.call(this);
+        updateAxis.call(this);
         // const xAxis = axisBottom(this.scales.x)
         //     .tickArguments(this.settings.xAxisTickArguments);
         //
@@ -9145,7 +9246,7 @@ function updateNodes() {
     // DATA JOIN
     // Join new data with old elements, if any.
     const nodes = nodesLayer.selectAll(".node")
-        .data(this.vertices, (v) => `n_${v.key}`);
+        .data(this.layout.vertices, (v) => `n_${v.key}`);
 
     // ENTER
     // Create new elements as needed.
@@ -9236,7 +9337,7 @@ function updateNodeBackgrounds() {
     // DATA JOIN
     // Join new data with old elements, if any.
     const nodes = nodesBackgroundLayer.selectAll(".node-background")
-        .data(this.vertices, (v) => `nb_${v.key}`);
+        .data(this.layout.vertices, (v) => `nb_${v.key}`);
 
     // ENTER
     // Create new elements as needed.
@@ -9292,7 +9393,7 @@ function updateBranches() {
     // DATA JOIN
     // Join new data with old elements, if any.
     const branches = branchesLayer.selectAll("g .branch")
-        .data(this.edges, (e) => `b_${e.key}`);
+        .data(this.layout.edges, (e) => `b_${e.key}`);
 
     // ENTER
     // Create new elements as needed.
@@ -9373,6 +9474,21 @@ function addAxis() {
         .style("text-anchor", "middle")
         .text(this.settings.xAxisTitle);
 }
+
+function updateAxis(){
+    const xAxis = axisBottom( linear$1().domain(this.layout.horizontalScale.domain()).range(this.scales.x.range()))
+        .tickArguments(this.settings.xAxisTickArguments);
+
+    const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
+
+    const axesLayer = this.svgSelection.select(".axes-layer");
+
+    axesLayer
+        .select("#x-axis")
+        .call(xAxis);
+
+}
+
 
 /**
  * A function to update the annotatation layer of the tree
