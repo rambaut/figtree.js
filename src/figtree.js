@@ -515,7 +515,7 @@ function updateBranches() {
     // Create new elements as needed.
     const newBranches = branches.enter().append("g")
         .attr("id", (e) => {
-            return e.key;
+            return `branch-to-${e.key}`;
 
         })
         .attr("class", (e) => ["branch", ...e.classes].join(" "))
@@ -577,11 +577,12 @@ function updateCartoons(){
         .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
         .attr("transform", (c) => {
             return `translate(${this.scales.x(c.vertices[0].x)}, ${this.scales.y(c.vertices[0].y)})`;
-        });
+        })
+
 
     newCartoons.append("path")
         .attr("class", "cartoon-path")
-        .attr("d", (e,i) => pointToPoint.call(this,e.vertices));
+        .attr("d", (e,i) => pointToPoint.call(this,e.vertices))
 
 
 
@@ -735,3 +736,6 @@ function pointToPoint(points){
     }
     return `M 0 0 ${path.join(" l ")} z`;
 }
+
+//TODO add interactive callbacks to instance so that when nodes are made again they can access those functions
+//TODO transtion on incoming and outgoing objects so they match the movement in the diagram;

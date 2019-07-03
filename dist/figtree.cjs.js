@@ -7710,12 +7710,26 @@ class Layout {
     }
 
     /**
-     * A utitlity function to callapse a clade into a single branch and tip.
+     * A utitlity function to collapse a clade into a single branch and tip.
      * @param vertex
      */
-    callapse(vertex){
-
-    }
+    // collapse(node){
+    //     const vertex=this._nodeMap.get(node);
+    //     if(vertex.collapsedAt){
+    //         const childVertices = [...this.tree.postorder(node)].filter(n=>n!==node).map(node=>this._nodeMap.get(node));
+    //         childVertices.forEach(c=> {c.collapse = false});
+    //         vertex.collapsedAt=false;
+    //     }else{
+    //             const childVertices = [...this.tree.postorder(node)].filter(n=>n!==node).map(node=>this._nodeMap.get(node));
+    //             const mostDiverged = childVertices.find(v=>v.x===max(childVertices,d=>d.x))
+    //             childVertices.forEach(c=> {if(c!==mostDiverged){c.collapse = true}});
+    //             vertex.collapsedAt = true;
+    //
+    //     }
+    //     vertex.collapsed = vertex.collapsed? !vertex.collapsed:true;
+    //     this.layoutKnown=false;
+    //     this.update();
+    // }
 
     /**
      * A utility function that will return a HTML string about the node and its
@@ -7736,6 +7750,8 @@ class Layout {
 /*
  * Private methods, called by the class using the <function>.call(this) function.
  */
+
+//TODO easier api for collapse and cartoon annotations maybe make vertex and edge class
 
 // const d3 = require("d3");
 /**
@@ -7825,6 +7841,7 @@ class RectangularLayout extends Layout {
                 this._nodeMap.set(n, vertex);
             });
         }
+
 
         // update the node locations (vertices)
         nodes
@@ -7944,6 +7961,8 @@ class RectangularLayout extends Layout {
             const newBottomVertex = {
                 ...newTopVertex,...{y:min(cartoonVertexDecedents, d => d.y),id: `${cartoonVertex.id}-bottom`}
             };
+            // place in middle of tips.
+            cartoonVertex.y = mean([newTopVertex,newBottomVertex],d=>d.y);
 
 
             this._cartoons.push({vertices:[cartoonVertex,newTopVertex,newBottomVertex],
@@ -8039,14 +8058,14 @@ class RectangularLayout extends Layout {
         if(!this.layoutKnown){
             this.layout();
         }
-        return this._edges.filter(e=>!e.v1.masked);
+        return this._edges.filter(e=>!e.v1.masked );
     }
 
     get vertices(){
         if(!this.layoutKnown){
             this.layout();
         }
-        return this._vertices.filter(v=>!v.masked);
+        return this._vertices.filter(v=>!v.masked );
     }
     get cartoons(){
         if(!this.layoutKnown){
@@ -8170,6 +8189,7 @@ class RectangularLayout$1 extends Layout {
             });
         }
 
+
         // update the node locations (vertices)
         nodes
             .forEach((n) => {
@@ -8288,6 +8308,8 @@ class RectangularLayout$1 extends Layout {
             const newBottomVertex = {
                 ...newTopVertex,...{y:min(cartoonVertexDecedents, d => d.y),id: `${cartoonVertex.id}-bottom`}
             };
+            // place in middle of tips.
+            cartoonVertex.y = mean([newTopVertex,newBottomVertex],d=>d.y);
 
 
             this._cartoons.push({vertices:[cartoonVertex,newTopVertex,newBottomVertex],
@@ -8383,14 +8405,14 @@ class RectangularLayout$1 extends Layout {
         if(!this.layoutKnown){
             this.layout();
         }
-        return this._edges.filter(e=>!e.v1.masked);
+        return this._edges.filter(e=>!e.v1.masked );
     }
 
     get vertices(){
         if(!this.layoutKnown){
             this.layout();
         }
-        return this._vertices.filter(v=>!v.masked);
+        return this._vertices.filter(v=>!v.masked );
     }
     get cartoons(){
         if(!this.layoutKnown){
@@ -9484,7 +9506,7 @@ function updateBranches() {
     // Create new elements as needed.
     const newBranches = branches.enter().append("g")
         .attr("id", (e) => {
-            return e.key;
+            return `branch-to-${e.key}`;
 
         })
         .attr("class", (e) => ["branch", ...e.classes].join(" "))
@@ -9547,6 +9569,7 @@ function updateCartoons(){
         .attr("transform", (c) => {
             return `translate(${this.scales.x(c.vertices[0].x)}, ${this.scales.y(c.vertices[0].y)})`;
         });
+
 
     newCartoons.append("path")
         .attr("class", "cartoon-path")
@@ -9704,6 +9727,9 @@ function pointToPoint(points){
     }
     return `M 0 0 ${path.join(" l ")} z`;
 }
+
+//TODO add interactive callbacks to instance so that when nodes are made again they can access those functions
+//TODO transtion on incoming and outgoing objects so they match the movement in the diagram;
 
 /** @module Graph */
 

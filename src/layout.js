@@ -1,4 +1,5 @@
 "use strict";
+import {max} from "d3";
 
 /** @module layout */
 
@@ -104,12 +105,26 @@ export class Layout {
     }
 
     /**
-     * A utitlity function to callapse a clade into a single branch and tip.
+     * A utitlity function to collapse a clade into a single branch and tip.
      * @param vertex
      */
-    callapse(vertex){
-
-    }
+    // collapse(node){
+    //     const vertex=this._nodeMap.get(node);
+    //     if(vertex.collapsedAt){
+    //         const childVertices = [...this.tree.postorder(node)].filter(n=>n!==node).map(node=>this._nodeMap.get(node));
+    //         childVertices.forEach(c=> {c.collapse = false});
+    //         vertex.collapsedAt=false;
+    //     }else{
+    //             const childVertices = [...this.tree.postorder(node)].filter(n=>n!==node).map(node=>this._nodeMap.get(node));
+    //             const mostDiverged = childVertices.find(v=>v.x===max(childVertices,d=>d.x))
+    //             childVertices.forEach(c=> {if(c!==mostDiverged){c.collapse = true}});
+    //             vertex.collapsedAt = true;
+    //
+    //     }
+    //     vertex.collapsed = vertex.collapsed? !vertex.collapsed:true;
+    //     this.layoutKnown=false;
+    //     this.update();
+    // }
 
     /**
      * A utility function that will return a HTML string about the node and its
@@ -131,3 +146,4 @@ export class Layout {
  * Private methods, called by the class using the <function>.call(this) function.
  */
 
+//TODO easier api for collapse and cartoon annotations maybe make vertex and edge class

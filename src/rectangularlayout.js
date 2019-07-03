@@ -95,6 +95,7 @@ export class RectangularLayout extends Layout {
             });
         }
 
+
         // update the node locations (vertices)
         nodes
             .forEach((n) => {
@@ -213,6 +214,8 @@ export class RectangularLayout extends Layout {
             const newBottomVertex = {
                 ...newTopVertex,...{y:min(cartoonVertexDecedents, d => d.y),id: `${cartoonVertex.id}-bottom`}
             };
+            // place in middle of tips.
+            cartoonVertex.y = mean([newTopVertex,newBottomVertex],d=>d.y)
 
 
             this._cartoons.push({vertices:[cartoonVertex,newTopVertex,newBottomVertex],
@@ -308,14 +311,14 @@ export class RectangularLayout extends Layout {
         if(!this.layoutKnown){
             this.layout();
         }
-        return this._edges.filter(e=>!e.v1.masked);
+        return this._edges.filter(e=>!e.v1.masked );
     }
 
     get vertices(){
         if(!this.layoutKnown){
             this.layout();
         }
-        return this._vertices.filter(v=>!v.masked);
+        return this._vertices.filter(v=>!v.masked );
     }
     get cartoons(){
         if(!this.layoutKnown){
@@ -349,4 +352,3 @@ export class RectangularLayout extends Layout {
 /*
  * Private methods, called by the class using the <function>.call(this) function.
  */
-

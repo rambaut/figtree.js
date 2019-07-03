@@ -9090,6 +9090,13 @@
 	  return Node;
 	}();
 
+	/** @module layout */
+
+	/**
+	 * The Layout class
+	 *
+	 */
+
 	var Layout =
 	/*#__PURE__*/
 	function () {
@@ -9205,13 +9212,27 @@
 	      this.update();
 	    }
 	    /**
-	     * A utitlity function to callapse a clade into a single branch and tip.
+	     * A utitlity function to collapse a clade into a single branch and tip.
 	     * @param vertex
 	     */
+	    // collapse(node){
+	    //     const vertex=this._nodeMap.get(node);
+	    //     if(vertex.collapsedAt){
+	    //         const childVertices = [...this.tree.postorder(node)].filter(n=>n!==node).map(node=>this._nodeMap.get(node));
+	    //         childVertices.forEach(c=> {c.collapse = false});
+	    //         vertex.collapsedAt=false;
+	    //     }else{
+	    //             const childVertices = [...this.tree.postorder(node)].filter(n=>n!==node).map(node=>this._nodeMap.get(node));
+	    //             const mostDiverged = childVertices.find(v=>v.x===max(childVertices,d=>d.x))
+	    //             childVertices.forEach(c=> {if(c!==mostDiverged){c.collapse = true}});
+	    //             vertex.collapsedAt = true;
+	    //
+	    //     }
+	    //     vertex.collapsed = vertex.collapsed? !vertex.collapsed:true;
+	    //     this.layoutKnown=false;
+	    //     this.update();
+	    // }
 
-	  }, {
-	    key: "callapse",
-	    value: function callapse(vertex) {}
 	    /**
 	     * A utility function that will return a HTML string about the node and its
 	     * annotations. Can be used with the addLabels() method.
@@ -9255,6 +9276,7 @@
 	/*
 	 * Private methods, called by the class using the <function>.call(this) function.
 	 */
+	//TODO easier api for collapse and cartoon annotations maybe make vertex and edge class
 
 	function _assertThisInitialized(self) {
 	  if (self === void 0) {
@@ -9550,6 +9572,11 @@
 	              return d.y;
 	            }),
 	            id: "".concat(cartoonVertex.id, "-bottom")
+	          }); // place in middle of tips.
+
+
+	          cartoonVertex.y = mean([newTopVertex, newBottomVertex], function (d) {
+	            return d.y;
 	          });
 
 	          _this2._cartoons.push({
@@ -9979,6 +10006,11 @@
 	              return d.y;
 	            }),
 	            id: "".concat(cartoonVertex.id, "-bottom")
+	          }); // place in middle of tips.
+
+
+	          cartoonVertex.y = mean([newTopVertex, newBottomVertex], function (d) {
+	            return d.y;
 	          });
 
 	          _this2._cartoons.push({
@@ -11340,7 +11372,7 @@
 	  // Create new elements as needed.
 
 	  var newBranches = branches.enter().append("g").attr("id", function (e) {
-	    return e.key;
+	    return "branch-to-".concat(e.key);
 	  }).attr("class", function (e) {
 	    return ["branch"].concat(toConsumableArray(e.classes)).join(" ");
 	  }).attr("transform", function (e) {
@@ -11623,7 +11655,8 @@
 	  }
 
 	  return "M 0 0 ".concat(path.join(" l "), " z");
-	}
+	} //TODO add interactive callbacks to instance so that when nodes are made again they can access those functions
+	//TODO transtion on incoming and outgoing objects so they match the movement in the diagram;
 
 	var Graph =
 	/*#__PURE__*/
