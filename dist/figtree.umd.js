@@ -9197,9 +9197,15 @@
 	        var v = _this2._nodeMap.get(n);
 
 	        if (!v.masked || v.masked && v.collapsed) {
-	          currentY = _this2.setYPosition(v, currentY); // TODO set up x like this as well so we can handle unrooted formats ect.
+	          currentY = _this2.setYPosition(v, currentY);
 
-	          setupVertex.call(_this2, v);
+	          _this2.setXPosition(v);
+
+	          v.degree = v.node.children ? v.node.children.length + 1 : 1; // the number of edges (including stem)
+
+	          v.id = v.node.id;
+	          setVertexClasses.call(_this2, v);
+	          setVertexLabels.call(_this2, v);
 	        } else {
 	          v.y = null; //forget the last position
 	        }
@@ -9213,7 +9219,6 @@
 
 
 	      this._verticalRange = [0, currentY];
-	      console.log("From layout: ".concat(this._verticalRange));
 	      this.layoutKnown = true;
 	    }
 	  }, {
@@ -9422,6 +9427,11 @@
 	      return currentY;
 	    }
 	  }, {
+	    key: "setXPosition",
+	    value: function setXPosition(v) {
+	      v.x = this._horizontalScale(v.node.height);
+	    }
+	  }, {
 	    key: "getTreeNodes",
 	    value: function getTreeNodes() {
 	      return toConsumableArray(this.tree.postorder());
@@ -9523,6 +9533,17 @@
 	        cartoonVertex.y = mean([newTopVertex, newBottomVertex], function (d) {
 	          return d.y;
 	        });
+	        var currentNode = cartoonVertex.node;
+
+	        while (currentNode.parent) {
+	          var parentVertex = _this8._nodeMap.get(currentNode.parent);
+
+	          parentVertex.y = mean(parentVertex.node.children, function (child) {
+	            return _this8._nodeMap.get(child).y;
+	          });
+	          currentNode = parentVertex.node;
+	        }
+
 	        cartoons.push({
 	          vertices: [cartoonVertex, newTopVertex, newBottomVertex],
 	          classes: cartoonVertex.classes,
@@ -9601,15 +9622,6 @@
 	    vertex.masked = null;
 	    vertex.collapsed = null;
 	  });
-	}
-
-	function setupVertex(v) {
-	  v.x = this._horizontalScale(v.node.height);
-	  v.degree = v.node.children ? v.node.children.length + 1 : 1; // the number of edges (including stem)
-
-	  v.id = v.node.id;
-	  setVertexClasses.call(this, v);
-	  setVertexLabels.call(this, v);
 	}
 
 	function setVertexClasses(v) {

@@ -7700,9 +7700,13 @@ class Layout {
             .forEach((n) => {
                 const v = this._nodeMap.get(n);
                 if(!v.masked||(v.masked &&v.collapsed)) {
+
                     currentY = this.setYPosition(v, currentY);
-                    // TODO set up x like this as well so we can handle unrooted formats ect.
-                    setupVertex.call(this, v);
+                    this.setXPosition(v);
+                    v.degree = (v.node.children ? v.node.children.length + 1: 1); // the number of edges (including stem)
+                    v.id = v.node.id;
+                    setVertexClasses.call(this,v);
+                    setVertexLabels.call(this,v);
                 }else{
                     v.y=null; //forget the last position
                 }
@@ -7720,10 +7724,7 @@ class Layout {
 
 // update verticalRange so that we count tips that are in cartoons but not those that are collapsed
         this._verticalRange = [0, currentY];
-        console.log(`From layout: ${this._verticalRange}`);
-
         this.layoutKnown = true;
-
 
     }
 
@@ -7927,7 +7928,12 @@ class Layout {
         };
         // place in middle of tips.
         cartoonVertex.y = mean([newTopVertex,newBottomVertex],d=>d.y);
-
+        let currentNode= cartoonVertex.node;
+        while(currentNode.parent){
+            const parentVertex = this._nodeMap.get(currentNode.parent);
+            parentVertex.y= mean(parentVertex.node.children, (child) => this._nodeMap.get(child).y);
+            currentNode = parentVertex.node;
+        }
 
             cartoons.push({vertices:[cartoonVertex,newTopVertex,newBottomVertex],
             classes : cartoonVertex.classes,
@@ -7985,6 +7991,10 @@ class Layout {
         return currentY;
     }
 
+    setXPosition(v){
+        v.x = this._horizontalScale(v.node.height);
+    }
+
     getTreeNodes() {
         return [...this.tree.postorder()]
     };
@@ -8010,16 +8020,7 @@ function makeVerticesFromNodes(nodes){
         vertex.collapsed = null;
     });
 }
-function setupVertex(v){
 
-    v.x = this._horizontalScale(v.node.height);
-    v.degree = (v.node.children ? v.node.children.length + 1: 1); // the number of edges (including stem)
-    v.id = v.node.id;
-
-    setVertexClasses.call(this,v);
-    setVertexLabels.call(this,v);
-
-}
 function setVertexClasses(v){
     v.classes = [
         (!v.node.children ? "external-node" : "internal-node"),
