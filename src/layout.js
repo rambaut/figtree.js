@@ -41,7 +41,7 @@ export class Layout {
         this._nodeMap = new Map();
 
         this._cartoonStore = [];
-        this._cartoons = [];
+        this._activeCartoons = [];
 
         this.branchLabelAnnotationName = null;
         this.internalNodeLabelAnnotationName = null;
@@ -79,29 +79,19 @@ export class Layout {
 
 
         //CARTOONS set up
-        this._cartoons = [];
         // filter so just showing the most ancestral;
         const allCartoonDescendents = [];
-
         this._cartoonStore.forEach(c=> {
             if(allCartoonDescendents.indexOf(c.node)===-1){
                 allCartoonDescendents.push(...[...this.tree.postorder(c.node)].filter(n=>n!==c.node))
             }
         })
-        this._cartoonStore.filter(c=>allCartoonDescendents.indexOf(c.node)===-1)
-            .filter(c=>c.format==='collapse')
+
+        this._activeCartoons = this._cartoonStore.filter(c=>allCartoonDescendents.indexOf(c.node)===-1);
+
+        this._activeCartoons.filter(c=>c.format==='collapse')
             .forEach(c=>{
-                const cartoonNodeDecedents = [...this.tree.postorder(c.node)].filter(n=>n!==c.node);
-
-                const cartoonVertexDecedents = cartoonNodeDecedents.map(n=>this._nodeMap.get(n));
-
-                const mostDiverged = this._nodeMap.get(cartoonNodeDecedents.find(n=>n.height===max(cartoonNodeDecedents,d=>d.height)));
-                cartoonVertexDecedents.forEach(v=> {
-                    v.masked = true
-                    if (v === mostDiverged) {
-                        v.collapsed = true
-                    }
-                });
+              markCollapsedNodes.call(this,c);
         })
 
 
@@ -117,38 +107,6 @@ export class Layout {
                     v.y=null; //forget the last position
                 }
             });
-
-        // Handle cartoons
-        this._cartoonStore.filter(c=>allCartoonDescendents.indexOf(c.node)===-1)
-            // .filter(c=>c.format==='cartoon')
-            .forEach(c=>{
-
-                const cartoonNodeDecedents = [...this.tree.postorder(c.node)].filter(n=>n!==c.node);
-                const cartoonVertex = this._nodeMap.get(c.node);
-
-                const cartoonVertexDecedents = cartoonNodeDecedents.map(n=>this._nodeMap.get(n));
-                cartoonVertexDecedents.forEach(v=>v.masked=true);
-                const newTopVertex = {
-                    x: max(cartoonVertexDecedents, d => d.x),
-                    y: max(cartoonVertexDecedents, d => d.y),
-                    id: `${cartoonVertex.id}-top`,
-                    node: cartoonVertex.node,
-                    classes: cartoonVertex.classes
-                };
-                const newBottomVertex = {
-                    ...newTopVertex,...{y:min(cartoonVertexDecedents, d => d.y),id: `${cartoonVertex.id}-bottom`}
-                };
-                // place in middle of tips.
-                cartoonVertex.y = mean([newTopVertex,newBottomVertex],d=>d.y)
-
-
-                this._cartoons.push({vertices:[cartoonVertex,newTopVertex,newBottomVertex],
-                    classes : cartoonVertex.classes,
-                    id:`${cartoonVertex.id}-cartoon`})
-
-            })
-
-
 
 
         // EDGES
@@ -280,16 +238,19 @@ export class Layout {
      * @param vertex
      */
     cartoon(node) {
-        if (this._cartoonStore.filter(c => c.format === "cartoon").find(c => c.node === node)) {
-            this._cartoonStore = this._cartoonStore.filter(c => !(c.format === "cartoon" && c.node === node));
-        } else {
-            this._cartoonStore.push({
-                node: node,
-                format: "cartoon"
-            })
+        if(node.children) {
+
+            if (this._cartoonStore.filter(c => c.format === "cartoon").find(c => c.node === node)) {
+                this._cartoonStore = this._cartoonStore.filter(c => !(c.format === "cartoon" && c.node === node));
+            } else {
+                this._cartoonStore.push({
+                    node: node,
+                    format: "cartoon"
+                })
+            }
+            this.layoutKnown = false;
+            this.update();
         }
-        this.layoutKnown = false;
-        this.update();
     }
 
     /**
@@ -297,16 +258,18 @@ export class Layout {
      * @param vertex
      */
     collapse(node) {
-        if (this._cartoonStore.filter(c => c.format === "collapse").find(c => c.node === node)){
-            this._cartoonStore = this._cartoonStore.filter(c => !(c.format === "collapse" && c.node === node));
-        } else {
-            this._cartoonStore.push({
-                node: node,
-                format: "collapse"
-            })
+        if(node.children) {
+            if (this._cartoonStore.filter(c => c.format === "collapse").find(c => c.node === node)) {
+                this._cartoonStore = this._cartoonStore.filter(c => !(c.format === "collapse" && c.node === node));
+            } else {
+                this._cartoonStore.push({
+                    node: node,
+                    format: "collapse"
+                })
+            }
+            this.layoutKnown = false;
+            this.update();
         }
-        this.layoutKnown = false;
-        this.update();
     }
 
     /**
@@ -342,7 +305,37 @@ export class Layout {
         if (!this.layoutKnown) {
             this.layout();
         }
-        return this._cartoons;
+        const cartoons = [];
+        // Handle cartoons
+        this._activeCartoons.forEach(c=>{
+
+
+        const cartoonNodeDecedents = [...this.tree.postorder(c.node)].filter(n=>n!==c.node);
+        const cartoonVertex = this._nodeMap.get(c.node);
+
+        const cartoonVertexDecedents = cartoonNodeDecedents.map(n=>this._nodeMap.get(n));
+        cartoonVertexDecedents.forEach(v=>v.masked=true);
+        const newTopVertex = {
+            x: max(cartoonVertexDecedents, d => d.x),
+            y: max(cartoonVertexDecedents, d => d.y),
+            id: `${cartoonVertex.id}-top`,
+            node: cartoonVertex.node,
+            classes: cartoonVertex.classes
+        };
+        const newBottomVertex = {
+            ...newTopVertex,...{y:min(cartoonVertexDecedents, d => d.y),id: `${cartoonVertex.id}-bottom`}
+        };
+        // place in middle of tips.
+        cartoonVertex.y = mean([newTopVertex,newBottomVertex],d=>d.y)
+
+
+            cartoons.push({vertices:[cartoonVertex,newTopVertex,newBottomVertex],
+            classes : cartoonVertex.classes,
+            id:`${cartoonVertex.id}-cartoon`})
+            })
+
+        return cartoons;
+
     }
 
     get nodeMap() {
@@ -524,4 +517,18 @@ function setEdgeLabels(e){
     e.labelBelow = e.v1.node.parent.children[0] !== e.v1.node;
 }
 
-//TODO easier api for collapse and cartoon annotations maybe make vertex and edge class
+function markCollapsedNodes(c){
+    const cartoonNodeDecedents = [...this.tree.postorder(c.node)].filter(n=>n!==c.node);
+
+    const cartoonVertexDecedents = cartoonNodeDecedents.map(n=>this._nodeMap.get(n));
+
+    const mostDiverged = this._nodeMap.get(cartoonNodeDecedents.find(n=>n.height===max(cartoonNodeDecedents,d=>d.height)));
+    cartoonVertexDecedents.forEach(v=> {
+        v.masked = true
+        if (v === mostDiverged) {
+            v.collapsed = true
+        }
+    });
+
+
+}

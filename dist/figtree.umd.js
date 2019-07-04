@@ -9137,7 +9137,7 @@
 	    this._vertices = [];
 	    this._nodeMap = new Map();
 	    this._cartoonStore = [];
-	    this._cartoons = [];
+	    this._activeCartoons = [];
 	    this.branchLabelAnnotationName = null;
 	    this.internalNodeLabelAnnotationName = null;
 	    this.externalNodeLabelAnnotationName = null;
@@ -9170,8 +9170,7 @@
 	      var nodes = this.getTreeNodes();
 	      var currentY = this.setInitialY();
 	      makeVerticesFromNodes.call(this, nodes); //CARTOONS set up
-
-	      this._cartoons = []; // filter so just showing the most ancestral;
+	      // filter so just showing the most ancestral;
 
 	      var allCartoonDescendents = [];
 
@@ -9183,32 +9182,14 @@
 	        }
 	      });
 
-	      this._cartoonStore.filter(function (c) {
+	      this._activeCartoons = this._cartoonStore.filter(function (c) {
 	        return allCartoonDescendents.indexOf(c.node) === -1;
-	      }).filter(function (c) {
+	      });
+
+	      this._activeCartoons.filter(function (c) {
 	        return c.format === 'collapse';
 	      }).forEach(function (c) {
-	        var cartoonNodeDecedents = toConsumableArray(_this2.tree.postorder(c.node)).filter(function (n) {
-	          return n !== c.node;
-	        });
-
-	        var cartoonVertexDecedents = cartoonNodeDecedents.map(function (n) {
-	          return _this2._nodeMap.get(n);
-	        });
-
-	        var mostDiverged = _this2._nodeMap.get(cartoonNodeDecedents.find(function (n) {
-	          return n.height === max(cartoonNodeDecedents, function (d) {
-	            return d.height;
-	          });
-	        }));
-
-	        cartoonVertexDecedents.forEach(function (v) {
-	          v.masked = true;
-
-	          if (v === mostDiverged) {
-	            v.collapsed = true;
-	          }
-	        });
+	        markCollapsedNodes.call(_this2, c);
 	      }); // update the node locations (vertices)
 
 
@@ -9222,55 +9203,7 @@
 	        } else {
 	          v.y = null; //forget the last position
 	        }
-	      }); // Handle cartoons
-
-	      this._cartoonStore.filter(function (c) {
-	        return allCartoonDescendents.indexOf(c.node) === -1;
-	      }) // .filter(c=>c.format==='cartoon')
-	      .forEach(function (c) {
-	        var cartoonNodeDecedents = toConsumableArray(_this2.tree.postorder(c.node)).filter(function (n) {
-	          return n !== c.node;
-	        });
-
-	        var cartoonVertex = _this2._nodeMap.get(c.node);
-
-	        var cartoonVertexDecedents = cartoonNodeDecedents.map(function (n) {
-	          return _this2._nodeMap.get(n);
-	        });
-	        cartoonVertexDecedents.forEach(function (v) {
-	          return v.masked = true;
-	        });
-	        var newTopVertex = {
-	          x: max(cartoonVertexDecedents, function (d) {
-	            return d.x;
-	          }),
-	          y: max(cartoonVertexDecedents, function (d) {
-	            return d.y;
-	          }),
-	          id: "".concat(cartoonVertex.id, "-top"),
-	          node: cartoonVertex.node,
-	          classes: cartoonVertex.classes
-	        };
-
-	        var newBottomVertex = objectSpread({}, newTopVertex, {
-	          y: min(cartoonVertexDecedents, function (d) {
-	            return d.y;
-	          }),
-	          id: "".concat(cartoonVertex.id, "-bottom")
-	        }); // place in middle of tips.
-
-
-	        cartoonVertex.y = mean([newTopVertex, newBottomVertex], function (d) {
-	          return d.y;
-	        });
-
-	        _this2._cartoons.push({
-	          vertices: [cartoonVertex, newTopVertex, newBottomVertex],
-	          classes: cartoonVertex.classes,
-	          id: "".concat(cartoonVertex.id, "-cartoon")
-	        });
 	      }); // EDGES
-
 
 	      makeEdgesFromNodes.call(this, nodes); //Update edge locations
 
@@ -9400,23 +9333,25 @@
 	  }, {
 	    key: "cartoon",
 	    value: function cartoon(node) {
-	      if (this._cartoonStore.filter(function (c) {
-	        return c.format === "cartoon";
-	      }).find(function (c) {
-	        return c.node === node;
-	      })) {
-	        this._cartoonStore = this._cartoonStore.filter(function (c) {
-	          return !(c.format === "cartoon" && c.node === node);
-	        });
-	      } else {
-	        this._cartoonStore.push({
-	          node: node,
-	          format: "cartoon"
-	        });
-	      }
+	      if (node.children) {
+	        if (this._cartoonStore.filter(function (c) {
+	          return c.format === "cartoon";
+	        }).find(function (c) {
+	          return c.node === node;
+	        })) {
+	          this._cartoonStore = this._cartoonStore.filter(function (c) {
+	            return !(c.format === "cartoon" && c.node === node);
+	          });
+	        } else {
+	          this._cartoonStore.push({
+	            node: node,
+	            format: "cartoon"
+	          });
+	        }
 
-	      this.layoutKnown = false;
-	      this.update();
+	        this.layoutKnown = false;
+	        this.update();
+	      }
 	    }
 	    /**
 	     * A utitlity function to collapse a clade into a single branch and tip.
@@ -9426,23 +9361,25 @@
 	  }, {
 	    key: "collapse",
 	    value: function collapse(node) {
-	      if (this._cartoonStore.filter(function (c) {
-	        return c.format === "collapse";
-	      }).find(function (c) {
-	        return c.node === node;
-	      })) {
-	        this._cartoonStore = this._cartoonStore.filter(function (c) {
-	          return !(c.format === "collapse" && c.node === node);
-	        });
-	      } else {
-	        this._cartoonStore.push({
-	          node: node,
-	          format: "collapse"
-	        });
-	      }
+	      if (node.children) {
+	        if (this._cartoonStore.filter(function (c) {
+	          return c.format === "collapse";
+	        }).find(function (c) {
+	          return c.node === node;
+	        })) {
+	          this._cartoonStore = this._cartoonStore.filter(function (c) {
+	            return !(c.format === "collapse" && c.node === node);
+	          });
+	        } else {
+	          this._cartoonStore.push({
+	            node: node,
+	            format: "collapse"
+	          });
+	        }
 
-	      this.layoutKnown = false;
-	      this.update();
+	        this.layoutKnown = false;
+	        this.update();
+	      }
 	    }
 	    /**
 	     * A utility function that will return a HTML string about the node and its
@@ -9542,11 +9479,58 @@
 	  }, {
 	    key: "cartoons",
 	    get: function get() {
+	      var _this8 = this;
+
 	      if (!this.layoutKnown) {
 	        this.layout();
 	      }
 
-	      return this._cartoons;
+	      var cartoons = []; // Handle cartoons
+
+	      this._activeCartoons.forEach(function (c) {
+	        var cartoonNodeDecedents = toConsumableArray(_this8.tree.postorder(c.node)).filter(function (n) {
+	          return n !== c.node;
+	        });
+
+	        var cartoonVertex = _this8._nodeMap.get(c.node);
+
+	        var cartoonVertexDecedents = cartoonNodeDecedents.map(function (n) {
+	          return _this8._nodeMap.get(n);
+	        });
+	        cartoonVertexDecedents.forEach(function (v) {
+	          return v.masked = true;
+	        });
+	        var newTopVertex = {
+	          x: max(cartoonVertexDecedents, function (d) {
+	            return d.x;
+	          }),
+	          y: max(cartoonVertexDecedents, function (d) {
+	            return d.y;
+	          }),
+	          id: "".concat(cartoonVertex.id, "-top"),
+	          node: cartoonVertex.node,
+	          classes: cartoonVertex.classes
+	        };
+
+	        var newBottomVertex = objectSpread({}, newTopVertex, {
+	          y: min(cartoonVertexDecedents, function (d) {
+	            return d.y;
+	          }),
+	          id: "".concat(cartoonVertex.id, "-bottom")
+	        }); // place in middle of tips.
+
+
+	        cartoonVertex.y = mean([newTopVertex, newBottomVertex], function (d) {
+	          return d.y;
+	        });
+	        cartoons.push({
+	          vertices: [cartoonVertex, newTopVertex, newBottomVertex],
+	          classes: cartoonVertex.classes,
+	          id: "".concat(cartoonVertex.id, "-cartoon")
+	        });
+	      });
+
+	      return cartoons;
 	    }
 	  }, {
 	    key: "nodeMap",
@@ -9597,22 +9581,22 @@
 	 */
 
 	function makeVerticesFromNodes(nodes) {
-	  var _this8 = this;
+	  var _this9 = this;
 
 	  nodes.forEach(function (n, i) {
-	    if (!_this8._nodeMap.has(n)) {
+	    if (!_this9._nodeMap.has(n)) {
 	      var _vertex = {
 	        node: n,
 	        key: n.id // key: Symbol(n.id).toString()
 
 	      };
 
-	      _this8._vertices.push(_vertex);
+	      _this9._vertices.push(_vertex);
 
-	      _this8._nodeMap.set(n, _vertex);
+	      _this9._nodeMap.set(n, _vertex);
 	    }
 
-	    var vertex = _this8._nodeMap.get(n);
+	    var vertex = _this9._nodeMap.get(n);
 
 	    vertex.masked = null;
 	    vertex.collapsed = null;
@@ -9629,7 +9613,7 @@
 	}
 
 	function setVertexClasses(v) {
-	  var _this9 = this;
+	  var _this10 = this;
 
 	  v.classes = [!v.node.children ? "external-node" : "internal-node", v.node.isSelected ? "selected" : "unselected"];
 
@@ -9638,7 +9622,7 @@
 	      var _ref4 = slicedToArray(_ref3, 1),
 	          key = _ref4[0];
 
-	      return _this9.tree.annotations[key] && (_this9.tree.annotations[key].type === Type.DISCRETE || _this9.tree.annotations[key].type === Type.BOOLEAN || _this9.tree.annotations[key].type === Type.INTEGER);
+	      return _this10.tree.annotations[key] && (_this10.tree.annotations[key].type === Type.DISCRETE || _this10.tree.annotations[key].type === Type.BOOLEAN || _this10.tree.annotations[key].type === Type.INTEGER);
 	    }).map(function (_ref5) {
 	      var _ref6 = slicedToArray(_ref5, 2),
 	          key = _ref6[0],
@@ -9663,24 +9647,24 @@
 	}
 
 	function makeEdgesFromNodes(nodes) {
-	  var _this10 = this;
+	  var _this11 = this;
 
 	  // create the edges (only done if the array is empty)
 	  nodes.filter(function (n) {
 	    return n.parent;
 	  }) // exclude the root
 	  .forEach(function (n, i) {
-	    if (!_this10._edgeMap.has(_this10._nodeMap.get(n))) {
+	    if (!_this11._edgeMap.has(_this11._nodeMap.get(n))) {
 	      if (!n.masked || n.masked && !n.collapsed) {
 	        var edge = {
-	          v0: _this10._nodeMap.get(n.parent),
-	          v1: _this10._nodeMap.get(n),
+	          v0: _this11._nodeMap.get(n.parent),
+	          v1: _this11._nodeMap.get(n),
 	          key: n.id
 	        };
 
-	        _this10._edges.push(edge);
+	        _this11._edges.push(edge);
 
-	        _this10._edgeMap.set(edge.v1, edge);
+	        _this11._edgeMap.set(edge.v1, edge);
 	      }
 	    }
 	  });
@@ -9699,7 +9683,7 @@
 	}
 
 	function setEdgeClasses(e) {
-	  var _this11 = this;
+	  var _this12 = this;
 
 	  e.classes = [];
 
@@ -9708,7 +9692,7 @@
 	      var _ref8 = slicedToArray(_ref7, 1),
 	          key = _ref8[0];
 
-	      return _this11.tree.annotations[key] && (_this11.tree.annotations[key].type === Type.DISCRETE || _this11.tree.annotations[key].type === Type.BOOLEAN || _this11.tree.annotations[key].type === Type.INTEGER);
+	      return _this12.tree.annotations[key] && (_this12.tree.annotations[key].type === Type.DISCRETE || _this12.tree.annotations[key].type === Type.BOOLEAN || _this12.tree.annotations[key].type === Type.INTEGER);
 	    }).map(function (_ref9) {
 	      var _ref10 = slicedToArray(_ref9, 2),
 	          key = _ref10[0],
@@ -9722,7 +9706,33 @@
 	function setEdgeLabels(e) {
 	  e.label = this.branchLabelAnnotationName ? this.branchLabelAnnotationName === 'length' ? this.settings.lengthFormat(length) : e.v1.node.annotations[this.branchLabelAnnotationName] : null;
 	  e.labelBelow = e.v1.node.parent.children[0] !== e.v1.node;
-	} //TODO easier api for collapse and cartoon annotations maybe make vertex and edge class
+	}
+
+	function markCollapsedNodes(c) {
+	  var _this13 = this;
+
+	  var cartoonNodeDecedents = toConsumableArray(this.tree.postorder(c.node)).filter(function (n) {
+	    return n !== c.node;
+	  });
+
+	  var cartoonVertexDecedents = cartoonNodeDecedents.map(function (n) {
+	    return _this13._nodeMap.get(n);
+	  });
+
+	  var mostDiverged = this._nodeMap.get(cartoonNodeDecedents.find(function (n) {
+	    return n.height === max(cartoonNodeDecedents, function (d) {
+	      return d.height;
+	    });
+	  }));
+
+	  cartoonVertexDecedents.forEach(function (v) {
+	    v.masked = true;
+
+	    if (v === mostDiverged) {
+	      v.collapsed = true;
+	    }
+	  });
+	}
 
 	function _assertThisInitialized(self) {
 	  if (self === void 0) {
@@ -10720,14 +10730,14 @@
 
 	      this.svgSelection = select(this.svg).select("g");
 	      this.svgSelection.append("g").attr("class", "axes-layer");
+	      this.svgSelection.append("g").attr("class", "cartoon-layer");
 	      this.svgSelection.append("g").attr("class", "branches-layer");
 
 	      if (this.settings.backgroundBorder > 0) {
 	        this.svgSelection.append("g").attr("class", "nodes-background-layer");
 	      }
 
-	      this.svgSelection.append("g").attr("class", "nodes-layer");
-	      this.svgSelection.append("g").attr("class", "cartoon-layer"); // create the scales
+	      this.svgSelection.append("g").attr("class", "nodes-layer"); // create the scales
 
 	      var xScale = linear$1().domain(this.layout.horizontalRange).range([this.margins.left, width - this.margins.right]);
 	      var yScale = linear$1().domain(this.layout.verticalRange).range([this.margins.top + 20, height - this.margins.bottom - 20]);
@@ -10771,15 +10781,8 @@
 	      this.scales.y.domain(this.layout.verticalRange).range([this.margins.top + 20, height - this.margins.bottom - 20]);
 	      this.scales.width = width;
 	      this.scales.height = height;
-	      updateAxis.call(this); // const xAxis = axisBottom(this.scales.x)
-	      //     .tickArguments(this.settings.xAxisTickArguments);
-	      //
-	      // this.svgSelection.select("#x-axis")
-	      //     .transition()
-	      //     .duration(this.settings.transitionDuration)
-	      //     .call(xAxis);
-	      // call the private methods to create the components of the diagram
-
+	      updateAxis.call(this);
+	      updateCartoons.call(this);
 	      updateBranches.call(this);
 
 	      if (this.settings.backgroundBorder > 0) {
@@ -10787,7 +10790,6 @@
 	      }
 
 	      updateNodes.call(this);
-	      updateCartoons.call(this);
 	    }
 	    /**
 	     * set mouseover highlighting of branches

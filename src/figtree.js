@@ -84,12 +84,13 @@ export class FigTree {
         this.svgSelection = select(this.svg).select("g");
 
         this.svgSelection.append("g").attr("class", "axes-layer");
+        this.svgSelection.append("g").attr("class", "cartoon-layer");
+
         this.svgSelection.append("g").attr("class", "branches-layer");
         if (this.settings.backgroundBorder > 0) {
             this.svgSelection.append("g").attr("class", "nodes-background-layer");
         }
         this.svgSelection.append("g").attr("class", "nodes-layer");
-        this.svgSelection.append("g").attr("class", "cartoon-layer");
 
 
         // create the scales
@@ -137,16 +138,8 @@ export class FigTree {
         this.scales.height=height;
 
         updateAxis.call(this);
-        // const xAxis = axisBottom(this.scales.x)
-        //     .tickArguments(this.settings.xAxisTickArguments);
-        //
-        // this.svgSelection.select("#x-axis")
-        //     .transition()
-        //     .duration(this.settings.transitionDuration)
-        //     .call(xAxis);
+        updateCartoons.call(this);
 
-
-        // call the private methods to create the components of the diagram
         updateBranches.call(this);
 
         if (this.settings.backgroundBorder > 0) {
@@ -154,7 +147,6 @@ export class FigTree {
         }
 
         updateNodes.call(this);
-        updateCartoons.call(this);
 
     }
 
