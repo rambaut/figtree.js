@@ -10712,6 +10712,11 @@
 	    this.settings = objectSpread({}, FigTree.DEFAULT_SETTINGS(), settings, {
 	      styles: styles
 	    });
+	    this.callbacks = {
+	      nodes: [],
+	      branches: [],
+	      cartoons: []
+	    };
 	    this.svg = svg;
 	  }
 
@@ -10810,15 +10815,21 @@
 	  }, {
 	    key: "hilightBranches",
 	    value: function hilightBranches() {
-	      // need to use 'function' here so that 'this' refers to the SVG
-	      // element being hovered over.
-	      var selected = this.svgSelection.selectAll(".branch").select(".branch-path");
-	      selected.on("mouseover", function (d, i) {
-	        select(this).classed("hovered", true);
+	      var _this2 = this;
+
+	      this.callbacks.branches.push(function () {
+	        // need to use 'function' here so that 'this' refers to the SVG
+	        // element being hovered over.
+	        var selected = _this2.svgSelection.selectAll(".branch").select(".branch-path");
+
+	        selected.on("mouseover", function (d, i) {
+	          select(this).classed("hovered", true);
+	        });
+	        selected.on("mouseout", function (d, i) {
+	          select(this).classed("hovered", false);
+	        });
 	      });
-	      selected.on("mouseout", function (d, i) {
-	        select(this).classed("hovered", false);
-	      });
+	      this.update();
 	    }
 	    /**
 	     * Set mouseover highlighting of internal nodes
@@ -10845,26 +10856,33 @@
 	  }, {
 	    key: "hilightNodes",
 	    value: function hilightNodes(selection) {
-	      // need to use 'function' here so that 'this' refers to the SVG
-	      // element being hovered over.
-	      var self = this;
-	      var selected = this.svgSelection.selectAll(selection);
-	      selected.on("mouseover", function (d, i) {
-	        var node = select(this).select(".node-shape");
-	        self.settings.baubles.forEach(function (bauble) {
-	          // if (bauble.vertexFilter(node)) {
-	          bauble.updateShapes(node, self.settings.hoverBorder); // }
+	      var _this3 = this;
+
+	      this.callbacks.nodes.push(function () {
+	        // need to use 'function' here so that 'this' refers to the SVG
+	        // element being hovered over.
+	        var self = _this3;
+
+	        var selected = _this3.svgSelection.selectAll(selection);
+
+	        selected.on("mouseover", function (d, i) {
+	          var node = select(this).select(".node-shape");
+	          self.settings.baubles.forEach(function (bauble) {
+	            // if (bauble.vertexFilter(node)) {
+	            bauble.updateShapes(node, self.settings.hoverBorder); // }
+	          });
+	          node.classed("hovered", true);
 	        });
-	        node.classed("hovered", true);
-	      });
-	      selected.on("mouseout", function (d, i) {
-	        var node = select(this).select(".node-shape");
-	        self.settings.baubles.forEach(function (bauble) {
-	          // if (bauble.vertexFilter(node)) {
-	          bauble.updateShapes(node, 0); // }
+	        selected.on("mouseout", function (d, i) {
+	          var node = select(this).select(".node-shape");
+	          self.settings.baubles.forEach(function (bauble) {
+	            // if (bauble.vertexFilter(node)) {
+	            bauble.updateShapes(node, 0); // }
+	          });
+	          node.classed("hovered", false);
 	        });
-	        node.classed("hovered", false);
 	      });
+	      this.update();
 	    }
 	    /**
 	     * Registers action function to be called when an edge is clicked on. The function is passed
@@ -10879,19 +10897,26 @@
 	  }, {
 	    key: "onClickBranch",
 	    value: function onClickBranch(action) {
+	      var _this4 = this;
+
 	      var selection = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-	      // We need to use the "function" keyword here (rather than an arrow) so that "this"
-	      // points to the actual SVG element (so we can use d3.mouse(this)). We therefore need
-	      // to store a reference to the object in "self".
-	      var self = this;
-	      var selected = this.svgSelection.selectAll("".concat(selection ? selection : ".branch"));
-	      selected.on("click", function (edge) {
-	        var x1 = self.scales.x(edge.v1.x);
-	        var x2 = self.scales.x(edge.v0.x);
-	        var mx = mouse(this)[0];
-	        var proportion = Math.max(0.0, Math.min(1.0, (mx - x2) / (x1 - x2)));
-	        action(edge, proportion);
+	      this.callbacks.branches.push(function () {
+	        // We need to use the "function" keyword here (rather than an arrow) so that "this"
+	        // points to the actual SVG element (so we can use d3.mouse(this)). We therefore need
+	        // to store a reference to the object in "self".
+	        var self = _this4;
+
+	        var selected = _this4.svgSelection.selectAll("".concat(selection ? selection : ".branch"));
+
+	        selected.on("click", function (edge) {
+	          var x1 = self.scales.x(edge.v1.x);
+	          var x2 = self.scales.x(edge.v0.x);
+	          var mx = mouse(this)[0];
+	          var proportion = Math.max(0.0, Math.min(1.0, (mx - x2) / (x1 - x2)));
+	          action(edge, proportion);
+	        });
 	      });
+	      this.update();
 	    }
 	    /**
 	     * Registers action function to be called when an internal node is clicked on. The function should
@@ -10932,49 +10957,67 @@
 	  }, {
 	    key: "onClickNode",
 	    value: function onClickNode(action) {
+	      var _this5 = this;
+
 	      var selection = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-	      var selected = this.svgSelection.selectAll("".concat(selection ? selection : ".node")).select(".node-shape");
-	      selected.on("click", function (vertex) {
-	        action(vertex);
+	      this.callbacks.nodes.push(function () {
+	        var selected = _this5.svgSelection.selectAll("".concat(selection ? selection : ".node")).select(".node-shape");
+
+	        selected.on("click", function (vertex) {
+	          action(vertex);
+	        });
 	      });
+	      this.update();
 	    }
 	    /**
 	     * General Nodehover callback
-	     * @param {*} action and object with an enter and exit function
+	     * @param {*} action and object with an enter and exit function which fire when the mouse enters and exits object
 	     * @param {*} selection defualts to ".node" will select this selection's child ".node-shape"
 	     */
 
 	  }, {
 	    key: "onHoverNode",
 	    value: function onHoverNode(action) {
+	      var _this6 = this;
+
 	      var selection = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-	      var selected = this.svgSelection.selectAll("".concat(selection ? selection : ".node")).select(".node-shape");
-	      selected.on("mouseover", function (vertex) {
-	        action.enter(vertex);
+	      this.callbacks.nodes.push(function () {
+	        var selected = _this6.svgSelection.selectAll("".concat(selection ? selection : ".node")).select(".node-shape");
+
+	        selected.on("mouseover", function (vertex) {
+	          action.enter(vertex);
+	        });
+	        selected.on("mouseout", function (vertex) {
+	          action.exit(vertex);
+	        });
 	      });
-	      selected.on("mouseout", function (vertex) {
-	        action.exit(vertex);
-	      });
+	      this.update();
 	    }
 	    /**
 	     * General branch hover callback
-	     * @param {*} action and object with an enter and exit function
+	     * @param {*} action and object with an enter and exit function which fire when the mouse enters and exits object
 	     * @param {*} selection defualts to .branch
 	     */
 
 	  }, {
 	    key: "onHoverBranch",
 	    value: function onHoverBranch(action) {
+	      var _this7 = this;
+
 	      var selection = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-	      // need to use 'function' here so that 'this' refers to the SVG
-	      // element being hovered over.
-	      var selected = this.svgSelection.selectAll("".concat(selection ? selection : ".branch")).select("branch-path");
-	      selected.on("mouseover", function (d, i) {
-	        action.enter(this);
+	      this.callbacks.branches.push(function () {
+	        // need to use 'function' here so that 'this' refers to the SVG
+	        // element being hovered over.
+	        var selected = _this7.svgSelection.selectAll("".concat(selection ? selection : ".branch")).select("branch-path");
+
+	        selected.on("mouseover", function (d, i) {
+	          action.enter(this);
+	        });
+	        selected.on("mouseout", function (d, i) {
+	          action.exit(this);
+	        });
 	      });
-	      selected.on("mouseout", function (d, i) {
-	        action.exit(this);
-	      });
+	      this.update();
 	    }
 	    /**
 	     * Registers some text to appear in a popup box when the mouse hovers over the selection.
@@ -11023,7 +11066,7 @@
 	 */
 
 	function updateNodes() {
-	  var _this2 = this;
+	  var _this8 = this;
 
 	  var nodesLayer = select(this.svg).select(".nodes-layer"); // DATA JOIN
 	  // Join new data with old elements, if any.
@@ -11038,7 +11081,7 @@
 	  }).attr("class", function (v) {
 	    return ["node"].concat(toConsumableArray(v.classes)).join(" ");
 	  }).attr("transform", function (v) {
-	    return "translate(".concat(_this2.scales.x(v.x), ", ").concat(_this2.scales.y(v.y), ")");
+	    return "translate(".concat(_this8.scales.x(v.x), ", ").concat(_this8.scales.y(v.y), ")");
 	  }); // add the specific node shapes or 'baubles'
 
 	  this.settings.baubles.forEach(function (bauble) {
@@ -11059,11 +11102,11 @@
 	  nodes.transition().duration(this.settings.transitionDuration).attr("class", function (v) {
 	    return ["node"].concat(toConsumableArray(v.classes)).join(" ");
 	  }).attr("transform", function (v) {
-	    return "translate(".concat(_this2.scales.x(v.x), ", ").concat(_this2.scales.y(v.y), ")");
+	    return "translate(".concat(_this8.scales.x(v.x), ", ").concat(_this8.scales.y(v.y), ")");
 	  }); // update all the baubles
 
 	  this.settings.baubles.forEach(function (bauble) {
-	    var d = nodes.select(".node-shape").filter(bauble.vertexFilter).transition().duration(_this2.settings.transitionDuration);
+	    var d = nodes.select(".node-shape").filter(bauble.vertexFilter).transition().duration(_this8.settings.transitionDuration);
 	    bauble.updateShapes(d);
 	  });
 	  nodes.select("text .node-label .name").transition().duration(this.settings.transitionDuration).attr("class", "node-label name").attr("text-anchor", "start").attr("alignment-baseline", "middle").attr("dx", "12").attr("dy", "0").text(function (d) {
@@ -11079,11 +11122,35 @@
 	  // Remove old elements as needed.
 
 	  nodes.exit().remove();
-	  updateNodeStyles.call(this);
+	  updateNodeStyles.call(this); // add callbacks
+
+	  var _iteratorNormalCompletion = true;
+	  var _didIteratorError = false;
+	  var _iteratorError = undefined;
+
+	  try {
+	    for (var _iterator = this.callbacks.nodes[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	      var callback = _step.value;
+	      callback();
+	    }
+	  } catch (err) {
+	    _didIteratorError = true;
+	    _iteratorError = err;
+	  } finally {
+	    try {
+	      if (!_iteratorNormalCompletion && _iterator["return"] != null) {
+	        _iterator["return"]();
+	      }
+	    } finally {
+	      if (_didIteratorError) {
+	        throw _iteratorError;
+	      }
+	    }
+	  }
 	}
 
 	function updateNodeBackgrounds() {
-	  var _this3 = this;
+	  var _this9 = this;
 
 	  var nodesBackgroundLayer = this.svgSelection.select(".nodes-background-layer"); // DATA JOIN
 	  // Join new data with old elements, if any.
@@ -11097,16 +11164,16 @@
 
 	  this.settings.baubles.forEach(function (bauble) {
 	    var d = bauble.createShapes(newNodes.filter(bauble.vertexFilter)).attr("class", "node-background").attr("transform", function (v) {
-	      return "translate(".concat(_this3.scales.x(v.x), ", ").concat(_this3.scales.y(v.y), ")");
+	      return "translate(".concat(_this9.scales.x(v.x), ", ").concat(_this9.scales.y(v.y), ")");
 	    });
-	    bauble.updateShapes(d, _this3.settings.backgroundBorder);
+	    bauble.updateShapes(d, _this9.settings.backgroundBorder);
 	  }); // update all the existing elements
 
 	  this.settings.baubles.forEach(function (bauble) {
-	    var d = nodes.filter(bauble.vertexFilter).transition().duration(_this3.settings.transitionDuration).attr("transform", function (v) {
-	      return "translate(".concat(_this3.scales.x(v.x), ", ").concat(_this3.scales.y(v.y), ")");
+	    var d = nodes.filter(bauble.vertexFilter).transition().duration(_this9.settings.transitionDuration).attr("transform", function (v) {
+	      return "translate(".concat(_this9.scales.x(v.x), ", ").concat(_this9.scales.y(v.y), ")");
 	    });
-	    bauble.updateShapes(d, _this3.settings.backgroundBorder);
+	    bauble.updateShapes(d, _this9.settings.backgroundBorder);
 	  }); // EXIT
 	  // Remove old elements as needed.
 
@@ -11119,7 +11186,7 @@
 
 
 	function updateBranches() {
-	  var _this4 = this;
+	  var _this10 = this;
 
 	  var branchesLayer = this.svgSelection.select(".branches-layer"); // a function to create a line path
 	  // const branchPath = d3.line()
@@ -11140,13 +11207,13 @@
 	  }).attr("class", function (e) {
 	    return ["branch"].concat(toConsumableArray(e.classes)).join(" ");
 	  }).attr("transform", function (e) {
-	    return "translate(".concat(_this4.scales.x(e.v0.x), ", ").concat(_this4.scales.y(e.v1.y), ")");
+	    return "translate(".concat(_this10.scales.x(e.v0.x), ", ").concat(_this10.scales.y(e.v1.y), ")");
 	  });
 	  newBranches.append("path").attr("class", "branch-path").attr("d", function (e, i) {
 	    return branchPath(e, i);
 	  });
 	  newBranches.append("text").attr("class", "branch-label length").attr("dx", function (e) {
-	    return (_this4.scales.x(e.v1.x) - _this4.scales.x(e.v0.x)) / 2;
+	    return (_this10.scales.x(e.v1.x) - _this10.scales.x(e.v0.x)) / 2;
 	  }).attr("dy", function (e) {
 	    return e.labelBelow ? +6 : -6;
 	  }).attr("alignment-baseline", function (e) {
@@ -11158,11 +11225,11 @@
 	  branches.transition().duration(this.settings.transitionDuration).attr("class", function (e) {
 	    return ["branch"].concat(toConsumableArray(e.classes)).join(" ");
 	  }).attr("transform", function (e) {
-	    return "translate(".concat(_this4.scales.x(e.v0.x), ", ").concat(_this4.scales.y(e.v1.y), ")");
+	    return "translate(".concat(_this10.scales.x(e.v0.x), ", ").concat(_this10.scales.y(e.v1.y), ")");
 	  }).select("path").attr("d", function (e, i) {
 	    return branchPath(e, i);
 	  }).select("text .branch-label .length").attr("class", "branch-label length").attr("dx", function (e) {
-	    return (_this4.scales.x(e.v1.x) - _this4.scales.x(e.v0.x)) / 2;
+	    return (_this10.scales.x(e.v1.x) - _this10.scales.x(e.v0.x)) / 2;
 	  }).attr("dy", function (e) {
 	    return e.labelBelow ? +6 : -6;
 	  }).attr("alignment-baseline", function (e) {
@@ -11173,11 +11240,35 @@
 	  // Remove old elements as needed.
 
 	  branches.exit().remove();
-	  updateBranchStyles.call(this);
+	  updateBranchStyles.call(this); // add callbacks
+
+	  var _iteratorNormalCompletion2 = true;
+	  var _didIteratorError2 = false;
+	  var _iteratorError2 = undefined;
+
+	  try {
+	    for (var _iterator2 = this.callbacks.branches[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+	      var callback = _step2.value;
+	      callback();
+	    }
+	  } catch (err) {
+	    _didIteratorError2 = true;
+	    _iteratorError2 = err;
+	  } finally {
+	    try {
+	      if (!_iteratorNormalCompletion2 && _iterator2["return"] != null) {
+	        _iterator2["return"]();
+	      }
+	    } finally {
+	      if (_didIteratorError2) {
+	        throw _iteratorError2;
+	      }
+	    }
+	  }
 	}
 
 	function updateCartoons() {
-	  var _this5 = this;
+	  var _this11 = this;
 
 	  var cartoonLayer = this.svgSelection.select(".cartoon-layer"); // DATA JOIN
 	  // Join new data with old elements, if any.
@@ -11192,23 +11283,47 @@
 	  }).attr("class", function (c) {
 	    return ["cartoon"].concat(toConsumableArray(c.classes)).join(" ");
 	  }).attr("transform", function (c) {
-	    return "translate(".concat(_this5.scales.x(c.vertices[0].x), ", ").concat(_this5.scales.y(c.vertices[0].y), ")");
+	    return "translate(".concat(_this11.scales.x(c.vertices[0].x), ", ").concat(_this11.scales.y(c.vertices[0].y), ")");
 	  });
 	  newCartoons.append("path").attr("class", "cartoon-path").attr("d", function (e, i) {
-	    return pointToPoint.call(_this5, e.vertices);
+	    return pointToPoint.call(_this11, e.vertices);
 	  }); // update the existing elements
 
 	  cartoons.transition().duration(this.settings.transitionDuration).attr("class", function (c) {
 	    return ["cartoon"].concat(toConsumableArray(c.classes)).join(" ");
 	  }).attr("transform", function (c) {
-	    return "translate(".concat(_this5.scales.x(c.vertices[0].x), ", ").concat(_this5.scales.y(c.vertices[0].y), ")");
+	    return "translate(".concat(_this11.scales.x(c.vertices[0].x), ", ").concat(_this11.scales.y(c.vertices[0].y), ")");
 	  }).select("path").attr("d", function (c) {
-	    return pointToPoint.call(_this5, c.vertices);
+	    return pointToPoint.call(_this11, c.vertices);
 	  }); // EXIT
 	  // Remove old elements as needed.
 
 	  cartoons.exit().remove();
-	  updateCartoonStyles.call(this);
+	  updateCartoonStyles.call(this); // add callbacks
+
+	  var _iteratorNormalCompletion3 = true;
+	  var _didIteratorError3 = false;
+	  var _iteratorError3 = undefined;
+
+	  try {
+	    for (var _iterator3 = this.callbacks.cartoons[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+	      var callback = _step3.value;
+	      callback();
+	    }
+	  } catch (err) {
+	    _didIteratorError3 = true;
+	    _iteratorError3 = err;
+	  } finally {
+	    try {
+	      if (!_iteratorNormalCompletion3 && _iterator3["return"] != null) {
+	        _iterator3["return"]();
+	      }
+	    } finally {
+	      if (_didIteratorError3) {
+	        throw _iteratorError3;
+	      }
+	    }
+	  }
 	}
 	/**
 	 * Add axis
@@ -11236,13 +11351,13 @@
 
 	  var nodes = nodesLayer.selectAll(".node .node-shape");
 	  var nodeAttrMap = this.settings.styles.nodes;
-	  var _iteratorNormalCompletion = true;
-	  var _didIteratorError = false;
-	  var _iteratorError = undefined;
+	  var _iteratorNormalCompletion4 = true;
+	  var _didIteratorError4 = false;
+	  var _iteratorError4 = undefined;
 
 	  try {
 	    var _loop = function _loop() {
-	      var key = _step.value;
+	      var key = _step4.value;
 	      nodes // .transition()
 	      // .duration(this.settings.transitionDuration)
 	      .attr(key, function (d) {
@@ -11250,125 +11365,8 @@
 	      });
 	    };
 
-	    for (var _iterator = nodeAttrMap.keys()[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	    for (var _iterator4 = nodeAttrMap.keys()[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
 	      _loop();
-	    }
-	  } catch (err) {
-	    _didIteratorError = true;
-	    _iteratorError = err;
-	  } finally {
-	    try {
-	      if (!_iteratorNormalCompletion && _iterator["return"] != null) {
-	        _iterator["return"]();
-	      }
-	    } finally {
-	      if (_didIteratorError) {
-	        throw _iteratorError;
-	      }
-	    }
-	  }
-	}
-
-	function updateNodeBackgroundStyles() {
-	  var nodesBackgroundLayer = this.svgSelection.select(".nodes-background-layer"); // DATA JOIN
-	  // Join new data with old elements, if any.
-
-	  var nodes = nodesBackgroundLayer.selectAll(".node-background");
-	  var nodeBackgroundsAttrMap = this.settings.styles.nodeBackgrounds;
-	  var _iteratorNormalCompletion2 = true;
-	  var _didIteratorError2 = false;
-	  var _iteratorError2 = undefined;
-
-	  try {
-	    var _loop2 = function _loop2() {
-	      var key = _step2.value;
-	      nodes // .transition()
-	      // .duration(this.settings.transitionDuration)
-	      .attr(key, function (d) {
-	        return nodeBackgroundsAttrMap.get(key)(d.node);
-	      });
-	    };
-
-	    for (var _iterator2 = nodeBackgroundsAttrMap.keys()[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-	      _loop2();
-	    }
-	  } catch (err) {
-	    _didIteratorError2 = true;
-	    _iteratorError2 = err;
-	  } finally {
-	    try {
-	      if (!_iteratorNormalCompletion2 && _iterator2["return"] != null) {
-	        _iterator2["return"]();
-	      }
-	    } finally {
-	      if (_didIteratorError2) {
-	        throw _iteratorError2;
-	      }
-	    }
-	  }
-	}
-
-	function updateBranchStyles() {
-	  var branchesLayer = this.svgSelection.select(".branches-layer"); // DATA JOIN
-	  // Join new data with old elements, if any.
-
-	  var branches = branchesLayer.selectAll("g .branch .branch-path");
-	  var branchAttrMap = this.settings.styles["branches"];
-	  var _iteratorNormalCompletion3 = true;
-	  var _didIteratorError3 = false;
-	  var _iteratorError3 = undefined;
-
-	  try {
-	    var _loop3 = function _loop3() {
-	      var key = _step3.value;
-	      branches // .transition()
-	      // .duration(this.settings.transitionDuration)
-	      .attr(key, function (d) {
-	        return branchAttrMap.get(key)(d.v1.node);
-	      });
-	    };
-
-	    for (var _iterator3 = branchAttrMap.keys()[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-	      _loop3();
-	    }
-	  } catch (err) {
-	    _didIteratorError3 = true;
-	    _iteratorError3 = err;
-	  } finally {
-	    try {
-	      if (!_iteratorNormalCompletion3 && _iterator3["return"] != null) {
-	        _iterator3["return"]();
-	      }
-	    } finally {
-	      if (_didIteratorError3) {
-	        throw _iteratorError3;
-	      }
-	    }
-	  }
-	}
-
-	function updateCartoonStyles() {
-	  var cartoonLayer = this.svgSelection.select(".cartoon-layer"); // DATA JOIN
-	  // Join new data with old elements, if any.
-
-	  var cartoons = cartoonLayer.selectAll(".cartoon path");
-	  var CartoonAttrMap = this.settings.styles.cartoons;
-	  var _iteratorNormalCompletion4 = true;
-	  var _didIteratorError4 = false;
-	  var _iteratorError4 = undefined;
-
-	  try {
-	    var _loop4 = function _loop4() {
-	      var key = _step4.value;
-	      cartoons // .transition()
-	      // .duration(this.settings.transitionDuration)
-	      .attr(key, function (c) {
-	        return CartoonAttrMap.get(key)(c.vertices[0].node);
-	      }); // attributes are set by the "root" node
-	    };
-
-	    for (var _iterator4 = CartoonAttrMap.keys()[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-	      _loop4();
 	    }
 	  } catch (err) {
 	    _didIteratorError4 = true;
@@ -11386,22 +11384,28 @@
 	  }
 	}
 
-	function pointToPoint(points) {
-	  var path = [];
-	  var origin = points[0];
-	  var pathPoints = points.reverse();
-	  var currentPoint = origin;
+	function updateNodeBackgroundStyles() {
+	  var nodesBackgroundLayer = this.svgSelection.select(".nodes-background-layer"); // DATA JOIN
+	  // Join new data with old elements, if any.
+
+	  var nodes = nodesBackgroundLayer.selectAll(".node-background");
+	  var nodeBackgroundsAttrMap = this.settings.styles.nodeBackgrounds;
 	  var _iteratorNormalCompletion5 = true;
 	  var _didIteratorError5 = false;
 	  var _iteratorError5 = undefined;
 
 	  try {
-	    for (var _iterator5 = pathPoints[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-	      var point = _step5.value;
-	      var xdiff = this.scales.x(point.x) - this.scales.x(currentPoint.x);
-	      var ydiff = this.scales.y(point.y) - this.scales.y(currentPoint.y);
-	      path.push("".concat(xdiff, " ").concat(ydiff));
-	      currentPoint = point;
+	    var _loop2 = function _loop2() {
+	      var key = _step5.value;
+	      nodes // .transition()
+	      // .duration(this.settings.transitionDuration)
+	      .attr(key, function (d) {
+	        return nodeBackgroundsAttrMap.get(key)(d.node);
+	      });
+	    };
+
+	    for (var _iterator5 = nodeBackgroundsAttrMap.keys()[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+	      _loop2();
 	    }
 	  } catch (err) {
 	    _didIteratorError5 = true;
@@ -11414,6 +11418,117 @@
 	    } finally {
 	      if (_didIteratorError5) {
 	        throw _iteratorError5;
+	      }
+	    }
+	  }
+	}
+
+	function updateBranchStyles() {
+	  var branchesLayer = this.svgSelection.select(".branches-layer"); // DATA JOIN
+	  // Join new data with old elements, if any.
+
+	  var branches = branchesLayer.selectAll("g .branch .branch-path");
+	  var branchAttrMap = this.settings.styles["branches"];
+	  var _iteratorNormalCompletion6 = true;
+	  var _didIteratorError6 = false;
+	  var _iteratorError6 = undefined;
+
+	  try {
+	    var _loop3 = function _loop3() {
+	      var key = _step6.value;
+	      branches // .transition()
+	      // .duration(this.settings.transitionDuration)
+	      .attr(key, function (d) {
+	        return branchAttrMap.get(key)(d.v1.node);
+	      });
+	    };
+
+	    for (var _iterator6 = branchAttrMap.keys()[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+	      _loop3();
+	    }
+	  } catch (err) {
+	    _didIteratorError6 = true;
+	    _iteratorError6 = err;
+	  } finally {
+	    try {
+	      if (!_iteratorNormalCompletion6 && _iterator6["return"] != null) {
+	        _iterator6["return"]();
+	      }
+	    } finally {
+	      if (_didIteratorError6) {
+	        throw _iteratorError6;
+	      }
+	    }
+	  }
+	}
+
+	function updateCartoonStyles() {
+	  var cartoonLayer = this.svgSelection.select(".cartoon-layer"); // DATA JOIN
+	  // Join new data with old elements, if any.
+
+	  var cartoons = cartoonLayer.selectAll(".cartoon path");
+	  var CartoonAttrMap = this.settings.styles.cartoons;
+	  var _iteratorNormalCompletion7 = true;
+	  var _didIteratorError7 = false;
+	  var _iteratorError7 = undefined;
+
+	  try {
+	    var _loop4 = function _loop4() {
+	      var key = _step7.value;
+	      cartoons // .transition()
+	      // .duration(this.settings.transitionDuration)
+	      .attr(key, function (c) {
+	        return CartoonAttrMap.get(key)(c.vertices[0].node);
+	      }); // attributes are set by the "root" node
+	    };
+
+	    for (var _iterator7 = CartoonAttrMap.keys()[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+	      _loop4();
+	    }
+	  } catch (err) {
+	    _didIteratorError7 = true;
+	    _iteratorError7 = err;
+	  } finally {
+	    try {
+	      if (!_iteratorNormalCompletion7 && _iterator7["return"] != null) {
+	        _iterator7["return"]();
+	      }
+	    } finally {
+	      if (_didIteratorError7) {
+	        throw _iteratorError7;
+	      }
+	    }
+	  }
+	}
+
+	function pointToPoint(points) {
+	  var path = [];
+	  var origin = points[0];
+	  var pathPoints = points.reverse();
+	  var currentPoint = origin;
+	  var _iteratorNormalCompletion8 = true;
+	  var _didIteratorError8 = false;
+	  var _iteratorError8 = undefined;
+
+	  try {
+	    for (var _iterator8 = pathPoints[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+	      var point = _step8.value;
+	      var xdiff = this.scales.x(point.x) - this.scales.x(currentPoint.x);
+	      var ydiff = this.scales.y(point.y) - this.scales.y(currentPoint.y);
+	      path.push("".concat(xdiff, " ").concat(ydiff));
+	      currentPoint = point;
+	    }
+	  } catch (err) {
+	    _didIteratorError8 = true;
+	    _iteratorError8 = err;
+	  } finally {
+	    try {
+	      if (!_iteratorNormalCompletion8 && _iterator8["return"] != null) {
+	        _iterator8["return"]();
+	      }
+	    } finally {
+	      if (_didIteratorError8) {
+	        throw _iteratorError8;
 	      }
 	    }
 	  }

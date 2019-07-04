@@ -8861,6 +8861,8 @@ class FigTree {
 
         this.settings = {...FigTree.DEFAULT_SETTINGS(), ...settings,...{styles:styles}};
 
+        this.callbacks= {nodes:[],branches:[],cartoons:[]};
+
         this.svg=svg;
 
     }
@@ -8960,17 +8962,20 @@ class FigTree {
      * set mouseover highlighting of branches
      */
     hilightBranches() {
-        // need to use 'function' here so that 'this' refers to the SVG
-        // element being hovered over.
-        const selected = this.svgSelection.selectAll(".branch").select(".branch-path");
-        selected.on("mouseover", function (d, i) {
-            select(this).classed("hovered", true);
+        this.callbacks.branches.push(()=>{
+            // need to use 'function' here so that 'this' refers to the SVG
+            // element being hovered over.
+            const selected = this.svgSelection.selectAll(".branch").select(".branch-path");
+            selected.on("mouseover", function (d, i) {
+                select(this).classed("hovered", true);
 
-        });
-        selected.on("mouseout", function (d, i) {
-            select(this).classed("hovered", false);
+            });
+            selected.on("mouseout", function (d, i) {
+                select(this).classed("hovered", false);
 
+            });
         });
+        this.update();
     }
 
     /**
@@ -8991,31 +8996,34 @@ class FigTree {
      * Set mouseover highlighting of nodes
      */
     hilightNodes(selection) {
-        // need to use 'function' here so that 'this' refers to the SVG
-        // element being hovered over.
-        const self = this;
-        const selected = this.svgSelection.selectAll(selection);
-        selected.on("mouseover", function (d, i) {
-            const node = select(this).select(".node-shape");
-            self.settings.baubles.forEach((bauble) => {
-                // if (bauble.vertexFilter(node)) {
+        this.callbacks.nodes.push(()=>{
+            // need to use 'function' here so that 'this' refers to the SVG
+            // element being hovered over.
+            const self = this;
+            const selected = this.svgSelection.selectAll(selection);
+            selected.on("mouseover", function (d, i) {
+                const node = select(this).select(".node-shape");
+                self.settings.baubles.forEach((bauble) => {
+                    // if (bauble.vertexFilter(node)) {
                     bauble.updateShapes(node, self.settings.hoverBorder);
-                // }
+                    // }
+                });
+
+                node.classed("hovered", true);
             });
+            selected.on("mouseout", function (d, i) {
+                const node = select(this).select(".node-shape");
 
-            node.classed("hovered", true);
-        });
-        selected.on("mouseout", function (d, i) {
-            const node = select(this).select(".node-shape");
-
-            self.settings.baubles.forEach((bauble) => {
-                // if (bauble.vertexFilter(node)) {
+                self.settings.baubles.forEach((bauble) => {
+                    // if (bauble.vertexFilter(node)) {
                     bauble.updateShapes(node, 0);
-                // }
-            });
+                    // }
+                });
 
-            node.classed("hovered", false);
+                node.classed("hovered", false);
+            });
         });
+        this.update();
     }
 
     /**
@@ -9028,18 +9036,21 @@ class FigTree {
      * @param selection
      */
     onClickBranch(action, selection = null) {
-        // We need to use the "function" keyword here (rather than an arrow) so that "this"
-        // points to the actual SVG element (so we can use d3.mouse(this)). We therefore need
-        // to store a reference to the object in "self".
-        const self = this;
-        const selected = this.svgSelection.selectAll(`${selection ? selection : ".branch"}`);
-        selected.on("click", function (edge) {
-            const x1 = self.scales.x(edge.v1.x);
-            const x2 = self.scales.x(edge.v0.x);
-            const mx = mouse(this)[0];
-            const proportion = Math.max(0.0, Math.min(1.0, (mx - x2) / (x1 - x2)));
-            action(edge, proportion);
+        this.callbacks.branches.push(()=>{
+            // We need to use the "function" keyword here (rather than an arrow) so that "this"
+            // points to the actual SVG element (so we can use d3.mouse(this)). We therefore need
+            // to store a reference to the object in "self".
+            const self = this;
+            const selected = this.svgSelection.selectAll(`${selection ? selection : ".branch"}`);
+            selected.on("click", function (edge) {
+                const x1 = self.scales.x(edge.v1.x);
+                const x2 = self.scales.x(edge.v0.x);
+                const mx = mouse(this)[0];
+                const proportion = Math.max(0.0, Math.min(1.0, (mx - x2) / (x1 - x2)));
+                action(edge, proportion);
+            });
         });
+        this.update();
     }
 
     /**
@@ -9074,45 +9085,54 @@ class FigTree {
      * @param selection
      */
     onClickNode(action, selection = null) {
-        const selected = this.svgSelection.selectAll(`${selection ? selection : ".node"}`).select(".node-shape");        
-        selected.on("click", (vertex) => {
-            action(vertex);
+        this.callbacks.nodes.push(()=>{
+            const selected = this.svgSelection.selectAll(`${selection ? selection : ".node"}`).select(".node-shape");
+            selected.on("click", (vertex) => {
+                action(vertex);
+            });
         });
+        this.update();
     }
     /**
      * General Nodehover callback
-     * @param {*} action and object with an enter and exit function
+     * @param {*} action and object with an enter and exit function which fire when the mouse enters and exits object
      * @param {*} selection defualts to ".node" will select this selection's child ".node-shape"
      */
 
     onHoverNode(action,selection=null){
-        const selected = this.svgSelection.selectAll(`${selection ? selection : ".node"}`).select(".node-shape");        
-        selected.on("mouseover", (vertex) => {
-            action.enter(vertex);
+        this.callbacks.nodes.push(()=>{
+            const selected = this.svgSelection.selectAll(`${selection ? selection : ".node"}`).select(".node-shape");
+            selected.on("mouseover", (vertex) => {
+                action.enter(vertex);
+            });
+            selected.on("mouseout", (vertex) => {
+                action.exit(vertex);
+            });
         });
-        selected.on("mouseout", (vertex) => {
-            action.exit(vertex);
-        });
+        this.update();
     }
 
     /**
      * General branch hover callback
-     * @param {*} action and object with an enter and exit function
+     * @param {*} action and object with an enter and exit function which fire when the mouse enters and exits object
      * @param {*} selection defualts to .branch
      */
-    onHoverBranch(action,selection=null){ 
-        // need to use 'function' here so that 'this' refers to the SVG
-        // element being hovered over.
-        const selected = this.svgSelection.selectAll(`${selection ? selection : ".branch"}`).select("branch-path");
+    onHoverBranch(action,selection=null){
+        this.callbacks.branches.push(()=>{
+            // need to use 'function' here so that 'this' refers to the SVG
+            // element being hovered over.
+            const selected = this.svgSelection.selectAll(`${selection ? selection : ".branch"}`).select("branch-path");
 
-        selected.on("mouseover", function (d, i) {
-            action.enter(this);
+            selected.on("mouseover", function (d, i) {
+                action.enter(this);
 
+            });
+            selected.on("mouseout", function (d, i) {
+                action.exit(this);
+
+            });
         });
-        selected.on("mouseout", function (d, i) {
-            action.exit(this);
-
-        });
+        this.update();
     }
     /**
      * Registers some text to appear in a popup box when the mouse hovers over the selection.
@@ -9235,11 +9255,21 @@ function updateNodes() {
         .attr("dy", d => (d.labelBelow ? -8 : +8))
         .text((d) => d.leftLabel);
 
+
+
+
+
     // EXIT
     // Remove old elements as needed.
     nodes.exit().remove();
 
     updateNodeStyles.call(this);
+
+
+    // add callbacks
+    for(const callback of this.callbacks.nodes){
+        callback();
+    }
 
 
 }
@@ -9355,6 +9385,11 @@ function updateBranches() {
     branches
         .exit().remove();
     updateBranchStyles.call(this);
+
+    // add callbacks
+    for(const callback of this.callbacks.branches){
+        callback();
+    }
 }
 
 function updateCartoons(){
@@ -9398,6 +9433,11 @@ function updateCartoons(){
     cartoons.exit().remove();
 
     updateCartoonStyles.call(this);
+
+    // add callbacks
+    for(const callback of this.callbacks.cartoons){
+        callback();
+    }
 }
 
 /**
