@@ -8151,7 +8151,7 @@ class RectangularLayout extends Layout {
      * @param settings
      */
     constructor(tree, settings = { }) {
-        super(tree,{...RectangularLayout.DEFAULT_SETTINGS(),...{settings}});
+        super(tree,{...RectangularLayout.DEFAULT_SETTINGS(),...settings});
 
     }
 
@@ -8216,7 +8216,7 @@ class RectangularLayout$1 extends Layout {
      * @param settings
      */
     constructor(tree, settings = { }) {
-        super(tree,{...RectangularLayout$1.DEFAULT_SETTINGS(),...{settings}});
+        super(tree,{...RectangularLayout$1.DEFAULT_SETTINGS(),...settings});
 
     }
 
@@ -8300,7 +8300,7 @@ class TransmissionLayout extends RectangularLayout$1 {
         });
 
 
-
+        // defined here so we can use the groupingAnnotation key
         const includedInVerticalRange = node  => !node.children || (node.children.length===1 && node.annotations[groupingAnnotation]!==node.children[0].annotations[groupingAnnotation]);
         super(tree, {...TransmissionLayout.DEFAULT_SETTINGS(),...{includedInVerticalRange:includedInVerticalRange}, ...settings});
 

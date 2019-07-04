@@ -25,7 +25,7 @@ export class RectangularLayout extends Layout {
      * @param settings
      */
     constructor(tree, settings = { }) {
-        super(tree,{...RectangularLayout.DEFAULT_SETTINGS(),...{settings}});
+        super(tree,{...RectangularLayout.DEFAULT_SETTINGS(),...settings});
 
     }
 

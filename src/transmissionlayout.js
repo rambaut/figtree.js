@@ -50,7 +50,7 @@ export class TransmissionLayout extends RectangularLayout {
         })
 
 
-
+        // defined here so we can use the groupingAnnotation key
         const includedInVerticalRange = node  => !node.children || (node.children.length===1 && node.annotations[groupingAnnotation]!==node.children[0].annotations[groupingAnnotation])
         super(tree, {...TransmissionLayout.DEFAULT_SETTINGS(),...{includedInVerticalRange:includedInVerticalRange}, ...settings});
 

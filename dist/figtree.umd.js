@@ -9837,9 +9837,7 @@
 
 	    classCallCheck(this, RectangularLayout);
 
-	    return possibleConstructorReturn(this, getPrototypeOf(RectangularLayout).call(this, tree, objectSpread({}, RectangularLayout.DEFAULT_SETTINGS(), {
-	      settings: settings
-	    })));
+	    return possibleConstructorReturn(this, getPrototypeOf(RectangularLayout).call(this, tree, objectSpread({}, RectangularLayout.DEFAULT_SETTINGS(), settings)));
 	  }
 
 	  createClass(RectangularLayout, [{
@@ -9923,9 +9921,7 @@
 
 	    classCallCheck(this, RectangularLayout);
 
-	    return possibleConstructorReturn(this, getPrototypeOf(RectangularLayout).call(this, tree, objectSpread({}, RectangularLayout.DEFAULT_SETTINGS(), {
-	      settings: settings
-	    })));
+	    return possibleConstructorReturn(this, getPrototypeOf(RectangularLayout).call(this, tree, objectSpread({}, RectangularLayout.DEFAULT_SETTINGS(), settings)));
 	  }
 
 	  createClass(RectangularLayout, [{
@@ -10027,7 +10023,7 @@
 	      newNodeInLocation.annotations[groupingAnnotation] = finalLocation;
 	      var newNodeFromLocation = tree.splitBranch(newNodeInLocation, 1.0);
 	      newNodeFromLocation.annotations[groupingAnnotation] = originalLocation;
-	    });
+	    }); // defined here so we can use the groupingAnnotation key
 
 	    var includedInVerticalRange = function includedInVerticalRange(node) {
 	      return !node.children || node.children.length === 1 && node.annotations[groupingAnnotation] !== node.children[0].annotations[groupingAnnotation];
