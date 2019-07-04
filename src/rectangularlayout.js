@@ -36,6 +36,8 @@ export class RectangularLayout extends Layout {
 
         const includedInVertical = this.settings.includedInVerticalRange(vertex.node);
         if(!includedInVertical){
+            // make this better
+
             vertex.y = mean(vertex.node.children,(child) => this._nodeMap.get(child).y)
         }
         else{

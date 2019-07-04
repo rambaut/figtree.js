@@ -9197,7 +9197,7 @@
 	        });
 
 	        var mostDiverged = _this2._nodeMap.get(cartoonNodeDecedents.find(function (n) {
-	          return n.height === min(cartoonNodeDecedents, function (d) {
+	          return n.height === max(cartoonNodeDecedents, function (d) {
 	            return d.height;
 	          });
 	        }));
@@ -9205,7 +9205,7 @@
 	        cartoonVertexDecedents.forEach(function (v) {
 	          v.masked = true;
 
-	          if (v.node === mostDiverged) {
+	          if (v === mostDiverged) {
 	            v.collapsed = true;
 	          }
 	        });
@@ -9219,14 +9219,15 @@
 	          currentY = _this2.setYPosition(v, currentY); // TODO set up x like this as well so we can handle unrooted formats ect.
 
 	          setupVertex.call(_this2, v);
+	        } else {
+	          v.y = null; //forget the last position
 	        }
-	      }); // Handel cartoons
+	      }); // Handle cartoons
 
 	      this._cartoonStore.filter(function (c) {
 	        return allCartoonDescendents.indexOf(c.node) === -1;
-	      }).filter(function (c) {
-	        return c.format === 'cartoon';
-	      }).forEach(function (c) {
+	      }) // .filter(c=>c.format==='cartoon')
+	      .forEach(function (c) {
 	        var cartoonNodeDecedents = toConsumableArray(_this2.tree.postorder(c.node)).filter(function (n) {
 	          return n !== c.node;
 	        });
@@ -9275,8 +9276,11 @@
 
 	      this._edges.forEach(function (e) {
 	        setupEdge.call(_this2, e);
-	      });
+	      }); // update verticalRange so that we count tips that are in cartoons but not those that are collapsed
 
+
+	      this._verticalRange = [0, currentY];
+	      console.log("From layout: ".concat(this._verticalRange));
 	      this.layoutKnown = true;
 	    }
 	  }, {
@@ -9398,11 +9402,11 @@
 	    value: function cartoon(node) {
 	      if (this._cartoonStore.filter(function (c) {
 	        return c.format === "cartoon";
-	      }).indexOf(function (c) {
+	      }).find(function (c) {
 	        return c.node === node;
-	      }) > -1) {
+	      })) {
 	        this._cartoonStore = this._cartoonStore.filter(function (c) {
-	          return !(c.format !== "cartoon" && c.node === node);
+	          return !(c.format === "cartoon" && c.node === node);
 	        });
 	      } else {
 	        this._cartoonStore.push({
@@ -9424,11 +9428,11 @@
 	    value: function collapse(node) {
 	      if (this._cartoonStore.filter(function (c) {
 	        return c.format === "collapse";
-	      }).indexOf(function (c) {
+	      }).find(function (c) {
 	        return c.node === node;
-	      }) > -1) {
+	      })) {
 	        this._cartoonStore = this._cartoonStore.filter(function (c) {
-	          return !(c.format !== "collapse" && c.node === node);
+	          return !(c.format === "collapse" && c.node === node);
 	        });
 	      } else {
 	        this._cartoonStore.push({
@@ -9493,6 +9497,10 @@
 	  }, {
 	    key: "verticalRange",
 	    get: function get() {
+	      if (!this.layoutKnown) {
+	        this.layout();
+	      }
+
 	      return this._verticalRange;
 	    }
 	  }, {
@@ -9517,7 +9525,7 @@
 	      }
 
 	      return this._edges.filter(function (e) {
-	        return !e.v1.masked || e.v1.masked && e.v1.collapsed;
+	        return !e.v1.masked;
 	      });
 	    }
 	  }, {
@@ -9592,17 +9600,19 @@
 	  var _this8 = this;
 
 	  nodes.forEach(function (n, i) {
-	    var vertex = {
-	      node: n,
-	      key: n.id // key: Symbol(n.id).toString()
-
-	    };
-
 	    if (!_this8._nodeMap.has(n)) {
-	      _this8._vertices.push(vertex);
+	      var _vertex = {
+	        node: n,
+	        key: n.id // key: Symbol(n.id).toString()
 
-	      _this8._nodeMap.set(n, vertex);
+	      };
+
+	      _this8._vertices.push(_vertex);
+
+	      _this8._nodeMap.set(n, _vertex);
 	    }
+
+	    var vertex = _this8._nodeMap.get(n);
 
 	    vertex.masked = null;
 	    vertex.collapsed = null;
@@ -9660,7 +9670,7 @@
 	    return n.parent;
 	  }) // exclude the root
 	  .forEach(function (n, i) {
-	    if (!_this10._edgeMap.has(n)) {
+	    if (!_this10._edgeMap.has(_this10._nodeMap.get(n))) {
 	      if (!n.masked || n.masked && !n.collapsed) {
 	        var edge = {
 	          v0: _this10._nodeMap.get(n.parent),
@@ -9820,6 +9830,7 @@
 	      var includedInVertical = this.settings.includedInVerticalRange(vertex.node);
 
 	      if (!includedInVertical) {
+	        // make this better
 	        vertex.y = mean(vertex.node.children, function (child) {
 	          return _this._nodeMap.get(child).y;
 	        });
@@ -9905,6 +9916,7 @@
 	      var includedInVertical = this.settings.includedInVerticalRange(vertex.node);
 
 	      if (!includedInVertical) {
+	        // make this better
 	        vertex.y = mean(vertex.node.children, function (child) {
 	          return _this._nodeMap.get(child).y;
 	        });
@@ -11110,7 +11122,7 @@
 	  // Create new elements as needed.
 
 	  var newBranches = branches.enter().append("g").attr("id", function (e) {
-	    return "branch-to-".concat(e.key);
+	    return e.id;
 	  }).attr("class", function (e) {
 	    return ["branch"].concat(toConsumableArray(e.classes)).join(" ");
 	  }).attr("transform", function (e) {

@@ -514,14 +514,12 @@ function updateBranches() {
     // ENTER
     // Create new elements as needed.
     const newBranches = branches.enter().append("g")
-        .attr("id", (e) => {
-            return `branch-to-${e.key}`;
-
-        })
+        .attr("id", (e) => e.id)
         .attr("class", (e) => ["branch", ...e.classes].join(" "))
         .attr("transform", (e) => {
             return `translate(${this.scales.x(e.v0.x)}, ${this.scales.y(e.v1.y)})`;
-        })
+        });
+
     newBranches.append("path")
         .attr("class", "branch-path")
         .attr("d", (e,i) => branchPath(e,i));
@@ -558,7 +556,6 @@ function updateBranches() {
     // Remove old elements as needed.
     branches
         .exit().remove();
-
     updateBranchStyles.call(this);
 }
 

@@ -438,7 +438,7 @@
     figTree.addToolTip('.node', layout.nodeInfo);
 
     figTree.hilightBranches();
-    figTree.onClickBranch(layout.reroot());
+    figTree.onClickBranch((e)=>layout.collapse(e.v1.node));
     figTree.hilightInternalNodes();
     figTree.onClickNode((v)=>layout.cartoon(v.node));
 

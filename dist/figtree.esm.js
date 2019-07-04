@@ -7688,7 +7688,6 @@ class Layout {
                 allCartoonDescendents.push(...[...this.tree.postorder(c.node)].filter(n=>n!==c.node));
             }
         });
-
         this._cartoonStore.filter(c=>allCartoonDescendents.indexOf(c.node)===-1)
             .filter(c=>c.format==='collapse')
             .forEach(c=>{
@@ -7696,10 +7695,10 @@ class Layout {
 
                 const cartoonVertexDecedents = cartoonNodeDecedents.map(n=>this._nodeMap.get(n));
 
-                const mostDiverged = this._nodeMap.get(cartoonNodeDecedents.find(n=>n.height===min(cartoonNodeDecedents,d=>d.height)));
+                const mostDiverged = this._nodeMap.get(cartoonNodeDecedents.find(n=>n.height===max(cartoonNodeDecedents,d=>d.height)));
                 cartoonVertexDecedents.forEach(v=> {
                     v.masked = true;
-                    if (v.node === mostDiverged) {
+                    if (v === mostDiverged) {
                         v.collapsed = true;
                     }
                 });
@@ -7714,12 +7713,14 @@ class Layout {
                     currentY = this.setYPosition(v, currentY);
                     // TODO set up x like this as well so we can handle unrooted formats ect.
                     setupVertex.call(this, v);
+                }else{
+                    v.y=null; //forget the last position
                 }
             });
 
-        // Handel cartoons
+        // Handle cartoons
         this._cartoonStore.filter(c=>allCartoonDescendents.indexOf(c.node)===-1)
-            .filter(c=>c.format==='cartoon')
+            // .filter(c=>c.format==='cartoon')
             .forEach(c=>{
 
                 const cartoonNodeDecedents = [...this.tree.postorder(c.node)].filter(n=>n!==c.node);
@@ -7759,7 +7760,9 @@ class Layout {
                 setupEdge.call(this, e);
             });
 
-
+// update verticalRange so that we count tips that are in cartoons but not those that are collapsed
+        this._verticalRange = [0, currentY];
+        console.log(`From layout: ${this._verticalRange}`);
 
         this.layoutKnown = true;
 
@@ -7771,6 +7774,9 @@ class Layout {
     }
 
     get verticalRange() {
+        if (!this.layoutKnown) {
+            this.layout();
+        }
         return this._verticalRange;
     }
 
@@ -7874,8 +7880,8 @@ class Layout {
      * @param vertex
      */
     cartoon(node) {
-        if (this._cartoonStore.filter(c => c.format === "cartoon").indexOf(c => c.node === node) > -1) {
-            this._cartoonStore = this._cartoonStore.filter(c => !(c.format !== "cartoon" && c.node === node));
+        if (this._cartoonStore.filter(c => c.format === "cartoon").find(c => c.node === node)) {
+            this._cartoonStore = this._cartoonStore.filter(c => !(c.format === "cartoon" && c.node === node));
         } else {
             this._cartoonStore.push({
                 node: node,
@@ -7891,8 +7897,8 @@ class Layout {
      * @param vertex
      */
     collapse(node) {
-        if (this._cartoonStore.filter(c => c.format === "collapse").indexOf(c => c.node === node) > -1) {
-            this._cartoonStore = this._cartoonStore.filter(c => !(c.format !== "collapse" && c.node === node));
+        if (this._cartoonStore.filter(c => c.format === "collapse").find(c => c.node === node)){
+            this._cartoonStore = this._cartoonStore.filter(c => !(c.format === "collapse" && c.node === node));
         } else {
             this._cartoonStore.push({
                 node: node,
@@ -7922,7 +7928,7 @@ class Layout {
         if (!this.layoutKnown) {
             this.layout();
         }
-        return this._edges.filter(e => !e.v1.masked||(e.v1.masked &&e.v1.collapsed));
+        return this._edges.filter(e => !e.v1.masked);
     }
 
     get vertices() {
@@ -7996,16 +8002,17 @@ class Layout {
  */
 function makeVerticesFromNodes(nodes){
     nodes.forEach((n, i) => {
-        const vertex = {
-            node: n,
-            key: n.id
-            // key: Symbol(n.id).toString()
-        };
-        if(!this._nodeMap.has(n)){
 
+        if(!this._nodeMap.has(n)){
+            const vertex = {
+                node: n,
+                key: n.id
+                // key: Symbol(n.id).toString()
+            };
             this._vertices.push(vertex);
             this._nodeMap.set(n, vertex);
         }
+        const vertex = this._nodeMap.get(n);
         vertex.masked=null;
         vertex.collapsed = null;
     });
@@ -8063,7 +8070,7 @@ function makeEdgesFromNodes(nodes){
     nodes
         .filter((n) => n.parent) // exclude the root
         .forEach((n, i) => {
-            if(!this._edgeMap.has(n)) {
+            if(!this._edgeMap.has(this._nodeMap.get(n))) {
                 if(!n.masked||(n.masked &&!n.collapsed)) {
                     const edge = {
                         v0: this._nodeMap.get(n.parent),
@@ -8076,10 +8083,6 @@ function makeEdgesFromNodes(nodes){
             }
         });
 }
-
-
-
-
 
 function setupEdge(e){
     setEdgeTermini.call(this,e);
@@ -8151,6 +8154,8 @@ class RectangularLayout extends Layout {
 
         const includedInVertical = this.settings.includedInVerticalRange(vertex.node);
         if(!includedInVertical){
+            // make this better
+
             vertex.y = mean(vertex.node.children,(child) => this._nodeMap.get(child).y);
         }
         else{
@@ -8214,6 +8219,8 @@ class RectangularLayout$1 extends Layout {
 
         const includedInVertical = this.settings.includedInVerticalRange(vertex.node);
         if(!includedInVertical){
+            // make this better
+
             vertex.y = mean(vertex.node.children,(child) => this._nodeMap.get(child).y);
         }
         else{
@@ -9305,14 +9312,12 @@ function updateBranches() {
     // ENTER
     // Create new elements as needed.
     const newBranches = branches.enter().append("g")
-        .attr("id", (e) => {
-            return `branch-to-${e.key}`;
-
-        })
+        .attr("id", (e) => e.id)
         .attr("class", (e) => ["branch", ...e.classes].join(" "))
         .attr("transform", (e) => {
             return `translate(${this.scales.x(e.v0.x)}, ${this.scales.y(e.v1.y)})`;
         });
+
     newBranches.append("path")
         .attr("class", "branch-path")
         .attr("d", (e,i) => branchPath(e,i));
@@ -9349,7 +9354,6 @@ function updateBranches() {
     // Remove old elements as needed.
     branches
         .exit().remove();
-
     updateBranchStyles.call(this);
 }
 
