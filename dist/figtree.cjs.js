@@ -7620,7 +7620,8 @@ class Layout {
             lengthFormat: format(".2f"),
             horizontalScale: null, // a scale that converts height to 0,1  domain. default is 0 = heighest tip
             includedInVerticalRange: node => !node.children,
-            branchCurve: null
+            branchCurve: null,
+            branchScale:1
         }
     }
 
@@ -7652,6 +7653,7 @@ class Layout {
         this.externalNodeLabelAnnotationName = null;
 
         this.layoutKnown = false;
+
 
         // called whenever the tree changes...
         this.tree.treeUpdateCallback = () => {
@@ -7755,6 +7757,14 @@ class Layout {
 
     get branchCurve() {
         return this.settings.branchCurve;
+    }
+
+    set branchScale(value){
+        this.settings.branchScale = value;
+        this.update();
+    }
+    get branchScale(){
+        return this.settings.branchScale;
     }
 
     /**
@@ -7976,7 +7986,7 @@ class Layout {
 
     updateHorizontalScale() {
         const newScale = this.settings.horizontalScale ? this.settings.horizontalScale :
-            linear$1().domain([this.tree.rootNode.height, this.tree.origin]).range(this._horizontalRange);
+            linear$1().domain([this.tree.rootNode.height*this.settings.branchScale, this.tree.origin]).range(this._horizontalRange);
         return newScale;
     }
 
@@ -7999,7 +8009,7 @@ class Layout {
     }
 
     setXPosition(v){
-        v.x = this._horizontalScale(v.node.height);
+        v.x = this._horizontalScale(v.node.height*this.settings.branchScale);
     }
 
     getTreeNodes() {

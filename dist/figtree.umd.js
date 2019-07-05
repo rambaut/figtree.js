@@ -9110,7 +9110,8 @@
 	        includedInVerticalRange: function includedInVerticalRange(node) {
 	          return !node.children;
 	        },
-	        branchCurve: null
+	        branchCurve: null,
+	        branchScale: 1
 	      };
 	    }
 	    /**
@@ -9398,7 +9399,7 @@
 	    key: "updateHorizontalScale",
 	    // layout functions that will allow decedent layouts to change only what they need to
 	    value: function updateHorizontalScale() {
-	      var newScale = this.settings.horizontalScale ? this.settings.horizontalScale : linear$1().domain([this.tree.rootNode.height, this.tree.origin]).range(this._horizontalRange);
+	      var newScale = this.settings.horizontalScale ? this.settings.horizontalScale : linear$1().domain([this.tree.rootNode.height * this.settings.branchScale, this.tree.origin]).range(this._horizontalRange);
 	      return newScale;
 	    }
 	  }, {
@@ -9429,7 +9430,7 @@
 	  }, {
 	    key: "setXPosition",
 	    value: function setXPosition(v) {
-	      v.x = this._horizontalScale(v.node.height);
+	      v.x = this._horizontalScale(v.node.height * this.settings.branchScale);
 	    }
 	  }, {
 	    key: "getTreeNodes",
@@ -9463,6 +9464,15 @@
 	    },
 	    get: function get() {
 	      return this.settings.branchCurve;
+	    }
+	  }, {
+	    key: "branchScale",
+	    set: function set(value) {
+	      this.settings.branchScale = value;
+	      this.update();
+	    },
+	    get: function get() {
+	      return this.settings.branchScale;
 	    }
 	  }, {
 	    key: "edges",
