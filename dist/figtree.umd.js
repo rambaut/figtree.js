@@ -9538,9 +9538,12 @@
 	        while (currentNode.parent) {
 	          var parentVertex = _this8._nodeMap.get(currentNode.parent);
 
-	          parentVertex.y = mean(parentVertex.node.children, function (child) {
-	            return _this8._nodeMap.get(child).y;
-	          });
+	          if (!_this8.settings.includedInVerticalRange(parentVertex.node)) {
+	            parentVertex.y = mean(parentVertex.node.children, function (child) {
+	              return _this8._nodeMap.get(child).y;
+	            });
+	          }
+
 	          currentNode = parentVertex.node;
 	        }
 

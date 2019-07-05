@@ -7935,8 +7935,11 @@ class Layout {
         let currentNode= cartoonVertex.node;
         while(currentNode.parent){
             const parentVertex = this._nodeMap.get(currentNode.parent);
-            parentVertex.y= mean(parentVertex.node.children, (child) => this._nodeMap.get(child).y);
+            if(!this.settings.includedInVerticalRange(parentVertex.node)) {
+                parentVertex.y = mean(parentVertex.node.children, (child) => this._nodeMap.get(child).y);
+            }
             currentNode = parentVertex.node;
+
         }
 
             cartoons.push({vertices:[cartoonVertex,newTopVertex,newBottomVertex],
