@@ -6782,15 +6782,70 @@ class Tree {
     }
 
     /**
-     * Adds a collapse flag to the node whose dependents will be collapsed by the layout. How the clade is collapsed depends on the the
-     * style.
-     * @param node - the mrca of the clade that is to be collapsed
-     * @param style -  The style in which to collapse the clade. Can be one of the CollapseStyles. TRIANGLE - returns a triangle,
-     * BRANCH reduces the clade to a single branch which extends to the most recent tip.
+     * Returns a new tree instance with  only the nodes provided and their path to the root. After this traversal, unspecified
+     * degree two nodes will be remove. The subtree will consist of the root and then the last common ancestor.
+     * The nodes of the new tree will be copies of the those in the original, but they will share
+     * ids, annotations, and names.
+     * @param chosenNodes
+     * @return {Tree}
      */
-    collapse(node,style){
-        node.collapse = style;
+    subTree(chosenNodes){
+
+        const sharedNodes = [...chosenNodes.map(node=>[...Tree.pathToRoot(node)])] // get all the paths to the root
+            .reduce((acc,curr)=> [...acc,...curr],[]) // unpack the paths
+            .filter((node,i,all)=> all.filter(x=>x===node).length>1) // filter to nodes that appear in more than one path
+            .reduce((acc,curr)=> { // reduce to the unique set.
+                if(!acc.includes(curr)){
+                    acc.push(curr);
+                }
+                return acc;
+            },[]);
+        const newNodesObjects = [...sharedNodes,...chosenNodes.filter(n=>!sharedNodes.includes(n))].map(node=> {
+                const newNodeObject = {
+                    id:node.id,
+                    annotations: node.annotations,
+            };
+            if(node.name){
+                newNodeObject.name=node.name;
+            }
+            return newNodeObject;
+
+        });
+        const newNodeMap = new Map(newNodesObjects.map(n=>[n.id,n]));
+        // set children set lengths
+        newNodesObjects.forEach(node=>{
+            let currentNode = this.nodeMap.get(node.id);
+            let length=0;
+            while(currentNode.parent&&!newNodeMap.has(currentNode.parent.id)){
+                length+=currentNode.length;
+                currentNode = currentNode.parent;
+            }
+            length+=currentNode.length;
+            const parent = currentNode.parent? newNodeMap.get(currentNode.parent.id): null;
+            node.parent = parent;
+            node.length = length;
+            if(parent) {
+                parent.children = parent.children ? parent.children.concat(node) : [node];
+            }
+
+        });
+        // intermediate nodes with show up as
+        const subtree = new Tree(newNodeMap.get(this.root.id));
+
+        // now remove degree 2 nodes that were not specified;
+
+        [...subtree.preorder()].forEach(node=>{
+            if(node.children){
+                if(node.children.length===1){
+                    if(!chosenNodes.map(n=>n.id).includes(node.id)){
+                        subtree.removeNode(node);
+                    }
+                }
+            }
+        });
+        return subtree;
     }
+
 
     /**
      * Gives the distance from the root to a given tip (external node).
@@ -6872,6 +6927,27 @@ class Tree {
         node._length = oldLength-splitNode.length;
         this.nodesUpdated=true;
         return splitNode;
+    }
+
+    /**
+     * Deletes a node from the tree. if the node had children the children are linked to the
+     * node's parent. This could result in a multifurcating tree.
+     * The root node can not be deleted.
+     * @param node
+     */
+    removeNode(node){
+        if(node===this.root){
+            return;
+        }
+        // remove the node from it's parent's children
+        node.parent._children=node.parent._children.filter(n=>n!==node);
+        //update child lengths
+        node.children.forEach(child=>{
+            child._length += node.length;
+            child.parent = node.parent;// This also updates parent's children array;
+        });
+
+        this.nodesUpdated = true;
     }
 
     /**
@@ -7326,6 +7402,7 @@ class Tree {
         }
         return trees;
     }
+
 }
 
 /*
@@ -7500,6 +7577,7 @@ class Node{
             children:null,
             label:undefined,
             level:undefined,
+            id:`node-${uuid_1.v4()}`
         }
 
 
@@ -7507,7 +7585,7 @@ class Node{
     constructor(nodeData ={}){
         const data = {...Node.DEFAULT_NODE(),...nodeData};
 
-        this._id = `node-${uuid_1.v4()}`;
+        this._id = data.id;
         this._height = data.height;
         this._length = data.length;
         this._name = data.name;
@@ -7589,7 +7667,7 @@ class Node{
     set parent(node) {
         this._parent = node;
         if(this._parent.children.filter(c=>c===this).length===0){
-            this._parent.children.append(this);
+            this._parent.children.push(this);
         }
     }
     get id(){

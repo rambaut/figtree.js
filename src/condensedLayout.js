@@ -74,18 +74,42 @@ export class CondensedLayout extends Layout {
         return branchPath;
     }
 
+
     getTreeNodes() {
 
-        const nodes =[];
-        for(let i=0,i<this.cartoonNodes.length-1,i++){
-            for(let j=i+1,j)
+        const commonAncestors = [];
+        for(let i=0;i<this.cartoonNodes.length-2;i++){
+            for(let j=i+1;j<this.cartoonNodes.length-1;j++){
+                const lca = this.tree.lastCommonAncestor(this.cartoonNodes[i],this.cartoonNodes[j]);
+                if(!commonAncestors.find(lca)){
+                    commonAncestors.push(lca);
+                }
+            }
         }
-        return super.getTreeNodes();
+        return [...commonAncestors,...this.cartoonNodes.map(n=>[...this.tree.postorder(n)])]
     }
 
     getDecendentsForDrawing(vertex){
         return vertex.node.children;
 
+    }
+
+    set cartoonNodes(array){
+        // ensure siblings are in cartoonNode array
+        this._cartoonNodes = array.reduce((acc,curr)=>{
+            if(!acc.includes(curr)){
+                acc.push(curr)
+            }
+            const sib = this.tree.getSibling(curr);
+            if(!acc.includes(sib)){
+                acc.push(sib)
+            }
+            return acc
+        },[])
+    }
+
+    get cartoonNodes(){
+        return this._cartoonNodes;
     }
 
 

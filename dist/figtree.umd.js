@@ -7847,17 +7847,92 @@
 	      return sum;
 	    }
 	    /**
-	     * Adds a collapse flag to the node whose dependents will be collapsed by the layout. How the clade is collapsed depends on the the
-	     * style.
-	     * @param node - the mrca of the clade that is to be collapsed
-	     * @param style -  The style in which to collapse the clade. Can be one of the CollapseStyles. TRIANGLE - returns a triangle,
-	     * BRANCH reduces the clade to a single branch which extends to the most recent tip.
+	     * Returns a new tree instance with  only the nodes provided and their path to the root. After this traversal, unspecified
+	     * degree two nodes will be remove. The subtree will consist of the root and then the last common ancestor.
+	     * The nodes of the new tree will be copies of the those in the original, but they will share
+	     * ids, annotations, and names.
+	     * @param chosenNodes
+	     * @return {Tree}
 	     */
 
 	  }, {
-	    key: "collapse",
-	    value: function collapse(node, style) {
-	      node.collapse = style;
+	    key: "subTree",
+	    value: function subTree(chosenNodes) {
+	      var _this4 = this;
+
+	      var sharedNodes = toConsumableArray(chosenNodes.map(function (node) {
+	        return toConsumableArray(Tree.pathToRoot(node));
+	      })) // get all the paths to the root
+	      .reduce(function (acc, curr) {
+	        return [].concat(toConsumableArray(acc), toConsumableArray(curr));
+	      }, []) // unpack the paths
+	      .filter(function (node, i, all) {
+	        return all.filter(function (x) {
+	          return x === node;
+	        }).length > 1;
+	      }) // filter to nodes that appear in more than one path
+	      .reduce(function (acc, curr) {
+	        // reduce to the unique set.
+	        if (!acc.includes(curr)) {
+	          acc.push(curr);
+	        }
+
+	        return acc;
+	      }, []);
+
+	      var newNodesObjects = [].concat(toConsumableArray(sharedNodes), toConsumableArray(chosenNodes.filter(function (n) {
+	        return !sharedNodes.includes(n);
+	      }))).map(function (node) {
+	        var newNodeObject = {
+	          id: node.id,
+	          annotations: node.annotations
+	        };
+
+	        if (node.name) {
+	          newNodeObject.name = node.name;
+	        }
+
+	        return newNodeObject;
+	      });
+	      var newNodeMap = new Map(newNodesObjects.map(function (n) {
+	        return [n.id, n];
+	      })); // set children set lengths
+
+	      newNodesObjects.forEach(function (node) {
+	        var currentNode = _this4.nodeMap.get(node.id);
+
+	        var length = 0;
+
+	        while (currentNode.parent && !newNodeMap.has(currentNode.parent.id)) {
+	          length += currentNode.length;
+	          currentNode = currentNode.parent;
+	        }
+
+	        length += currentNode.length;
+	        var parent = currentNode.parent ? newNodeMap.get(currentNode.parent.id) : null;
+	        node.parent = parent;
+	        node.length = length;
+
+	        if (parent) {
+	          parent.children = parent.children ? parent.children.concat(node) : [node];
+	        }
+	      }); // intermediate nodes with show up as
+
+	      var subtree = new Tree(newNodeMap.get(this.root.id)); // now remove degree 2 nodes that were not specified;
+
+	      toConsumableArray(subtree.preorder()).forEach(function (node) {
+	        if (node.children) {
+	          if (node.children.length === 1) {
+	            if (!chosenNodes.map(function (n) {
+	              return n.id;
+	            }).includes(node.id)) {
+	              subtree.removeNode(node);
+	            }
+	          }
+	        }
+	      });
+
+	      return subtree;
 	    }
 	    /**
 	     * Gives the distance from the root to a given tip (external node).
@@ -7906,10 +7981,10 @@
 	  }, {
 	    key: "rootToTipLengths",
 	    value: function rootToTipLengths() {
-	      var _this4 = this;
+	      var _this5 = this;
 
 	      return this.externalNodes.map(function (tip) {
-	        return _this4.rootToTipLength(tip);
+	        return _this5.rootToTipLength(tip);
 	      });
 	    }
 	    /**
@@ -7921,7 +7996,7 @@
 	  }, {
 	    key: "splitBranches",
 	    value: function splitBranches() {
-	      var _this5 = this;
+	      var _this6 = this;
 
 	      var splits = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
@@ -7939,13 +8014,13 @@
 	                  time = _ref3[0],
 	                  id = _ref3[1];
 
-	              splitNode = _this5.splitBranch(splitNode, time);
+	              splitNode = _this6.splitBranch(splitNode, time);
 	              splitNode.id = id;
 	            });
 	          }
 	        } else {
 	          // if no splitLocations are given then split it in the middle.
-	          _this5.splitBranch(node, 0.5);
+	          _this6.splitBranch(node, 0.5);
 	        }
 	      });
 
@@ -7983,6 +8058,31 @@
 	      node._length = oldLength - splitNode.length;
 	      this.nodesUpdated = true;
 	      return splitNode;
+	    }
+	    /**
+	     * Deletes a node from the tree. if the node had children the children are linked to the
+	     * node's parent. This could result in a multifurcating tree.
+	     * The root node can not be deleted.
+	     * @param node
+	     */
+
+	  }, {
+	    key: "removeNode",
+	    value: function removeNode(node) {
+	      if (node === this.root) {
+	        return;
+	      } // remove the node from it's parent's children
+
+
+	      node.parent._children = node.parent._children.filter(function (n) {
+	        return n !== node;
+	      }); //update child lengths
+
+	      node.children.forEach(function (child) {
+	        child._length += node.length;
+	        child.parent = node.parent; // This also updates parent's children array;
+	      });
+	      this.nodesUpdated = true;
 	    }
 	    /**
 	     * Set one or more annotations for the tips.
@@ -8760,11 +8860,11 @@
 
 
 	function calculateHeights() {
-	  var _this6 = this;
+	  var _this7 = this;
 
 	  var maxRTT = max(this.rootToTipLengths());
 	  this.nodeList.forEach(function (node) {
-	    return node._height = _this6.origin - (maxRTT - _this6.rootToTipLength(node));
+	    return node._height = _this7.origin - (maxRTT - _this7.rootToTipLength(node));
 	  });
 	  this.heightsKnown = true;
 	}
@@ -8906,7 +9006,7 @@
 	}
 
 	function setUpArraysAndMaps() {
-	  var _this7 = this;
+	  var _this8 = this;
 
 	  this._nodeList = toConsumableArray(this.preorder());
 	  this.nodesUpdated = false;
@@ -8918,7 +9018,7 @@
 	    }
 
 	    if (node.annotations) {
-	      _this7.addAnnotations(node.annotations);
+	      _this8.addAnnotations(node.annotations);
 	    }
 	  });
 
@@ -8944,7 +9044,8 @@
 	        parent: undefined,
 	        children: null,
 	        label: undefined,
-	        level: undefined
+	        level: undefined,
+	        id: "node-".concat(uuid_1.v4())
 	      };
 	    }
 	  }]);
@@ -8956,7 +9057,7 @@
 
 	    var data = objectSpread({}, Node.DEFAULT_NODE(), nodeData);
 
-	    this._id = "node-".concat(uuid_1.v4());
+	    this._id = data.id;
 	    this._height = data.height;
 	    this._length = data.length;
 	    this._name = data.name;
@@ -9067,14 +9168,14 @@
 	      return this._parent;
 	    },
 	    set: function set(node) {
-	      var _this8 = this;
+	      var _this9 = this;
 
 	      this._parent = node;
 
 	      if (this._parent.children.filter(function (c) {
-	        return c === _this8;
+	        return c === _this9;
 	      }).length === 0) {
-	        this._parent.children.append(this);
+	        this._parent.children.push(this);
 	      }
 	    }
 	  }, {
