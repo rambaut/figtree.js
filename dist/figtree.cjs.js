@@ -6838,7 +6838,7 @@ class Tree {
 
         // now remove degree 2 nodes that were not specified;
 
-        [...subtree.preorder()].forEach(node=>{
+        [...subtree.postorder()].forEach(node=>{
             if(node.children){
                 if(node.children.length===1){
                     if(!chosenNodes.map(n=>n.id).includes(node.id)){
@@ -6946,11 +6946,14 @@ class Tree {
         // remove the node from it's parent's children
         node.parent._children=node.parent._children.filter(n=>n!==node);
         //update child lengths
+        if(node.children){
         node.children.forEach(child=>{
             child._length += node.length;
             child.parent = node.parent;// This also updates parent's children array;
-        });
-
+            });
+        }else{
+            this.removeNode(node.parent); // if it's a tip then remove it's parent which is now degree two;
+        }
         this.nodesUpdated = true;
     }
 
@@ -7934,6 +7937,8 @@ class Layout {
         if(node.children) {
 
             if (this._cartoonStore.filter(c => c.format === "cartoon").find(c => c.node === node)) {
+                console.log('removing this');
+                console.log(node);
                 this._cartoonStore = this._cartoonStore.filter(c => !(c.format === "cartoon" && c.node === node));
             } else {
                 this._cartoonStore.push({
@@ -8032,7 +8037,7 @@ class Layout {
 
             cartoons.push({vertices:[cartoonVertex,newTopVertex,newBottomVertex],
             classes : cartoonVertex.classes,
-            id:`${cartoonVertex.id}-cartoon`});
+            id:`${cartoonVertex.id}-cartoon`, node:c.node});
             });
 
         return cartoons;
@@ -9216,14 +9221,14 @@ class FigTree {
         this.callbacks.branches.push(()=>{
             // need to use 'function' here so that 'this' refers to the SVG
             // element being hovered over.
-            const selected = this.svgSelection.selectAll(`${selection ? selection : ".branch"}`).select("branch-path");
+            const selected = selection? this.svgSelection.selectAll(".branch").select("branch-path"):selection;
 
             selected.on("mouseover", function (d, i) {
-                action.enter(this);
+                action.enter(d);
 
             });
             selected.on("mouseout", function (d, i) {
-                action.exit(this);
+                action.exit(d);
 
             });
         });

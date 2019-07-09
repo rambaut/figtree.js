@@ -350,7 +350,7 @@ export class Layout {
 
             cartoons.push({vertices:[cartoonVertex,newTopVertex,newBottomVertex],
             classes : cartoonVertex.classes,
-            id:`${cartoonVertex.id}-cartoon`})
+            id:`${cartoonVertex.id}-cartoon`, node:c.node})
             })
 
         return cartoons;

@@ -450,7 +450,7 @@ export class Tree {
 
         // now remove degree 2 nodes that were not specified;
 
-        [...subtree.preorder()].forEach(node=>{
+        [...subtree.postorder()].forEach(node=>{
             if(node.children){
                 if(node.children.length===1){
                     if(!chosenNodes.map(n=>n.id).includes(node.id)){
@@ -558,11 +558,14 @@ export class Tree {
         // remove the node from it's parent's children
         node.parent._children=node.parent._children.filter(n=>n!==node);
         //update child lengths
+        if(node.children){
         node.children.forEach(child=>{
             child._length += node.length;
             child.parent = node.parent;// This also updates parent's children array;
-        })
-
+            })
+        }else{
+            this.removeNode(node.parent); // if it's a tip then remove it's parent which is now degree two;
+        }
         this.nodesUpdated = true;
     }
 

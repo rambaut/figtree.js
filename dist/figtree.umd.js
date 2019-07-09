@@ -7920,7 +7920,7 @@
 
 	      var subtree = new Tree(newNodeMap.get(this.root.id)); // now remove degree 2 nodes that were not specified;
 
-	      toConsumableArray(subtree.preorder()).forEach(function (node) {
+	      toConsumableArray(subtree.postorder()).forEach(function (node) {
 	        if (node.children) {
 	          if (node.children.length === 1) {
 	            if (!chosenNodes.map(function (n) {
@@ -8078,10 +8078,15 @@
 	        return n !== node;
 	      }); //update child lengths
 
-	      node.children.forEach(function (child) {
-	        child._length += node.length;
-	        child.parent = node.parent; // This also updates parent's children array;
-	      });
+	      if (node.children) {
+	        node.children.forEach(function (child) {
+	          child._length += node.length;
+	          child.parent = node.parent; // This also updates parent's children array;
+	        });
+	      } else {
+	        this.removeNode(node.parent); // if it's a tip then remove it's parent which is now degree two;
+	      }
+
 	      this.nodesUpdated = true;
 	    }
 	    /**
@@ -9446,6 +9451,8 @@
 	        }).find(function (c) {
 	          return c.node === node;
 	        })) {
+	          console.log('removing this');
+	          console.log(node);
 	          this._cartoonStore = this._cartoonStore.filter(function (c) {
 	            return !(c.format === "cartoon" && c.node === node);
 	          });
@@ -9661,7 +9668,8 @@
 	        cartoons.push({
 	          vertices: [cartoonVertex, newTopVertex, newBottomVertex],
 	          classes: cartoonVertex.classes,
-	          id: "".concat(cartoonVertex.id, "-cartoon")
+	          id: "".concat(cartoonVertex.id, "-cartoon"),
+	          node: c.node
 	        });
 	      });
 
@@ -11118,13 +11126,12 @@
 	      this.callbacks.branches.push(function () {
 	        // need to use 'function' here so that 'this' refers to the SVG
 	        // element being hovered over.
-	        var selected = _this7.svgSelection.selectAll("".concat(selection ? selection : ".branch")).select("branch-path");
-
+	        var selected = selection ? _this7.svgSelection.selectAll(".branch").select("branch-path") : selection;
 	        selected.on("mouseover", function (d, i) {
-	          action.enter(this);
+	          action.enter(d);
 	        });
 	        selected.on("mouseout", function (d, i) {
-	          action.exit(this);
+	          action.exit(d);
 	        });
 	      });
 	      this.update();
