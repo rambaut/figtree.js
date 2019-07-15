@@ -3,9 +3,7 @@
 /** @module layout */
 
 import { RectangularLayout } from "./rectangularLayout.js";
-import {format,curveStepBefore,max,line,mean,scaleLinear} from "d3";
 
-import {Tree, Type} from "./tree"
 
 export const Direction = {
     UP : Symbol("UP"),
@@ -53,8 +51,6 @@ export class TransmissionLayout extends RectangularLayout {
         // defined here so we can use the groupingAnnotation key
         const includedInVerticalRange = node  => !node.children || (node.children.length===1 && node.annotations[groupingAnnotation]!==node.children[0].annotations[groupingAnnotation])
         super(tree, {...TransmissionLayout.DEFAULT_SETTINGS(),...{includedInVerticalRange:includedInVerticalRange}, ...settings});
-
-
 
     }
 

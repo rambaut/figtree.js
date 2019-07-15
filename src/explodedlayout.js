@@ -3,36 +3,114 @@
 /** @module layout */
 
 import { RectangularLayout } from "./rectangularLayout.js";
+import {min,mean} from "d3";
+
+
+export const Direction = {
+    UP : Symbol("UP"),
+    DOWN : Symbol("DOWN")
+};
 
 /**
- * The ExplodedLayout class
+ * The TransmissionLayout class
+ * Only works for 'up' directions
  *
- * This class lays out a tree annotated by a trait so that it is broken into subtrees
- * where ever the trait changes.
  */
 export class ExplodedLayout extends RectangularLayout {
+
+    static DEFAULT_SETTINGS() {
+        return {
+            groupingAnnotation:"host",
+            direction:"up",
+            groupGap:10,
+        }
+    };
 
     /**
      * The constructor.
      * @param tree
      * @param settings
      */
-    constructor(tree, settings = { }) {
-        super(tree, settings);
+    constructor(tree, settings = {}) {
+        tree.order((nodeA, countA, nodeB, countB) => {
+            return (countB - countA);
+        });
+
+        const groupingAnnotation = {...ExplodedLayout.DEFAULT_SETTINGS(),...settings}['groupingAnnotation'];
+        const locationChanges = tree.nodeList.filter(n=>n.parent && n.parent.annotations[groupingAnnotation]!==n.annotations[groupingAnnotation]);
+
+        locationChanges.forEach(node =>{
+            const originalLocation = node.parent.annotations[groupingAnnotation];
+            const finalLocation = node.annotations[groupingAnnotation];
+            const newNodeInLocation = tree.splitBranch(node);
+            newNodeInLocation.annotations[groupingAnnotation] = finalLocation;
+            const newNodeFromLocation = tree.splitBranch(newNodeInLocation,1.0);
+            newNodeFromLocation.annotations[groupingAnnotation] = originalLocation;
+        })
+
+
+        // defined here so we can use the groupingAnnotation key
+        const includedInVerticalRange = node  => !node.children || (node.children.length===1 && node.annotations[groupingAnnotation]!==node.children[0].annotations[groupingAnnotation])
+        super(tree, {...ExplodedLayout.DEFAULT_SETTINGS(),...{includedInVerticalRange:includedInVerticalRange}, ...settings});
+        this.groupingAnnotation = groupingAnnotation;
+    }
+
+    getTreeNodes() {
+        // order first by grouping annotation and then by postorder
+        const postOrderNodes = [...this.tree.postorder()];
+
+        const groupHeights = new Map()
+        for(const group of this.tree.annotations[this.groupingAnnotation].values){
+            const height = min(postOrderNodes.filter(n=>n.annotations[this.groupingAnnotation]===group),d=>d.height);
+            groupHeights.set(group,height);
+        }
+        // sort by location and then by post order order but we want all import/export banches to be last
+        return([...this.tree.postorder()].sort((a,b)=>{
+            if(a.annotations[this.groupingAnnotation]===b.annotations[this.groupingAnnotation]){
+                return postOrderNodes.indexOf(a)-postOrderNodes.indexOf(b);
+            }else{
+                    return groupHeights.get(a.annotations[this.groupingAnnotation]) -  groupHeights.get(b.annotations[this.groupingAnnotation])
+                }
+        }))
+
+
+    }
+    setYPosition(vertex, currentY) {
+
+        // check if there are children that that are in the same group and set position to mean
+        // if do something else
+        if(currentY===this.setInitialY()) {
+            this._currentGroup = vertex.node.annotations[this.groupingAnnotation];
+        }
+
+        const includedInVertical = this.settings.includedInVerticalRange(vertex.node);
+        if (!includedInVertical) {
+            vertex.y = mean(vertex.node.children, (child) => this._nodeMap.get(child).y)
+        } else {
+            if(vertex.node.annotations[this.groupingAnnotation]!==this._currentGroup){
+                currentY+=this.settings.groupGap;
+            }else{
+                currentY += 1;
+            }
+            this._currentGroup= vertex.node.annotations[this.groupingAnnotation];
+            vertex.y = currentY;
+        }
+        return currentY;
     }
 
     /**
-     * Inherited method overwritten to set the y-position of an internal node to the same as its
-     * first child which gives a visual directionality to the tree.
-     * @param vertex
-     * @param currentY
-     * @returns {*}
+     * Set the direction to draw transmission (up or down).
+     * @param direction
      */
-    setYPosition(vertex, currentY) {
-        throw Error("Not implemented yet");
-    }
+    // set direction(direction) {
+    //     this.update();
+    // }
 
 }
+
+
+
+
 /*
  * Private methods, called by the class using the <function>.call(this) function.
  */

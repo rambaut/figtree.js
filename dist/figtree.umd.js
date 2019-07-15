@@ -7420,6 +7420,7 @@
 	    /*#__PURE__*/
 	    regenerator.mark(function preorder() {
 	      var startNode,
+	          filter,
 	          traverse,
 	          _args2 = arguments;
 	      return regenerator.wrap(function preorder$(_context2) {
@@ -7427,88 +7428,96 @@
 	          switch (_context2.prev = _context2.next) {
 	            case 0:
 	              startNode = _args2.length > 0 && _args2[0] !== undefined ? _args2[0] : this.root;
+	              filter = _args2.length > 1 && _args2[1] !== undefined ? _args2[1] : function () {
+	                return true;
+	              };
 	              traverse =
 	              /*#__PURE__*/
-	              regenerator.mark(function traverse(node) {
+	              regenerator.mark(function traverse(node, filter) {
 	                var _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, child;
 
 	                return regenerator.wrap(function traverse$(_context) {
 	                  while (1) {
 	                    switch (_context.prev = _context.next) {
 	                      case 0:
-	                        _context.next = 2;
+	                        if (!filter(node)) {
+	                          _context.next = 29;
+	                          break;
+	                        }
+
+	                        _context.next = 3;
 	                        return node;
 
-	                      case 2:
+	                      case 3:
 	                        if (!node.children) {
-	                          _context.next = 28;
+	                          _context.next = 29;
 	                          break;
 	                        }
 
 	                        _iteratorNormalCompletion = true;
 	                        _didIteratorError = false;
 	                        _iteratorError = undefined;
-	                        _context.prev = 6;
+	                        _context.prev = 7;
 	                        _iterator = node.children[Symbol.iterator]();
 
-	                      case 8:
+	                      case 9:
 	                        if (_iteratorNormalCompletion = (_step = _iterator.next()).done) {
-	                          _context.next = 14;
+	                          _context.next = 15;
 	                          break;
 	                        }
 
 	                        child = _step.value;
-	                        return _context.delegateYield(traverse(child), "t0", 11);
+	                        return _context.delegateYield(traverse(child, filter), "t0", 12);
 
-	                      case 11:
+	                      case 12:
 	                        _iteratorNormalCompletion = true;
-	                        _context.next = 8;
+	                        _context.next = 9;
 	                        break;
 
-	                      case 14:
-	                        _context.next = 20;
+	                      case 15:
+	                        _context.next = 21;
 	                        break;
 
-	                      case 16:
-	                        _context.prev = 16;
-	                        _context.t1 = _context["catch"](6);
+	                      case 17:
+	                        _context.prev = 17;
+	                        _context.t1 = _context["catch"](7);
 	                        _didIteratorError = true;
 	                        _iteratorError = _context.t1;
 
-	                      case 20:
-	                        _context.prev = 20;
+	                      case 21:
 	                        _context.prev = 21;
+	                        _context.prev = 22;
 
 	                        if (!_iteratorNormalCompletion && _iterator["return"] != null) {
 	                          _iterator["return"]();
 	                        }
 
-	                      case 23:
-	                        _context.prev = 23;
+	                      case 24:
+	                        _context.prev = 24;
 
 	                        if (!_didIteratorError) {
-	                          _context.next = 26;
+	                          _context.next = 27;
 	                          break;
 	                        }
 
 	                        throw _iteratorError;
 
-	                      case 26:
-	                        return _context.finish(23);
-
 	                      case 27:
-	                        return _context.finish(20);
+	                        return _context.finish(24);
 
 	                      case 28:
+	                        return _context.finish(21);
+
+	                      case 29:
 	                      case "end":
 	                        return _context.stop();
 	                    }
 	                  }
-	                }, traverse, null, [[6, 16, 20, 28], [21,, 23, 27]]);
+	                }, traverse, null, [[7, 17, 21, 29], [22,, 24, 28]]);
 	              });
-	              return _context2.delegateYield(traverse(startNode), "t0", 3);
+	              return _context2.delegateYield(traverse(startNode, filter), "t0", 4);
 
-	            case 3:
+	            case 4:
 	            case "end":
 	              return _context2.stop();
 	          }
@@ -7527,6 +7536,7 @@
 	    /*#__PURE__*/
 	    regenerator.mark(function postorder() {
 	      var startNode,
+	          filter,
 	          traverse,
 	          _args4 = arguments;
 	      return regenerator.wrap(function postorder$(_context4) {
@@ -7534,88 +7544,96 @@
 	          switch (_context4.prev = _context4.next) {
 	            case 0:
 	              startNode = _args4.length > 0 && _args4[0] !== undefined ? _args4[0] : this.root;
+	              filter = _args4.length > 1 && _args4[1] !== undefined ? _args4[1] : function () {
+	                return true;
+	              };
 	              traverse =
 	              /*#__PURE__*/
-	              regenerator.mark(function traverse(node) {
+	              regenerator.mark(function traverse(node, filter) {
 	                var _iteratorNormalCompletion2, _didIteratorError2, _iteratorError2, _iterator2, _step2, child;
 
 	                return regenerator.wrap(function traverse$(_context3) {
 	                  while (1) {
 	                    switch (_context3.prev = _context3.next) {
 	                      case 0:
+	                        if (!filter(node)) {
+	                          _context3.next = 29;
+	                          break;
+	                        }
+
 	                        if (!node.children) {
-	                          _context3.next = 26;
+	                          _context3.next = 27;
 	                          break;
 	                        }
 
 	                        _iteratorNormalCompletion2 = true;
 	                        _didIteratorError2 = false;
 	                        _iteratorError2 = undefined;
-	                        _context3.prev = 4;
+	                        _context3.prev = 5;
 	                        _iterator2 = node.children[Symbol.iterator]();
 
-	                      case 6:
+	                      case 7:
 	                        if (_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done) {
-	                          _context3.next = 12;
+	                          _context3.next = 13;
 	                          break;
 	                        }
 
 	                        child = _step2.value;
-	                        return _context3.delegateYield(traverse(child), "t0", 9);
+	                        return _context3.delegateYield(traverse(child, filter), "t0", 10);
 
-	                      case 9:
+	                      case 10:
 	                        _iteratorNormalCompletion2 = true;
-	                        _context3.next = 6;
+	                        _context3.next = 7;
 	                        break;
 
-	                      case 12:
-	                        _context3.next = 18;
+	                      case 13:
+	                        _context3.next = 19;
 	                        break;
 
-	                      case 14:
-	                        _context3.prev = 14;
-	                        _context3.t1 = _context3["catch"](4);
+	                      case 15:
+	                        _context3.prev = 15;
+	                        _context3.t1 = _context3["catch"](5);
 	                        _didIteratorError2 = true;
 	                        _iteratorError2 = _context3.t1;
 
-	                      case 18:
-	                        _context3.prev = 18;
+	                      case 19:
 	                        _context3.prev = 19;
+	                        _context3.prev = 20;
 
 	                        if (!_iteratorNormalCompletion2 && _iterator2["return"] != null) {
 	                          _iterator2["return"]();
 	                        }
 
-	                      case 21:
-	                        _context3.prev = 21;
+	                      case 22:
+	                        _context3.prev = 22;
 
 	                        if (!_didIteratorError2) {
-	                          _context3.next = 24;
+	                          _context3.next = 25;
 	                          break;
 	                        }
 
 	                        throw _iteratorError2;
 
-	                      case 24:
-	                        return _context3.finish(21);
-
 	                      case 25:
-	                        return _context3.finish(18);
+	                        return _context3.finish(22);
 
 	                      case 26:
-	                        _context3.next = 28;
+	                        return _context3.finish(19);
+
+	                      case 27:
+	                        _context3.next = 29;
 	                        return node;
 
-	                      case 28:
+	                      case 29:
 	                      case "end":
 	                        return _context3.stop();
 	                    }
 	                  }
-	                }, traverse, null, [[4, 14, 18, 26], [19,, 21, 25]]);
+	                }, traverse, null, [[5, 15, 19, 27], [20,, 22, 26]]);
 	              });
-	              return _context4.delegateYield(traverse(startNode), "t0", 3);
+	              return _context4.delegateYield(traverse(startNode, filter), "t0", 4);
 
-	            case 3:
+	            case 4:
 	            case "end":
 	              return _context4.stop();
 	          }
@@ -8808,7 +8826,7 @@
 	 * A private recursive function that rotates nodes to give an ordering provided
 	 * by a function.
 	 * @param node
-	 * @param ordering
+	 * @param ordering function that takes (a,number of tips form a, b, number of tips from b) and sorts a and be by the output.
 	 * @param callback an optional callback that is called each rotate
 	 * @returns {number}
 	 */
@@ -9943,7 +9961,8 @@
 	    key: "DEFAULT_SETTINGS",
 	    value: function DEFAULT_SETTINGS() {
 	      return {
-	        branchCurve: stepBefore
+	        branchCurve: stepBefore,
+	        radius: 0
 	      };
 	    }
 	    /**
@@ -9994,13 +10013,28 @@
 	        }).y(function (v) {
 	          return v.y;
 	        }).curve(_this2.settings.branchCurve);
-	        return branchLine([{
+	        var factor = e.v0.y - e.v1.y > 0 ? 1 : -1;
+	        var dontNeedCurv = e.v0.y - e.v1.y === 0 ? 0 : 1;
+	        var output = _this2.settings.radius > 0 ? branchLine([{
+	          x: 0,
+	          y: scales.y(e.v0.y) - scales.y(e.v1.y)
+	        }, {
+	          x: 0,
+	          y: dontNeedCurv * factor * _this2.settings.radius
+	        }, {
+	          x: 0 + dontNeedCurv * _this2.settings.radius,
+	          y: 0
+	        }, {
+	          x: scales.x(e.v1.x) - scales.x(e.v0.x),
+	          y: 0
+	        }]) : branchLine([{
 	          x: 0,
 	          y: scales.y(e.v0.y) - scales.y(e.v1.y)
 	        }, {
 	          x: scales.x(e.v1.x) - scales.x(e.v0.x),
 	          y: 0
 	        }]);
+	        return output;
 	      };
 
 	      return branchPath;
@@ -10027,7 +10061,8 @@
 	    key: "DEFAULT_SETTINGS",
 	    value: function DEFAULT_SETTINGS() {
 	      return {
-	        branchCurve: stepBefore
+	        branchCurve: stepBefore,
+	        radius: 0
 	      };
 	    }
 	    /**
@@ -10078,13 +10113,28 @@
 	        }).y(function (v) {
 	          return v.y;
 	        }).curve(_this2.settings.branchCurve);
-	        return branchLine([{
+	        var factor = e.v0.y - e.v1.y > 0 ? 1 : -1;
+	        var dontNeedCurv = e.v0.y - e.v1.y === 0 ? 0 : 1;
+	        var output = _this2.settings.radius > 0 ? branchLine([{
+	          x: 0,
+	          y: scales.y(e.v0.y) - scales.y(e.v1.y)
+	        }, {
+	          x: 0,
+	          y: dontNeedCurv * factor * _this2.settings.radius
+	        }, {
+	          x: 0 + dontNeedCurv * _this2.settings.radius,
+	          y: 0
+	        }, {
+	          x: scales.x(e.v1.x) - scales.x(e.v0.x),
+	          y: 0
+	        }]) : branchLine([{
 	          x: 0,
 	          y: scales.y(e.v0.y) - scales.y(e.v1.y)
 	        }, {
 	          x: scales.x(e.v1.x) - scales.x(e.v0.x),
 	          y: 0
 	        }]);
+	        return output;
 	      };
 
 	      return branchPath;
@@ -10166,6 +10216,166 @@
 
 	  return TransmissionLayout;
 	}(RectangularLayout$1);
+
+	/**
+	 * The TransmissionLayout class
+	 * Only works for 'up' directions
+	 *
+	 */
+
+	var ExplodedLayout =
+	/*#__PURE__*/
+	function (_RectangularLayout) {
+	  inherits(ExplodedLayout, _RectangularLayout);
+
+	  createClass(ExplodedLayout, null, [{
+	    key: "DEFAULT_SETTINGS",
+	    value: function DEFAULT_SETTINGS() {
+	      return {
+	        groupingAnnotation: "host",
+	        direction: "up",
+	        groupGap: 10
+	      };
+	    }
+	  }]);
+
+	  /**
+	   * The constructor.
+	   * @param tree
+	   * @param settings
+	   */
+	  function ExplodedLayout(tree) {
+	    var _this;
+
+	    var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
+	    classCallCheck(this, ExplodedLayout);
+
+	    tree.order(function (nodeA, countA, nodeB, countB) {
+	      return countB - countA;
+	    });
+
+	    var groupingAnnotation = objectSpread({}, ExplodedLayout.DEFAULT_SETTINGS(), settings)['groupingAnnotation'];
+
+	    var locationChanges = tree.nodeList.filter(function (n) {
+	      return n.parent && n.parent.annotations[groupingAnnotation] !== n.annotations[groupingAnnotation];
+	    });
+	    locationChanges.forEach(function (node) {
+	      var originalLocation = node.parent.annotations[groupingAnnotation];
+	      var finalLocation = node.annotations[groupingAnnotation];
+	      var newNodeInLocation = tree.splitBranch(node);
+	      newNodeInLocation.annotations[groupingAnnotation] = finalLocation;
+	      var newNodeFromLocation = tree.splitBranch(newNodeInLocation, 1.0);
+	      newNodeFromLocation.annotations[groupingAnnotation] = originalLocation;
+	    }); // defined here so we can use the groupingAnnotation key
+
+	    var includedInVerticalRange = function includedInVerticalRange(node) {
+	      return !node.children || node.children.length === 1 && node.annotations[groupingAnnotation] !== node.children[0].annotations[groupingAnnotation];
+	    };
+
+	    _this = possibleConstructorReturn(this, getPrototypeOf(ExplodedLayout).call(this, tree, objectSpread({}, ExplodedLayout.DEFAULT_SETTINGS(), {
+	      includedInVerticalRange: includedInVerticalRange
+	    }, settings)));
+	    _this.groupingAnnotation = groupingAnnotation;
+	    return _this;
+	  }
+
+	  createClass(ExplodedLayout, [{
+	    key: "getTreeNodes",
+	    value: function getTreeNodes() {
+	      var _this2 = this;
+
+	      // order first by grouping annotation and then by postorder
+	      var postOrderNodes = toConsumableArray(this.tree.postorder());
+
+	      var groupHeights = new Map();
+	      var _iteratorNormalCompletion = true;
+	      var _didIteratorError = false;
+	      var _iteratorError = undefined;
+
+	      try {
+	        var _loop = function _loop() {
+	          var group = _step.value;
+	          var height = min(postOrderNodes.filter(function (n) {
+	            return n.annotations[_this2.groupingAnnotation] === group;
+	          }), function (d) {
+	            return d.height;
+	          });
+	          groupHeights.set(group, height);
+	        };
+
+	        for (var _iterator = this.tree.annotations[this.groupingAnnotation].values[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	          _loop();
+	        } // sort by location and then by post order order but we want all import/export banches to be last
+
+	      } catch (err) {
+	        _didIteratorError = true;
+	        _iteratorError = err;
+	      } finally {
+	        try {
+	          if (!_iteratorNormalCompletion && _iterator["return"] != null) {
+	            _iterator["return"]();
+	          }
+	        } finally {
+	          if (_didIteratorError) {
+	            throw _iteratorError;
+	          }
+	        }
+	      }
+
+	      return toConsumableArray(this.tree.postorder()).sort(function (a, b) {
+	        if (a.annotations[_this2.groupingAnnotation] === b.annotations[_this2.groupingAnnotation]) {
+	          return postOrderNodes.indexOf(a) - postOrderNodes.indexOf(b);
+	        } else {
+	          return groupHeights.get(a.annotations[_this2.groupingAnnotation]) - groupHeights.get(b.annotations[_this2.groupingAnnotation]);
+	        }
+	      });
+	    }
+	  }, {
+	    key: "setYPosition",
+	    value: function setYPosition(vertex, currentY) {
+	      var _this3 = this;
+
+	      // check if there are children that that are in the same group and set position to mean
+	      // if do something else
+	      if (currentY === this.setInitialY()) {
+	        this._currentGroup = vertex.node.annotations[this.groupingAnnotation];
+	      }
+
+	      var includedInVertical = this.settings.includedInVerticalRange(vertex.node);
+
+	      if (!includedInVertical) {
+	        vertex.y = mean(vertex.node.children, function (child) {
+	          return _this3._nodeMap.get(child).y;
+	        });
+	      } else {
+	        if (vertex.node.annotations[this.groupingAnnotation] !== this._currentGroup) {
+	          currentY += this.settings.groupGap;
+	        } else {
+	          currentY += 1;
+	        }
+
+	        this._currentGroup = vertex.node.annotations[this.groupingAnnotation];
+	        vertex.y = currentY;
+	      }
+
+	      return currentY;
+	    }
+	    /**
+	     * Set the direction to draw transmission (up or down).
+	     * @param direction
+	     */
+	    // set direction(direction) {
+	    //     this.update();
+	    // }
+
+	  }]);
+
+	  return ExplodedLayout;
+	}(RectangularLayout$1);
+	/*
+	 * Private methods, called by the class using the <function>.call(this) function.
+	 */
 
 	/**
 	 * The ArcLayout class
@@ -11083,9 +11293,10 @@
 
 	        selected.on("click", function (vertex) {
 	          action(vertex);
+
+	          _this5.update();
 	        });
 	      });
-	      this.update();
 	    }
 	    /**
 	     * General Nodehover callback
@@ -11104,12 +11315,15 @@
 
 	        selected.on("mouseover", function (vertex) {
 	          action.enter(vertex);
+
+	          _this6.update();
 	        });
 	        selected.on("mouseout", function (vertex) {
 	          action.exit(vertex);
+
+	          _this6.update();
 	        });
 	      });
-	      this.update();
 	    }
 	    /**
 	     * General branch hover callback
@@ -11124,14 +11338,17 @@
 
 	      var selection = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
 	      this.callbacks.branches.push(function () {
-	        // need to use 'function' here so that 'this' refers to the SVG
-	        // element being hovered over.
-	        var selected = selection ? _this7.svgSelection.selectAll(".branch").select("branch-path") : selection;
+	        var self = _this7;
+
+	        var selected = _this7.svgSelection.selectAll("".concat(selection ? selection : ".branch"));
+
 	        selected.on("mouseover", function (d, i) {
 	          action.enter(d);
+	          self.update();
 	        });
 	        selected.on("mouseout", function (d, i) {
 	          action.exit(d);
+	          self.update();
 	        });
 	      });
 	      this.update();
@@ -11650,7 +11867,7 @@
 	    }
 	  }
 
-	  return "M 0 0 ".concat(path.join(" l "), " z");
+	  return "M 0 0 l ".concat(path.join(" l "), " z");
 	} //TODO add interactive callbacks to instance so that when nodes are made again they can access those functions
 	//TODO transtion on incoming and outgoing objects so they match the movement in the diagram;
 
@@ -12731,6 +12948,7 @@
 	exports.ArcLayout = ArcLayout;
 	exports.Bauble = Bauble;
 	exports.CircleBauble = CircleBauble;
+	exports.ExplodedLayout = ExplodedLayout;
 	exports.FigTree = FigTree;
 	exports.Graph = Graph;
 	exports.Layout = Layout;

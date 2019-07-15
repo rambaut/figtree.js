@@ -4,7 +4,7 @@
 
 import { Layout } from "./layout.js";
 import { Type } from "./tree.js";
-import {format,curveStepBefore,max,min,line,mean,scaleLinear,curveLinear} from "d3";
+import {curveStepBefore,curveMonotoneY,line,mean} from "d3";
 
 // const d3 = require("d3");
 /**
@@ -16,6 +16,7 @@ export class RectangularLayout extends Layout {
     static DEFAULT_SETTINGS() {
         return {
             branchCurve: curveStepBefore,
+            radius:0,
         };
     }
 
@@ -53,12 +54,20 @@ export class RectangularLayout extends Layout {
                  .x((v) => v.x)
                 .y((v) => v.y)
                 .curve(this.settings.branchCurve);
-            return(
+            const factor = e.v0.y-e.v1.y>0? 1:-1;
+            const dontNeedCurv = e.v0.y-e.v1.y===0?0:1
+            const output = this.settings.radius>0?
                 branchLine(
                     [{x: 0, y: scales.y(e.v0.y) - scales.y(e.v1.y)},
-                    {x: scales.x(e.v1.x) - scales.x(e.v0.x), y: 0}]
-                )
-            )
+                    { x:0, y:dontNeedCurv*factor * this.settings.radius},
+                    {x:0 + dontNeedCurv*this.settings.radius, y:0},
+                {x: scales.x(e.v1.x) - scales.x(e.v0.x), y: 0}
+                ]):
+                branchLine(
+                [{x: 0, y: scales.y(e.v0.y) - scales.y(e.v1.y)},
+                    {x: scales.x(e.v1.x) - scales.x(e.v0.x), y: 0}
+                    ])
+            return(output)
             
         }
         return branchPath;

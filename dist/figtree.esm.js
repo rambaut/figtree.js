@@ -6567,17 +6567,19 @@ class Tree {
      *
      * @returns {IterableIterator<IterableIterator<*|*>>}
      */
-    *preorder(startNode=this.root) {
-        const traverse = function *(node) {
-            yield node;
-            if (node.children) {
-                for (const child of node.children) {
-                    yield* traverse(child);
+    *preorder(startNode=this.root,filter=()=>true) {
+        const traverse = function *(node,filter) {
+            if(filter(node)) {
+                yield node;
+                if (node.children) {
+                    for (const child of node.children) {
+                        yield* traverse(child, filter);
+                    }
                 }
             }
         };
 
-        yield* traverse(startNode);
+        yield* traverse(startNode,filter);
     }
 
     /**
@@ -6585,17 +6587,19 @@ class Tree {
      *
      * @returns {IterableIterator<IterableIterator<*|*>>}
      */
-    *postorder(startNode=this.root) {
-        const traverse = function *(node) {
-            if (node.children) {
-                for (const child of node.children) {
-                    yield* traverse(child);
+    *postorder(startNode=this.root,filter=()=>true) {
+        const traverse = function *(node,filter) {
+            if(filter(node)) {
+                if (node.children) {
+                    for (const child of node.children) {
+                        yield* traverse(child, filter);
+                    }
                 }
+                yield node;
             }
-            yield node;
         };
 
-        yield* traverse(startNode);
+        yield* traverse(startNode,filter);
     }
 
     /**
@@ -7416,7 +7420,7 @@ class Tree {
  * A private recursive function that rotates nodes to give an ordering provided
  * by a function.
  * @param node
- * @param ordering
+ * @param ordering function that takes (a,number of tips form a, b, number of tips from b) and sorts a and be by the output.
  * @param callback an optional callback that is called each rotate
  * @returns {number}
  */
@@ -8238,6 +8242,7 @@ class RectangularLayout extends Layout {
     static DEFAULT_SETTINGS() {
         return {
             branchCurve: stepBefore,
+            radius:0,
         };
     }
 
@@ -8275,12 +8280,20 @@ class RectangularLayout extends Layout {
                  .x((v) => v.x)
                 .y((v) => v.y)
                 .curve(this.settings.branchCurve);
-            return(
+            const factor = e.v0.y-e.v1.y>0? 1:-1;
+            const dontNeedCurv = e.v0.y-e.v1.y===0?0:1;
+            const output = this.settings.radius>0?
                 branchLine(
                     [{x: 0, y: scales.y(e.v0.y) - scales.y(e.v1.y)},
-                    {x: scales.x(e.v1.x) - scales.x(e.v0.x), y: 0}]
-                )
-            )
+                    { x:0, y:dontNeedCurv*factor * this.settings.radius},
+                    {x:0 + dontNeedCurv*this.settings.radius, y:0},
+                {x: scales.x(e.v1.x) - scales.x(e.v0.x), y: 0}
+                ]):
+                branchLine(
+                [{x: 0, y: scales.y(e.v0.y) - scales.y(e.v1.y)},
+                    {x: scales.x(e.v1.x) - scales.x(e.v0.x), y: 0}
+                    ]);
+            return(output)
             
         };
         return branchPath;
@@ -8303,6 +8316,7 @@ class RectangularLayout$1 extends Layout {
     static DEFAULT_SETTINGS() {
         return {
             branchCurve: stepBefore,
+            radius:0,
         };
     }
 
@@ -8340,12 +8354,20 @@ class RectangularLayout$1 extends Layout {
                  .x((v) => v.x)
                 .y((v) => v.y)
                 .curve(this.settings.branchCurve);
-            return(
+            const factor = e.v0.y-e.v1.y>0? 1:-1;
+            const dontNeedCurv = e.v0.y-e.v1.y===0?0:1;
+            const output = this.settings.radius>0?
                 branchLine(
                     [{x: 0, y: scales.y(e.v0.y) - scales.y(e.v1.y)},
-                    {x: scales.x(e.v1.x) - scales.x(e.v0.x), y: 0}]
-                )
-            )
+                    { x:0, y:dontNeedCurv*factor * this.settings.radius},
+                    {x:0 + dontNeedCurv*this.settings.radius, y:0},
+                {x: scales.x(e.v1.x) - scales.x(e.v0.x), y: 0}
+                ]):
+                branchLine(
+                [{x: 0, y: scales.y(e.v0.y) - scales.y(e.v1.y)},
+                    {x: scales.x(e.v1.x) - scales.x(e.v0.x), y: 0}
+                    ]);
+            return(output)
             
         };
         return branchPath;
@@ -8400,8 +8422,6 @@ class TransmissionLayout extends RectangularLayout$1 {
         const includedInVerticalRange = node  => !node.children || (node.children.length===1 && node.annotations[groupingAnnotation]!==node.children[0].annotations[groupingAnnotation]);
         super(tree, {...TransmissionLayout.DEFAULT_SETTINGS(),...{includedInVerticalRange:includedInVerticalRange}, ...settings});
 
-
-
     }
 
     /**
@@ -8413,6 +8433,110 @@ class TransmissionLayout extends RectangularLayout$1 {
     // }
 
 }
+
+/**
+ * The TransmissionLayout class
+ * Only works for 'up' directions
+ *
+ */
+class ExplodedLayout extends RectangularLayout$1 {
+
+    static DEFAULT_SETTINGS() {
+        return {
+            groupingAnnotation:"host",
+            direction:"up",
+            groupGap:10,
+        }
+    };
+
+    /**
+     * The constructor.
+     * @param tree
+     * @param settings
+     */
+    constructor(tree, settings = {}) {
+        tree.order((nodeA, countA, nodeB, countB) => {
+            return (countB - countA);
+        });
+
+        const groupingAnnotation = {...ExplodedLayout.DEFAULT_SETTINGS(),...settings}['groupingAnnotation'];
+        const locationChanges = tree.nodeList.filter(n=>n.parent && n.parent.annotations[groupingAnnotation]!==n.annotations[groupingAnnotation]);
+
+        locationChanges.forEach(node =>{
+            const originalLocation = node.parent.annotations[groupingAnnotation];
+            const finalLocation = node.annotations[groupingAnnotation];
+            const newNodeInLocation = tree.splitBranch(node);
+            newNodeInLocation.annotations[groupingAnnotation] = finalLocation;
+            const newNodeFromLocation = tree.splitBranch(newNodeInLocation,1.0);
+            newNodeFromLocation.annotations[groupingAnnotation] = originalLocation;
+        });
+
+
+        // defined here so we can use the groupingAnnotation key
+        const includedInVerticalRange = node  => !node.children || (node.children.length===1 && node.annotations[groupingAnnotation]!==node.children[0].annotations[groupingAnnotation]);
+        super(tree, {...ExplodedLayout.DEFAULT_SETTINGS(),...{includedInVerticalRange:includedInVerticalRange}, ...settings});
+        this.groupingAnnotation = groupingAnnotation;
+    }
+
+    getTreeNodes() {
+        // order first by grouping annotation and then by postorder
+        const postOrderNodes = [...this.tree.postorder()];
+
+        const groupHeights = new Map();
+        for(const group of this.tree.annotations[this.groupingAnnotation].values){
+            const height = min(postOrderNodes.filter(n=>n.annotations[this.groupingAnnotation]===group),d=>d.height);
+            groupHeights.set(group,height);
+        }
+        // sort by location and then by post order order but we want all import/export banches to be last
+        return([...this.tree.postorder()].sort((a,b)=>{
+            if(a.annotations[this.groupingAnnotation]===b.annotations[this.groupingAnnotation]){
+                return postOrderNodes.indexOf(a)-postOrderNodes.indexOf(b);
+            }else{
+                    return groupHeights.get(a.annotations[this.groupingAnnotation]) -  groupHeights.get(b.annotations[this.groupingAnnotation])
+                }
+        }))
+
+
+    }
+    setYPosition(vertex, currentY) {
+
+        // check if there are children that that are in the same group and set position to mean
+        // if do something else
+        if(currentY===this.setInitialY()) {
+            this._currentGroup = vertex.node.annotations[this.groupingAnnotation];
+        }
+
+        const includedInVertical = this.settings.includedInVerticalRange(vertex.node);
+        if (!includedInVertical) {
+            vertex.y = mean(vertex.node.children, (child) => this._nodeMap.get(child).y);
+        } else {
+            if(vertex.node.annotations[this.groupingAnnotation]!==this._currentGroup){
+                currentY+=this.settings.groupGap;
+            }else{
+                currentY += 1;
+            }
+            this._currentGroup= vertex.node.annotations[this.groupingAnnotation];
+            vertex.y = currentY;
+        }
+        return currentY;
+    }
+
+    /**
+     * Set the direction to draw transmission (up or down).
+     * @param direction
+     */
+    // set direction(direction) {
+    //     this.update();
+    // }
+
+}
+
+
+
+
+/*
+ * Private methods, called by the class using the <function>.call(this) function.
+ */
 
 /**
  * The ArcLayout class
@@ -9185,9 +9309,10 @@ class FigTree {
             const selected = this.svgSelection.selectAll(`${selection ? selection : ".node"}`).select(".node-shape");
             selected.on("click", (vertex) => {
                 action(vertex);
+                this.update();
             });
         });
-        this.update();
+
     }
     /**
      * General Nodehover callback
@@ -9200,12 +9325,14 @@ class FigTree {
             const selected = this.svgSelection.selectAll(`${selection ? selection : ".node"}`).select(".node-shape");
             selected.on("mouseover", (vertex) => {
                 action.enter(vertex);
+                this.update();
+
             });
             selected.on("mouseout", (vertex) => {
                 action.exit(vertex);
+                this.update();
             });
         });
-        this.update();
     }
 
     /**
@@ -9215,20 +9342,19 @@ class FigTree {
      */
     onHoverBranch(action,selection=null){
         this.callbacks.branches.push(()=>{
-            // need to use 'function' here so that 'this' refers to the SVG
-            // element being hovered over.
-            const selected = selection? this.svgSelection.selectAll(".branch").select("branch-path"):selection;
-
+            const self = this;
+            const selected = this.svgSelection.selectAll(`${selection ? selection : ".branch"}`);
             selected.on("mouseover", function (d, i) {
                 action.enter(d);
-
+                self.update();
             });
             selected.on("mouseout", function (d, i) {
                 action.exit(d);
-
+                self.update();
             });
         });
         this.update();
+
     }
     /**
      * Registers some text to appear in a popup box when the mouse hovers over the selection.
@@ -9665,7 +9791,7 @@ function pointToPoint(points){
         path.push(`${xdiff} ${ydiff}`);
         currentPoint = point;
     }
-    return `M 0 0 ${path.join(" l ")} z`;
+    return `M 0 0 l ${path.join(" l ")} z`;
 }
 
 //TODO add interactive callbacks to instance so that when nodes are made again they can access those functions
@@ -10496,5 +10622,5 @@ function createElements(svg, margins) {
     this.tree.treeUpdateCallback = () => this.update();
 }
 
-export { ArcLayout, Bauble, CircleBauble, FigTree, Graph, Layout, RectangularBauble, RectangularLayout, RootToTipPlot, TransmissionLayout, Tree, Type };
+export { ArcLayout, Bauble, CircleBauble, ExplodedLayout, FigTree, Graph, Layout, RectangularBauble, RectangularLayout, RootToTipPlot, TransmissionLayout, Tree, Type };
 //# sourceMappingURL=figtree.esm.js.map

@@ -283,9 +283,10 @@ export class FigTree {
             const selected = this.svgSelection.selectAll(`${selection ? selection : ".node"}`).select(".node-shape");
             selected.on("click", (vertex) => {
                 action(vertex);
+                this.update();
             })
         })
-        this.update();
+
     }
     /**
      * General Nodehover callback
@@ -298,12 +299,14 @@ export class FigTree {
             const selected = this.svgSelection.selectAll(`${selection ? selection : ".node"}`).select(".node-shape");
             selected.on("mouseover", (vertex) => {
                 action.enter(vertex);
+                this.update();
+
             });
             selected.on("mouseout", (vertex) => {
                 action.exit(vertex);
+                this.update();
             });
         })
-        this.update();
     }
 
     /**
@@ -313,20 +316,19 @@ export class FigTree {
      */
     onHoverBranch(action,selection=null){
         this.callbacks.branches.push(()=>{
-            // need to use 'function' here so that 'this' refers to the SVG
-            // element being hovered over.
-            const selected = this.svgSelection.selectAll(`${selection ? selection : ".branch"}`).select("branch-path");
-
+            const self = this;
+            const selected = this.svgSelection.selectAll(`${selection ? selection : ".branch"}`);
             selected.on("mouseover", function (d, i) {
-                action.enter(this);
-
+                action.enter(d);
+                self.update();
             });
             selected.on("mouseout", function (d, i) {
-                action.exit(this);
-
+                action.exit(d);
+                self.update();
             });
         })
         this.update();
+
     }
     /**
      * Registers some text to appear in a popup box when the mouse hovers over the selection.
@@ -763,7 +765,7 @@ function pointToPoint(points){
         path.push(`${xdiff} ${ydiff}`)
         currentPoint = point;
     }
-    return `M 0 0 ${path.join(" l ")} z`;
+    return `M 0 0 l ${path.join(" l ")} z`;
 }
 
 //TODO add interactive callbacks to instance so that when nodes are made again they can access those functions

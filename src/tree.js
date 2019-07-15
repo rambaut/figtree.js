@@ -179,17 +179,19 @@ export class Tree {
      *
      * @returns {IterableIterator<IterableIterator<*|*>>}
      */
-    *preorder(startNode=this.root) {
-        const traverse = function *(node) {
-            yield node;
-            if (node.children) {
-                for (const child of node.children) {
-                    yield* traverse(child);
+    *preorder(startNode=this.root,filter=()=>true) {
+        const traverse = function *(node,filter) {
+            if(filter(node)) {
+                yield node;
+                if (node.children) {
+                    for (const child of node.children) {
+                        yield* traverse(child, filter);
+                    }
                 }
             }
         };
 
-        yield* traverse(startNode);
+        yield* traverse(startNode,filter);
     }
 
     /**
@@ -197,17 +199,19 @@ export class Tree {
      *
      * @returns {IterableIterator<IterableIterator<*|*>>}
      */
-    *postorder(startNode=this.root) {
-        const traverse = function *(node) {
-            if (node.children) {
-                for (const child of node.children) {
-                    yield* traverse(child);
+    *postorder(startNode=this.root,filter=()=>true) {
+        const traverse = function *(node,filter) {
+            if(filter(node)) {
+                if (node.children) {
+                    for (const child of node.children) {
+                        yield* traverse(child, filter);
+                    }
                 }
+                yield node;
             }
-            yield node;
         };
 
-        yield* traverse(startNode);
+        yield* traverse(startNode,filter);
     }
 
     /**
@@ -1032,7 +1036,7 @@ export class Tree {
  * A private recursive function that rotates nodes to give an ordering provided
  * by a function.
  * @param node
- * @param ordering
+ * @param ordering function that takes (a,number of tips form a, b, number of tips from b) and sorts a and be by the output.
  * @param callback an optional callback that is called each rotate
  * @returns {number}
  */
