@@ -6743,7 +6743,7 @@ class Tree {
         const factor = increasing ? 1 : -1;
         orderNodes.call(this, node, (nodeA, countA, nodeB, countB) => {
             return (countA - countB) * factor;
-        }, callback);
+        });
         this.treeUpdateCallback();
     }
 
@@ -6950,12 +6950,13 @@ class Tree {
         // remove the node from it's parent's children
         node.parent._children=node.parent._children.filter(n=>n!==node);
         //update child lengths
-        if(node.children){
-        node.children.forEach(child=>{
+        if(node._children){
+        node._children.forEach(child=>{
             child._length += node.length;
             child.parent = node.parent;// This also updates parent's children array;
             });
         }else{
+            console.log("removing parent");
             this.removeNode(node.parent); // if it's a tip then remove it's parent which is now degree two;
         }
         this.nodesUpdated = true;
@@ -7941,8 +7942,7 @@ class Layout {
         if(node.children) {
 
             if (this._cartoonStore.filter(c => c.format === "cartoon").find(c => c.node === node)) {
-                console.log('removing this');
-                console.log(node);
+
                 this._cartoonStore = this._cartoonStore.filter(c => !(c.format === "cartoon" && c.node === node));
             } else {
                 this._cartoonStore.push({
@@ -8449,7 +8449,10 @@ class ExplodedLayout extends RectangularLayout$1 {
         return {
             groupingAnnotation:"host",
             direction:"up",
-            groupGap:10,
+            interGroupGap:10,
+            intraGroupGap:5,
+            focusFactor:1,
+
         }
     };
 
@@ -8465,7 +8468,7 @@ class ExplodedLayout extends RectangularLayout$1 {
 
         const groupingAnnotation = {...ExplodedLayout.DEFAULT_SETTINGS(),...settings}['groupingAnnotation'];
         const locationChanges = tree.nodeList.filter(n=>n.parent && n.parent.annotations[groupingAnnotation]!==n.annotations[groupingAnnotation]);
-
+        console.log(locationChanges);
         locationChanges.forEach(node =>{
             const originalLocation = node.parent.annotations[groupingAnnotation];
             const finalLocation = node.annotations[groupingAnnotation];
@@ -8496,28 +8499,30 @@ class ExplodedLayout extends RectangularLayout$1 {
             if(a.annotations[this.groupingAnnotation]===b.annotations[this.groupingAnnotation]){
                 return postOrderNodes.indexOf(a)-postOrderNodes.indexOf(b);
             }else{
-                    return groupHeights.get(a.annotations[this.groupingAnnotation]) -  groupHeights.get(b.annotations[this.groupingAnnotation])
+                    return -1*(groupHeights.get(a.annotations[this.groupingAnnotation]) -  groupHeights.get(b.annotations[this.groupingAnnotation]))
                 }
         }))
 
 
     }
     setYPosition(vertex, currentY) {
-
         // check if there are children that that are in the same group and set position to mean
         // if do something else
         if(currentY===this.setInitialY()) {
             this._currentGroup = vertex.node.annotations[this.groupingAnnotation];
         }
+        const focusFactor=vertex.focused?this.settings.focusFactor:1;
 
         const includedInVertical = this.settings.includedInVerticalRange(vertex.node);
         if (!includedInVertical) {
             vertex.y = mean(vertex.node.children, (child) => this._nodeMap.get(child).y);
         } else {
             if(vertex.node.annotations[this.groupingAnnotation]!==this._currentGroup){
-                currentY+=this.settings.groupGap;
+                currentY+=focusFactor*this.settings.interGroupGap;
+            }else if(vertex.node.parent.annotations[this.groupingAnnotation]!==this._currentGroup){
+                currentY+=focusFactor*this.settings.intraGroupGap;
             }else{
-                currentY += 1;
+                currentY += focusFactor*1;
             }
             this._currentGroup= vertex.node.annotations[this.groupingAnnotation];
             vertex.y = currentY;

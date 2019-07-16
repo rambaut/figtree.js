@@ -22,7 +22,10 @@ export class ExplodedLayout extends RectangularLayout {
         return {
             groupingAnnotation:"host",
             direction:"up",
-            groupGap:10,
+            interGroupGap:10,
+            intraGroupGap:5,
+            focusFactor:1,
+
         }
     };
 
@@ -38,7 +41,7 @@ export class ExplodedLayout extends RectangularLayout {
 
         const groupingAnnotation = {...ExplodedLayout.DEFAULT_SETTINGS(),...settings}['groupingAnnotation'];
         const locationChanges = tree.nodeList.filter(n=>n.parent && n.parent.annotations[groupingAnnotation]!==n.annotations[groupingAnnotation]);
-
+        console.log(locationChanges)
         locationChanges.forEach(node =>{
             const originalLocation = node.parent.annotations[groupingAnnotation];
             const finalLocation = node.annotations[groupingAnnotation];
@@ -69,28 +72,30 @@ export class ExplodedLayout extends RectangularLayout {
             if(a.annotations[this.groupingAnnotation]===b.annotations[this.groupingAnnotation]){
                 return postOrderNodes.indexOf(a)-postOrderNodes.indexOf(b);
             }else{
-                    return groupHeights.get(a.annotations[this.groupingAnnotation]) -  groupHeights.get(b.annotations[this.groupingAnnotation])
+                    return -1*(groupHeights.get(a.annotations[this.groupingAnnotation]) -  groupHeights.get(b.annotations[this.groupingAnnotation]))
                 }
         }))
 
 
     }
     setYPosition(vertex, currentY) {
-
         // check if there are children that that are in the same group and set position to mean
         // if do something else
         if(currentY===this.setInitialY()) {
             this._currentGroup = vertex.node.annotations[this.groupingAnnotation];
         }
+        const focusFactor=vertex.focused?this.settings.focusFactor:1;
 
         const includedInVertical = this.settings.includedInVerticalRange(vertex.node);
         if (!includedInVertical) {
             vertex.y = mean(vertex.node.children, (child) => this._nodeMap.get(child).y)
         } else {
             if(vertex.node.annotations[this.groupingAnnotation]!==this._currentGroup){
-                currentY+=this.settings.groupGap;
+                currentY+=focusFactor*this.settings.interGroupGap;
+            }else if(vertex.node.parent.annotations[this.groupingAnnotation]!==this._currentGroup){
+                currentY+=focusFactor*this.settings.intraGroupGap;
             }else{
-                currentY += 1;
+                currentY += focusFactor*1;
             }
             this._currentGroup= vertex.node.annotations[this.groupingAnnotation];
             vertex.y = currentY;

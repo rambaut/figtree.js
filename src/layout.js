@@ -252,8 +252,7 @@ export class Layout {
         if(node.children) {
 
             if (this._cartoonStore.filter(c => c.format === "cartoon").find(c => c.node === node)) {
-                console.log('removing this')
-                console.log(node)
+
                 this._cartoonStore = this._cartoonStore.filter(c => !(c.format === "cartoon" && c.node === node));
             } else {
                 this._cartoonStore.push({

@@ -7810,7 +7810,7 @@
 	      var factor = increasing ? 1 : -1;
 	      orderNodes.call(this, node, function (nodeA, countA, nodeB, countB) {
 	        return (countA - countB) * factor;
-	      }, callback);
+	      });
 	      this.treeUpdateCallback();
 	    }
 	    /**
@@ -8096,12 +8096,13 @@
 	        return n !== node;
 	      }); //update child lengths
 
-	      if (node.children) {
-	        node.children.forEach(function (child) {
+	      if (node._children) {
+	        node._children.forEach(function (child) {
 	          child._length += node.length;
 	          child.parent = node.parent; // This also updates parent's children array;
 	        });
 	      } else {
+	        console.log("removing parent");
 	        this.removeNode(node.parent); // if it's a tip then remove it's parent which is now degree two;
 	      }
 
@@ -9469,8 +9470,6 @@
 	        }).find(function (c) {
 	          return c.node === node;
 	        })) {
-	          console.log('removing this');
-	          console.log(node);
 	          this._cartoonStore = this._cartoonStore.filter(function (c) {
 	            return !(c.format === "cartoon" && c.node === node);
 	          });
@@ -10234,7 +10233,9 @@
 	      return {
 	        groupingAnnotation: "host",
 	        direction: "up",
-	        groupGap: 10
+	        interGroupGap: 10,
+	        intraGroupGap: 5,
+	        focusFactor: 1
 	      };
 	    }
 	  }]);
@@ -10260,6 +10261,7 @@
 	    var locationChanges = tree.nodeList.filter(function (n) {
 	      return n.parent && n.parent.annotations[groupingAnnotation] !== n.annotations[groupingAnnotation];
 	    });
+	    console.log(locationChanges);
 	    locationChanges.forEach(function (node) {
 	      var originalLocation = node.parent.annotations[groupingAnnotation];
 	      var finalLocation = node.annotations[groupingAnnotation];
@@ -10327,7 +10329,7 @@
 	        if (a.annotations[_this2.groupingAnnotation] === b.annotations[_this2.groupingAnnotation]) {
 	          return postOrderNodes.indexOf(a) - postOrderNodes.indexOf(b);
 	        } else {
-	          return groupHeights.get(a.annotations[_this2.groupingAnnotation]) - groupHeights.get(b.annotations[_this2.groupingAnnotation]);
+	          return -1 * (groupHeights.get(a.annotations[_this2.groupingAnnotation]) - groupHeights.get(b.annotations[_this2.groupingAnnotation]));
 	        }
 	      });
 	    }
@@ -10342,6 +10344,7 @@
 	        this._currentGroup = vertex.node.annotations[this.groupingAnnotation];
 	      }
 
+	      var focusFactor = vertex.focused ? this.settings.focusFactor : 1;
 	      var includedInVertical = this.settings.includedInVerticalRange(vertex.node);
 
 	      if (!includedInVertical) {
@@ -10350,9 +10353,11 @@
 	        });
 	      } else {
 	        if (vertex.node.annotations[this.groupingAnnotation] !== this._currentGroup) {
-	          currentY += this.settings.groupGap;
+	          currentY += focusFactor * this.settings.interGroupGap;
+	        } else if (vertex.node.parent.annotations[this.groupingAnnotation] !== this._currentGroup) {
+	          currentY += focusFactor * this.settings.intraGroupGap;
 	        } else {
-	          currentY += 1;
+	          currentY += focusFactor * 1;
 	        }
 
 	        this._currentGroup = vertex.node.annotations[this.groupingAnnotation];
