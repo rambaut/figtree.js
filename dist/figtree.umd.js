@@ -10313,18 +10313,26 @@
 	        this._currentGroup = vertex.node.annotations[this.groupingAnnotation];
 	      }
 
-	      var focusFactor = vertex.focused ? this.settings.focusFactor : 1;
+	      var focusFactor = vertex.focused || this._lastVertexFocused ? this.settings.focusFactor : 1;
 	      var includedInVertical = this.settings.includedInVerticalRange(vertex.node);
 
 	      if (!includedInVertical) {
 	        vertex.y = mean(vertex.node.children, function (child) {
 	          return _this3._nodeMap.get(child).y;
 	        });
+
+	        if (vertex.node.parent) {
+	          if (vertex.node.annotations[this.groupingAnnotation] !== vertex.node.parent.annotations[this.groupingAnnotation]) {
+	            this._newIntraGroupNext = true;
+	          }
+	        }
 	      } else {
 	        if (vertex.node.annotations[this.groupingAnnotation] !== this._currentGroup) {
 	          currentY += focusFactor * this.settings.interGroupGap;
-	        } else if (vertex.node.parent.annotations[this.groupingAnnotation] !== this._currentGroup) {
+	          this._newIntraGroupNext = false;
+	        } else if (this._newIntraGroupNext) {
 	          currentY += focusFactor * this.settings.intraGroupGap;
+	          this._newIntraGroupNext = false;
 	        } else {
 	          currentY += focusFactor * 1;
 	        }
@@ -10333,6 +10341,7 @@
 	        vertex.y = currentY;
 	      }
 
+	      this._lastVertexFocused = vertex.focused;
 	      return currentY;
 	    }
 	    /**

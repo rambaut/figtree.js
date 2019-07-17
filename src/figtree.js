@@ -244,7 +244,6 @@ export class FigTree {
                 const proportion = Math.max(0.0, Math.min(1.0, (mx - x2) / (x1 - x2)));
                 action(edge, proportion);
                 self.update();
-
             })
         });
         this.update();
