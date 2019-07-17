@@ -70,7 +70,6 @@ export class Layout {
      * @param edges - objects with v1 (a vertex) and v0 (the parent vertex).
      */
     layout() {
-        console.log("layoutfired")
         this._horizontalScale = this.updateHorizontalScale();
 
         // get the nodes

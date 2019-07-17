@@ -9291,7 +9291,6 @@
 	    value: function layout() {
 	      var _this2 = this;
 
-	      console.log("layoutfired");
 	      this._horizontalScale = this.updateHorizontalScale(); // get the nodes
 
 	      var nodes = this.getTreeNodes();
@@ -10163,7 +10162,8 @@
 	    value: function DEFAULT_SETTINGS() {
 	      return {
 	        groupingAnnotation: "host",
-	        direction: "up"
+	        direction: "up",
+	        groupGap: 5
 	      };
 	    }
 	  }]);
@@ -10189,14 +10189,47 @@
 	      includedInVerticalRange: includedInVerticalRange
 	    }, settings)));
 	  }
-	  /**
-	   * Set the direction to draw transmission (up or down).
-	   * @param direction
-	   */
-	  // set direction(direction) {
-	  //     this.update();
-	  // }
 
+	  createClass(TransmissionLayout, [{
+	    key: "setYPosition",
+	    value: function setYPosition(vertex, currentY) {
+	      var _this = this;
+
+	      // check if there are children that that are in the same group and set position to mean
+	      // if do something else
+	      if (currentY === this.setInitialY()) {
+	        this._currentGroup = vertex.node.annotations[this.groupingAnnotation];
+	      }
+
+	      var includedInVertical = this.settings.includedInVerticalRange(vertex.node);
+
+	      if (!includedInVertical) {
+	        vertex.y = mean(vertex.node.children, function (child) {
+	          return _this._nodeMap.get(child).y;
+	        });
+	      } else {
+	        if (vertex.node.children && vertex.node.children.length === 1 && vertex.node.annotations[this.settings.groupingAnnotation] !== vertex.node.children[0].annotations[this.settings.groupingAnnotation]) {
+	          console.log("gapit");
+	          currentY += this.settings.groupGap;
+	        } else {
+	          currentY += 1;
+	        }
+
+	        this._currentGroup = vertex.node.annotations[this.groupingAnnotation];
+	        vertex.y = currentY;
+	      }
+
+	      return currentY;
+	    }
+	    /**
+	     * Set the direction to draw transmission (up or down).
+	     * @param direction
+	     */
+	    // set direction(direction) {
+	    //     this.update();
+	    // }
+
+	  }]);
 
 	  return TransmissionLayout;
 	}(RectangularLayout$1);
