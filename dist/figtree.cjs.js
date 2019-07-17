@@ -7760,6 +7760,7 @@ class Layout {
      * @param edges - objects with v1 (a vertex) and v0 (the parent vertex).
      */
     layout() {
+        console.log("layoutfired");
         this._horizontalScale = this.updateHorizontalScale();
 
         // get the nodes
@@ -8404,24 +8405,7 @@ class TransmissionLayout extends RectangularLayout$1 {
      * @param settings
      */
     constructor(tree, settings = {}) {
-        tree.order((nodeA, countA, nodeB, countB) => {
-            // otherwise just order by increasing node density
-            return (countB - countA);
-        });
-
         const groupingAnnotation = {...TransmissionLayout.DEFAULT_SETTINGS(),...settings}['groupingAnnotation'];
-        const locationChanges = tree.nodeList.filter(n=>n.parent && n.parent.annotations[groupingAnnotation]!==n.annotations[groupingAnnotation]);
-
-        locationChanges.forEach(node =>{
-            const originalLocation = node.parent.annotations[groupingAnnotation];
-            const finalLocation = node.annotations[groupingAnnotation];
-            const newNodeInLocation = tree.splitBranch(node);
-            newNodeInLocation.annotations[groupingAnnotation] = finalLocation;
-            const newNodeFromLocation = tree.splitBranch(newNodeInLocation,1.0);
-            newNodeFromLocation.annotations[groupingAnnotation] = originalLocation;
-        });
-
-
         // defined here so we can use the groupingAnnotation key
         const includedInVerticalRange = node  => !node.children || (node.children.length===1 && node.annotations[groupingAnnotation]!==node.children[0].annotations[groupingAnnotation]);
         super(tree, {...TransmissionLayout.DEFAULT_SETTINGS(),...{includedInVerticalRange:includedInVerticalRange}, ...settings});
@@ -8462,22 +8446,7 @@ class ExplodedLayout extends RectangularLayout$1 {
      * @param settings
      */
     constructor(tree, settings = {}) {
-        tree.order((nodeA, countA, nodeB, countB) => {
-            return (countB - countA);
-        });
-
         const groupingAnnotation = {...ExplodedLayout.DEFAULT_SETTINGS(),...settings}['groupingAnnotation'];
-        const locationChanges = tree.nodeList.filter(n=>n.parent && n.parent.annotations[groupingAnnotation]!==n.annotations[groupingAnnotation]);
-        console.log(locationChanges);
-        locationChanges.forEach(node =>{
-            const originalLocation = node.parent.annotations[groupingAnnotation];
-            const finalLocation = node.annotations[groupingAnnotation];
-            const newNodeInLocation = tree.splitBranch(node);
-            newNodeInLocation.annotations[groupingAnnotation] = finalLocation;
-            const newNodeFromLocation = tree.splitBranch(newNodeInLocation,1.0);
-            newNodeFromLocation.annotations[groupingAnnotation] = originalLocation;
-        });
-
 
         // defined here so we can use the groupingAnnotation key
         const includedInVerticalRange = node  => !node.children || (node.children.length===1 && node.annotations[groupingAnnotation]!==node.children[0].annotations[groupingAnnotation]);
@@ -9091,6 +9060,7 @@ class FigTree {
         this.settings = {...FigTree.DEFAULT_SETTINGS(), ...settings,...{styles:styles}};
 
         this.callbacks= {nodes:[],branches:[],cartoons:[]};
+        this._annotations =[];
 
         this.svg=svg;
 
@@ -9119,7 +9089,7 @@ class FigTree {
 
         //to selecting every time
         this.svgSelection = select(this.svg).select("g");
-
+        this.svgSelection.append("g").attr("class","annotation-layer");
         this.svgSelection.append("g").attr("class", "axes-layer");
         this.svgSelection.append("g").attr("class", "cartoon-layer");
 
@@ -9175,8 +9145,8 @@ class FigTree {
         this.scales.height=height;
 
         updateAxis.call(this);
+        updateAnnoations.call(this);
         updateCartoons.call(this);
-
         updateBranches.call(this);
 
         if (this.settings.backgroundBorder > 0) {
@@ -9277,6 +9247,8 @@ class FigTree {
                 const mx = mouse(this)[0];
                 const proportion = Math.max(0.0, Math.min(1.0, (mx - x2) / (x1 - x2)));
                 action(edge, proportion);
+                self.update();
+
             });
         });
         this.update();
@@ -9395,6 +9367,11 @@ class FigTree {
         this.layout = layout;
         this.update();
     }
+
+    addAnnotation(annotation){
+        this._annotations.push(annotation);
+        this.update();
+    }
 }
 
 /*
@@ -9485,10 +9462,6 @@ function updateNodes() {
         .attr("dx", "-6")
         .attr("dy", d => (d.labelBelow ? -8 : +8))
         .text((d) => d.leftLabel);
-
-
-
-
 
     // EXIT
     // Remove old elements as needed.
@@ -9785,8 +9758,6 @@ function updateCartoonStyles(){
             .attr(key,c=>CartoonAttrMap.get(key)(c.vertices[0].node));
         // attributes are set by the "root" node
     }
-
-
 }
 
 function pointToPoint(points){
@@ -9802,6 +9773,13 @@ function pointToPoint(points){
     }
     return `M 0 0 l ${path.join(" l ")} z`;
 }
+
+function updateAnnoations(){
+    for( const annotation of this._annotations){
+        annotation.call(this);
+    }
+}
+
 
 //TODO add interactive callbacks to instance so that when nodes are made again they can access those functions
 //TODO transtion on incoming and outgoing objects so they match the movement in the diagram;

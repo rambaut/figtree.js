@@ -30,24 +30,7 @@ export class TransmissionLayout extends RectangularLayout {
      * @param settings
      */
     constructor(tree, settings = {}) {
-        tree.order((nodeA, countA, nodeB, countB) => {
-            // otherwise just order by increasing node density
-            return (countB - countA);
-        });
-
         const groupingAnnotation = {...TransmissionLayout.DEFAULT_SETTINGS(),...settings}['groupingAnnotation'];
-        const locationChanges = tree.nodeList.filter(n=>n.parent && n.parent.annotations[groupingAnnotation]!==n.annotations[groupingAnnotation]);
-
-        locationChanges.forEach(node =>{
-            const originalLocation = node.parent.annotations[groupingAnnotation];
-            const finalLocation = node.annotations[groupingAnnotation];
-            const newNodeInLocation = tree.splitBranch(node);
-            newNodeInLocation.annotations[groupingAnnotation] = finalLocation;
-            const newNodeFromLocation = tree.splitBranch(newNodeInLocation,1.0);
-            newNodeFromLocation.annotations[groupingAnnotation] = originalLocation;
-        })
-
-
         // defined here so we can use the groupingAnnotation key
         const includedInVerticalRange = node  => !node.children || (node.children.length===1 && node.annotations[groupingAnnotation]!==node.children[0].annotations[groupingAnnotation])
         super(tree, {...TransmissionLayout.DEFAULT_SETTINGS(),...{includedInVerticalRange:includedInVerticalRange}, ...settings});

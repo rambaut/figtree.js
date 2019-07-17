@@ -9291,6 +9291,7 @@
 	    value: function layout() {
 	      var _this2 = this;
 
+	      console.log("layoutfired");
 	      this._horizontalScale = this.updateHorizontalScale(); // get the nodes
 
 	      var nodes = this.getTreeNodes();
@@ -10177,24 +10178,8 @@
 
 	    classCallCheck(this, TransmissionLayout);
 
-	    tree.order(function (nodeA, countA, nodeB, countB) {
-	      // otherwise just order by increasing node density
-	      return countB - countA;
-	    });
+	    var groupingAnnotation = objectSpread({}, TransmissionLayout.DEFAULT_SETTINGS(), settings)['groupingAnnotation']; // defined here so we can use the groupingAnnotation key
 
-	    var groupingAnnotation = objectSpread({}, TransmissionLayout.DEFAULT_SETTINGS(), settings)['groupingAnnotation'];
-
-	    var locationChanges = tree.nodeList.filter(function (n) {
-	      return n.parent && n.parent.annotations[groupingAnnotation] !== n.annotations[groupingAnnotation];
-	    });
-	    locationChanges.forEach(function (node) {
-	      var originalLocation = node.parent.annotations[groupingAnnotation];
-	      var finalLocation = node.annotations[groupingAnnotation];
-	      var newNodeInLocation = tree.splitBranch(node);
-	      newNodeInLocation.annotations[groupingAnnotation] = finalLocation;
-	      var newNodeFromLocation = tree.splitBranch(newNodeInLocation, 1.0);
-	      newNodeFromLocation.annotations[groupingAnnotation] = originalLocation;
-	    }); // defined here so we can use the groupingAnnotation key
 
 	    var includedInVerticalRange = function includedInVerticalRange(node) {
 	      return !node.children || node.children.length === 1 && node.annotations[groupingAnnotation] !== node.children[0].annotations[groupingAnnotation];
@@ -10252,24 +10237,8 @@
 
 	    classCallCheck(this, ExplodedLayout);
 
-	    tree.order(function (nodeA, countA, nodeB, countB) {
-	      return countB - countA;
-	    });
+	    var groupingAnnotation = objectSpread({}, ExplodedLayout.DEFAULT_SETTINGS(), settings)['groupingAnnotation']; // defined here so we can use the groupingAnnotation key
 
-	    var groupingAnnotation = objectSpread({}, ExplodedLayout.DEFAULT_SETTINGS(), settings)['groupingAnnotation'];
-
-	    var locationChanges = tree.nodeList.filter(function (n) {
-	      return n.parent && n.parent.annotations[groupingAnnotation] !== n.annotations[groupingAnnotation];
-	    });
-	    console.log(locationChanges);
-	    locationChanges.forEach(function (node) {
-	      var originalLocation = node.parent.annotations[groupingAnnotation];
-	      var finalLocation = node.annotations[groupingAnnotation];
-	      var newNodeInLocation = tree.splitBranch(node);
-	      newNodeInLocation.annotations[groupingAnnotation] = finalLocation;
-	      var newNodeFromLocation = tree.splitBranch(newNodeInLocation, 1.0);
-	      newNodeFromLocation.annotations[groupingAnnotation] = originalLocation;
-	    }); // defined here so we can use the groupingAnnotation key
 
 	    var includedInVerticalRange = function includedInVerticalRange(node) {
 	      return !node.children || node.children.length === 1 && node.annotations[groupingAnnotation] !== node.children[0].annotations[groupingAnnotation];
@@ -11050,6 +11019,7 @@
 	      branches: [],
 	      cartoons: []
 	    };
+	    this._annotations = [];
 	    this.svg = svg;
 	  }
 
@@ -11079,6 +11049,7 @@
 	      select(this.svg).append("g").attr("transform", "translate(".concat(this.margins.left, ",").concat(this.margins.top, ")")); //to selecting every time
 
 	      this.svgSelection = select(this.svg).select("g");
+	      this.svgSelection.append("g").attr("class", "annotation-layer");
 	      this.svgSelection.append("g").attr("class", "axes-layer");
 	      this.svgSelection.append("g").attr("class", "cartoon-layer");
 	      this.svgSelection.append("g").attr("class", "branches-layer");
@@ -11132,6 +11103,7 @@
 	      this.scales.width = width;
 	      this.scales.height = height;
 	      updateAxis.call(this);
+	      updateAnnoations.call(this);
 	      updateCartoons.call(this);
 	      updateBranches.call(this);
 
@@ -11247,6 +11219,7 @@
 	          var mx = mouse(this)[0];
 	          var proportion = Math.max(0.0, Math.min(1.0, (mx - x2) / (x1 - x2)));
 	          action(edge, proportion);
+	          self.update();
 	        });
 	      });
 	      this.update();
@@ -11385,6 +11358,13 @@
 	        var tooltip = document.getElementById("tooltip");
 	        tooltip.style.display = "none";
 	      });
+	    }
+	  }, {
+	    key: "addAnnotation",
+	    value: function addAnnotation(annotation) {
+	      this._annotations.push(annotation);
+
+	      this.update();
 	    }
 	  }, {
 	    key: "treeLayout",
@@ -11873,6 +11853,32 @@
 	  }
 
 	  return "M 0 0 l ".concat(path.join(" l "), " z");
+	}
+
+	function updateAnnoations() {
+	  var _iteratorNormalCompletion9 = true;
+	  var _didIteratorError9 = false;
+	  var _iteratorError9 = undefined;
+
+	  try {
+	    for (var _iterator9 = this._annotations[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+	      var annotation = _step9.value;
+	      annotation.call(this);
+	    }
+	  } catch (err) {
+	    _didIteratorError9 = true;
+	    _iteratorError9 = err;
+	  } finally {
+	    try {
+	      if (!_iteratorNormalCompletion9 && _iterator9["return"] != null) {
+	        _iterator9["return"]();
+	      }
+	    } finally {
+	      if (_didIteratorError9) {
+	        throw _iteratorError9;
+	      }
+	    }
+	  }
 	} //TODO add interactive callbacks to instance so that when nodes are made again they can access those functions
 	//TODO transtion on incoming and outgoing objects so they match the movement in the diagram;
 
