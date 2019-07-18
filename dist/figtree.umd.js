@@ -11746,6 +11746,8 @@
 	}
 
 	function updateNodeBackgroundStyles() {
+	  var _this12 = this;
+
 	  var nodesBackgroundLayer = this.svgSelection.select(".nodes-background-layer"); // DATA JOIN
 	  // Join new data with old elements, if any.
 
@@ -11761,7 +11763,7 @@
 	      nodes // .transition()
 	      // .duration(this.settings.transitionDuration)
 	      .attr(key, function (d) {
-	        return nodeBackgroundsAttrMap.get(key)(d.node);
+	        return nodeBackgroundsAttrMap.get(key).call(_this12, d.node);
 	      });
 	    };
 
@@ -11785,6 +11787,8 @@
 	}
 
 	function updateBranchStyles() {
+	  var _this13 = this;
+
 	  var branchesLayer = this.svgSelection.select(".branches-layer"); // DATA JOIN
 	  // Join new data with old elements, if any.
 
@@ -11800,7 +11804,7 @@
 	      branches // .transition()
 	      // .duration(this.settings.transitionDuration)
 	      .attr(key, function (d) {
-	        return branchAttrMap.get(key)(d.v1.node);
+	        return branchAttrMap.get(key).call(_this13, d.v1.node);
 	      });
 	    };
 
@@ -11824,6 +11828,8 @@
 	}
 
 	function updateCartoonStyles() {
+	  var _this14 = this;
+
 	  var cartoonLayer = this.svgSelection.select(".cartoon-layer"); // DATA JOIN
 	  // Join new data with old elements, if any.
 
@@ -11839,7 +11845,7 @@
 	      cartoons // .transition()
 	      // .duration(this.settings.transitionDuration)
 	      .attr(key, function (c) {
-	        return CartoonAttrMap.get(key)(c.vertices[0].node);
+	        return CartoonAttrMap.get(key).call(_this14, c.vertices[0].node);
 	      }); // attributes are set by the "root" node
 	    };
 

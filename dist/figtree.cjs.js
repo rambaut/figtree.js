@@ -9756,7 +9756,7 @@ function updateNodeBackgroundStyles(){
         nodes
             // .transition()
             // .duration(this.settings.transitionDuration)
-            .attr(key,d=>nodeBackgroundsAttrMap.get(key)(d.node));
+            .attr(key,d=>nodeBackgroundsAttrMap.get(key).call(this,d.node));
     }
 
 }
@@ -9773,7 +9773,7 @@ function updateBranchStyles(){
         branches
             // .transition()
             // .duration(this.settings.transitionDuration)
-            .attr(key,d=>branchAttrMap.get(key)(d.v1.node));
+            .attr(key,d=>branchAttrMap.get(key).call(this,d.v1.node));
     }
 
 }
@@ -9789,7 +9789,7 @@ function updateCartoonStyles(){
         cartoons
         // .transition()
         // .duration(this.settings.transitionDuration)
-            .attr(key,c=>CartoonAttrMap.get(key)(c.vertices[0].node));
+            .attr(key,c=>CartoonAttrMap.get(key).call(this,c.vertices[0].node));
         // attributes are set by the "root" node
     }
 }
