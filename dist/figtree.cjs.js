@@ -6444,6 +6444,7 @@ class Tree {
         this._tipMap = new Map(this.externalNodes.map( (tip) => [tip.name, tip] ));
 
         this.nodesUpdated = false;
+        this.offset = 0;
         // a callback function that is called whenever the tree is changed
         this.treeUpdateCallback = () => {};
     };
@@ -7379,7 +7380,7 @@ class Tree {
         const trees=[];
 
         const nexusTokens = nexus.split(/\s*Begin|begin|end|End|BEGIN|END\s*/);
-        const firstToken = nexusTokens.shift();
+        const firstToken = nexusTokens.shift().trim();
         if(firstToken.toLowerCase()!=='#nexus'){
             throw Error("File does not begin with #NEXUS is it a nexus file?")
         }
@@ -7460,8 +7461,9 @@ function orderNodes(node, ordering, callback = null) {
 function calculateHeights() {
 
     const maxRTT = max(this.rootToTipLengths());
-    this.nodeList.forEach((node) => node._height = this.origin - (maxRTT - this.rootToTipLength(node)) );
+    this.nodeList.forEach((node) => node._height = this.origin -this.offset- (maxRTT - this.rootToTipLength(node)) );
     this.heightsKnown = true;
+    this.treeUpdateCallback();
 }
 
 /**
@@ -9054,13 +9056,14 @@ class FigTree {
 
     static DEFAULT_SETTINGS() {
         return {
-            xAxisTickArguments: [5, "f"],
             xAxisTitle: "Height",
             // nodeRadius: 6,
             hoverBorder: 2,
             backgroundBorder: 0,
             baubles: [],
             transitionDuration:500,
+            tickFormat:format(".2f"),
+            ticks:5
         };
     }
     static DEFAULT_STYLES(){
@@ -9685,7 +9688,7 @@ function addAxis() {
 
 
     const xAxis = axisBottom( linear$1().domain(this.layout.horizontalScale.domain()).range(this.scales.x.range()))
-        .tickArguments(this.settings.xAxisTickArguments);
+        .ticks(this.settings.ticks).tickFormat(this.settings.tickFormat);
 
     const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
 
@@ -9712,7 +9715,7 @@ function addAxis() {
 
 function updateAxis(){
     const xAxis = axisBottom( linear$1().domain(this.layout.horizontalScale.domain()).range(this.scales.x.range()))
-        .tickArguments(this.settings.xAxisTickArguments);
+        .ticks(this.settings.ticks).tickFormat(this.settings.tickFormat);
 
     const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
 

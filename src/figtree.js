@@ -1,5 +1,5 @@
 "use strict";
-import {select,selectAll,scaleLinear,axisBottom,mouse,event} from "d3";
+import {select,selectAll,scaleLinear,axisBottom,mouse,event,format} from "d3";
 
 /** @module figtree */
 // const d3 = require("d3");
@@ -15,13 +15,14 @@ export class FigTree {
 
     static DEFAULT_SETTINGS() {
         return {
-            xAxisTickArguments: [5, "f"],
             xAxisTitle: "Height",
             // nodeRadius: 6,
             hoverBorder: 2,
             backgroundBorder: 0,
             baubles: [],
             transitionDuration:500,
+            tickFormat:format(".2f"),
+            ticks:5
         };
     }
     static DEFAULT_STYLES(){
@@ -646,7 +647,7 @@ function addAxis() {
 
 
     const xAxis = axisBottom( scaleLinear().domain(this.layout.horizontalScale.domain()).range(this.scales.x.range()))
-        .tickArguments(this.settings.xAxisTickArguments);
+        .ticks(this.settings.ticks).tickFormat(this.settings.tickFormat)
 
     const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
 
@@ -673,7 +674,7 @@ function addAxis() {
 
 function updateAxis(){
     const xAxis = axisBottom( scaleLinear().domain(this.layout.horizontalScale.domain()).range(this.scales.x.range()))
-        .tickArguments(this.settings.xAxisTickArguments);
+        .ticks(this.settings.ticks).tickFormat(this.settings.tickFormat)
 
     const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
 

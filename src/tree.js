@@ -52,6 +52,7 @@ export class Tree {
         this._tipMap = new Map(this.externalNodes.map( (tip) => [tip.name, tip] ));
 
         this.nodesUpdated = false;
+        this.offset = 0;
         // a callback function that is called whenever the tree is changed
         this.treeUpdateCallback = () => {};
     };
@@ -991,7 +992,7 @@ export class Tree {
         const trees=[];
 
         const nexusTokens = nexus.split(/\s*Begin|begin|end|End|BEGIN|END\s*/);
-        const firstToken = nexusTokens.shift();
+        const firstToken = nexusTokens.shift().trim();
         if(firstToken.toLowerCase()!=='#nexus'){
             throw Error("File does not begin with #NEXUS is it a nexus file?")
         }
@@ -1072,8 +1073,9 @@ function orderNodes(node, ordering, callback = null) {
 function calculateHeights() {
 
     const maxRTT = max(this.rootToTipLengths());
-    this.nodeList.forEach((node) => node._height = this.origin - (maxRTT - this.rootToTipLength(node)) );
+    this.nodeList.forEach((node) => node._height = this.origin -this.offset- (maxRTT - this.rootToTipLength(node)) );
     this.heightsKnown = true;
+    this.treeUpdateCallback();
 }
 
 /**

@@ -7349,7 +7349,8 @@
 	    this._tipMap = new Map(this.externalNodes.map(function (tip) {
 	      return [tip.name, tip];
 	    }));
-	    this.nodesUpdated = false; // a callback function that is called whenever the tree is changed
+	    this.nodesUpdated = false;
+	    this.offset = 0; // a callback function that is called whenever the tree is changed
 
 	    this.treeUpdateCallback = function () {};
 	  }
@@ -8733,7 +8734,7 @@
 	    value: function parseNexus(nexus) {
 	      var trees = [];
 	      var nexusTokens = nexus.split(/\s*Begin|begin|end|End|BEGIN|END\s*/);
-	      var firstToken = nexusTokens.shift();
+	      var firstToken = nexusTokens.shift().trim();
 
 	      if (firstToken.toLowerCase() !== '#nexus') {
 	        throw Error("File does not begin with #NEXUS is it a nexus file?");
@@ -8888,9 +8889,10 @@
 
 	  var maxRTT = max(this.rootToTipLengths());
 	  this.nodeList.forEach(function (node) {
-	    return node._height = _this7.origin - (maxRTT - _this7.rootToTipLength(node));
+	    return node._height = _this7.origin - _this7.offset - (maxRTT - _this7.rootToTipLength(node));
 	  });
 	  this.heightsKnown = true;
+	  this.treeUpdateCallback();
 	}
 	/**
 	 * A private recursive function that calculates the length of the branch below each node
@@ -10992,13 +10994,14 @@
 	    key: "DEFAULT_SETTINGS",
 	    value: function DEFAULT_SETTINGS() {
 	      return {
-	        xAxisTickArguments: [5, "f"],
 	        xAxisTitle: "Height",
 	        // nodeRadius: 6,
 	        hoverBorder: 2,
 	        backgroundBorder: 0,
 	        baubles: [],
-	        transitionDuration: 500
+	        transitionDuration: 500,
+	        tickFormat: format(".2f"),
+	        ticks: 5
 	      };
 	    }
 	  }, {
@@ -11692,7 +11695,7 @@
 
 
 	function addAxis() {
-	  var xAxis = axisBottom(linear$1().domain(this.layout.horizontalScale.domain()).range(this.scales.x.range())).tickArguments(this.settings.xAxisTickArguments);
+	  var xAxis = axisBottom(linear$1().domain(this.layout.horizontalScale.domain()).range(this.scales.x.range())).ticks(this.settings.ticks).tickFormat(this.settings.tickFormat);
 	  var xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
 	  var axesLayer = this.svgSelection.select(".axes-layer");
 	  axesLayer.append("g").attr("id", "x-axis").attr("class", "axis").attr("transform", "translate(0, ".concat(this.scales.height - this.margins.bottom + 5, ")")).call(xAxis);
@@ -11700,7 +11703,7 @@
 	}
 
 	function updateAxis() {
-	  var xAxis = axisBottom(linear$1().domain(this.layout.horizontalScale.domain()).range(this.scales.x.range())).tickArguments(this.settings.xAxisTickArguments);
+	  var xAxis = axisBottom(linear$1().domain(this.layout.horizontalScale.domain()).range(this.scales.x.range())).ticks(this.settings.ticks).tickFormat(this.settings.tickFormat);
 	  var xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
 	  var axesLayer = this.svgSelection.select(".axes-layer");
 	  axesLayer.select("#x-axis").call(xAxis);
