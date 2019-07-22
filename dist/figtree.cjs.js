@@ -9323,14 +9323,15 @@ class FigTree {
      * @param selection
      */
     onClickNode(action, selection = null) {
+        const self = this;
         this.callbacks.nodes.push(()=>{
             const selected = this.svgSelection.selectAll(`${selection ? selection : ".node"}`).select(".node-shape");
             selected.on("click", (vertex) => {
                 action(vertex);
-                this.update();
+                self.update();
             });
         });
-
+    this.update();
     }
     /**
      * General Nodehover callback

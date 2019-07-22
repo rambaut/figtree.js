@@ -11311,15 +11311,16 @@
 	      var _this5 = this;
 
 	      var selection = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+	      var self = this;
 	      this.callbacks.nodes.push(function () {
 	        var selected = _this5.svgSelection.selectAll("".concat(selection ? selection : ".node")).select(".node-shape");
 
 	        selected.on("click", function (vertex) {
 	          action(vertex);
-
-	          _this5.update();
+	          self.update();
 	        });
 	      });
+	      this.update();
 	    }
 	    /**
 	     * General Nodehover callback
