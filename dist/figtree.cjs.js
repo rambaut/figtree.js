@@ -7674,6 +7674,12 @@ class Node{
         for(const child of this._children){
             child.parent=this;
         }
+        this._tree.nodesUpdated = true;
+    }
+    addChild(node){
+        const newNode = new Node(node);
+        this.children = [...this._children,newNode];
+        this._tree.addAnnotations(newNode.annotations);
     }
     get parent() {
         return this._parent;
@@ -9063,7 +9069,8 @@ class FigTree {
             baubles: [],
             transitionDuration:500,
             tickFormat:format(".2f"),
-            ticks:5
+            ticks:5,
+
         };
     }
     static DEFAULT_STYLES(){

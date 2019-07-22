@@ -9096,6 +9096,14 @@
 	  }
 
 	  createClass(Node, [{
+	    key: "addChild",
+	    value: function addChild(node) {
+	      var newNode = new Node(node);
+	      this.children = [].concat(toConsumableArray(this._children), [newNode]);
+
+	      this._tree.addAnnotations(newNode.annotations);
+	    }
+	  }, {
 	    key: "level",
 	    get: function get() {
 	      return this._level;
@@ -9187,6 +9195,8 @@
 	          }
 	        }
 	      }
+
+	      this._tree.nodesUpdated = true;
 	    }
 	  }, {
 	    key: "parent",

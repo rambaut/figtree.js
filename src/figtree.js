@@ -22,7 +22,8 @@ export class FigTree {
             baubles: [],
             transitionDuration:500,
             tickFormat:format(".2f"),
-            ticks:5
+            ticks:5,
+
         };
     }
     static DEFAULT_STYLES(){
