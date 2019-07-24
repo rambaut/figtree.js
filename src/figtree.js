@@ -1,5 +1,5 @@
 "use strict";
-import {select,selectAll,scaleLinear,axisBottom,mouse,event,format} from "d3";
+import {select,easeLinear,scaleLinear,axisBottom,mouse,event,format} from "d3";
 
 /** @module figtree */
 // const d3 = require("d3");
@@ -21,6 +21,7 @@ export class FigTree {
             backgroundBorder: 0,
             baubles: [],
             transitionDuration:500,
+            transitionEase:easeLinear,
             tickFormat:format(".2f"),
             ticks:5,
 
@@ -425,6 +426,7 @@ function updateNodes() {
     nodes
         .transition()
         .duration(this.settings.transitionDuration)
+        .ease(this.settings.transitionEase)
         .attr("class", (v) => ["node", ...v.classes].join(" "))
         .attr("transform", (v) => {
             return `translate(${this.scales.x(v.x)}, ${this.scales.y(v.y)})`;
@@ -437,13 +439,16 @@ function updateNodes() {
         const d = nodes.select(".node-shape")
             .filter(bauble.vertexFilter)
             .transition()
-            .duration(this.settings.transitionDuration);
+            .duration(this.settings.transitionDuration)
+            .ease(this.settings.transitionEase)
+        ;
         bauble.updateShapes(d)
     });
 
     nodes.select("text .node-label .name")
         .transition()
         .duration(this.settings.transitionDuration)
+        .ease(this.settings.transitionEase)
         .attr("class", "node-label name")
         .attr("text-anchor", "start")
         .attr("alignment-baseline", "middle")
@@ -454,6 +459,7 @@ function updateNodes() {
     nodes.select("text .node-label .support")
         .transition()
         .duration(this.settings.transitionDuration)
+        .ease(this.settings.transitionEase)
         .attr("alignment-baseline", d => (d.labelBelow ? "bottom": "hanging" ))
         .attr("class", "node-label support")
         .attr("text-anchor", "end")
@@ -507,6 +513,7 @@ function updateNodeBackgrounds() {
             .filter(bauble.vertexFilter)
             .transition()
             .duration(this.settings.transitionDuration)
+            .ease(this.settings.transitionEase)
             .attr("transform", (v) => {
                 return `translate(${this.scales.x(v.x)}, ${this.scales.y(v.y)})`;
             });
@@ -566,6 +573,7 @@ function updateBranches() {
     branches
         .transition()
         .duration(this.settings.transitionDuration)
+        .ease(this.settings.transitionEase)
         .attr("class", (e) => ["branch", ...e.classes].join(" "))
         .attr("transform", (e) => {
             return `translate(${this.scales.x(e.v0.x)}, ${this.scales.y(e.v1.y)})`;
@@ -622,6 +630,7 @@ function updateCartoons(){
     cartoons
         .transition()
         .duration(this.settings.transitionDuration)
+        .ease(this.settings.transitionEase)
         .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
         .attr("transform", (c) => {
             return `translate(${this.scales.x(c.vertices[0].x)}, ${this.scales.y(c.vertices[0].y)})`

@@ -45,14 +45,9 @@ export class TransmissionLayout extends RectangularLayout {
 
         const includedInVertical = this.settings.includedInVerticalRange(vertex.node);
         if (!includedInVertical) {
-            vertex.y = mean(vertex.node.children,(child) => {
-                const childVertex = this._nodeMap.get(child);
-                if(childVertex.visibility===VertexStyle.INCLUDED||childVertex.visibility===VertexStyle.HIDDEN){
-                    return childVertex.y
-                }else{
-                    return null;
-                }
-            })
+            const vertexChildren = vertex.node.children.map(child=>this._nodeMap.get(child)).filter(child=>child.visibility===VertexStyle.INCLUDED||child.visibility===VertexStyle.HIDDEN);
+            vertex.y = mean(vertexChildren,(child) => child.y);
+
         } else {
             if(vertex.node.children &&(  vertex.node.children.length===1 && vertex.node.annotations[this.settings.groupingAnnotation]!==vertex.node.children[0].annotations[this.settings.groupingAnnotation])){
                 currentY+=focusFactor*this.settings.groupGap;

@@ -57,15 +57,9 @@ export class RectangularLayout extends Layout {
 
         if(!includedInVertical){
             // make this better
+            const vertexChildren = vertex.node.children.map(child=>this._nodeMap.get(child)).filter(child=>child.visibility===VertexStyle.INCLUDED||child.visibility===VertexStyle.HIDDEN);
+            vertex.y = mean(vertexChildren,(child) => child.y);
 
-            vertex.y = mean(vertex.node.children,(child) => {
-                const childVertex = this._nodeMap.get(child);
-                if(childVertex.visibility===VertexStyle.INCLUDED||childVertex.visibility===VertexStyle.HIDDEN){
-                    return childVertex.y
-            }else{
-                    return null;
-                }
-            })
         }
         else{
             currentY += focusFactor*1;

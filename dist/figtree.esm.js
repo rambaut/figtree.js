@@ -3347,6 +3347,10 @@ Transition.prototype = transition.prototype = {
   end: transition_end
 };
 
+function linear$1(t) {
+  return +t;
+}
+
 function cubicInOut(t) {
   return ((t *= 2) <= 1 ? t * t * t : (t -= 2) * t * t + 2) / 2;
 }
@@ -4802,11 +4806,11 @@ function linearish(scale) {
   return scale;
 }
 
-function linear$1() {
+function linear$2() {
   var scale = continuous(identity$3, identity$3);
 
   scale.copy = function() {
-    return copy(scale, linear$1());
+    return copy(scale, linear$2());
   };
 
   initRange.apply(scale, arguments);
@@ -8337,7 +8341,7 @@ class RectangularLayout extends Layout {
 
     updateHorizontalScale() {
         const newScale = this.settings.horizontalScale ? this.settings.horizontalScale :
-            linear$1().domain([this.tree.rootNode.height*this.settings.branchScale, this.tree.origin]).range(this._horizontalRange);
+            linear$2().domain([this.tree.rootNode.height*this.settings.branchScale, this.tree.origin]).range(this._horizontalRange);
         return newScale;
     }
 
@@ -8357,15 +8361,9 @@ class RectangularLayout extends Layout {
 
         if(!includedInVertical){
             // make this better
+            const vertexChildren = vertex.node.children.map(child=>this._nodeMap.get(child)).filter(child=>child.visibility===VertexStyle.INCLUDED||child.visibility===VertexStyle.HIDDEN);
+            vertex.y = mean(vertexChildren,(child) => child.y);
 
-            vertex.y = mean(vertex.node.children,(child) => {
-                const childVertex = this._nodeMap.get(child);
-                if(childVertex.visibility===VertexStyle.INCLUDED||childVertex.visibility===VertexStyle.HIDDEN){
-                    return childVertex.y
-            }else{
-                    return null;
-                }
-            });
         }
         else{
             currentY += focusFactor*1;
@@ -8442,7 +8440,7 @@ class RectangularLayout$1 extends Layout {
 
     updateHorizontalScale() {
         const newScale = this.settings.horizontalScale ? this.settings.horizontalScale :
-            linear$1().domain([this.tree.rootNode.height*this.settings.branchScale, this.tree.origin]).range(this._horizontalRange);
+            linear$2().domain([this.tree.rootNode.height*this.settings.branchScale, this.tree.origin]).range(this._horizontalRange);
         return newScale;
     }
 
@@ -8462,15 +8460,9 @@ class RectangularLayout$1 extends Layout {
 
         if(!includedInVertical){
             // make this better
+            const vertexChildren = vertex.node.children.map(child=>this._nodeMap.get(child)).filter(child=>child.visibility===VertexStyle.INCLUDED||child.visibility===VertexStyle.HIDDEN);
+            vertex.y = mean(vertexChildren,(child) => child.y);
 
-            vertex.y = mean(vertex.node.children,(child) => {
-                const childVertex = this._nodeMap.get(child);
-                if(childVertex.visibility===VertexStyle.INCLUDED||childVertex.visibility===VertexStyle.HIDDEN){
-                    return childVertex.y
-            }else{
-                    return null;
-                }
-            });
         }
         else{
             currentY += focusFactor*1;
@@ -8550,14 +8542,9 @@ class TransmissionLayout extends RectangularLayout$1 {
 
         const includedInVertical = this.settings.includedInVerticalRange(vertex.node);
         if (!includedInVertical) {
-            vertex.y = mean(vertex.node.children,(child) => {
-                const childVertex = this._nodeMap.get(child);
-                if(childVertex.visibility===VertexStyle.INCLUDED||childVertex.visibility===VertexStyle.HIDDEN){
-                    return childVertex.y
-                }else{
-                    return null;
-                }
-            });
+            const vertexChildren = vertex.node.children.map(child=>this._nodeMap.get(child)).filter(child=>child.visibility===VertexStyle.INCLUDED||child.visibility===VertexStyle.HIDDEN);
+            vertex.y = mean(vertexChildren,(child) => child.y);
+
         } else {
             if(vertex.node.children &&(  vertex.node.children.length===1 && vertex.node.annotations[this.settings.groupingAnnotation]!==vertex.node.children[0].annotations[this.settings.groupingAnnotation])){
                 currentY+=focusFactor*this.settings.groupGap;
@@ -9204,6 +9191,7 @@ class FigTree {
             backgroundBorder: 0,
             baubles: [],
             transitionDuration:500,
+            transitionEase:linear$1,
             tickFormat:format(".2f"),
             ticks:5,
 
@@ -9282,11 +9270,11 @@ class FigTree {
 
 
         // create the scales
-        const xScale = linear$1()
+        const xScale = linear$2()
             .domain(this.layout.horizontalRange)
             .range([this.margins.left, width - this.margins.right]);
 
-        const yScale = linear$1()
+        const yScale = linear$2()
             .domain(this.layout.verticalRange)
             .range([this.margins.top + 20, height -this.margins.bottom - 20]);
 
@@ -9608,6 +9596,7 @@ function updateNodes() {
     nodes
         .transition()
         .duration(this.settings.transitionDuration)
+        .ease(this.settings.transitionEase)
         .attr("class", (v) => ["node", ...v.classes].join(" "))
         .attr("transform", (v) => {
             return `translate(${this.scales.x(v.x)}, ${this.scales.y(v.y)})`;
@@ -9620,13 +9609,16 @@ function updateNodes() {
         const d = nodes.select(".node-shape")
             .filter(bauble.vertexFilter)
             .transition()
-            .duration(this.settings.transitionDuration);
+            .duration(this.settings.transitionDuration)
+            .ease(this.settings.transitionEase)
+        ;
         bauble.updateShapes(d);
     });
 
     nodes.select("text .node-label .name")
         .transition()
         .duration(this.settings.transitionDuration)
+        .ease(this.settings.transitionEase)
         .attr("class", "node-label name")
         .attr("text-anchor", "start")
         .attr("alignment-baseline", "middle")
@@ -9637,6 +9629,7 @@ function updateNodes() {
     nodes.select("text .node-label .support")
         .transition()
         .duration(this.settings.transitionDuration)
+        .ease(this.settings.transitionEase)
         .attr("alignment-baseline", d => (d.labelBelow ? "bottom": "hanging" ))
         .attr("class", "node-label support")
         .attr("text-anchor", "end")
@@ -9690,6 +9683,7 @@ function updateNodeBackgrounds() {
             .filter(bauble.vertexFilter)
             .transition()
             .duration(this.settings.transitionDuration)
+            .ease(this.settings.transitionEase)
             .attr("transform", (v) => {
                 return `translate(${this.scales.x(v.x)}, ${this.scales.y(v.y)})`;
             });
@@ -9749,6 +9743,7 @@ function updateBranches() {
     branches
         .transition()
         .duration(this.settings.transitionDuration)
+        .ease(this.settings.transitionEase)
         .attr("class", (e) => ["branch", ...e.classes].join(" "))
         .attr("transform", (e) => {
             return `translate(${this.scales.x(e.v0.x)}, ${this.scales.y(e.v1.y)})`;
@@ -9805,6 +9800,7 @@ function updateCartoons(){
     cartoons
         .transition()
         .duration(this.settings.transitionDuration)
+        .ease(this.settings.transitionEase)
         .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
         .attr("transform", (c) => {
             return `translate(${this.scales.x(c.vertices[0].x)}, ${this.scales.y(c.vertices[0].y)})`
@@ -9831,7 +9827,7 @@ function updateCartoons(){
 function addAxis() {
 
 
-    const xAxis = axisBottom( linear$1().domain(this.layout.horizontalScale.domain()).range(this.scales.x.range()))
+    const xAxis = axisBottom( linear$2().domain(this.layout.horizontalScale.domain()).range(this.scales.x.range()))
         .ticks(this.settings.ticks).tickFormat(this.settings.tickFormat);
 
     const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
@@ -9858,7 +9854,7 @@ function addAxis() {
 }
 
 function updateAxis(){
-    const xAxis = axisBottom( linear$1().domain(this.layout.horizontalScale.domain()).range(this.scales.x.range()))
+    const xAxis = axisBottom( linear$2().domain(this.layout.horizontalScale.domain()).range(this.scales.x.range()))
         .ticks(this.settings.ticks).tickFormat(this.settings.tickFormat);
 
     const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
@@ -10668,10 +10664,10 @@ function createElements(svg, margins) {
     const y2 = max([regression.y(x2), max(this.points, d => d.y)]);
 
     this.scales = {
-        x: linear$1()
+        x: linear$2()
             .domain([x1, x2]).nice()
             .range([margins.left, width - margins.right]),
-        y: linear$1()
+        y: linear$2()
             .domain([y1, y2]).nice()
             .range([height - margins.bottom, margins.top])
     };

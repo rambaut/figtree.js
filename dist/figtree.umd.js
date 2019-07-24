@@ -4243,6 +4243,10 @@
 	  end: transition_end
 	};
 
+	function linear$1(t) {
+	  return +t;
+	}
+
 	function cubicInOut(t) {
 	  return ((t *= 2) <= 1 ? t * t * t : (t -= 2) * t * t + 2) / 2;
 	}
@@ -5698,11 +5702,11 @@
 	  return scale;
 	}
 
-	function linear$1() {
+	function linear$2() {
 	  var scale = continuous(identity$3, identity$3);
 
 	  scale.copy = function() {
-	    return copy(scale, linear$1());
+	    return copy(scale, linear$2());
 	  };
 
 	  initRange.apply(scale, arguments);
@@ -10071,7 +10075,7 @@
 	  }, {
 	    key: "updateHorizontalScale",
 	    value: function updateHorizontalScale() {
-	      var newScale = this.settings.horizontalScale ? this.settings.horizontalScale : linear$1().domain([this.tree.rootNode.height * this.settings.branchScale, this.tree.origin]).range(this._horizontalRange);
+	      var newScale = this.settings.horizontalScale ? this.settings.horizontalScale : linear$2().domain([this.tree.rootNode.height * this.settings.branchScale, this.tree.origin]).range(this._horizontalRange);
 	      return newScale;
 	    }
 	  }, {
@@ -10096,14 +10100,13 @@
 
 	      if (!includedInVertical) {
 	        // make this better
-	        vertex.y = mean(vertex.node.children, function (child) {
-	          var childVertex = _this._nodeMap.get(child);
-
-	          if (childVertex.visibility === VertexStyle.INCLUDED || childVertex.visibility === VertexStyle.HIDDEN) {
-	            return childVertex.y;
-	          } else {
-	            return null;
-	          }
+	        var vertexChildren = vertex.node.children.map(function (child) {
+	          return _this._nodeMap.get(child);
+	        }).filter(function (child) {
+	          return child.visibility === VertexStyle.INCLUDED || child.visibility === VertexStyle.HIDDEN;
+	        });
+	        vertex.y = mean(vertexChildren, function (child) {
+	          return child.y;
 	        });
 	      } else {
 	        currentY += focusFactor * 1;
@@ -10206,7 +10209,7 @@
 	  }, {
 	    key: "updateHorizontalScale",
 	    value: function updateHorizontalScale() {
-	      var newScale = this.settings.horizontalScale ? this.settings.horizontalScale : linear$1().domain([this.tree.rootNode.height * this.settings.branchScale, this.tree.origin]).range(this._horizontalRange);
+	      var newScale = this.settings.horizontalScale ? this.settings.horizontalScale : linear$2().domain([this.tree.rootNode.height * this.settings.branchScale, this.tree.origin]).range(this._horizontalRange);
 	      return newScale;
 	    }
 	  }, {
@@ -10231,14 +10234,13 @@
 
 	      if (!includedInVertical) {
 	        // make this better
-	        vertex.y = mean(vertex.node.children, function (child) {
-	          var childVertex = _this._nodeMap.get(child);
-
-	          if (childVertex.visibility === VertexStyle.INCLUDED || childVertex.visibility === VertexStyle.HIDDEN) {
-	            return childVertex.y;
-	          } else {
-	            return null;
-	          }
+	        var vertexChildren = vertex.node.children.map(function (child) {
+	          return _this._nodeMap.get(child);
+	        }).filter(function (child) {
+	          return child.visibility === VertexStyle.INCLUDED || child.visibility === VertexStyle.HIDDEN;
+	        });
+	        vertex.y = mean(vertexChildren, function (child) {
+	          return child.y;
 	        });
 	      } else {
 	        currentY += focusFactor * 1;
@@ -10352,14 +10354,13 @@
 	      var includedInVertical = this.settings.includedInVerticalRange(vertex.node);
 
 	      if (!includedInVertical) {
-	        vertex.y = mean(vertex.node.children, function (child) {
-	          var childVertex = _this._nodeMap.get(child);
-
-	          if (childVertex.visibility === VertexStyle.INCLUDED || childVertex.visibility === VertexStyle.HIDDEN) {
-	            return childVertex.y;
-	          } else {
-	            return null;
-	          }
+	        var vertexChildren = vertex.node.children.map(function (child) {
+	          return _this._nodeMap.get(child);
+	        }).filter(function (child) {
+	          return child.visibility === VertexStyle.INCLUDED || child.visibility === VertexStyle.HIDDEN;
+	        });
+	        vertex.y = mean(vertexChildren, function (child) {
+	          return child.y;
 	        });
 	      } else {
 	        if (vertex.node.children && vertex.node.children.length === 1 && vertex.node.annotations[this.settings.groupingAnnotation] !== vertex.node.children[0].annotations[this.settings.groupingAnnotation]) {
@@ -11157,6 +11158,7 @@
 	        backgroundBorder: 0,
 	        baubles: [],
 	        transitionDuration: 500,
+	        transitionEase: linear$1,
 	        tickFormat: format(".2f"),
 	        ticks: 5
 	      };
@@ -11270,8 +11272,8 @@
 
 	      this.svgSelection.append("g").attr("class", "nodes-layer"); // create the scales
 
-	      var xScale = linear$1().domain(this.layout.horizontalRange).range([this.margins.left, width - this.margins.right]);
-	      var yScale = linear$1().domain(this.layout.verticalRange).range([this.margins.top + 20, height - this.margins.bottom - 20]);
+	      var xScale = linear$2().domain(this.layout.horizontalRange).range([this.margins.left, width - this.margins.right]);
+	      var yScale = linear$2().domain(this.layout.verticalRange).range([this.margins.top + 20, height - this.margins.bottom - 20]);
 	      this.scales = {
 	        x: xScale,
 	        y: yScale,
@@ -11629,20 +11631,20 @@
 	    return d.leftLabel;
 	  }); // update the existing elements
 
-	  nodes.transition().duration(this.settings.transitionDuration).attr("class", function (v) {
+	  nodes.transition().duration(this.settings.transitionDuration).ease(this.settings.transitionEase).attr("class", function (v) {
 	    return ["node"].concat(toConsumableArray(v.classes)).join(" ");
 	  }).attr("transform", function (v) {
 	    return "translate(".concat(_this8.scales.x(v.x), ", ").concat(_this8.scales.y(v.y), ")");
 	  }); // update all the baubles
 
 	  this.settings.baubles.forEach(function (bauble) {
-	    var d = nodes.select(".node-shape").filter(bauble.vertexFilter).transition().duration(_this8.settings.transitionDuration);
+	    var d = nodes.select(".node-shape").filter(bauble.vertexFilter).transition().duration(_this8.settings.transitionDuration).ease(_this8.settings.transitionEase);
 	    bauble.updateShapes(d);
 	  });
-	  nodes.select("text .node-label .name").transition().duration(this.settings.transitionDuration).attr("class", "node-label name").attr("text-anchor", "start").attr("alignment-baseline", "middle").attr("dx", "12").attr("dy", "0").text(function (d) {
+	  nodes.select("text .node-label .name").transition().duration(this.settings.transitionDuration).ease(this.settings.transitionEase).attr("class", "node-label name").attr("text-anchor", "start").attr("alignment-baseline", "middle").attr("dx", "12").attr("dy", "0").text(function (d) {
 	    return d.rightLabel;
 	  });
-	  nodes.select("text .node-label .support").transition().duration(this.settings.transitionDuration).attr("alignment-baseline", function (d) {
+	  nodes.select("text .node-label .support").transition().duration(this.settings.transitionDuration).ease(this.settings.transitionEase).attr("alignment-baseline", function (d) {
 	    return d.labelBelow ? "bottom" : "hanging";
 	  }).attr("class", "node-label support").attr("text-anchor", "end").attr("dx", "-6").attr("dy", function (d) {
 	    return d.labelBelow ? -8 : +8;
@@ -11700,7 +11702,7 @@
 	  }); // update all the existing elements
 
 	  this.settings.baubles.forEach(function (bauble) {
-	    var d = nodes.filter(bauble.vertexFilter).transition().duration(_this9.settings.transitionDuration).attr("transform", function (v) {
+	    var d = nodes.filter(bauble.vertexFilter).transition().duration(_this9.settings.transitionDuration).ease(_this9.settings.transitionEase).attr("transform", function (v) {
 	      return "translate(".concat(_this9.scales.x(v.x), ", ").concat(_this9.scales.y(v.y), ")");
 	    });
 	    bauble.updateShapes(d, _this9.settings.backgroundBorder);
@@ -11752,7 +11754,7 @@
 	    return e.label;
 	  }); // update the existing elements
 
-	  branches.transition().duration(this.settings.transitionDuration).attr("class", function (e) {
+	  branches.transition().duration(this.settings.transitionDuration).ease(this.settings.transitionEase).attr("class", function (e) {
 	    return ["branch"].concat(toConsumableArray(e.classes)).join(" ");
 	  }).attr("transform", function (e) {
 	    return "translate(".concat(_this10.scales.x(e.v0.x), ", ").concat(_this10.scales.y(e.v1.y), ")");
@@ -11819,7 +11821,7 @@
 	    return pointToPoint.call(_this11, e.vertices);
 	  }); // update the existing elements
 
-	  cartoons.transition().duration(this.settings.transitionDuration).attr("class", function (c) {
+	  cartoons.transition().duration(this.settings.transitionDuration).ease(this.settings.transitionEase).attr("class", function (c) {
 	    return ["cartoon"].concat(toConsumableArray(c.classes)).join(" ");
 	  }).attr("transform", function (c) {
 	    return "translate(".concat(_this11.scales.x(c.vertices[0].x), ", ").concat(_this11.scales.y(c.vertices[0].y), ")");
@@ -11861,7 +11863,7 @@
 
 
 	function addAxis() {
-	  var xAxis = axisBottom(linear$1().domain(this.layout.horizontalScale.domain()).range(this.scales.x.range())).ticks(this.settings.ticks).tickFormat(this.settings.tickFormat);
+	  var xAxis = axisBottom(linear$2().domain(this.layout.horizontalScale.domain()).range(this.scales.x.range())).ticks(this.settings.ticks).tickFormat(this.settings.tickFormat);
 	  var xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
 	  var axesLayer = this.svgSelection.select(".axes-layer");
 	  axesLayer.append("g").attr("id", "x-axis").attr("class", "axis").attr("transform", "translate(0, ".concat(this.scales.height - this.margins.bottom + 5, ")")).call(xAxis);
@@ -11869,7 +11871,7 @@
 	}
 
 	function updateAxis() {
-	  var xAxis = axisBottom(linear$1().domain(this.layout.horizontalScale.domain()).range(this.scales.x.range())).ticks(this.settings.ticks).tickFormat(this.settings.tickFormat);
+	  var xAxis = axisBottom(linear$2().domain(this.layout.horizontalScale.domain()).range(this.scales.x.range())).ticks(this.settings.ticks).tickFormat(this.settings.tickFormat);
 	  var xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
 	  var axesLayer = this.svgSelection.select(".axes-layer");
 	  axesLayer.select("#x-axis").call(xAxis);
@@ -13050,8 +13052,8 @@
 	    return d.y;
 	  })]);
 	  this.scales = {
-	    x: linear$1().domain([x1, x2]).nice().range([margins.left, width - margins.right]),
-	    y: linear$1().domain([y1, y2]).nice().range([height - margins.bottom, margins.top])
+	    x: linear$2().domain([x1, x2]).nice().range([margins.left, width - margins.right]),
+	    y: linear$2().domain([y1, y2]).nice().range([height - margins.bottom, margins.top])
 	  };
 	  var xAxis = axisBottom(this.scales.x).tickArguments(this.settings.xAxisTickArguments);
 	  var yAxis = axisLeft(this.scales.y).tickArguments(this.settings.yAxisTickArguments);
