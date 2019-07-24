@@ -613,3 +613,6 @@ function markCollapsedNodes(c){
 
 
 }
+//TODO add focus implementation to layout method
+//TODO add minimum gap to layout method
+//TODO split MASKED, included ect into a visualisation flag and an included in y position flag
