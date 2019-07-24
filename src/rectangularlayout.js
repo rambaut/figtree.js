@@ -4,7 +4,8 @@
 
 import { Layout } from "./layout.js";
 import { Type } from "./tree.js";
-import {curveStepBefore,curveMonotoneY,line,mean} from "d3";
+import {curveStepBefore,scaleLinear,line,mean} from "d3";
+import {VertexStyle} from "./layout";
 
 // const d3 = require("d3");
 /**
@@ -30,22 +31,53 @@ export class RectangularLayout extends Layout {
 
     }
 
+    getTreeNodes() {
+        return [...this.tree.postorder()]
+    }
+
+    updateHorizontalScale() {
+        const newScale = this.settings.horizontalScale ? this.settings.horizontalScale :
+            scaleLinear().domain([this.tree.rootNode.height*this.settings.branchScale, this.tree.origin]).range(this._horizontalRange);
+        return newScale;
+    }
+
+    setInitialY() {
+        return -1;
+    }
+    setInitialX() {
+        return 0;
+    }
 
     setYPosition(vertex, currentY) {
         // check if there are children that that are in the same group and set position to mean
         // if do something else
 
         const includedInVertical = this.settings.includedInVerticalRange(vertex.node);
+        const focusFactor=vertex.focused||this._previousVertexFocused?this.settings.focusFactor:1;
+
         if(!includedInVertical){
             // make this better
 
-            vertex.y = mean(vertex.node.children,(child) => this._nodeMap.get(child).y)
+            vertex.y = mean(vertex.node.children,(child) => {
+                const childVertex = this._nodeMap.get(child);
+                if(childVertex.visibility===VertexStyle.INCLUDED||childVertex.visibility===VertexStyle.HIDDEN){
+                    return childVertex.y
+            }else{
+                    return null;
+                }
+            })
         }
         else{
-            currentY+=1;
+            currentY += focusFactor*1;
             vertex.y = currentY;
         }
+        this._previousVertexFocused=vertex.focused;
         return currentY;
+    }
+
+    setXPosition(vertex,currentX){
+        vertex.x = this._horizontalScale(vertex.node.height*this.settings.branchScale);
+        return 0;
     }
 
     branchPathGenerator(scales){

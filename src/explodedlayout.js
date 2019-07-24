@@ -4,6 +4,7 @@
 
 import { RectangularLayout } from "./rectangularLayout.js";
 import {min,mean} from "d3";
+import {VertexStyle} from "./layout";
 
 
 export const Direction = {
@@ -63,17 +64,25 @@ export class ExplodedLayout extends RectangularLayout {
 
 
     }
+
     setYPosition(vertex, currentY) {
         // check if there are children that that are in the same group and set position to mean
         // if do something else
         if(currentY===this.setInitialY()) {
             this._currentGroup = vertex.node.annotations[this.groupingAnnotation];
         }
-        const focusFactor=vertex.focused||this._lastVertexFocused?this.settings.focusFactor:1;
+        const focusFactor=vertex.focused||this._previousVertexFocused?this.settings.focusFactor:1;
 
         const includedInVertical = this.settings.includedInVerticalRange(vertex.node);
         if (!includedInVertical) {
-            vertex.y = mean(vertex.node.children, (child) => this._nodeMap.get(child).y);
+            vertex.y = mean(vertex.node.children,(child) => {
+                const childVertex = this._nodeMap.get(child);
+                if(childVertex.visibility===VertexStyle.INCLUDED||childVertex.visibility===VertexStyle.HIDDEN){
+                    return childVertex.y
+                }else{
+                    return null;
+                }
+            })
             if(vertex.node.parent){
                 if(vertex.node.annotations[this.groupingAnnotation]!==vertex.node.parent.annotations[this.groupingAnnotation]){
                     this._newIntraGroupNext=true;
@@ -94,10 +103,11 @@ export class ExplodedLayout extends RectangularLayout {
             this._currentGroup= vertex.node.annotations[this.groupingAnnotation];
             vertex.y = currentY;
         }
-        this._lastVertexFocused=vertex.focused;
+        this._previousVertexFocused=vertex.focused;
 
         return currentY;
     }
+
 
     /**
      * Set the direction to draw transmission (up or down).

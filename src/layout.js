@@ -4,6 +4,12 @@ import {Type} from "./tree";
 
 /** @module layout */
 
+export const  VertexStyle = {
+    INCLUDED:Symbol("INCLUDED"),// Only included nodes are sent to the figtree class
+    IGNORED:Symbol('IGNORED'), // Ignored nodes are just that ignored in everyway
+    HIDDEN:Symbol("HIDDEN"), // The only difference between hidden and included nodes is that hidden nodes are not sent to the figtree class
+    MASKED:Symbol("MASKED") // Masked nodes have an x and y coordinate but are then ignored. They don't count towards their parent's x and y
+}
 
 /**
  * The Layout class
@@ -17,7 +23,8 @@ export class Layout {
             horizontalScale: null, // a scale that converts height to 0,1  domain. default is 0 = heighest tip
             includedInVerticalRange: node => !node.children,
             branchCurve: null,
-            branchScale:1
+            branchScale:1,
+            focusFactor:1,
         }
     }
 
@@ -35,11 +42,17 @@ export class Layout {
         this._horizontalTicks = [0, 0.5, 1];
 
 
+
+
+
         this._edges = [];
         this._edgeMap = new Map();
 
         this._vertices = [];
         this._nodeMap = new Map();
+
+
+
 
         this._cartoonStore = [];
         this._activeCartoons = [];
@@ -61,6 +74,10 @@ export class Layout {
         // create an empty callback function
         this.updateCallback = () => {
         };
+
+
+
+
     }
 
     /**
@@ -72,12 +89,13 @@ export class Layout {
     layout() {
         this._horizontalScale = this.updateHorizontalScale();
 
+        makeVerticesFromNodes.call(this,this.getTreeNodes());
+        makeEdgesFromNodes.call(this,this.getTreeNodes());
         // get the nodes
-        const nodes = this.getTreeNodes();
 
         let currentY = this.setInitialY();
+        let currentX = this.setInitialX();
 
-        makeVerticesFromNodes.call(this, nodes);
 
 
         //CARTOONS set up
@@ -87,36 +105,30 @@ export class Layout {
             if(allCartoonDescendents.indexOf(c.node)===-1){
                 allCartoonDescendents.push(...[...this.tree.postorder(c.node)].filter(n=>n!==c.node))
             }
-        })
+        });
 
         this._activeCartoons = this._cartoonStore.filter(c=>allCartoonDescendents.indexOf(c.node)===-1);
 
         this._activeCartoons.filter(c=>c.format==='collapse')
             .forEach(c=>{
               markCollapsedNodes.call(this,c);
-        })
+        });
 
 
         // update the node locations (vertices)
-        nodes
-            .forEach((n) => {
-                const v = this._nodeMap.get(n);
-                if(!v.masked||(v.masked &&v.collapsed)) {
+        this._vertices.forEach((v)=>{
+                if(!(v.visibility===VertexStyle.IGNORED)) {
 
-                    currentY = this.setYPosition(v, currentY)
-                    this.setXPosition(v);
+                    currentY = this.setYPosition(v, currentY);
+                    currentX = this.setXPosition(v,currentX);
                     v.degree = (v.node.children ? v.node.children.length + 1: 1); // the number of edges (including stem)
                     v.id = v.node.id;
                     setVertexClasses.call(this,v);
                     setVertexLabels.call(this,v);
-                }else{
-                    v.y=null; //forget the last position
                 }
             });
 
 
-        // EDGES
-        makeEdgesFromNodes.call(this, nodes);
 
         //Update edge locations
         this._edges
@@ -124,7 +136,7 @@ export class Layout {
                 setupEdge.call(this, e)
             })
 
-// update verticalRange so that we count tips that are in cartoons but not those that are collapsed
+// update verticalRange so that we count tips that are in cartoons but not those that are ignored
         this._verticalRange = [0, currentY];
         this.layoutKnown = true;
 
@@ -284,6 +296,27 @@ export class Layout {
         }
     }
 
+    maskNode(node){
+        const vertex = this.nodeMap.get(node);
+        vertex.visibility = VertexStyle.MASKED;
+        this.layoutKnown=false;
+    }
+    hideNode(node){
+        const vertex = this.nodeMap.get(node);
+        vertex.visibility = VertexStyle.HIDDEN;
+        this.layoutKnown=false;
+    }
+    ignoreNode(node){
+        const vertex = this.nodeMap.get(node);
+        vertex.visibility = VertexStyle.IGNORED;
+        this.layoutKnown=false;
+    }
+    includeNode(node){
+        const vertex = this.nodeMap.get(node);
+        vertex.visibility = VertexStyle.INCLUDED;
+        this.layoutKnown=false;
+    }
+
     /**
      * A utility function that will return a HTML string about the node and its
      * annotations. Can be used with the addLabels() method.
@@ -303,14 +336,14 @@ export class Layout {
         if (!this.layoutKnown) {
             this.layout();
         }
-        return this._edges.filter(e => !e.v1.masked);
+        return this._edges.filter(e => e.v1.visibility===VertexStyle.INCLUDED);
     }
 
     get vertices() {
         if (!this.layoutKnown) {
             this.layout();
         }
-        return this._vertices.filter(v => !v.masked);
+        return this._vertices.filter(v => v.visibility===VertexStyle.INCLUDED);
     }
 
     get cartoons() {
@@ -326,7 +359,7 @@ export class Layout {
         const cartoonVertex = this._nodeMap.get(c.node);
 
         const cartoonVertexDecedents = cartoonNodeDecedents.map(n=>this._nodeMap.get(n));
-        cartoonVertexDecedents.forEach(v=>v.masked=true);
+        cartoonVertexDecedents.forEach(v=>v.visibility=VertexStyle.HIDDEN);
         const newTopVertex = {
             x: max(cartoonVertexDecedents, d => d.x),
             y: max(cartoonVertexDecedents, d => d.y),
@@ -379,39 +412,76 @@ export class Layout {
         return this._horizontalScale;
     }
 
-    // layout functions that will allow decedent layouts to change only what they need to
+    // layout functions should be overwritten in decedents
 
+    /**
+     * Sets the horizontal scale for the layout. This maps the tree to the layout range which is [0,1]
+     * @return {null|*}
+     */
     updateHorizontalScale() {
-        const newScale = this.settings.horizontalScale ? this.settings.horizontalScale :
-            scaleLinear().domain([this.tree.rootNode.height*this.settings.branchScale, this.tree.origin]).range(this._horizontalRange);
-        return newScale;
+        throw  new Error("Don't call this method from the parent layout class. It must be implemented in the child class")
     }
 
+    /**
+     * sets the initial Y value for the first node returned from the getTreeNodes().
+     * @return {number}
+     */
     setInitialY() {
-        return -1;
+        throw  new Error("Don't call this method from the parent layout class. It must be implemented in the child class")
     }
 
+    /**
+     * Set the y position of a vertex and return the Y position. This function is called on each node in the order returns from the getTreeNodes() method.
+     * The currentY represent the Y position of the previous node at each iteration. These y values will be mapped to a [0,1]
+     * range.
+     * @param vertex
+     * @param currentY
+     * @return {number}
+     */
     setYPosition(vertex, currentY) {
-        // check if there are children that that are in the same group and set position to mean
-        // if do something else
-
-        const includedInVertical = this.settings.includedInVerticalRange(vertex.node);
-        if (!includedInVertical) {
-            vertex.y = mean(vertex.node.children, (child) => this._nodeMap.get(child).y)
-        } else {
-            currentY += 1;
-            vertex.y = currentY;
-        }
-        return currentY;
+        throw  new Error("Don't call this method from the parent layout class. It must be implemented in the child class")
+    }
+    /**
+     * sets the initial x value for the first node returned from the getTreeNodes().
+     * @return {number}
+     */
+    setInitialX() {
+        throw  new Error("Don't call this method from the parent layout class. It must be implemented in the child class")
+    }
+    /**
+     * Set the x position of a vertex and return the X position. This function is called on each node in the order returns from the getTreeNodes() method.
+     * The currentX represent the x position of the previous node at each iteration. These x values will be mapped to a [0,1]
+     * range. In the 'normal' left to right tree this method would ignore the currentX and set the x based on the horizontal scale.
+     * @param vertex
+     * @param currentX
+     * @return {number}
+     */
+    setXPosition(vertex, currentX) {
+        throw  new Error("Don't call this method from the parent layout class. It must be implemented in the child class")
     }
 
-    setXPosition(v){
-        v.x = this._horizontalScale(v.node.height*this.settings.branchScale);
-    }
-
+    /**
+     * A method which returns the nodes of the tree in the order inwhcih they will be assigned Y and X coordinates.
+     * @return {IterableIterator<*>[]}
+     */
     getTreeNodes() {
-        return [...this.tree.postorder()]
+        throw  new Error("Don't call this method from the parent layout class. It must be implemented in the child class")
     };
+
+    /**
+     * Generates a line() function that takes an edge and it's index and returns a line for d3 path element. It is called
+     * by the figtree class as
+     * const branchPath = this.layout.branchPathGenerator(this.scales)
+     * newBranches.append("path")
+     .attr("class", "branch-path")
+     .attr("d", (e,i) => branchPath(e,i));
+     * @param scales
+     * @return {function(*, *)}
+     */
+    branchPathGenerator(scales){
+        throw  new Error("Don't call this method from the parent layout class. It must be implemented in the child class")
+
+    }
 
 }
 /*
@@ -423,15 +493,14 @@ function makeVerticesFromNodes(nodes){
         if(!this._nodeMap.has(n)){
             const vertex = {
                 node: n,
-                key: n.id
+                key: n.id,
+                focused:false,
+                visibility:VertexStyle.INCLUDED
                 // key: Symbol(n.id).toString()
             };
             this._vertices.push(vertex);
             this._nodeMap.set(n, vertex);
         }
-        const vertex = this._nodeMap.get(n);
-        vertex.masked=null;
-        vertex.collapsed = null;
     });
 };
 
@@ -480,7 +549,6 @@ function makeEdgesFromNodes(nodes){
         .filter((n) => n.parent) // exclude the root
         .forEach((n, i) => {
             if(!this._edgeMap.has(this._nodeMap.get(n))) {
-                if(!n.masked||(n.masked &&!n.collapsed)) {
                     const edge = {
                         v0: this._nodeMap.get(n.parent),
                         v1: this._nodeMap.get(n),
@@ -489,7 +557,6 @@ function makeEdgesFromNodes(nodes){
                     this._edges.push(edge);
                     this._edgeMap.set(edge.v1, edge);
                 }
-            }
         })
 }
 
@@ -538,9 +605,9 @@ function markCollapsedNodes(c){
 
     const mostDiverged = this._nodeMap.get(cartoonNodeDecedents.find(n=>n.height===max(cartoonNodeDecedents,d=>d.height)));
     cartoonVertexDecedents.forEach(v=> {
-        v.masked = true
+        v.visibility = VertexStyle.HIDDEN;
         if (v === mostDiverged) {
-            v.collapsed = true
+            v.visibility = VertexStyle.IGNORED;
         }
     });
 

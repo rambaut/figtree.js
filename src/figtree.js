@@ -27,10 +27,10 @@ export class FigTree {
         };
     }
     static DEFAULT_STYLES(){
-        return {"nodes":new Map(),
-            "nodeBackgrounds":new Map(),
-            "branches":new Map([["fill",d=>"none"],["stroke-width",d=>"2"],["stroke",d=>"black"]]),
-        "cartoons":new Map([["fill",d=>"none"],["stroke-width",d=>"2"],["stroke",d=>"black"]])}
+        return {"nodes":{},
+            "nodeBackgrounds":{},
+            "branches":{"fill":d=>"none","stroke-width":d=>"2","stroke":d=>"black"},
+        "cartoons":{"fill":d=>"none","stroke-width":d=>"2","stroke":d=>"black"}}
     }
 
     /**
@@ -50,7 +50,7 @@ export class FigTree {
         if(settings.styles) {
             for (const key of Object.keys(styles)) {
                 if (settings.styles[key]) {
-                    styles[key] = new Map([...styles[key], ...settings.styles[key]])
+                    styles[key] = {...styles[key], ...settings.styles[key]}
                 }
             }
         }
@@ -697,12 +697,12 @@ function updateNodeStyles(){
     // DATA JOIN
     // Join new data with old elements, if any.
     const nodes = nodesLayer.selectAll(".node .node-shape");
-    const nodeAttrMap = this.settings.styles.nodes;
-    for(const key of nodeAttrMap.keys()){
+    const nodeStyles = this.settings.styles.nodes;
+    for(const key of Object.keys(nodeStyles)){
         nodes
             // .transition()
             // .duration(this.settings.transitionDuration)
-            .attr(key,d=>nodeAttrMap.get(key)(d.node))
+            .attr(key,d=>nodeStyles[key].call(this,d.node))
     }
 
 
@@ -715,12 +715,12 @@ function updateNodeBackgroundStyles(){
     // Join new data with old elements, if any.
     const nodes = nodesBackgroundLayer.selectAll(".node-background")
 
-    const nodeBackgroundsAttrMap = this.settings.styles.nodeBackgrounds;
-    for(const key of nodeBackgroundsAttrMap.keys()){
+    const nodeBackgroundsStyles = this.settings.styles.nodeBackgrounds;
+    for(const key of Object.keys(nodeBackgroundsStyles)){
         nodes
             // .transition()
             // .duration(this.settings.transitionDuration)
-            .attr(key,d=>nodeBackgroundsAttrMap.get(key).call(this,d.node))
+            .attr(key,d=>nodeBackgroundsStyles[key].call(this,d.node))
     }
 
 }
@@ -732,12 +732,12 @@ function updateBranchStyles(){
     // Join new data with old elements, if any.
     const branches = branchesLayer.selectAll("g .branch .branch-path")
 
-    const branchAttrMap = this.settings.styles["branches"];
-    for(const key of branchAttrMap.keys()){
+    const branchStyles = this.settings.styles["branches"];
+    for(const key of Object.keys(branchStyles)){
         branches
             // .transition()
             // .duration(this.settings.transitionDuration)
-            .attr(key,d=>branchAttrMap.get(key).call(this,d.v1.node))
+            .attr(key,d=>branchStyles[key].call(this,d.v1.node))
     }
 
 }
@@ -748,12 +748,12 @@ function updateCartoonStyles(){
     // DATA JOIN
     // Join new data with old elements, if any.
     const cartoons = cartoonLayer.selectAll(".cartoon path");
-    const CartoonAttrMap = this.settings.styles.cartoons;
-    for(const key of CartoonAttrMap.keys()){
+    const CartoonStyles = this.settings.styles.cartoons;
+    for(const key of Object.keys(CartoonStyles)){
         cartoons
         // .transition()
         // .duration(this.settings.transitionDuration)
-            .attr(key,c=>CartoonAttrMap.get(key).call(this,c.vertices[0].node))
+            .attr(key,c=>CartoonStyles[key].call(this,c.vertices[0].node))
         // attributes are set by the "root" node
     }
 }

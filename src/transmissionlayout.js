@@ -4,6 +4,7 @@
 
 import { RectangularLayout } from "./rectangularLayout.js";
 import {mean} from "d3";
+import {VertexStyle} from "./layout";
 
 
 export const Direction = {
@@ -40,25 +41,27 @@ export class TransmissionLayout extends RectangularLayout {
     }
 
     setYPosition(vertex, currentY) {
-        // check if there are children that that are in the same group and set position to mean
-        // if do something else
-        if(currentY===this.setInitialY()) {
-            this._currentGroup = vertex.node.annotations[this.groupingAnnotation];
-        }
+        const focusFactor=vertex.focused||this._previousVertexFocused?this.settings.focusFactor:1;
 
         const includedInVertical = this.settings.includedInVerticalRange(vertex.node);
         if (!includedInVertical) {
-            vertex.y = mean(vertex.node.children, (child) => this._nodeMap.get(child).y);
+            vertex.y = mean(vertex.node.children,(child) => {
+                const childVertex = this._nodeMap.get(child);
+                if(childVertex.visibility===VertexStyle.INCLUDED||childVertex.visibility===VertexStyle.HIDDEN){
+                    return childVertex.y
+                }else{
+                    return null;
+                }
+            })
         } else {
             if(vertex.node.children &&(  vertex.node.children.length===1 && vertex.node.annotations[this.settings.groupingAnnotation]!==vertex.node.children[0].annotations[this.settings.groupingAnnotation])){
-                console.log("gapit")
-                currentY+=this.settings.groupGap;
+                currentY+=focusFactor*this.settings.groupGap;
             }else{
-                currentY += 1;
+                currentY += focusFactor*1;
             }
-            this._currentGroup= vertex.node.annotations[this.groupingAnnotation];
             vertex.y = currentY;
         }
+        this._previousVertexFocused=vertex.focused;
 
         return currentY;
     }

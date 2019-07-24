@@ -9229,11 +9229,21 @@
 
 	/** @module layout */
 
-	/**
-	 * The Layout class
-	 *
-	 */
+	var VertexStyle = {
+	  INCLUDED: Symbol("INCLUDED"),
+	  // Only included nodes are sent to the figtree class
+	  IGNORED: Symbol('IGNORED'),
+	  // Ignored nodes are just that ignored in everyway
+	  HIDDEN: Symbol("HIDDEN"),
+	  // The only difference between hidden and included nodes is that hidden nodes are not sent to the figtree class
+	  MASKED: Symbol("MASKED") // Masked nodes have an x and y coordinate but are then ignored. They don't count towards their parent's x and y
 
+	  /**
+	   * The Layout class
+	   *
+	   */
+
+	};
 	var Layout =
 	/*#__PURE__*/
 	function () {
@@ -9248,7 +9258,8 @@
 	          return !node.children;
 	        },
 	        branchCurve: null,
-	        branchScale: 1
+	        branchScale: 1,
+	        focusFactor: 1
 	      };
 	    }
 	    /**
@@ -9303,11 +9314,12 @@
 	    value: function layout() {
 	      var _this2 = this;
 
-	      this._horizontalScale = this.updateHorizontalScale(); // get the nodes
+	      this._horizontalScale = this.updateHorizontalScale();
+	      makeVerticesFromNodes.call(this, this.getTreeNodes());
+	      makeEdgesFromNodes.call(this, this.getTreeNodes()); // get the nodes
 
-	      var nodes = this.getTreeNodes();
 	      var currentY = this.setInitialY();
-	      makeVerticesFromNodes.call(this, nodes); //CARTOONS set up
+	      var currentX = this.setInitialX(); //CARTOONS set up
 	      // filter so just showing the most ancestral;
 
 	      var allCartoonDescendents = [];
@@ -9331,29 +9343,22 @@
 	      }); // update the node locations (vertices)
 
 
-	      nodes.forEach(function (n) {
-	        var v = _this2._nodeMap.get(n);
-
-	        if (!v.masked || v.masked && v.collapsed) {
+	      this._vertices.forEach(function (v) {
+	        if (!(v.visibility === VertexStyle.IGNORED)) {
 	          currentY = _this2.setYPosition(v, currentY);
-
-	          _this2.setXPosition(v);
-
+	          currentX = _this2.setXPosition(v, currentX);
 	          v.degree = v.node.children ? v.node.children.length + 1 : 1; // the number of edges (including stem)
 
 	          v.id = v.node.id;
 	          setVertexClasses.call(_this2, v);
 	          setVertexLabels.call(_this2, v);
-	        } else {
-	          v.y = null; //forget the last position
 	        }
-	      }); // EDGES
+	      }); //Update edge locations
 
-	      makeEdgesFromNodes.call(this, nodes); //Update edge locations
 
 	      this._edges.forEach(function (e) {
 	        setupEdge.call(_this2, e);
-	      }); // update verticalRange so that we count tips that are in cartoons but not those that are collapsed
+	      }); // update verticalRange so that we count tips that are in cartoons but not those that are ignored
 
 
 	      this._verticalRange = [0, currentY];
@@ -9524,6 +9529,34 @@
 	        this.update();
 	      }
 	    }
+	  }, {
+	    key: "maskNode",
+	    value: function maskNode(node) {
+	      var vertex = this.nodeMap.get(node);
+	      vertex.visibility = VertexStyle.MASKED;
+	      this.layoutKnown = false;
+	    }
+	  }, {
+	    key: "hideNode",
+	    value: function hideNode(node) {
+	      var vertex = this.nodeMap.get(node);
+	      vertex.visibility = VertexStyle.HIDDEN;
+	      this.layoutKnown = false;
+	    }
+	  }, {
+	    key: "ignoreNode",
+	    value: function ignoreNode(node) {
+	      var vertex = this.nodeMap.get(node);
+	      vertex.visibility = VertexStyle.IGNORED;
+	      this.layoutKnown = false;
+	    }
+	  }, {
+	    key: "includeNode",
+	    value: function includeNode(node) {
+	      var vertex = this.nodeMap.get(node);
+	      vertex.visibility = VertexStyle.INCLUDED;
+	      this.layoutKnown = false;
+	    }
 	    /**
 	     * A utility function that will return a HTML string about the node and its
 	     * annotations. Can be used with the addLabels() method.
@@ -9534,45 +9567,88 @@
 
 	  }, {
 	    key: "updateHorizontalScale",
-	    // layout functions that will allow decedent layouts to change only what they need to
+	    // layout functions should be overwritten in decedents
+
+	    /**
+	     * Sets the horizontal scale for the layout. This maps the tree to the layout range which is [0,1]
+	     * @return {null|*}
+	     */
 	    value: function updateHorizontalScale() {
-	      var newScale = this.settings.horizontalScale ? this.settings.horizontalScale : linear$1().domain([this.tree.rootNode.height * this.settings.branchScale, this.tree.origin]).range(this._horizontalRange);
-	      return newScale;
+	      throw new Error("Don't call this method from the parent layout class. It must be implemented in the child class");
 	    }
+	    /**
+	     * sets the initial Y value for the first node returned from the getTreeNodes().
+	     * @return {number}
+	     */
+
 	  }, {
 	    key: "setInitialY",
 	    value: function setInitialY() {
-	      return -1;
+	      throw new Error("Don't call this method from the parent layout class. It must be implemented in the child class");
 	    }
+	    /**
+	     * Set the y position of a vertex and return the Y position. This function is called on each node in the order returns from the getTreeNodes() method.
+	     * The currentY represent the Y position of the previous node at each iteration. These y values will be mapped to a [0,1]
+	     * range.
+	     * @param vertex
+	     * @param currentY
+	     * @return {number}
+	     */
+
 	  }, {
 	    key: "setYPosition",
 	    value: function setYPosition(vertex, currentY) {
-	      var _this7 = this;
-
-	      // check if there are children that that are in the same group and set position to mean
-	      // if do something else
-	      var includedInVertical = this.settings.includedInVerticalRange(vertex.node);
-
-	      if (!includedInVertical) {
-	        vertex.y = mean(vertex.node.children, function (child) {
-	          return _this7._nodeMap.get(child).y;
-	        });
-	      } else {
-	        currentY += 1;
-	        vertex.y = currentY;
-	      }
-
-	      return currentY;
+	      throw new Error("Don't call this method from the parent layout class. It must be implemented in the child class");
 	    }
+	    /**
+	     * sets the initial x value for the first node returned from the getTreeNodes().
+	     * @return {number}
+	     */
+
+	  }, {
+	    key: "setInitialX",
+	    value: function setInitialX() {
+	      throw new Error("Don't call this method from the parent layout class. It must be implemented in the child class");
+	    }
+	    /**
+	     * Set the x position of a vertex and return the X position. This function is called on each node in the order returns from the getTreeNodes() method.
+	     * The currentX represent the x position of the previous node at each iteration. These x values will be mapped to a [0,1]
+	     * range. In the 'normal' left to right tree this method would ignore the currentX and set the x based on the horizontal scale.
+	     * @param vertex
+	     * @param currentX
+	     * @return {number}
+	     */
+
 	  }, {
 	    key: "setXPosition",
-	    value: function setXPosition(v) {
-	      v.x = this._horizontalScale(v.node.height * this.settings.branchScale);
+	    value: function setXPosition(vertex, currentX) {
+	      throw new Error("Don't call this method from the parent layout class. It must be implemented in the child class");
 	    }
+	    /**
+	     * A method which returns the nodes of the tree in the order inwhcih they will be assigned Y and X coordinates.
+	     * @return {IterableIterator<*>[]}
+	     */
+
 	  }, {
 	    key: "getTreeNodes",
 	    value: function getTreeNodes() {
-	      return toConsumableArray(this.tree.postorder());
+	      throw new Error("Don't call this method from the parent layout class. It must be implemented in the child class");
+	    }
+	  }, {
+	    key: "branchPathGenerator",
+
+	    /**
+	     * Generates a line() function that takes an edge and it's index and returns a line for d3 path element. It is called
+	     * by the figtree class as
+	     * const branchPath = this.layout.branchPathGenerator(this.scales)
+	     * newBranches.append("path")
+	     .attr("class", "branch-path")
+	     .attr("d", (e,i) => branchPath(e,i));
+	     * @param scales
+	     * @return {function(*, *)}
+	     */
+	    value: function branchPathGenerator(scales) {
+	      throw new Error("Don't call this method from the parent layout class. It must be implemented in the child class");
 	    }
 	  }, {
 	    key: "horizontalRange",
@@ -9619,7 +9695,7 @@
 	      }
 
 	      return this._edges.filter(function (e) {
-	        return !e.v1.masked;
+	        return e.v1.visibility === VertexStyle.INCLUDED;
 	      });
 	    }
 	  }, {
@@ -9630,13 +9706,13 @@
 	      }
 
 	      return this._vertices.filter(function (v) {
-	        return !v.masked;
+	        return v.visibility === VertexStyle.INCLUDED;
 	      });
 	    }
 	  }, {
 	    key: "cartoons",
 	    get: function get() {
-	      var _this8 = this;
+	      var _this7 = this;
 
 	      if (!this.layoutKnown) {
 	        this.layout();
@@ -9645,17 +9721,17 @@
 	      var cartoons = []; // Handle cartoons
 
 	      this._activeCartoons.forEach(function (c) {
-	        var cartoonNodeDecedents = toConsumableArray(_this8.tree.postorder(c.node)).filter(function (n) {
+	        var cartoonNodeDecedents = toConsumableArray(_this7.tree.postorder(c.node)).filter(function (n) {
 	          return n !== c.node;
 	        });
 
-	        var cartoonVertex = _this8._nodeMap.get(c.node);
+	        var cartoonVertex = _this7._nodeMap.get(c.node);
 
 	        var cartoonVertexDecedents = cartoonNodeDecedents.map(function (n) {
-	          return _this8._nodeMap.get(n);
+	          return _this7._nodeMap.get(n);
 	        });
 	        cartoonVertexDecedents.forEach(function (v) {
-	          return v.masked = true;
+	          return v.visibility = VertexStyle.HIDDEN;
 	        });
 	        var newTopVertex = {
 	          x: max(cartoonVertexDecedents, function (d) {
@@ -9683,11 +9759,11 @@
 	        var currentNode = cartoonVertex.node;
 
 	        while (currentNode.parent) {
-	          var parentVertex = _this8._nodeMap.get(currentNode.parent);
+	          var parentVertex = _this7._nodeMap.get(currentNode.parent);
 
-	          if (!_this8.settings.includedInVerticalRange(parentVertex.node)) {
+	          if (!_this7.settings.includedInVerticalRange(parentVertex.node)) {
 	            parentVertex.y = mean(parentVertex.node.children, function (child) {
-	              return _this8._nodeMap.get(child).y;
+	              return _this7._nodeMap.get(child).y;
 	            });
 	          }
 
@@ -9753,30 +9829,27 @@
 	 */
 
 	function makeVerticesFromNodes(nodes) {
-	  var _this9 = this;
+	  var _this8 = this;
 
 	  nodes.forEach(function (n, i) {
-	    if (!_this9._nodeMap.has(n)) {
-	      var _vertex = {
+	    if (!_this8._nodeMap.has(n)) {
+	      var vertex = {
 	        node: n,
-	        key: n.id // key: Symbol(n.id).toString()
+	        key: n.id,
+	        focused: false,
+	        visibility: VertexStyle.INCLUDED // key: Symbol(n.id).toString()
 
 	      };
 
-	      _this9._vertices.push(_vertex);
+	      _this8._vertices.push(vertex);
 
-	      _this9._nodeMap.set(n, _vertex);
+	      _this8._nodeMap.set(n, vertex);
 	    }
-
-	    var vertex = _this9._nodeMap.get(n);
-
-	    vertex.masked = null;
-	    vertex.collapsed = null;
 	  });
 	}
 
 	function setVertexClasses(v) {
-	  var _this10 = this;
+	  var _this9 = this;
 
 	  v.classes = [!v.node.children ? "external-node" : "internal-node", v.node.isSelected ? "selected" : "unselected"];
 
@@ -9785,7 +9858,7 @@
 	      var _ref4 = slicedToArray(_ref3, 1),
 	          key = _ref4[0];
 
-	      return _this10.tree.annotations[key] && (_this10.tree.annotations[key].type === Type.DISCRETE || _this10.tree.annotations[key].type === Type.BOOLEAN || _this10.tree.annotations[key].type === Type.INTEGER);
+	      return _this9.tree.annotations[key] && (_this9.tree.annotations[key].type === Type.DISCRETE || _this9.tree.annotations[key].type === Type.BOOLEAN || _this9.tree.annotations[key].type === Type.INTEGER);
 	    }).map(function (_ref5) {
 	      var _ref6 = slicedToArray(_ref5, 2),
 	          key = _ref6[0],
@@ -9810,25 +9883,23 @@
 	}
 
 	function makeEdgesFromNodes(nodes) {
-	  var _this11 = this;
+	  var _this10 = this;
 
 	  // create the edges (only done if the array is empty)
 	  nodes.filter(function (n) {
 	    return n.parent;
 	  }) // exclude the root
 	  .forEach(function (n, i) {
-	    if (!_this11._edgeMap.has(_this11._nodeMap.get(n))) {
-	      if (!n.masked || n.masked && !n.collapsed) {
-	        var edge = {
-	          v0: _this11._nodeMap.get(n.parent),
-	          v1: _this11._nodeMap.get(n),
-	          key: n.id
-	        };
+	    if (!_this10._edgeMap.has(_this10._nodeMap.get(n))) {
+	      var edge = {
+	        v0: _this10._nodeMap.get(n.parent),
+	        v1: _this10._nodeMap.get(n),
+	        key: n.id
+	      };
 
-	        _this11._edges.push(edge);
+	      _this10._edges.push(edge);
 
-	        _this11._edgeMap.set(edge.v1, edge);
-	      }
+	      _this10._edgeMap.set(edge.v1, edge);
 	    }
 	  });
 	}
@@ -9846,7 +9917,7 @@
 	}
 
 	function setEdgeClasses(e) {
-	  var _this12 = this;
+	  var _this11 = this;
 
 	  e.classes = [];
 
@@ -9855,7 +9926,7 @@
 	      var _ref8 = slicedToArray(_ref7, 1),
 	          key = _ref8[0];
 
-	      return _this12.tree.annotations[key] && (_this12.tree.annotations[key].type === Type.DISCRETE || _this12.tree.annotations[key].type === Type.BOOLEAN || _this12.tree.annotations[key].type === Type.INTEGER);
+	      return _this11.tree.annotations[key] && (_this11.tree.annotations[key].type === Type.DISCRETE || _this11.tree.annotations[key].type === Type.BOOLEAN || _this11.tree.annotations[key].type === Type.INTEGER);
 	    }).map(function (_ref9) {
 	      var _ref10 = slicedToArray(_ref9, 2),
 	          key = _ref10[0],
@@ -9872,14 +9943,14 @@
 	}
 
 	function markCollapsedNodes(c) {
-	  var _this13 = this;
+	  var _this12 = this;
 
 	  var cartoonNodeDecedents = toConsumableArray(this.tree.postorder(c.node)).filter(function (n) {
 	    return n !== c.node;
 	  });
 
 	  var cartoonVertexDecedents = cartoonNodeDecedents.map(function (n) {
-	    return _this13._nodeMap.get(n);
+	    return _this12._nodeMap.get(n);
 	  });
 
 	  var mostDiverged = this._nodeMap.get(cartoonNodeDecedents.find(function (n) {
@@ -9889,10 +9960,10 @@
 	  }));
 
 	  cartoonVertexDecedents.forEach(function (v) {
-	    v.masked = true;
+	    v.visibility = VertexStyle.HIDDEN;
 
 	    if (v === mostDiverged) {
-	      v.collapsed = true;
+	      v.visibility = VertexStyle.IGNORED;
 	    }
 	  });
 	}
@@ -9993,6 +10064,27 @@
 	  }
 
 	  createClass(RectangularLayout, [{
+	    key: "getTreeNodes",
+	    value: function getTreeNodes() {
+	      return toConsumableArray(this.tree.postorder());
+	    }
+	  }, {
+	    key: "updateHorizontalScale",
+	    value: function updateHorizontalScale() {
+	      var newScale = this.settings.horizontalScale ? this.settings.horizontalScale : linear$1().domain([this.tree.rootNode.height * this.settings.branchScale, this.tree.origin]).range(this._horizontalRange);
+	      return newScale;
+	    }
+	  }, {
+	    key: "setInitialY",
+	    value: function setInitialY() {
+	      return -1;
+	    }
+	  }, {
+	    key: "setInitialX",
+	    value: function setInitialX() {
+	      return 0;
+	    }
+	  }, {
 	    key: "setYPosition",
 	    value: function setYPosition(vertex, currentY) {
 	      var _this = this;
@@ -10000,18 +10092,32 @@
 	      // check if there are children that that are in the same group and set position to mean
 	      // if do something else
 	      var includedInVertical = this.settings.includedInVerticalRange(vertex.node);
+	      var focusFactor = vertex.focused || this._previousVertexFocused ? this.settings.focusFactor : 1;
 
 	      if (!includedInVertical) {
 	        // make this better
 	        vertex.y = mean(vertex.node.children, function (child) {
-	          return _this._nodeMap.get(child).y;
+	          var childVertex = _this._nodeMap.get(child);
+
+	          if (childVertex.visibility === VertexStyle.INCLUDED || childVertex.visibility === VertexStyle.HIDDEN) {
+	            return childVertex.y;
+	          } else {
+	            return null;
+	          }
 	        });
 	      } else {
-	        currentY += 1;
+	        currentY += focusFactor * 1;
 	        vertex.y = currentY;
 	      }
 
+	      this._previousVertexFocused = vertex.focused;
 	      return currentY;
+	    }
+	  }, {
+	    key: "setXPosition",
+	    value: function setXPosition(vertex, currentX) {
+	      vertex.x = this._horizontalScale(vertex.node.height * this.settings.branchScale);
+	      return 0;
 	    }
 	  }, {
 	    key: "branchPathGenerator",
@@ -10093,6 +10199,27 @@
 	  }
 
 	  createClass(RectangularLayout, [{
+	    key: "getTreeNodes",
+	    value: function getTreeNodes() {
+	      return toConsumableArray(this.tree.postorder());
+	    }
+	  }, {
+	    key: "updateHorizontalScale",
+	    value: function updateHorizontalScale() {
+	      var newScale = this.settings.horizontalScale ? this.settings.horizontalScale : linear$1().domain([this.tree.rootNode.height * this.settings.branchScale, this.tree.origin]).range(this._horizontalRange);
+	      return newScale;
+	    }
+	  }, {
+	    key: "setInitialY",
+	    value: function setInitialY() {
+	      return -1;
+	    }
+	  }, {
+	    key: "setInitialX",
+	    value: function setInitialX() {
+	      return 0;
+	    }
+	  }, {
 	    key: "setYPosition",
 	    value: function setYPosition(vertex, currentY) {
 	      var _this = this;
@@ -10100,18 +10227,32 @@
 	      // check if there are children that that are in the same group and set position to mean
 	      // if do something else
 	      var includedInVertical = this.settings.includedInVerticalRange(vertex.node);
+	      var focusFactor = vertex.focused || this._previousVertexFocused ? this.settings.focusFactor : 1;
 
 	      if (!includedInVertical) {
 	        // make this better
 	        vertex.y = mean(vertex.node.children, function (child) {
-	          return _this._nodeMap.get(child).y;
+	          var childVertex = _this._nodeMap.get(child);
+
+	          if (childVertex.visibility === VertexStyle.INCLUDED || childVertex.visibility === VertexStyle.HIDDEN) {
+	            return childVertex.y;
+	          } else {
+	            return null;
+	          }
 	        });
 	      } else {
-	        currentY += 1;
+	        currentY += focusFactor * 1;
 	        vertex.y = currentY;
 	      }
 
+	      this._previousVertexFocused = vertex.focused;
 	      return currentY;
+	    }
+	  }, {
+	    key: "setXPosition",
+	    value: function setXPosition(vertex, currentX) {
+	      vertex.x = this._horizontalScale(vertex.node.height * this.settings.branchScale);
+	      return 0;
 	    }
 	  }, {
 	    key: "branchPathGenerator",
@@ -10207,30 +10348,30 @@
 	    value: function setYPosition(vertex, currentY) {
 	      var _this = this;
 
-	      // check if there are children that that are in the same group and set position to mean
-	      // if do something else
-	      if (currentY === this.setInitialY()) {
-	        this._currentGroup = vertex.node.annotations[this.groupingAnnotation];
-	      }
-
+	      var focusFactor = vertex.focused || this._previousVertexFocused ? this.settings.focusFactor : 1;
 	      var includedInVertical = this.settings.includedInVerticalRange(vertex.node);
 
 	      if (!includedInVertical) {
 	        vertex.y = mean(vertex.node.children, function (child) {
-	          return _this._nodeMap.get(child).y;
+	          var childVertex = _this._nodeMap.get(child);
+
+	          if (childVertex.visibility === VertexStyle.INCLUDED || childVertex.visibility === VertexStyle.HIDDEN) {
+	            return childVertex.y;
+	          } else {
+	            return null;
+	          }
 	        });
 	      } else {
 	        if (vertex.node.children && vertex.node.children.length === 1 && vertex.node.annotations[this.settings.groupingAnnotation] !== vertex.node.children[0].annotations[this.settings.groupingAnnotation]) {
-	          console.log("gapit");
-	          currentY += this.settings.groupGap;
+	          currentY += focusFactor * this.settings.groupGap;
 	        } else {
-	          currentY += 1;
+	          currentY += focusFactor * 1;
 	        }
 
-	        this._currentGroup = vertex.node.annotations[this.groupingAnnotation];
 	        vertex.y = currentY;
 	      }
 
+	      this._previousVertexFocused = vertex.focused;
 	      return currentY;
 	    }
 	    /**
@@ -10358,12 +10499,18 @@
 	        this._currentGroup = vertex.node.annotations[this.groupingAnnotation];
 	      }
 
-	      var focusFactor = vertex.focused || this._lastVertexFocused ? this.settings.focusFactor : 1;
+	      var focusFactor = vertex.focused || this._previousVertexFocused ? this.settings.focusFactor : 1;
 	      var includedInVertical = this.settings.includedInVerticalRange(vertex.node);
 
 	      if (!includedInVertical) {
 	        vertex.y = mean(vertex.node.children, function (child) {
-	          return _this3._nodeMap.get(child).y;
+	          var childVertex = _this3._nodeMap.get(child);
+
+	          if (childVertex.visibility === VertexStyle.INCLUDED || childVertex.visibility === VertexStyle.HIDDEN) {
+	            return childVertex.y;
+	          } else {
+	            return null;
+	          }
 	        });
 
 	        if (vertex.node.parent) {
@@ -10386,7 +10533,7 @@
 	        vertex.y = currentY;
 	      }
 
-	      this._lastVertexFocused = vertex.focused;
+	      this._previousVertexFocused = vertex.focused;
 	      return currentY;
 	    }
 	    /**
@@ -11018,22 +11165,30 @@
 	    key: "DEFAULT_STYLES",
 	    value: function DEFAULT_STYLES() {
 	      return {
-	        "nodes": new Map(),
-	        "nodeBackgrounds": new Map(),
-	        "branches": new Map([["fill", function (d) {
-	          return "none";
-	        }], ["stroke-width", function (d) {
-	          return "2";
-	        }], ["stroke", function (d) {
-	          return "black";
-	        }]]),
-	        "cartoons": new Map([["fill", function (d) {
-	          return "none";
-	        }], ["stroke-width", function (d) {
-	          return "2";
-	        }], ["stroke", function (d) {
-	          return "black";
-	        }]])
+	        "nodes": {},
+	        "nodeBackgrounds": {},
+	        "branches": {
+	          "fill": function fill(d) {
+	            return "none";
+	          },
+	          "stroke-width": function strokeWidth(d) {
+	            return "2";
+	          },
+	          "stroke": function stroke(d) {
+	            return "black";
+	          }
+	        },
+	        "cartoons": {
+	          "fill": function fill(d) {
+	            return "none";
+	          },
+	          "stroke-width": function strokeWidth(d) {
+	            return "2";
+	          },
+	          "stroke": function stroke(d) {
+	            return "black";
+	          }
+	        }
 	      };
 	    }
 	    /**
@@ -11061,7 +11216,7 @@
 	        var key = _Object$keys[_i];
 
 	        if (settings.styles[key]) {
-	          styles[key] = new Map([].concat(toConsumableArray(styles[key]), toConsumableArray(settings.styles[key])));
+	          styles[key] = objectSpread({}, styles[key], settings.styles[key]);
 	        }
 	      }
 	    }
@@ -11721,27 +11876,113 @@
 	}
 
 	function updateNodeStyles() {
+	  var _this12 = this;
+
 	  var nodesLayer = select(this.svg).select(".nodes-layer"); // DATA JOIN
 	  // Join new data with old elements, if any.
 
 	  var nodes = nodesLayer.selectAll(".node .node-shape");
-	  var nodeAttrMap = this.settings.styles.nodes;
+	  var nodeStyles = this.settings.styles.nodes;
+
+	  var _loop = function _loop() {
+	    var key = _Object$keys2[_i2];
+	    nodes // .transition()
+	    // .duration(this.settings.transitionDuration)
+	    .attr(key, function (d) {
+	      return nodeStyles[key].call(_this12, d.node);
+	    });
+	  };
+
+	  for (var _i2 = 0, _Object$keys2 = Object.keys(nodeStyles); _i2 < _Object$keys2.length; _i2++) {
+	    _loop();
+	  }
+	}
+
+	function updateNodeBackgroundStyles() {
+	  var _this13 = this;
+
+	  var nodesBackgroundLayer = this.svgSelection.select(".nodes-background-layer"); // DATA JOIN
+	  // Join new data with old elements, if any.
+
+	  var nodes = nodesBackgroundLayer.selectAll(".node-background");
+	  var nodeBackgroundsStyles = this.settings.styles.nodeBackgrounds;
+
+	  var _loop2 = function _loop2() {
+	    var key = _Object$keys3[_i3];
+	    nodes // .transition()
+	    // .duration(this.settings.transitionDuration)
+	    .attr(key, function (d) {
+	      return nodeBackgroundsStyles[key].call(_this13, d.node);
+	    });
+	  };
+
+	  for (var _i3 = 0, _Object$keys3 = Object.keys(nodeBackgroundsStyles); _i3 < _Object$keys3.length; _i3++) {
+	    _loop2();
+	  }
+	}
+
+	function updateBranchStyles() {
+	  var _this14 = this;
+
+	  var branchesLayer = this.svgSelection.select(".branches-layer"); // DATA JOIN
+	  // Join new data with old elements, if any.
+
+	  var branches = branchesLayer.selectAll("g .branch .branch-path");
+	  var branchStyles = this.settings.styles["branches"];
+
+	  var _loop3 = function _loop3() {
+	    var key = _Object$keys4[_i4];
+	    branches // .transition()
+	    // .duration(this.settings.transitionDuration)
+	    .attr(key, function (d) {
+	      return branchStyles[key].call(_this14, d.v1.node);
+	    });
+	  };
+
+	  for (var _i4 = 0, _Object$keys4 = Object.keys(branchStyles); _i4 < _Object$keys4.length; _i4++) {
+	    _loop3();
+	  }
+	}
+
+	function updateCartoonStyles() {
+	  var _this15 = this;
+
+	  var cartoonLayer = this.svgSelection.select(".cartoon-layer"); // DATA JOIN
+	  // Join new data with old elements, if any.
+
+	  var cartoons = cartoonLayer.selectAll(".cartoon path");
+	  var CartoonStyles = this.settings.styles.cartoons;
+
+	  var _loop4 = function _loop4() {
+	    var key = _Object$keys5[_i5];
+	    cartoons // .transition()
+	    // .duration(this.settings.transitionDuration)
+	    .attr(key, function (c) {
+	      return CartoonStyles[key].call(_this15, c.vertices[0].node);
+	    }); // attributes are set by the "root" node
+	  };
+
+	  for (var _i5 = 0, _Object$keys5 = Object.keys(CartoonStyles); _i5 < _Object$keys5.length; _i5++) {
+	    _loop4();
+	  }
+	}
+
+	function pointToPoint(points) {
+	  var path = [];
+	  var origin = points[0];
+	  var pathPoints = points.reverse();
+	  var currentPoint = origin;
 	  var _iteratorNormalCompletion4 = true;
 	  var _didIteratorError4 = false;
 	  var _iteratorError4 = undefined;
 
 	  try {
-	    var _loop = function _loop() {
-	      var key = _step4.value;
-	      nodes // .transition()
-	      // .duration(this.settings.transitionDuration)
-	      .attr(key, function (d) {
-	        return nodeAttrMap.get(key)(d.node);
-	      });
-	    };
-
-	    for (var _iterator4 = nodeAttrMap.keys()[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-	      _loop();
+	    for (var _iterator4 = pathPoints[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+	      var point = _step4.value;
+	      var xdiff = this.scales.x(point.x) - this.scales.x(currentPoint.x);
+	      var ydiff = this.scales.y(point.y) - this.scales.y(currentPoint.y);
+	      path.push("".concat(xdiff, " ").concat(ydiff));
+	      currentPoint = point;
 	    }
 	  } catch (err) {
 	    _didIteratorError4 = true;
@@ -11757,32 +11998,19 @@
 	      }
 	    }
 	  }
+
+	  return "M 0 0 l ".concat(path.join(" l "), " z");
 	}
 
-	function updateNodeBackgroundStyles() {
-	  var _this12 = this;
-
-	  var nodesBackgroundLayer = this.svgSelection.select(".nodes-background-layer"); // DATA JOIN
-	  // Join new data with old elements, if any.
-
-	  var nodes = nodesBackgroundLayer.selectAll(".node-background");
-	  var nodeBackgroundsAttrMap = this.settings.styles.nodeBackgrounds;
+	function updateAnnoations() {
 	  var _iteratorNormalCompletion5 = true;
 	  var _didIteratorError5 = false;
 	  var _iteratorError5 = undefined;
 
 	  try {
-	    var _loop2 = function _loop2() {
-	      var key = _step5.value;
-	      nodes // .transition()
-	      // .duration(this.settings.transitionDuration)
-	      .attr(key, function (d) {
-	        return nodeBackgroundsAttrMap.get(key).call(_this12, d.node);
-	      });
-	    };
-
-	    for (var _iterator5 = nodeBackgroundsAttrMap.keys()[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-	      _loop2();
+	    for (var _iterator5 = this._annotations[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+	      var annotation = _step5.value;
+	      annotation.call(this);
 	    }
 	  } catch (err) {
 	    _didIteratorError5 = true;
@@ -11795,149 +12023,6 @@
 	    } finally {
 	      if (_didIteratorError5) {
 	        throw _iteratorError5;
-	      }
-	    }
-	  }
-	}
-
-	function updateBranchStyles() {
-	  var _this13 = this;
-
-	  var branchesLayer = this.svgSelection.select(".branches-layer"); // DATA JOIN
-	  // Join new data with old elements, if any.
-
-	  var branches = branchesLayer.selectAll("g .branch .branch-path");
-	  var branchAttrMap = this.settings.styles["branches"];
-	  var _iteratorNormalCompletion6 = true;
-	  var _didIteratorError6 = false;
-	  var _iteratorError6 = undefined;
-
-	  try {
-	    var _loop3 = function _loop3() {
-	      var key = _step6.value;
-	      branches // .transition()
-	      // .duration(this.settings.transitionDuration)
-	      .attr(key, function (d) {
-	        return branchAttrMap.get(key).call(_this13, d.v1.node);
-	      });
-	    };
-
-	    for (var _iterator6 = branchAttrMap.keys()[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-	      _loop3();
-	    }
-	  } catch (err) {
-	    _didIteratorError6 = true;
-	    _iteratorError6 = err;
-	  } finally {
-	    try {
-	      if (!_iteratorNormalCompletion6 && _iterator6["return"] != null) {
-	        _iterator6["return"]();
-	      }
-	    } finally {
-	      if (_didIteratorError6) {
-	        throw _iteratorError6;
-	      }
-	    }
-	  }
-	}
-
-	function updateCartoonStyles() {
-	  var _this14 = this;
-
-	  var cartoonLayer = this.svgSelection.select(".cartoon-layer"); // DATA JOIN
-	  // Join new data with old elements, if any.
-
-	  var cartoons = cartoonLayer.selectAll(".cartoon path");
-	  var CartoonAttrMap = this.settings.styles.cartoons;
-	  var _iteratorNormalCompletion7 = true;
-	  var _didIteratorError7 = false;
-	  var _iteratorError7 = undefined;
-
-	  try {
-	    var _loop4 = function _loop4() {
-	      var key = _step7.value;
-	      cartoons // .transition()
-	      // .duration(this.settings.transitionDuration)
-	      .attr(key, function (c) {
-	        return CartoonAttrMap.get(key).call(_this14, c.vertices[0].node);
-	      }); // attributes are set by the "root" node
-	    };
-
-	    for (var _iterator7 = CartoonAttrMap.keys()[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-	      _loop4();
-	    }
-	  } catch (err) {
-	    _didIteratorError7 = true;
-	    _iteratorError7 = err;
-	  } finally {
-	    try {
-	      if (!_iteratorNormalCompletion7 && _iterator7["return"] != null) {
-	        _iterator7["return"]();
-	      }
-	    } finally {
-	      if (_didIteratorError7) {
-	        throw _iteratorError7;
-	      }
-	    }
-	  }
-	}
-
-	function pointToPoint(points) {
-	  var path = [];
-	  var origin = points[0];
-	  var pathPoints = points.reverse();
-	  var currentPoint = origin;
-	  var _iteratorNormalCompletion8 = true;
-	  var _didIteratorError8 = false;
-	  var _iteratorError8 = undefined;
-
-	  try {
-	    for (var _iterator8 = pathPoints[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-	      var point = _step8.value;
-	      var xdiff = this.scales.x(point.x) - this.scales.x(currentPoint.x);
-	      var ydiff = this.scales.y(point.y) - this.scales.y(currentPoint.y);
-	      path.push("".concat(xdiff, " ").concat(ydiff));
-	      currentPoint = point;
-	    }
-	  } catch (err) {
-	    _didIteratorError8 = true;
-	    _iteratorError8 = err;
-	  } finally {
-	    try {
-	      if (!_iteratorNormalCompletion8 && _iterator8["return"] != null) {
-	        _iterator8["return"]();
-	      }
-	    } finally {
-	      if (_didIteratorError8) {
-	        throw _iteratorError8;
-	      }
-	    }
-	  }
-
-	  return "M 0 0 l ".concat(path.join(" l "), " z");
-	}
-
-	function updateAnnoations() {
-	  var _iteratorNormalCompletion9 = true;
-	  var _didIteratorError9 = false;
-	  var _iteratorError9 = undefined;
-
-	  try {
-	    for (var _iterator9 = this._annotations[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-	      var annotation = _step9.value;
-	      annotation.call(this);
-	    }
-	  } catch (err) {
-	    _didIteratorError9 = true;
-	    _iteratorError9 = err;
-	  } finally {
-	    try {
-	      if (!_iteratorNormalCompletion9 && _iterator9["return"] != null) {
-	        _iterator9["return"]();
-	      }
-	    } finally {
-	      if (_didIteratorError9) {
-	        throw _iteratorError9;
 	      }
 	    }
 	  }
