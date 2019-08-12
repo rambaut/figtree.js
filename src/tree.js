@@ -991,6 +991,7 @@ export class Tree {
 
         const trees=[];
 
+
         const nexusTokens = nexus.split(/\s*Begin|begin|end|End|BEGIN|END\s*/);
         const firstToken = nexusTokens.shift().trim();
         if(firstToken.toLowerCase()!=='#nexus'){
@@ -1015,10 +1016,12 @@ export class Tree {
                                 tipNameMap.set(taxaData[0],taxaData[1]);
                             }
                         }else{
-                            const treeString = token.substring(token.indexOf("("));
-                            const thisTree = Tree.parseNewick(treeString);
-                            thisTree.externalNodes.forEach(tip=>tip.name = tipNameMap.get(tip.name))
-                            trees.push(thisTree);
+                            if(tipNameMap.size>0) {
+                                const treeString = token.substring(token.indexOf("("));
+                                const thisTree = Tree.parseNewick(treeString);
+                                thisTree.externalNodes.forEach(tip => tip.name = tipNameMap.get(tip.name))
+                                trees.push(thisTree);
+                            }
                         }
                     }
                 }
