@@ -1,6 +1,7 @@
 "use strict";
 import {format,curveStepBefore,max,min,line,mean,scaleLinear,curveLinear} from "d3";
 import {Type} from "./tree";
+import uuid from "uuid";
 
 /** @module layout */
 
@@ -41,18 +42,11 @@ export class Layout {
         this._verticalRange = [0, this.tree.nodeList.filter(this.settings.includedInVerticalRange).length - 1];
         this._horizontalTicks = [0, 0.5, 1];
 
-
-
-
-
         this._edges = [];
         this._edgeMap = new Map();
 
         this._vertices = [];
         this._nodeMap = new Map();
-
-
-
 
         this._cartoonStore = [];
         this._activeCartoons = [];
@@ -62,7 +56,6 @@ export class Layout {
         this.externalNodeLabelAnnotationName = null;
 
         this.layoutKnown = false;
-
 
         // called whenever the tree changes...
         this.tree.treeUpdateCallback = () => {
@@ -610,9 +603,8 @@ function markCollapsedNodes(c){
             v.visibility = VertexStyle.IGNORED;
         }
     });
-
-
 }
 //TODO add focus implementation to layout method
 //TODO add minimum gap to layout method
 //TODO split MASKED, included ect into a visualisation flag and an included in y position flag
+

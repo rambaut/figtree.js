@@ -42,7 +42,7 @@ export class RectangularLayout extends Layout {
     }
 
     setInitialY() {
-        return -1;
+        return -0.5;
     }
     setInitialX() {
         return 0;

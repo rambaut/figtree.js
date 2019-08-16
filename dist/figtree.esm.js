@@ -7742,18 +7742,11 @@ class Layout {
         this._verticalRange = [0, this.tree.nodeList.filter(this.settings.includedInVerticalRange).length - 1];
         this._horizontalTicks = [0, 0.5, 1];
 
-
-
-
-
         this._edges = [];
         this._edgeMap = new Map();
 
         this._vertices = [];
         this._nodeMap = new Map();
-
-
-
 
         this._cartoonStore = [];
         this._activeCartoons = [];
@@ -7763,7 +7756,6 @@ class Layout {
         this.externalNodeLabelAnnotationName = null;
 
         this.layoutKnown = false;
-
 
         // called whenever the tree changes...
         this.tree.treeUpdateCallback = () => {
@@ -8310,8 +8302,6 @@ function markCollapsedNodes(c){
             v.visibility = VertexStyle.IGNORED;
         }
     });
-
-
 }
 //TODO add focus implementation to layout method
 //TODO add minimum gap to layout method
@@ -8352,7 +8342,7 @@ class RectangularLayout extends Layout {
     }
 
     setInitialY() {
-        return -1;
+        return -0.5;
     }
     setInitialX() {
         return 0;
@@ -8451,7 +8441,7 @@ class RectangularLayout$1 extends Layout {
     }
 
     setInitialY() {
-        return -1;
+        return -0.5;
     }
     setInitialX() {
         return 0;
@@ -9869,8 +9859,22 @@ function updateAxis(){
 
     axesLayer
         .select("#x-axis")
+        .transition()
+        .duration(this.settings.transitionDuration)
+        .ease(this.settings.transitionEase)
+        .attr("transform", `translate(0, ${this.scales.height - this.margins.bottom + 5})`)
         .call(xAxis);
 
+    axesLayer
+        .select("#axis-label")
+        .transition()
+        .duration(this.settings.transitionDuration)
+        .ease(this.settings.transitionEase)
+        .attr("transform", `translate(${this.margins.left}, ${this.scales.height - this.margins.bottom})`)
+        .attr("transform", `translate(${xAxisWidth / 2}, 35)`)
+        .attr("alignment-baseline", "hanging")
+        .style("text-anchor", "middle")
+        .text(this.settings.xAxisTitle);
 }
 
 

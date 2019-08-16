@@ -10085,7 +10085,7 @@
 	  }, {
 	    key: "setInitialY",
 	    value: function setInitialY() {
-	      return -1;
+	      return -0.5;
 	    }
 	  }, {
 	    key: "setInitialX",
@@ -10219,7 +10219,7 @@
 	  }, {
 	    key: "setInitialY",
 	    value: function setInitialY() {
-	      return -1;
+	      return -0.5;
 	    }
 	  }, {
 	    key: "setInitialX",
@@ -11878,7 +11878,8 @@
 	  var xAxis = axisBottom(linear$2().domain(this.layout.horizontalScale.domain()).range(this.scales.x.range())).ticks(this.settings.ticks).tickFormat(this.settings.tickFormat);
 	  var xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
 	  var axesLayer = this.svgSelection.select(".axes-layer");
-	  axesLayer.select("#x-axis").call(xAxis);
+	  axesLayer.select("#x-axis").transition().duration(this.settings.transitionDuration).ease(this.settings.transitionEase).attr("transform", "translate(0, ".concat(this.scales.height - this.margins.bottom + 5, ")")).call(xAxis);
+	  axesLayer.select("#axis-label").transition().duration(this.settings.transitionDuration).ease(this.settings.transitionEase).attr("transform", "translate(".concat(this.margins.left, ", ").concat(this.scales.height - this.margins.bottom, ")")).attr("transform", "translate(".concat(xAxisWidth / 2, ", 35)")).attr("alignment-baseline", "hanging").style("text-anchor", "middle").text(this.settings.xAxisTitle);
 	}
 
 	function updateNodeStyles() {

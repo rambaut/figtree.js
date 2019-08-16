@@ -39,7 +39,7 @@ export class ExplodedLayout extends RectangularLayout {
         const groupingAnnotation = {...ExplodedLayout.DEFAULT_SETTINGS(),...settings}['groupingAnnotation'];
 
         // defined here so we can use the groupingAnnotation key
-        const includedInVerticalRange = node  => !node.children || (node.children.length===1 && node.annotations[groupingAnnotation]!==node.children[0].annotations[groupingAnnotation])
+        const includedInVerticalRange = node  => !node.children || (node.children.length===1 && node.annotations[groupingAnnotation]!==node.children[0].annotations[groupingAnnotation]);
         super(tree, {...ExplodedLayout.DEFAULT_SETTINGS(),...{includedInVerticalRange:includedInVerticalRange}, ...settings});
         this.groupingAnnotation = groupingAnnotation;
     }
@@ -48,7 +48,7 @@ export class ExplodedLayout extends RectangularLayout {
         // order first by grouping annotation and then by postorder
         const postOrderNodes = [...this.tree.postorder()];
 
-        const groupHeights = new Map()
+        const groupHeights = new Map();
         for(const group of this.tree.annotations[this.groupingAnnotation].values){
             const height = min(postOrderNodes.filter(n=>n.annotations[this.groupingAnnotation]===group),d=>d.height);
             groupHeights.set(group,height);

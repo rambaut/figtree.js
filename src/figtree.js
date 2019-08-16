@@ -693,8 +693,22 @@ function updateAxis(){
 
     axesLayer
         .select("#x-axis")
+        .transition()
+        .duration(this.settings.transitionDuration)
+        .ease(this.settings.transitionEase)
+        .attr("transform", `translate(0, ${this.scales.height - this.margins.bottom + 5})`)
         .call(xAxis);
 
+    axesLayer
+        .select("#axis-label")
+        .transition()
+        .duration(this.settings.transitionDuration)
+        .ease(this.settings.transitionEase)
+        .attr("transform", `translate(${this.margins.left}, ${this.scales.height - this.margins.bottom})`)
+        .attr("transform", `translate(${xAxisWidth / 2}, 35)`)
+        .attr("alignment-baseline", "hanging")
+        .style("text-anchor", "middle")
+        .text(this.settings.xAxisTitle);
 }
 
 
