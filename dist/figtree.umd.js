@@ -11237,6 +11237,7 @@
 	    };
 	    this._annotations = [];
 	    this.svg = svg;
+	    return this;
 	  }
 
 	  createClass(FigTree, [{
@@ -11291,6 +11292,7 @@
 	      };
 
 	      this.update();
+	      return this;
 	    }
 	    /**
 	     * Updates the tree when it has changed
@@ -11328,6 +11330,7 @@
 	      }
 
 	      updateNodes.call(this);
+	      return this;
 	    }
 	    /**
 	     * set mouseover highlighting of branches
@@ -11351,6 +11354,7 @@
 	        });
 	      });
 	      this.update();
+	      return this;
 	    }
 	    /**
 	     * Set mouseover highlighting of internal nodes
@@ -11360,6 +11364,7 @@
 	    key: "hilightInternalNodes",
 	    value: function hilightInternalNodes() {
 	      this.hilightNodes(".internal-node");
+	      return this;
 	    }
 	    /**
 	     * Set mouseover highlighting of internal nodes
@@ -11369,6 +11374,7 @@
 	    key: "hilightExternalNodes",
 	    value: function hilightExternalNodes() {
 	      this.hilightNodes(".external-node");
+	      return this;
 	    }
 	    /**
 	     * Set mouseover highlighting of nodes
@@ -11404,6 +11410,7 @@
 	        });
 	      });
 	      this.update();
+	      return this;
 	    }
 	    /**
 	     * Registers action function to be called when an edge is clicked on. The function is passed
@@ -11439,6 +11446,7 @@
 	        });
 	      });
 	      this.update();
+	      return this;
 	    }
 	    /**
 	     * Registers action function to be called when an internal node is clicked on. The function should
@@ -11453,6 +11461,7 @@
 	    key: "onClickInternalNode",
 	    value: function onClickInternalNode(action) {
 	      this.onClickNode(action, ".internal-node");
+	      return this;
 	    }
 	    /**
 	     * Registers action function to be called when an external node is clicked on. The function should
@@ -11465,6 +11474,7 @@
 	    key: "onClickExternalNode",
 	    value: function onClickExternalNode(action) {
 	      this.onClickNode(action, ".external-node");
+	      return this;
 	    }
 	    /**
 	     * Registers action function to be called when a vertex is clicked on. The function is passed
@@ -11492,6 +11502,7 @@
 	        });
 	      });
 	      this.update();
+	      return this;
 	    }
 	    /**
 	     * General Nodehover callback
@@ -11519,6 +11530,7 @@
 	          _this6.update();
 	        });
 	      });
+	      return this;
 	    }
 	    /**
 	     * General branch hover callback
@@ -11547,6 +11559,7 @@
 	        });
 	      });
 	      this.update();
+	      return this;
 	    }
 	    /**
 	     * Registers some text to appear in a popup box when the mouse hovers over the selection.
@@ -11575,6 +11588,7 @@
 	        var tooltip = document.getElementById("tooltip");
 	        tooltip.style.display = "none";
 	      });
+	      return this;
 	    }
 	  }, {
 	    key: "addAnnotation",
@@ -11582,6 +11596,7 @@
 	      this._annotations.push(annotation);
 
 	      this.update();
+	      return this;
 	    }
 	  }, {
 	    key: "treeLayout",

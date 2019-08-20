@@ -63,6 +63,7 @@ export class FigTree {
 
         this.svg=svg;
 
+        return this;
     }
     draw(){
         
@@ -118,6 +119,8 @@ export class FigTree {
         }
 
         this.update();
+        return this;
+
     }
 
     /**
@@ -154,6 +157,8 @@ export class FigTree {
 
         updateNodes.call(this);
 
+        return this;
+
     }
 
     /**
@@ -174,6 +179,9 @@ export class FigTree {
             });
         })
         this.update();
+
+        return this;
+
     }
 
     /**
@@ -181,6 +189,8 @@ export class FigTree {
      */
     hilightInternalNodes() {
         this.hilightNodes(".internal-node");
+        return this;
+
     }
 
     /**
@@ -188,6 +198,9 @@ export class FigTree {
      */
     hilightExternalNodes() {
         this.hilightNodes(".external-node");
+
+        return this;
+
     }
 
     /**
@@ -222,6 +235,9 @@ export class FigTree {
             });
         })
         this.update();
+
+        return this;
+
     }
 
     /**
@@ -250,6 +266,9 @@ export class FigTree {
             })
         });
         this.update();
+
+        return this;
+
     }
 
     /**
@@ -262,6 +281,9 @@ export class FigTree {
      */
     onClickInternalNode(action) {
         this.onClickNode(action, ".internal-node");
+
+        return this;
+
     }
 
     /**
@@ -272,6 +294,9 @@ export class FigTree {
      */
     onClickExternalNode(action) {
         this.onClickNode(action, ".external-node");
+
+        return this;
+
     }
 
     /**
@@ -293,6 +318,9 @@ export class FigTree {
             })
         });
     this.update();
+
+        return this;
+
     }
     /**
      * General Nodehover callback
@@ -313,6 +341,9 @@ export class FigTree {
                 this.update();
             });
         })
+
+        return this;
+
     }
 
     /**
@@ -334,6 +365,7 @@ export class FigTree {
             });
         })
         this.update();
+        return this;
 
     }
     /**
@@ -360,6 +392,8 @@ export class FigTree {
             let tooltip = document.getElementById("tooltip");
             tooltip.style.display = "none";
         });
+        return this;
+
     }
 
     set treeLayout(layout) {
@@ -370,6 +404,8 @@ export class FigTree {
     addAnnotation(annotation){
         this._annotations.push(annotation);
         this.update();
+        return this;
+
     }
 }
 

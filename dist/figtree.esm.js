@@ -9229,6 +9229,7 @@ class FigTree {
 
         this.svg=svg;
 
+        return this;
     }
     draw(){
         
@@ -9284,6 +9285,8 @@ class FigTree {
         };
 
         this.update();
+        return this;
+
     }
 
     /**
@@ -9320,6 +9323,8 @@ class FigTree {
 
         updateNodes.call(this);
 
+        return this;
+
     }
 
     /**
@@ -9340,6 +9345,9 @@ class FigTree {
             });
         });
         this.update();
+
+        return this;
+
     }
 
     /**
@@ -9347,6 +9355,8 @@ class FigTree {
      */
     hilightInternalNodes() {
         this.hilightNodes(".internal-node");
+        return this;
+
     }
 
     /**
@@ -9354,6 +9364,9 @@ class FigTree {
      */
     hilightExternalNodes() {
         this.hilightNodes(".external-node");
+
+        return this;
+
     }
 
     /**
@@ -9388,6 +9401,9 @@ class FigTree {
             });
         });
         this.update();
+
+        return this;
+
     }
 
     /**
@@ -9416,6 +9432,9 @@ class FigTree {
             });
         });
         this.update();
+
+        return this;
+
     }
 
     /**
@@ -9428,6 +9447,9 @@ class FigTree {
      */
     onClickInternalNode(action) {
         this.onClickNode(action, ".internal-node");
+
+        return this;
+
     }
 
     /**
@@ -9438,6 +9460,9 @@ class FigTree {
      */
     onClickExternalNode(action) {
         this.onClickNode(action, ".external-node");
+
+        return this;
+
     }
 
     /**
@@ -9459,6 +9484,9 @@ class FigTree {
             });
         });
     this.update();
+
+        return this;
+
     }
     /**
      * General Nodehover callback
@@ -9479,6 +9507,9 @@ class FigTree {
                 this.update();
             });
         });
+
+        return this;
+
     }
 
     /**
@@ -9500,6 +9531,7 @@ class FigTree {
             });
         });
         this.update();
+        return this;
 
     }
     /**
@@ -9526,6 +9558,8 @@ class FigTree {
             let tooltip = document.getElementById("tooltip");
             tooltip.style.display = "none";
         });
+        return this;
+
     }
 
     set treeLayout(layout) {
@@ -9536,6 +9570,8 @@ class FigTree {
     addAnnotation(annotation){
         this._annotations.push(annotation);
         this.update();
+        return this;
+
     }
 }
 
