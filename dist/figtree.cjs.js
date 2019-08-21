@@ -251,20 +251,6 @@ function number(x) {
   return x === null ? NaN : +x;
 }
 
-function range(start, stop, step) {
-  start = +start, stop = +stop, step = (n = arguments.length) < 2 ? (stop = start, start = 0, 1) : n < 3 ? 1 : +step;
-
-  var i = -1,
-      n = Math.max(0, Math.ceil((stop - start) / step)) | 0,
-      range = new Array(n);
-
-  while (++i < n) {
-    range[i] = start + i * step;
-  }
-
-  return range;
-}
-
 var e10 = Math.sqrt(50),
     e5 = Math.sqrt(10),
     e2 = Math.sqrt(2);
@@ -6359,52 +6345,6 @@ ReflectContext.prototype = {
   bezierCurveTo: function(x1, y1, x2, y2, x, y) { this._context.bezierCurveTo(y1, x1, y2, x2, y, x); }
 };
 
-function Step(context, t) {
-  this._context = context;
-  this._t = t;
-}
-
-Step.prototype = {
-  areaStart: function() {
-    this._line = 0;
-  },
-  areaEnd: function() {
-    this._line = NaN;
-  },
-  lineStart: function() {
-    this._x = this._y = NaN;
-    this._point = 0;
-  },
-  lineEnd: function() {
-    if (0 < this._t && this._t < 1 && this._point === 2) this._context.lineTo(this._x, this._y);
-    if (this._line || (this._line !== 0 && this._point === 1)) this._context.closePath();
-    if (this._line >= 0) this._t = 1 - this._t, this._line = 1 - this._line;
-  },
-  point: function(x, y) {
-    x = +x, y = +y;
-    switch (this._point) {
-      case 0: this._point = 1; this._line ? this._context.lineTo(x, y) : this._context.moveTo(x, y); break;
-      case 1: this._point = 2; // proceed
-      default: {
-        if (this._t <= 0) {
-          this._context.lineTo(this._x, y);
-          this._context.lineTo(x, y);
-        } else {
-          var x1 = this._x * (1 - this._t) + x * this._t;
-          this._context.lineTo(x1, this._y);
-          this._context.lineTo(x1, y);
-        }
-        break;
-      }
-    }
-    this._x = x, this._y = y;
-  }
-};
-
-function stepBefore(context) {
-  return new Step(context, 0);
-}
-
 // for unique node ids
 const Type = {
     DISCRETE : Symbol("DISCRETE"),
@@ -7713,33 +7653,390 @@ const  VertexStyle = {
     INCLUDED:Symbol("INCLUDED"),// Only included nodes are sent to the figtree class
     IGNORED:Symbol('IGNORED'), // Ignored nodes are just that ignored in everyway
     HIDDEN:Symbol("HIDDEN"), // The only difference between hidden and included nodes is that hidden nodes are not sent to the figtree class
+    MASKED:Symbol("MASKED") // Masked nodes have an x and y coordinate but are then ignored. They don't count towards their parent's x and y and are not visualized.
+};
+
+/**
+ * The interface for the layout class this defines the api
+ *
+ */
+class layoutInterface {
+
+    /**
+     * The constructor
+     * @param tree
+     * @param settings
+     */
+
+
+    /**
+     * The layout function is called to make the edges, vertrices, and cartoons that make up the graph and set or update
+     * their positions on a custom x and y scale. It also should update the _horizontialScale, the _veriticalRange so that
+     * these positions can be converted to a [0,1] scale to be consumed by the figtree class.
+     * 
+     */
+    layout() {
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+
+    /**
+     * A getter to return the horizontal range spanned by the vertices in the graph
+     */
+    get horizontalRange() {
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+    /**
+     * A getter to return the vertical range spanned by the vertices in the graph
+     */
+    get verticalRange() {
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+
+
+    /**
+     * A setter for setting the branchScale factor. Should trigger and update
+     * @param value
+     */
+    set branchScale(value){
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+
+    }
+
+    /**
+     * A getter for the branchScaling factor
+     * @return {number}
+     */
+    get branchScale(){
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+
+    /**
+     * Sets the annotation to use as the node labels for internal nodes. It should trigger and update.
+     *
+     * @param annotationName
+     */
+    set internalNodeLabelAnnotationName(annotationName) {
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+
+    }
+
+    /**
+     * Getter for internal node annotation name
+     * @return {*}
+     */
+    get internalNodeLabelAnnotationName() {
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+
+
+
+    /**
+     * Sets the annotation to use as the node labels for external nodes.It should trigger and update
+     *
+     * @param annotationName
+     */
+    set externalNodeLabelAnnotationName(annotationName) {
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+
+    }
+
+    /**
+     * getter for external node label name.
+     * @return {*}
+     */
+    get externalNodeLabelAnnotationName() {
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+
+    /**
+     * Sets the annotation to use as the branch labels. It should trigger an update
+     *
+     * @param annotationName
+     */
+    set branchLabelAnnotationName(annotationName) {
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+    get branchLabelAnnotationName() {
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+
+    /**
+     * Updates the tree when it has changed
+     */
+    update() {
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+    /**
+     * A utility function for rotating a node
+     * @returns {rotate}
+     */
+    rotate() {
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+
+    /**
+     * A utility function for ordering a subtree with increasing tip density
+     * @returns {orderIncreasing}
+     */
+    orderIncreasing() {
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+
+    /**
+     * A utility function for ordering a subtree with decreasing tip density
+     * @returns {orderIncreasing}
+     */
+    orderDecreasing() {
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+
+    /**
+     * A utility function for rerooting the tree
+     * @returns {reroot}
+     */
+    reroot() {
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+
+    /**
+     * A utility function to mark a clade as a triangle cartoon
+     * @param vertex
+     */
+    cartoon(vertex) {
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+
+    /**
+     * A utitlity function to collapse a clade into a single branch and tip.
+     * @param vertex
+     */
+    collapse(vertex) {
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+
+    /**
+     * A utility function to mask a node so that it's vertex will be assigned an x and y but these values will not be used
+     * to calculate the position of parent nodes.
+     * @param node
+     */
+    maskNode(node){
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+
+    /**
+     * A utility function to hide a node so that it is not sent to the figtree class for visualization.
+     * @param node
+     */
+    hideNode(node){
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+
+    /**
+     * A utility function to ignore a node so that it does not get an x or y coordinate and is not sent to figtree.js
+     * for visualization.
+     * @param node
+     */
+    ignoreNode(node){
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+
+    }
+
+    /**
+     * A unitlity function to mark a node as included. This is the default.
+     * @param node
+     */
+    includeNode(node){
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+
+    /**
+     * A utility function that will return a HTML string about the node and its
+     * annotations. Can be used with the addLabels() method.
+     *
+     * @param node
+     * @returns {string}
+     */
+    nodeInfo(node) {
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+
+    /**
+     * A getter function that updates the layout if needed and then returns edges whose target node is "included"
+     * @return {T[]}
+     */
+    get edges() {
+        if (!this.layoutKnown) {
+            this.layout();
+        }
+        return this._edges.filter(e => e.v1.visibility===VertexStyle.INCLUDED);
+    }
+
+    /**
+     * A getter function that updates the layout if needed and returns included vertices.
+     * @return {T[]}
+     */
+    get vertices() {
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+
+    /**
+     * A getter function that updates the layout if needed, determines the most ancestral cartoons, hides the appropriate vertices
+     * and then returns a array of  cartoon objects defined as {vertices[{x:,y}...{x:,y:}], classes:[string,...],id:string,node:NODE:starting node }
+     * @return {[]}
+     */
+    get cartoons() {
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+
+    /**
+     * A utility function that updates the layout if needed then returns the nodeMap.
+     * @return {*|Map|Map|Map|Map<any, any>}
+     */
+    get nodeMap() {
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+
+    /**
+     * A utility function that updates the layout if needed then returns the edgeMap.
+     * @return {*|Map|Map|Map|Map<any, any>}
+     */
+    get edgeMap() {
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+
+    /**
+     * A uitility function that updates the layout if needed, then calls returns the horizontal scale.
+     * @return {*}
+     */
+    get horizontalScale() {
+        if (!this.layoutKnown) {
+            this.layout();
+        }
+        return this._horizontalScale;
+    }
+
+
+    /**
+     * Sets the horizontal scale for the layout. This maps the tree to the layout range which is [0,1]
+     * @return {null|*}
+     */
+    updateHorizontalScale() {
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+
+    /**
+     * sets the initial Y value for the first node returned from the getTreeNodes().
+     * @return {number}
+     */
+    setInitialY() {
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+
+    /**
+     * Set the y position of a vertex and return the Y position. This function is called on each node in the order returns from the getTreeNodes() method.
+     * The currentY represent the Y position of the previous node at each iteration. These y values will be mapped to a [0,1]
+     * range.
+     * @param vertex
+     * @param currentY
+     * @return {number}
+     */
+    setYPosition(vertex, currentY) {
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+    /**
+     * sets the initial x value for the first node returned from the getTreeNodes().
+     * @return {number}
+     */
+    setInitialX() {
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+    /**
+     * Set the x position of a vertex and return the X position. This function is called on each node in the order returns from the getTreeNodes() method.
+     * The currentX represent the x position of the previous node at each iteration. These x values will be mapped to a [0,1]
+     * range. In the 'normal' left to right tree this method would ignore the currentX and set the x based on the horizontal scale.
+     * @param vertex
+     * @param currentX
+     * @return {number}
+     */
+    setXPosition(vertex, currentX) {
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+
+    /**
+     * A method which returns the nodes of the tree in the order in which they will be assigned Y and X coordinates.
+     * @return {IterableIterator<*>[]}
+     */
+    getTreeNodes() {
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    };
+
+    /**
+     * Generates a line() function that takes an edge and it's index and returns a line for d3 path element. It is called
+     * by the figtree class as
+     * const branchPath = this.layout.branchPathGenerator(this.scales)
+     * newBranches.append("path")
+     .attr("class", "branch-path")
+     .attr("d", (e,i) => branchPath(e,i));
+     * @param scales
+     * @param branchCurve
+     * @return {function(*, *)}
+     */
+
+    branchPathGenerator(scales,branchCurve){
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+
+    /**
+     * A utility function that replaces the aspects of the settins provided here then calls update.
+     * @param newSettings
+     */
+    updateSettings(newSettings){
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+
+}
+
+/** @module layout */
+
+const  VertexStyle$1 = {
+    INCLUDED:Symbol("INCLUDED"),// Only included nodes are sent to the figtree class
+    IGNORED:Symbol('IGNORED'), // Ignored nodes are just that ignored in everyway
+    HIDDEN:Symbol("HIDDEN"), // The only difference between hidden and included nodes is that hidden nodes are not sent to the figtree class
     MASKED:Symbol("MASKED") // Masked nodes have an x and y coordinate but are then ignored. They don't count towards their parent's x and y
 };
 
 /**
- * The Layout class
+ * The AbstractLayout class
  *
  */
-class Layout {
+class AbstractLayout extends layoutInterface {
 
+    /**
+     * The default layout settings
+     * @return {{lengthFormat: *, horizontalScale: null, branchScale: number, radiusOfCurve: number, includedInVerticalRange: (function(*): boolean)}}
+     * @constructor
+     */
     static DEFAULT_SETTINGS() {
         return {
             lengthFormat: format(".2f"),
-            horizontalScale: null, // a scale that converts height to 0,1  domain. default is 0 = heighest tip
+            horizontalScale: null, // a scale that converts height to 0,1  domain. default is 0 = highest tip
             includedInVerticalRange: node => !node.children,
-            branchCurve: null,
-            branchScale:1,
-            focusFactor:1,
+            branchScale: 1,
+            radiusOfCurve:0,
+
         }
     }
 
     /**
-     * The constructor.
+     * The constructor
+     * @param tree
+     * @param settings
      */
     constructor(tree, settings = {}) {
+        super();
 
         this.tree = tree;
-        this.settings = {...Layout.DEFAULT_SETTINGS(), ...settings};
+        this.settings = {...AbstractLayout.DEFAULT_SETTINGS(), ...settings};
 
         // default ranges - these should be set in layout()
         this._horizontalRange = [0.0, 1.0];
@@ -7755,9 +8052,9 @@ class Layout {
         this._cartoonStore = [];
         this._activeCartoons = [];
 
-        this.branchLabelAnnotationName = null;
-        this.internalNodeLabelAnnotationName = null;
-        this.externalNodeLabelAnnotationName = null;
+        this._branchLabelAnnotationName = null;
+        this._internalNodeLabelAnnotationName = null;
+        this._externalNodeLabelAnnotationName = null;
 
         this.layoutKnown = false;
 
@@ -7773,58 +8070,47 @@ class Layout {
         };
 
 
-
-
     }
 
-    /**
-     * An abstract base class for a layout class. The aim is to describe the API of the class.
-     *
-     * @param vertices - objects with an x, y coordinates and a reference to the original node
-     * @param edges - objects with v1 (a vertex) and v0 (the parent vertex).
-     */
     layout() {
         this._horizontalScale = this.updateHorizontalScale();
 
-        makeVerticesFromNodes.call(this,this.getTreeNodes());
-        makeEdgesFromNodes.call(this,this.getTreeNodes());
+        makeVerticesFromNodes.call(this, this.getTreeNodes());
+        makeEdgesFromNodes.call(this, this.getTreeNodes());
         // get the nodes
 
         let currentY = this.setInitialY();
         let currentX = this.setInitialX();
 
-
-
         //CARTOONS set up
         // filter so just showing the most ancestral;
         const allCartoonDescendents = [];
-        this._cartoonStore.forEach(c=> {
-            if(allCartoonDescendents.indexOf(c.node)===-1){
-                allCartoonDescendents.push(...[...this.tree.postorder(c.node)].filter(n=>n!==c.node));
+        this._cartoonStore.forEach(c => {
+            if (allCartoonDescendents.indexOf(c.node) === -1) {
+                allCartoonDescendents.push(...[...this.tree.postorder(c.node)].filter(n => n !== c.node));
             }
         });
 
-        this._activeCartoons = this._cartoonStore.filter(c=>allCartoonDescendents.indexOf(c.node)===-1);
+        this._activeCartoons = this._cartoonStore.filter(c => allCartoonDescendents.indexOf(c.node) === -1);
 
-        this._activeCartoons.filter(c=>c.format==='collapse')
-            .forEach(c=>{
-              markCollapsedNodes.call(this,c);
-        });
+        this._activeCartoons.filter(c => c.format === 'collapse')
+            .forEach(c => {
+                markCollapsedNodes.call(this, c);
+            });
 
 
         // update the node locations (vertices)
-        this._vertices.forEach((v)=>{
-                if(!(v.visibility===VertexStyle.IGNORED)) {
+        this._vertices.forEach((v) => {
+            if (!(v.visibility === VertexStyle$1.IGNORED)) {
 
-                    currentY = this.setYPosition(v, currentY);
-                    currentX = this.setXPosition(v,currentX);
-                    v.degree = (v.node.children ? v.node.children.length + 1: 1); // the number of edges (including stem)
-                    v.id = v.node.id;
-                    setVertexClasses.call(this,v);
-                    setVertexLabels.call(this,v);
-                }
-            });
-
+                currentY = this.setYPosition(v, currentY);
+                currentX = this.setXPosition(v, currentX);
+                v.degree = (v.node.children ? v.node.children.length + 1 : 1); // the number of edges (including stem)
+                v.id = v.node.id;
+                setVertexClasses.call(this, v);
+                setVertexLabels.call(this, v);
+            }
+        });
 
 
         //Update edge locations
@@ -7837,6 +8123,30 @@ class Layout {
         this._verticalRange = [0, currentY];
         this.layoutKnown = true;
 
+    }
+    branchPathGenerator(scales,branchCurve){
+        const branchPath =(e,i)=>{
+            const branchLine = line()
+                .x((v) => v.x)
+                .y((v) => v.y)
+                .curve(branchCurve);
+            const factor = e.v0.y-e.v1.y>0? 1:-1;
+            const dontNeedCurv = e.v0.y-e.v1.y===0?0:1;
+            const output = this.settings.radius>0?
+                branchLine(
+                    [{x: 0, y: scales.y(e.v0.y) - scales.y(e.v1.y)},
+                        { x:0, y:dontNeedCurv*factor * this.settings.radius},
+                        {x:0 + dontNeedCurv*this.settings.radius, y:0},
+                        {x: scales.x(e.v1.x) - scales.x(e.v0.x), y: 0}
+                    ]):
+                branchLine(
+                    [{x: 0, y: scales.y(e.v0.y) - scales.y(e.v1.y)},
+                        {x: scales.x(e.v1.x) - scales.x(e.v0.x), y: 0}
+                    ]);
+            return(output)
+
+        };
+        return branchPath;
     }
 
     get horizontalRange() {
@@ -7854,65 +8164,63 @@ class Layout {
         return this._horizontalTicks;
     }
 
-    set branchCurve(curve) {
-        this.settings.branchCurve = curve;
-        this.update();
-    }
+    //TODO move to figtree
 
+    // set branchCurve(curve) {
+    //     this.settings.branchCurve = curve;
+    //     this.update();
+    // }
+    //
+    //
+    // get branchCurve() {
+    //     return this.settings.branchCurve;
+    // }
 
-    get branchCurve() {
-        return this.settings.branchCurve;
-    }
-
-    set branchScale(value){
+    set branchScale(value) {
         this.settings.branchScale = value;
         this.update();
     }
-    get branchScale(){
+
+    get branchScale() {
         return this.settings.branchScale;
     }
 
-    /**
-     * Sets the annotation to use as the node labels.
-     *
-     * @param annotationName
-     */
-    setInternalNodeLabels(annotationName) {
-        this.internalNodeLabelAnnotationName = annotationName;
+
+    set internalNodeLabelAnnotationName(annotationName) {
+        this._internalNodeLabelAnnotationName = annotationName;
+        this.update();
+    }
+    get internalNodeLabelAnnotationName() {
+        return this._internalNodeLabelAnnotationName;
+    }
+
+
+
+    set externalNodeLabelAnnotationName(annotationName) {
+        this._externalNodeLabelAnnotationName = annotationName;
         this.update();
     }
 
-    /**
-     * Sets the annotation to use as the node labels.
-     *
-     * @param annotationName
-     */
-    setExternalNodeLabels(annotationName) {
-        this.externalNodeLabelAnnotationName = annotationName;
-        this.update();
+    get externalNodeLabelAnnotationName() {
+        return this._externalNodeLabelAnnotationName;
     }
 
-    /**
-     * Sets the annotation to use as the node labels.
-     *
-     * @param annotationName
-     */
-    setBranchLabels(annotationName) {
-        this.branchLabelAnnotationName = annotationName;
+
+    set branchLabelAnnotationName(annotationName) {
+        this._branchLabelAnnotationName = annotationName;
         this.update();
     }
+    get branchLabelAnnotationName() {
+        return this._branchLabelAnnotationName;
+    }
 
-    /**
-     * Updates the tree when it has changed
-     */
+
+
     update() {
         this.updateCallback();
     }
 
-    /**
-     * A utility function for rotating a node
-     * @returns {rotate}
-     */
+
     rotate() {
         return (vertex) => {
             this.tree.rotate(vertex.node);
@@ -7920,10 +8228,7 @@ class Layout {
         };
     }
 
-    /**
-     * A utility function for ordering a subtree with increasing tip density
-     * @returns {orderIncreasing}
-     */
+
     orderIncreasing() {
         return (vertex) => {
             this.tree.rotate(vertex.node);
@@ -7931,10 +8236,7 @@ class Layout {
         };
     }
 
-    /**
-     * A utility function for ordering a subtree with decreasing tip density
-     * @returns {orderIncreasing}
-     */
+
     orderDecreasing() {
         return (vertex) => {
             this.tree.rotate(vertex.node);
@@ -7942,10 +8244,7 @@ class Layout {
         };
     }
 
-    /**
-     * A utility function for rerooting the tree
-     * @returns {reroot}
-     */
+
     reroot() {
         return (edge, position) => {
             this.tree.reroot(edge.v1.node, position);
@@ -7953,12 +8252,10 @@ class Layout {
         };
     }
 
-    /**
-     * A utility function to cartoon a clade into a triangle
-     * @param vertex
-     */
-    cartoon(node) {
-        if(node.children) {
+
+    cartoon(vertex) {
+        const node = vertex.node;
+        if (node.children) {
 
             if (this._cartoonStore.filter(c => c.format === "cartoon").find(c => c.node === node)) {
 
@@ -7974,12 +8271,10 @@ class Layout {
         }
     }
 
-    /**
-     * A utitlity function to collapse a clade into a single branch and tip.
-     * @param vertex
-     */
-    collapse(node) {
-        if(node.children) {
+
+    collapse(vertex) {
+        const node = vertex.node;
+        if (node.children) {
             if (this._cartoonStore.filter(c => c.format === "collapse").find(c => c.node === node)) {
                 this._cartoonStore = this._cartoonStore.filter(c => !(c.format === "collapse" && c.node === node));
             } else {
@@ -7993,35 +8288,32 @@ class Layout {
         }
     }
 
-    maskNode(node){
+    maskNode(node) {
         const vertex = this.nodeMap.get(node);
-        vertex.visibility = VertexStyle.MASKED;
-        this.layoutKnown=false;
-    }
-    hideNode(node){
-        const vertex = this.nodeMap.get(node);
-        vertex.visibility = VertexStyle.HIDDEN;
-        this.layoutKnown=false;
-    }
-    ignoreNode(node){
-        const vertex = this.nodeMap.get(node);
-        vertex.visibility = VertexStyle.IGNORED;
-        this.layoutKnown=false;
-    }
-    includeNode(node){
-        const vertex = this.nodeMap.get(node);
-        vertex.visibility = VertexStyle.INCLUDED;
-        this.layoutKnown=false;
+        vertex.visibility = VertexStyle$1.MASKED;
+        this.layoutKnown = false;
     }
 
-    /**
-     * A utility function that will return a HTML string about the node and its
-     * annotations. Can be used with the addLabels() method.
-     *
-     * @param node
-     * @returns {string}
-     */
-    static nodeInfo(node) {
+    hideNode(node) {
+        const vertex = this.nodeMap.get(node);
+        vertex.visibility = VertexStyle$1.HIDDEN;
+        this.layoutKnown = false;
+    }
+
+    ignoreNode(node) {
+        const vertex = this.nodeMap.get(node);
+        vertex.visibility = VertexStyle$1.IGNORED;
+        this.layoutKnown = false;
+    }
+
+    includeNode(node) {
+        const vertex = this.nodeMap.get(node);
+        vertex.visibility = VertexStyle$1.INCLUDED;
+        this.layoutKnown = false;
+    }
+
+
+    nodeInfo(node) {
         let text = `${node.name ? node.name : node.id}`;
         Object.entries(node.annotations).forEach(([key, value]) => {
             text += `<p>${key}: ${value}</p>`;
@@ -8033,14 +8325,14 @@ class Layout {
         if (!this.layoutKnown) {
             this.layout();
         }
-        return this._edges.filter(e => e.v1.visibility===VertexStyle.INCLUDED);
+        return this._edges.filter(e => e.v1.visibility === VertexStyle$1.INCLUDED);
     }
 
     get vertices() {
         if (!this.layoutKnown) {
             this.layout();
         }
-        return this._vertices.filter(v => v.visibility===VertexStyle.INCLUDED);
+        return this._vertices.filter(v => v.visibility === VertexStyle$1.INCLUDED);
     }
 
     get cartoons() {
@@ -8049,40 +8341,42 @@ class Layout {
         }
         const cartoons = [];
         // Handle cartoons
-        this._activeCartoons.forEach(c=>{
+        this._activeCartoons.forEach(c => {
 
 
-        const cartoonNodeDecedents = [...this.tree.postorder(c.node)].filter(n=>n!==c.node);
-        const cartoonVertex = this._nodeMap.get(c.node);
+            const cartoonNodeDecedents = [...this.tree.postorder(c.node)].filter(n => n !== c.node);
+            const cartoonVertex = this._nodeMap.get(c.node);
 
-        const cartoonVertexDecedents = cartoonNodeDecedents.map(n=>this._nodeMap.get(n));
-        cartoonVertexDecedents.forEach(v=>v.visibility=VertexStyle.HIDDEN);
-        const newTopVertex = {
-            x: max(cartoonVertexDecedents, d => d.x),
-            y: max(cartoonVertexDecedents, d => d.y),
-            id: `${cartoonVertex.id}-top`,
-            node: cartoonVertex.node,
-            classes: cartoonVertex.classes
-        };
-        const newBottomVertex = {
-            ...newTopVertex,...{y:min(cartoonVertexDecedents, d => d.y),id: `${cartoonVertex.id}-bottom`}
-        };
-        // place in middle of tips.
-        cartoonVertex.y = mean([newTopVertex,newBottomVertex],d=>d.y);
-        let currentNode= cartoonVertex.node;
-        while(currentNode.parent){
-            const parentVertex = this._nodeMap.get(currentNode.parent);
-            if(!this.settings.includedInVerticalRange(parentVertex.node)) {
-                parentVertex.y = mean(parentVertex.node.children, (child) => this._nodeMap.get(child).y);
+            const cartoonVertexDecedents = cartoonNodeDecedents.map(n => this._nodeMap.get(n));
+            cartoonVertexDecedents.forEach(v => v.visibility = VertexStyle$1.HIDDEN);
+            const newTopVertex = {
+                x: max(cartoonVertexDecedents, d => d.x),
+                y: max(cartoonVertexDecedents, d => d.y),
+                id: `${cartoonVertex.id}-top`,
+                node: cartoonVertex.node,
+                classes: cartoonVertex.classes
+            };
+            const newBottomVertex = {
+                ...newTopVertex, ...{y: min(cartoonVertexDecedents, d => d.y), id: `${cartoonVertex.id}-bottom`}
+            };
+            // place in middle of tips.
+            cartoonVertex.y = mean([newTopVertex, newBottomVertex], d => d.y);
+            let currentNode = cartoonVertex.node;
+            while (currentNode.parent) {
+                const parentVertex = this._nodeMap.get(currentNode.parent);
+                if (!this.settings.includedInVerticalRange(parentVertex.node)) {
+                    parentVertex.y = mean(parentVertex.node.children, (child) => this._nodeMap.get(child).y);
+                }
+                currentNode = parentVertex.node;
+
             }
-            currentNode = parentVertex.node;
 
-        }
-
-            cartoons.push({vertices:[cartoonVertex,newTopVertex,newBottomVertex],
-            classes : cartoonVertex.classes,
-            id:`${cartoonVertex.id}-cartoon`, node:c.node});
+            cartoons.push({
+                vertices: [cartoonVertex, newTopVertex, newBottomVertex],
+                classes: cartoonVertex.classes,
+                id: `${cartoonVertex.id}-cartoon`, node: c.node
             });
+        });
 
         return cartoons;
 
@@ -8108,79 +8402,17 @@ class Layout {
         }
         return this._horizontalScale;
     }
-
-    // layout functions should be overwritten in decedents
-
-    /**
-     * Sets the horizontal scale for the layout. This maps the tree to the layout range which is [0,1]
-     * @return {null|*}
-     */
     updateHorizontalScale() {
-        throw  new Error("Don't call this method from the parent layout class. It must be implemented in the child class")
+        const newScale = this.settings.horizontalScale ? this.settings.horizontalScale :
+            linear$2().domain([this.tree.rootNode.height*this.settings.branchScale, this.tree.origin]).range(this._horizontalRange);
+        return newScale;
     }
-
-    /**
-     * sets the initial Y value for the first node returned from the getTreeNodes().
-     * @return {number}
-     */
-    setInitialY() {
-        throw  new Error("Don't call this method from the parent layout class. It must be implemented in the child class")
+    updateSettings(newSettings){
+        this.settings={...this.settings,...newSettings};
+        this.update();
     }
-
-    /**
-     * Set the y position of a vertex and return the Y position. This function is called on each node in the order returns from the getTreeNodes() method.
-     * The currentY represent the Y position of the previous node at each iteration. These y values will be mapped to a [0,1]
-     * range.
-     * @param vertex
-     * @param currentY
-     * @return {number}
-     */
-    setYPosition(vertex, currentY) {
-        throw  new Error("Don't call this method from the parent layout class. It must be implemented in the child class")
-    }
-    /**
-     * sets the initial x value for the first node returned from the getTreeNodes().
-     * @return {number}
-     */
-    setInitialX() {
-        throw  new Error("Don't call this method from the parent layout class. It must be implemented in the child class")
-    }
-    /**
-     * Set the x position of a vertex and return the X position. This function is called on each node in the order returns from the getTreeNodes() method.
-     * The currentX represent the x position of the previous node at each iteration. These x values will be mapped to a [0,1]
-     * range. In the 'normal' left to right tree this method would ignore the currentX and set the x based on the horizontal scale.
-     * @param vertex
-     * @param currentX
-     * @return {number}
-     */
-    setXPosition(vertex, currentX) {
-        throw  new Error("Don't call this method from the parent layout class. It must be implemented in the child class")
-    }
-
-    /**
-     * A method which returns the nodes of the tree in the order inwhcih they will be assigned Y and X coordinates.
-     * @return {IterableIterator<*>[]}
-     */
-    getTreeNodes() {
-        throw  new Error("Don't call this method from the parent layout class. It must be implemented in the child class")
-    };
-
-    /**
-     * Generates a line() function that takes an edge and it's index and returns a line for d3 path element. It is called
-     * by the figtree class as
-     * const branchPath = this.layout.branchPathGenerator(this.scales)
-     * newBranches.append("path")
-     .attr("class", "branch-path")
-     .attr("d", (e,i) => branchPath(e,i));
-     * @param scales
-     * @return {function(*, *)}
-     */
-    branchPathGenerator(scales){
-        throw  new Error("Don't call this method from the parent layout class. It must be implemented in the child class")
-
-    }
-
 }
+
 /*
  * Private methods, called by the class using the <function>.call(this) function.
  */
@@ -8192,7 +8424,7 @@ function makeVerticesFromNodes(nodes){
                 node: n,
                 key: n.id,
                 focused:false,
-                visibility:VertexStyle.INCLUDED
+                visibility:VertexStyle$1.INCLUDED
                 // key: Symbol(n.id).toString()
             };
             this._vertices.push(vertex);
@@ -8301,9 +8533,9 @@ function markCollapsedNodes(c){
 
     const mostDiverged = this._nodeMap.get(cartoonNodeDecedents.find(n=>n.height===max(cartoonNodeDecedents,d=>d.height)));
     cartoonVertexDecedents.forEach(v=> {
-        v.visibility = VertexStyle.HIDDEN;
+        v.visibility = VertexStyle$1.HIDDEN;
         if (v === mostDiverged) {
-            v.visibility = VertexStyle.IGNORED;
+            v.visibility = VertexStyle$1.IGNORED;
         }
     });
 }
@@ -8311,19 +8543,12 @@ function markCollapsedNodes(c){
 //TODO add minimum gap to layout method
 //TODO split MASKED, included ect into a visualisation flag and an included in y position flag
 
-// const d3 = require("d3");
 /**
- * The Layout class
+ * The rectangular layout class
  *
  */
-class RectangularLayout extends Layout {
+class RectangularLayout extends AbstractLayout {
 
-    static DEFAULT_SETTINGS() {
-        return {
-            branchCurve: stepBefore,
-            radius:0,
-        };
-    }
 
     /**
      * The constructor.
@@ -8331,18 +8556,12 @@ class RectangularLayout extends Layout {
      * @param settings
      */
     constructor(tree, settings = { }) {
-        super(tree,{...RectangularLayout.DEFAULT_SETTINGS(),...settings});
+        super(tree,settings);
 
     }
 
     getTreeNodes() {
         return [...this.tree.postorder()]
-    }
-
-    updateHorizontalScale() {
-        const newScale = this.settings.horizontalScale ? this.settings.horizontalScale :
-            linear$2().domain([this.tree.rootNode.height*this.settings.branchScale, this.tree.origin]).range(this._horizontalRange);
-        return newScale;
     }
 
     setInitialY() {
@@ -8356,20 +8575,16 @@ class RectangularLayout extends Layout {
         // check if there are children that that are in the same group and set position to mean
         // if do something else
 
-        const includedInVertical = this.settings.includedInVerticalRange(vertex.node);
-        const focusFactor=vertex.focused||this._previousVertexFocused?this.settings.focusFactor:1;
-
+        const includedInVertical = !vertex.node.children;
         if(!includedInVertical){
             // make this better
-            const vertexChildren = vertex.node.children.map(child=>this._nodeMap.get(child)).filter(child=>child.visibility===VertexStyle.INCLUDED||child.visibility===VertexStyle.HIDDEN);
+            const vertexChildren = vertex.node.children.map(child=>this._nodeMap.get(child)).filter(child=>child.visibility===VertexStyle$1.INCLUDED||child.visibility===VertexStyle$1.HIDDEN);
             vertex.y = mean(vertexChildren,(child) => child.y);
-
         }
         else{
-            currentY += focusFactor*1;
+            currentY += 1;
             vertex.y = currentY;
         }
-        this._previousVertexFocused=vertex.focused;
         return currentY;
     }
 
@@ -8378,129 +8593,7 @@ class RectangularLayout extends Layout {
         return 0;
     }
 
-    branchPathGenerator(scales){
-        const branchPath =(e,i)=>{
-            const branchLine = line()
-                 .x((v) => v.x)
-                .y((v) => v.y)
-                .curve(this.settings.branchCurve);
-            const factor = e.v0.y-e.v1.y>0? 1:-1;
-            const dontNeedCurv = e.v0.y-e.v1.y===0?0:1;
-            const output = this.settings.radius>0?
-                branchLine(
-                    [{x: 0, y: scales.y(e.v0.y) - scales.y(e.v1.y)},
-                    { x:0, y:dontNeedCurv*factor * this.settings.radius},
-                    {x:0 + dontNeedCurv*this.settings.radius, y:0},
-                {x: scales.x(e.v1.x) - scales.x(e.v0.x), y: 0}
-                ]):
-                branchLine(
-                [{x: 0, y: scales.y(e.v0.y) - scales.y(e.v1.y)},
-                    {x: scales.x(e.v1.x) - scales.x(e.v0.x), y: 0}
-                    ]);
-            return(output)
-            
-        };
-        return branchPath;
-    }
 
-
-}
-
-/*
- * Private methods, called by the class using the <function>.call(this) function.
- */
-
-// const d3 = require("d3");
-/**
- * The Layout class
- *
- */
-class RectangularLayout$1 extends Layout {
-
-    static DEFAULT_SETTINGS() {
-        return {
-            branchCurve: stepBefore,
-            radius:0,
-        };
-    }
-
-    /**
-     * The constructor.
-     * @param tree
-     * @param settings
-     */
-    constructor(tree, settings = { }) {
-        super(tree,{...RectangularLayout$1.DEFAULT_SETTINGS(),...settings});
-
-    }
-
-    getTreeNodes() {
-        return [...this.tree.postorder()]
-    }
-
-    updateHorizontalScale() {
-        const newScale = this.settings.horizontalScale ? this.settings.horizontalScale :
-            linear$2().domain([this.tree.rootNode.height*this.settings.branchScale, this.tree.origin]).range(this._horizontalRange);
-        return newScale;
-    }
-
-    setInitialY() {
-        return -0.5;
-    }
-    setInitialX() {
-        return 0;
-    }
-
-    setYPosition(vertex, currentY) {
-        // check if there are children that that are in the same group and set position to mean
-        // if do something else
-
-        const includedInVertical = this.settings.includedInVerticalRange(vertex.node);
-        const focusFactor=vertex.focused||this._previousVertexFocused?this.settings.focusFactor:1;
-
-        if(!includedInVertical){
-            // make this better
-            const vertexChildren = vertex.node.children.map(child=>this._nodeMap.get(child)).filter(child=>child.visibility===VertexStyle.INCLUDED||child.visibility===VertexStyle.HIDDEN);
-            vertex.y = mean(vertexChildren,(child) => child.y);
-
-        }
-        else{
-            currentY += focusFactor*1;
-            vertex.y = currentY;
-        }
-        this._previousVertexFocused=vertex.focused;
-        return currentY;
-    }
-
-    setXPosition(vertex,currentX){
-        vertex.x = this._horizontalScale(vertex.node.height*this.settings.branchScale);
-        return 0;
-    }
-
-    branchPathGenerator(scales){
-        const branchPath =(e,i)=>{
-            const branchLine = line()
-                 .x((v) => v.x)
-                .y((v) => v.y)
-                .curve(this.settings.branchCurve);
-            const factor = e.v0.y-e.v1.y>0? 1:-1;
-            const dontNeedCurv = e.v0.y-e.v1.y===0?0:1;
-            const output = this.settings.radius>0?
-                branchLine(
-                    [{x: 0, y: scales.y(e.v0.y) - scales.y(e.v1.y)},
-                    { x:0, y:dontNeedCurv*factor * this.settings.radius},
-                    {x:0 + dontNeedCurv*this.settings.radius, y:0},
-                {x: scales.x(e.v1.x) - scales.x(e.v0.x), y: 0}
-                ]):
-                branchLine(
-                [{x: 0, y: scales.y(e.v0.y) - scales.y(e.v1.y)},
-                    {x: scales.x(e.v1.x) - scales.x(e.v0.x), y: 0}
-                    ]);
-            return(output)
-            
-        };
-        return branchPath;
-    }
 
 
 }
@@ -8514,7 +8607,7 @@ class RectangularLayout$1 extends Layout {
  * Only works for 'up' directions
  *
  */
-class TransmissionLayout extends RectangularLayout$1 {
+class TransmissionLayout extends AbstractLayout {
 
     static DEFAULT_SETTINGS() {
         return {
@@ -8532,24 +8625,22 @@ class TransmissionLayout extends RectangularLayout$1 {
     constructor(tree, settings = {}) {
         const groupingAnnotation = {...TransmissionLayout.DEFAULT_SETTINGS(),...settings}['groupingAnnotation'];
         // defined here so we can use the groupingAnnotation key
-        const includedInVerticalRange = node  => !node.children || (node.children.length===1 && node.annotations[groupingAnnotation]!==node.children[0].annotations[groupingAnnotation]);
-        super(tree, {...TransmissionLayout.DEFAULT_SETTINGS(),...{includedInVerticalRange:includedInVerticalRange}, ...settings});
-
+        super(tree, {...TransmissionLayout.DEFAULT_SETTINGS(), ...settings});
     }
 
+    //TODO rework this so it loops through twice and updates accordinglin when there is a group change.
     setYPosition(vertex, currentY) {
-        const focusFactor=vertex.focused||this._previousVertexFocused?this.settings.focusFactor:1;
-
-        const includedInVertical = this.settings.includedInVerticalRange(vertex.node);
+        const node = vertex.node;
+        const includedInVerticalRange = !node.children || (node.children.length===1 && node.annotations[this.settings.groupingAnnotation]!==node.children[0].annotations[this.settings.groupingAnnotation]);
         if (!includedInVertical) {
-            const vertexChildren = vertex.node.children.map(child=>this._nodeMap.get(child)).filter(child=>child.visibility===VertexStyle.INCLUDED||child.visibility===VertexStyle.HIDDEN);
+            const vertexChildren = vertex.node.children.map(child=>this._nodeMap.get(child)).filter(child=>child.visibility===VertexStyle$1.INCLUDED||child.visibility===VertexStyle$1.HIDDEN);
             vertex.y = mean(vertexChildren,(child) => child.y);
 
         } else {
             if(vertex.node.children &&(  vertex.node.children.length===1 && vertex.node.annotations[this.settings.groupingAnnotation]!==vertex.node.children[0].annotations[this.settings.groupingAnnotation])){
-                currentY+=focusFactor*this.settings.groupGap;
+                currentY+=this.settings.groupGap;
             }else{
-                currentY += focusFactor*1;
+                currentY += 1;
             }
             vertex.y = currentY;
         }
@@ -8558,14 +8649,6 @@ class TransmissionLayout extends RectangularLayout$1 {
         return currentY;
     }
 
-    /**
-     * Set the direction to draw transmission (up or down).
-     * @param direction
-     */
-    // set direction(direction) {
-    //     this.update();
-    // }
-
 }
 
 /**
@@ -8573,7 +8656,7 @@ class TransmissionLayout extends RectangularLayout$1 {
  * Only works for 'up' directions
  *
  */
-class ExplodedLayout extends RectangularLayout$1 {
+class ExplodedLayout extends RectangularLayout {
 
     static DEFAULT_SETTINGS() {
         return {
@@ -8592,12 +8675,8 @@ class ExplodedLayout extends RectangularLayout$1 {
      * @param settings
      */
     constructor(tree, settings = {}) {
-        const groupingAnnotation = {...ExplodedLayout.DEFAULT_SETTINGS(),...settings}['groupingAnnotation'];
 
-        // defined here so we can use the groupingAnnotation key
-        const includedInVerticalRange = node  => !node.children || (node.children.length===1 && node.annotations[groupingAnnotation]!==node.children[0].annotations[groupingAnnotation]);
-        super(tree, {...ExplodedLayout.DEFAULT_SETTINGS(),...{includedInVerticalRange:includedInVerticalRange}, ...settings});
-        this.groupingAnnotation = groupingAnnotation;
+        super(tree, {...ExplodedLayout.DEFAULT_SETTINGS(), ...settings});
     }
 
     getTreeNodes() {
@@ -8605,16 +8684,16 @@ class ExplodedLayout extends RectangularLayout$1 {
         const postOrderNodes = [...this.tree.postorder()];
 
         const groupHeights = new Map();
-        for(const group of this.tree.annotations[this.groupingAnnotation].values){
-            const height = min(postOrderNodes.filter(n=>n.annotations[this.groupingAnnotation]===group),d=>d.height);
+        for(const group of this.tree.annotations[this.settings.groupingAnnotation].values){
+            const height = min(postOrderNodes.filter(n=>n.annotations[this.settings.groupingAnnotation]===group),d=>d.height);
             groupHeights.set(group,height);
         }
         // sort by location and then by post order order but we want all import/export banches to be last
         return([...this.tree.postorder()].sort((a,b)=>{
-            if(a.annotations[this.groupingAnnotation]===b.annotations[this.groupingAnnotation]){
+            if(a.annotations[this.settings.groupingAnnotation]===b.annotations[this.settings.groupingAnnotation]){
                 return postOrderNodes.indexOf(a)-postOrderNodes.indexOf(b);
             }else{
-                    return -1*(groupHeights.get(a.annotations[this.groupingAnnotation]) -  groupHeights.get(b.annotations[this.groupingAnnotation]))
+                    return -1*(groupHeights.get(a.annotations[this.settings.groupingAnnotation]) -  groupHeights.get(b.annotations[this.settings.groupingAnnotation]))
                 }
         }))
 
@@ -8625,54 +8704,41 @@ class ExplodedLayout extends RectangularLayout$1 {
         // check if there are children that that are in the same group and set position to mean
         // if do something else
         if(currentY===this.setInitialY()) {
-            this._currentGroup = vertex.node.annotations[this.groupingAnnotation];
-        }
-        const focusFactor=vertex.focused||this._previousVertexFocused?this.settings.focusFactor:1;
-
-        const includedInVertical = this.settings.includedInVerticalRange(vertex.node);
+            this._currentGroup = vertex.node.annotations[this.settings.groupingAnnotation];
+        }        const includedInVertical = this.settings.includedInVerticalRange(vertex.node);
         if (!includedInVertical) {
             vertex.y = mean(vertex.node.children,(child) => {
                 const childVertex = this._nodeMap.get(child);
-                if(childVertex.visibility===VertexStyle.INCLUDED||childVertex.visibility===VertexStyle.HIDDEN){
+                if(childVertex.visibility===VertexStyle$1.INCLUDED||childVertex.visibility===VertexStyle$1.HIDDEN){
                     return childVertex.y
                 }else{
                     return null;
                 }
             });
             if(vertex.node.parent){
-                if(vertex.node.annotations[this.groupingAnnotation]!==vertex.node.parent.annotations[this.groupingAnnotation]){
+                if(vertex.node.annotations[this.settings.groupingAnnotation]!==vertex.node.parent.annotations[this.settings.groupingAnnotation]){
                     this._newIntraGroupNext=true;
                 }
             }
 
         } else {
-            if(vertex.node.annotations[this.groupingAnnotation]!==this._currentGroup){
-                currentY+=focusFactor*this.settings.interGroupGap;
+            if(vertex.node.annotations[this.settings.groupingAnnotation]!==this._currentGroup){
+                currentY+=this.settings.interGroupGap;
                 this._newIntraGroupNext = false;
             }
             else if(this._newIntraGroupNext){
-                currentY+=focusFactor*this.settings.intraGroupGap;
+                currentY+=this.settings.intraGroupGap;
                 this._newIntraGroupNext = false;
             }else{
-                currentY += focusFactor*1;
+                currentY += 1;
             }
-            this._currentGroup= vertex.node.annotations[this.groupingAnnotation];
+            this._currentGroup= vertex.node.annotations[this.settings.groupingAnnotation];
             vertex.y = currentY;
         }
-        this._previousVertexFocused=vertex.focused;
 
         return currentY;
     }
 
-
-    /**
-     * Set the direction to draw transmission (up or down).
-     * @param direction
-     */
-    // set direction(direction) {
-    //     this.update();
-    // }
-
 }
 
 
@@ -8681,393 +8747,6 @@ class ExplodedLayout extends RectangularLayout$1 {
 /*
  * Private methods, called by the class using the <function>.call(this) function.
  */
-
-/**
- * The ArcLayout class
- * note the function in the settings that placed the nodes on the xaxis a 0,1 range. The horizontal range is always 0->1. it is this funciton's job
- * To map the nodes to that space. the default is the 
- * node's index in the node list.
- */
-class ArcLayout extends Layout {
-
-    static DEFAULT_SETTINGS() {
-        return {
-            lengthFormat: format(".2f"),
-            edgeWidth:2,
-            xFunction:(n,i,t)=>i/t.length,
-            branchCurve:curveLinear,
-            curve:'arc',
-            
-        };
-    }
-
-    /**
-     * The constructor.
-     * @param graph
-     * @param settings
-     */
-    constructor(graph, settings = { }) {
-        super();
-
-        this.graph = graph;
-        this.annotations={};
-        // merge the default settings with the supplied settings
-        this.settings = {...ArcLayout.DEFAULT_SETTINGS(), ...settings};
-
-        this.branchLabelAnnotationName = null;
-        this.internalNodeLabelAnnotationName = null;
-        this.externalNodeLabelAnnotationName = null;
-
-        // called whenever the tree changes...
-        // this.tree.treeUpdateCallback = () => {
-        //     this.update();
-        // };
-    }
-
-    /**
-     * Lays out the tree in a standard rectangular format.
-     *
-     * This function is called by the FigTree class and is used to layout the nodes of the tree. It
-     * populates the vertices array with vertex objects that wrap the nodes and have coordinates and
-     * populates the edges array with edge objects that have two vertices.
-     *
-     * It encapsulates the tree object to keep it abstract
-     *
-     * @param vertices - objects with an x, y coordinates and a reference to the original node
-     * @param edges - objects with v1 (a vertex) and v0 (the parent vertex).
-     */
-    layout(vertices, edges) {
-        this._horizontalRange = [0,1];
-        this._verticalRange = [-this.graph.nodes.length,this.graph.nodes.length];
-
-        // get the nodes in pre-order (starting at first node)
-        // const nodes = [...this.graph.preorder(this.graph.nodes[0])];
-        const nodes = [...this.graph.nodes];
-        nodes.forEach(n=>this.addAnnotations(n));
-
-        if (vertices.length === 0) {
-            this.nodeMap = new Map();
-
-            // create the vertices (only done if the array is empty)
-            nodes.forEach((n, i) => {
-                const vertex = {
-                    node: n,
-                    key: n.id
-                    // key: Symbol(n.id).toString()
-                };
-                vertices.push(vertex);
-                this.nodeMap.set(n, vertex);
-            });
-        }
-
-        // update the node locations (vertices)
-        //
-        nodes
-            .forEach((n,i) => {
-                const v = this.nodeMap.get(n);
-
-                v.x = this.settings.xFunction(n,i);
-                v.y=0;
-                v.degree = this.graph.getEdges(v.node).length ; // the number of edges 
-                // console.log(v.x)
-                v.classes = [
-                    (!this.graph.getOutgoingEdges(v.node).length>0? "external-node" : "internal-node"),
-                    (v.node.isSelected ? "selected" : "unselected")];
-
-                // if (v.node.annotations) {
-                    v.classes = [
-                        ...v.classes,
-                        ...this.getAnnotations(v.node)];
-                // }
-
-                this.nodeMap.set(v.node, v);
-            });
-
-        if (edges.length === 0) {
-            this.edgeMap = new Map();
-
-            // create the edges (only done if the array is empty)
-            const dataEdges = this.graph.edges;
-            dataEdges
-                .forEach((e, i) => {
-                    const edge = {
-                        // The source and targets here are nodes in the graph;
-                        v0: this.nodeMap.get(e.source),
-                        v1: this.nodeMap.get(e.target),
-                        key: e.id
-                        // key: Symbol(n.id).toString()
-                    };
-                    edges.push(edge);
-                    this.edgeMap.set(edge, edge.v1);
-                });
-        }
-
-        // update the edges
-
-
-        edges
-            .forEach((e) => {
-                e.v1 = this.edgeMap.get(e);
-                e.v0 = this.nodeMap.get(e.v0.node);
-                e.classes = [];
-
-
-                // if (e.v1.node.annotations) {
-                    e.classes = [
-                        ...e.classes,
-                        ...this.getAnnotations(e.v1.node)];
-
-                // }
-                const length = e.v1.x - e.v0.x;
-                e.length = length;
-                e.label = (this.branchLabelAnnotationName ?
-                    (this.branchLabelAnnotationName === 'length' ?
-                        this.settings.lengthFormat(length) :
-                        e.v1.node.annotations[this.branchLabelAnnotationName]) :
-                    null );
-                // e.labelBelow = e.v1.node.parent.children[0] !== e.v1.node;
-            });
-    }
-
-    set branchCurve(curve) {
-        this.settings.branchCurve = curve;
-        this.update();
-    }
-
-
-    get branchCurve() {
-        return this.settings.branchCurve;
-    }
-
-    /**
-     * Sets the annotation to use as the node labels.
-     *
-     * @param annotationName
-     */
-    setInternalNodeLabels(annotationName) {
-        this.internalNodeLabelAnnotationName = annotationName;
-        this.update();
-    }
-
-    /**
-     * Sets the annotation to use as the node labels.
-     *
-     * @param annotationName
-     */
-    setExternalNodeLabels(annotationName) {
-        this.externalNodeLabelAnnotationName = annotationName;
-        this.update();
-    }
-
-    /**
-     * Sets the annotation to use as the node labels.
-     *
-     * @param annotationName
-     */
-    setBranchLabels(annotationName) {
-        this.branchLabelAnnotationName = annotationName;
-        this.update();
-    }
-
-
-    /**
-     * Updates the tree when it has changed
-     */
-    update() {
-        this.updateCallback();
-    }
-
-    /* This methods also checks the values are correct and conform to previous annotations
-    * in type.
-    *
-    * @param annotations
-    */
-   addAnnotations(datum) {
-       for (let [key, addValues] of Object.entries(datum)) {
-           if(addValues instanceof Date||  typeof addValues === 'symbol'){
-               continue; // don't handel dates yet
-           }
-            let annotation = this.annotations[key];
-           if (!annotation) {
-               annotation = {};
-               this.annotations[key] = annotation;
-           }
-
-           if(typeof addValues === 'string' || addValues instanceof String){
-               // fake it as an array
-               addValues = [addValues];
-           }
-           if (Array.isArray(addValues)) {
-               // is a set of discrete values or 
-               const type = Type.DISCRETE;
-
-               if (annotation.type && annotation.type !== type) {
-                   throw Error(`existing values of the annotation, ${key}, in the tree is not of the same type`);
-               }
-               annotation.type = type;
-               annotation.values = annotation.values? [...annotation.values, ...addValues]:[...addValues];
-           } else if (Object.isExtensible(addValues)) {
-               // is a set of properties with values               
-               let type = null;
-
-               let sum = 0.0;
-               let keys = [];
-               for (let [key, value] of Object.entries(addValues)) {
-                   if (keys.includes(key)) {
-                       throw Error(`the states of annotation, ${key}, should be unique`);
-                   }
-                   if (typeof value === typeof 1.0) {
-                       // This is a vector of probabilities of different states
-                       type = (type === undefined) ? Type.PROBABILITIES : type;
-
-                       if (type === Type.DISCRETE) {
-                           throw Error(`the values of annotation, ${key}, should be all boolean or all floats`);
-                       }
-
-                       sum += value;
-                       if (sum > 1.0) {
-                           throw Error(`the values of annotation, ${key}, should be probabilities of states and add to 1.0`);
-                       }
-                   } else if (typeof value === typeof true) {
-                       type = (type === undefined) ? Type.DISCRETE : type;
-
-                       if (type === Type.PROBABILITIES) {
-                           throw Error(`the values of annotation, ${key}, should be all boolean or all floats`);
-                       }
-                   } else {
-                       throw Error(`the values of annotation, ${key}, should be all boolean or all floats`);
-                   }
-                   keys.append(key);
-               }
-
-               if (annotation.type && annotation.type !== type) {
-                   throw Error(`existing values of the annotation, ${key}, in the tree is not of the same type`);
-               }
-
-               annotation.type = type;
-               annotation.values = annotation.values? [...annotation.values, ...addValues]:[...addValues];
-           } else {
-               let type = Type.DISCRETE;
-
-               if (typeof addValues === typeof true) {
-                   type = Type.BOOLEAN;
-               } else if (Number(addValues)) {
-                   type = (addValues % 1 === 0 ? Type.INTEGER : Type.FLOAT);
-               }
-
-               if (annotation.type && annotation.type !== type) {
-                   if ((type === Type.INTEGER && annotation.type === Type.FLOAT) ||
-                       (type === Type.FLOAT && annotation.type === Type.INTEGER)) {
-                       // upgrade to float
-                       type = Type.FLOAT;
-                   } else {
-                       throw Error(`existing values of the annotation, ${key}, in the tree is not of the same type`);
-                   }
-               }
-
-               if (type === Type.DISCRETE) {
-                   if (!annotation.values) {
-                       annotation.values = new Set();
-                   }
-                    annotation.values.add(addValues);
-                
-               }
-
-               annotation.type = type;
-           }
-
-           // overwrite the existing annotation property
-           this.annotations[key] = annotation;
-       }
-   }
-
-   getAnnotations(datum){
-    const annotationClasses=[ ...Object.entries(datum)
-                         .filter(([key]) => {
-                             if(!this.annotations[key]){
-                                 return false;
-                             }
-                             return this.annotations[key].type === Type.DISCRETE ||
-                                 this.annotations[key].type === Type.BOOLEAN ||
-                                 this.annotations[key].type === Type.INTEGER;
-                         })
-                         .map(([key, value]) => `${key}-${value}`)];
-     return annotationClasses
- }
-// Takes in scales and returns a function that will draw the branch paths given each edge and index as input.
-// branches have been translated so 0,0 is the top left hand corner of the group - 
-    branchPathGenerator(scales){
-            const branchPath =(e,i)=>{
-                let points;
-            if(this.settings.curve==="bezier"){
-                const sign = i%2===0?1:-1;
-                
-                const startingP = {x:0,
-                                    y: scales.y(e.v0.y)-scales.y(e.v1.y)}; // which is 0 in the defualt setting
-                const endingP = {x:scales.x(e.v1.x)-scales.x(e.v0.x),
-                                y: 0};
-                const correctingFactor =  Math.abs(startingP.x-endingP.x)/(scales.x.range()[1]-scales.x.range()[0]); // so the longer the arc the heigher it goes
-                const controlPoint = {"x":startingP.x,
-                                        "y":sign*scales.y(scales.y.domain()[1])*correctingFactor};
-                const controlPoint1 = {"x":startingP.x,//+endingP.x)/3,
-                                        "y":sign*scales.y(scales.y.domain()[1])*correctingFactor};
-                    
-                const controlPoint2 = {"x":endingP.x,//+endingP.x)/3,
-                                        "y":sign*scales.y(scales.y.domain()[1])*correctingFactor};
-                points = cubicBezier(startingP,controlPoint1,controlPoint2,endingP);
-                // points = quadraticBezier(startingP,controlPoint,endingP)
-            }else{
-                const r = (scales.x(e.v1.x) - scales.x(e.v0.x))/2;
-                const a = r; // center x position
-                const sign = i%2===0?1:-1;
-                const x = range(0,scales.x(e.v1.x) - scales.x(e.v0.x),1);//step every pixel
-                const y = x.map(x=>circleY(x,r,a,sign));
-                points = x.map((x,i)=>{
-                    return {x:x,y:y[i]}
-                }); 
-            }
-
-                const branchLine = line()
-                     .x((v) => v.x)
-                    .y((v) => v.y)
-                    .curve(this.branchCurve);
-      
-            return(
-                branchLine(
-                    points
-                )
-            )
-            
-        };
-        return branchPath;
-    }
-
-}
-
-
-/*
- * Private methods, called by the class using the <function>.call(this) function.
- */
-function circleY(x,r,a,sign){
-        return  sign*(Math.sqrt(Math.pow(r,2)-Math.pow((x-a),2)))
-}
-/**
- * Cubic Bezier curves
- * @param {*} p0 -starting point
- * @param {*} p1 - ending point
- * @param {*} q0 control points
- * @param {*} q1 - control point 2
- */
-function cubicBezier(p0,p1,p2,p3){
-
-    const points = [];
-    for(let t =0; t<=1;t+=0.01){
-        const x = Math.pow((1-t),3)*p0.x + 3*Math.pow((1-t),2)*t*p1.x +  3*(1-t)*Math.pow(t,2)*p2.x + Math.pow(t,3)*p3.x;
-        const y = Math.pow((1-t),3)*p0.y + 3*Math.pow((1-t),2)*t*p1.y +  3*(1-t)*Math.pow(t,2)*p2.y + Math.pow(t,3)*p3.y;
-        points.push({"x":x,"y":y});
-    }
-    return points;
-}
 
 /** @module bauble */
 
@@ -9078,6 +8757,11 @@ function cubicBezier(p0,p1,p2,p3){
  * This is a shape or decoration at the node of a tree or graph
  */
 class Bauble {
+    /**
+     * The default settings for the Bauable class. The default is ()=>true. All vertexs are assigned a bauble
+     * @return {{vertexFilter: (function(): boolean)}}
+     * @constructor
+     */
     static DEFAULT_SETTINGS() {
         return {
             vertexFilter: () => true
@@ -9085,27 +8769,54 @@ class Bauble {
     }
 
     /**
-     * The constructor.
+     * The constructor takes a setting object. The keys of the setting object are determined by the type of bauble.
+     *
+     * @param settings
      */
     constructor(settings = {}) {
         this.settings = {...Bauble.DEFAULT_SETTINGS(), ...settings};
     }
 
+    /**
+     * A getter for the vertexFilter
+     * @return {*|vertexFilter|(function(): boolean)}
+     */
+
     get vertexFilter() {
         return this.settings.vertexFilter;
     }
 
+    /**
+     * A function that appends a svg object  to the selection and returns the modified selection. This adds the bauble to
+     * the svg.
+     * @param selection
+     */
     createShapes(selection) {
         throw new Error("don't call the base class methods")
     }
 
+    /**
+     * A function that assigns the attributes to the svg objects appended by createShapes.
+     * @param selection
+     * @param border
+     */
     updateShapes(selection, border = 0) {
         throw new Error("don't call the base class methods")
     }
 
 }
 
+/**
+ * The CircleBauble class. Each vertex is assigned a circle in the svg.
+ */
 class CircleBauble extends Bauble {
+
+    /**
+     * The default settings for the circleBauble
+     * The default is 6;
+     * @return {{radius: number}}
+     * @constructor
+     */
     static DEFAULT_SETTINGS() {
         return {
             radius: 6,
@@ -9119,11 +8830,23 @@ class CircleBauble extends Bauble {
         super({...CircleBauble.DEFAULT_SETTINGS(), ...settings});
     }
 
+    /**
+     * A function to append the circles to the svg.
+     * @param selection
+     * @return {Bundle|MagicString|*|void}
+     */
     createShapes(selection) {
         return selection
             .append("circle");
     };
 
+    /**
+     * A function that assigns cy,cx,and r attributes to a selection. (cx and cy are set to 0 each r is the settings radius
+     * plus the border.
+     * @param selection
+     * @param border
+     * @return {*|null|undefined}
+     */
     updateShapes(selection, border = 0) {
         return selection
             .attr("cx", 0)
@@ -9133,6 +8856,12 @@ class CircleBauble extends Bauble {
 }
 
 class RectangularBauble extends Bauble {
+
+    /**
+     * The default settings for the rectangular bauble.
+     * @return {{width: number, radius: number, height: number}}
+     * @constructor
+     */
     static DEFAULT_SETTINGS() {
         return {
             height: 16,
@@ -9148,11 +8877,22 @@ class RectangularBauble extends Bauble {
         super({...RectangularBauble.DEFAULT_SETTINGS(), ...settings});
     }
 
+    /**
+     * A function that adds a rect to a selection
+     * @param selection
+     * @return {Bundle|MagicString|*|void}
+     */
     createShapes(selection) {
         return selection
             .append("rect");
     };
 
+    /**
+     * A function that assigns width,height,x,y,rx, and ry attributes to a rect selection.
+     * @param selection
+     * @param border
+     * @return {*|null|undefined}
+     */
     updateShapes(selection, border = 0) {
         const w = this.settings.width + border;
         const h = this.settings.height + border;
@@ -9207,7 +8947,7 @@ class FigTree {
     /**
      * The constructor.
      * @param svg
-     * @param layout - an instance of class Layout
+     * @param layout - an instance of class AbstractLayout
      * @param margins
      * @param settings
      */
@@ -9733,7 +9473,7 @@ function updateNodeBackgrounds() {
     updateNodeBackgroundStyles.call(this);
 
 }
-
+//TODO add branchCurve to figtree.js settings
 
 /**
  * Adds or updates branch lines
@@ -9968,7 +9708,6 @@ function updateBranchStyles(){
             // .duration(this.settings.transitionDuration)
             .attr(key,d=>branchStyles[key].call(this,d.v1.node));
     }
-
 }
 
 function updateCartoonStyles(){
@@ -10005,409 +9744,6 @@ function updateAnnoations(){
     for( const annotation of this._annotations){
         annotation.call(this);
     }
-}
-
-
-//TODO add interactive callbacks to instance so that when nodes are made again they can access those functions
-//TODO transtion on incoming and outgoing objects so they match the movement in the diagram;
-
-/** @module Graph */
-
-// import {Type} from 'figtree';
-/**
- * The graph class
- *
- * A class that takes an arrary of nodes and edges and provides a number of methods
- * for manipulating the graph.
- * @param nodes - an array of nodes. Should contain a unique id identifier
- * @param edges - an array of edges linking the nodes {source:node.id,target:node.id}
- */
-class Graph{
-    constructor(nodes=[],edges=[],settings={acyclicSelector:(e)=>true}) {
-        
-        this.nodeList = [];
-        this.nodeMap = new Map();
-        this.outGoingEdgeMap = new Map();
-        this.incomingEdgeMap= new Map();
-        this.edgeList = [];
-        this.edgeMap = new Map();  
-        this.acyclicSelector=settings.acyclicSelector;
-
-
-        nodes.forEach(node=>this.addNode(node));
-        edges.forEach(edge=> {
-                            const metaData = edge.metaData? edge.metaData:{};
-                           
-                            this.drawEdge(edge.source,edge.target,metaData);
-        });
-        // This is used in identifying terminal tips  
-    };
-    /**
-     * A static function to make a graph out of a tree
-     * @param {*} tree 
-     * @returns {Graph}
-     */
-    static fromPhylogeny(tree){
-        const nodes = tree.externalNodes;
-        // links inferred from the transmission layout
-        // will also need a call back somewhere to update the links
-        
-    }
-    /**
-     * @returns {*}
-     */
-    get nodes(){
-        return this.nodeList;
-    }
-    /**
-     * @returns {*}
-     */
-    get externalNodes(){
-        return this.nodeList.filter(d=>this.getOutgoingEdges().length===0);
-    }
-    /**
-     * Adds a node to the graph.
-     * @param {*} node 
-     */
-    addNode(node){
-        if(!node.id){
-            throw new Error(`All node's must contain an 'id' key ${node}`)
-        }
-        this.nodeList.push(node);
-        if(this.nodeMap.has(node.id)){
-            throw new Error(`All node's must have unique id values ${node.id} seen twice`)
-        }
-        this.nodeMap.set(node.id,node);
-
-        this.outGoingEdgeMap.set(node,[]);
-        this.incomingEdgeMap.set(node,[]);
-    }
-   
-   /**
-    * return a node given the key
-    * @param {*} id the node id value 
-    */
-    getNode(id){
-        return this.nodeMap.get(id);
-    }
-    
-    /**
-     * Get the edges entering a node
-     * @param {*} node 
-     * @returns {array} array of edges that end with the node
-     */
-    getIncomingEdges(node){
-        return this.incomingEdgeMap.get(node)
-     }
-     /**
-      * Get the edges leaving a node
-      * @param {*} node 
-      * @returns {array} array of edges that begin with the node
-      */
- 
-     getOutgoingEdges(node){
-         return this.outGoingEdgeMap.get(node)
-     }
-     /**
-      * Get all the edges leaving and entering a node
-      * @param {*} node
-      * @returns {array} array of edges that touch node
-      */
-     getEdges(node){
-         return (this.getOutgoingEdges(node).concat(this.getIncomingEdges(node)));
-     }
-
-    getNodeInfo(node){
-        // const formatDate=d3.timeFormat("%Y-%m-%d")
-        // let outString = `${node.id} </br>`
-        // // for(const key of Object.keys(node)){
-        // //     if(node[key]){
-        // //         if(key!=="id"&& key!=="metaData"&&key!=="key"){
-        // //             if(key.toLowerCase().indexOf("date")>-1){
-        // //                 outString = `${outString}${key}: ${node[key].toISOString().substring(0, 10)}</br>`;
-        // //                 }else{
-        // //                 outString = `${outString}${key}: ${node[key]}</br>`;
-        // //                 }            
-        // //             }
-        // //     }
-        // // }
-    
-        // for(const key of Object.keys(node.metaData)){
-        //     if(key.toLowerCase().indexOf("date")>-1){
-        //     outString = `${outString}${key}: ${node.metaData[key].toISOString().substring(0, 10)}</br>`;
-        //     }else{
-        //     outString = `${outString}${key}: ${node.metaData[key]}</br>`;
-        //     }
-        // }
-        // return outString;
-    }
-
-    /**
-     * removes the node and incoming/outgoing edges
-     * @param {object} node 
-     */
-   
-    removeNode(node){
-        //remove edges
-        const edges = this.getEdges(node);
-        edges.forEach(edge=>this.removeEdge(edge));
-
-        const id=node.id;
-        this.nodeList=this.nodeList.filter(node=>node.id!==id);
-        this.nodeMap.delete(id);
-        this.incomingEdgeMap.delete(node);
-        this.outGoingEdgeMap.delete(node);
-    }
-
-    /**
-    * @returns {*} 
-    */
-    get edges(){
-    return this.edgeList;
-    }
-    
-    /**
-     * returns the edge
-     * @param {Symbol()} id - symbol key of the edge
-     * @returns {*} edge
-     */
-    getEdge(id){
-        return this.edgeMap.get(id);
-    }
-    getEdgeInfo(edge){
-        // // const formatDate=d3.timeFormat("%Y-%m-%d")
-        // let outString = `Source:${edge.source.id} </br> Target: ${edge.target.id}</br>`;
-        // for(const key of Object.keys(edge.metaData)){
-        //     if(key.toLowerCase().indexOf("date")>-1){
-        //     outString = `${outString}${key}: ${edge.metaData[key].toISOString().substring(0, 10)}</br>`;
-        //     }else{
-        //     outString = `${outString}${key}: ${edge.metaData[key]}</br>`;
-        //     }
-        // }
-        // return outString;
-    }
-     /**
-     * Adds an edge between the provide source and target nodes. It the nodes are not part of the graph they are added.
-     * @param {String} sourceNode Id
-     * @param {String} targetNode Id
-     */
-    drawEdge(sourceNodeId,targetNodeId,metaData={}){
-        if(!this.nodeMap.has(sourceNodeId)){
-            throw new Error(`${sourceNodeId} not found in graph`)
-        }
-        if(!this.nodeMap.has(targetNodeId)){
-            throw new Error(`${targetNodeId} not found in graph`)
-        }
-        const index = this.edgeList.length;
-        const edge = {source:this.getNode(sourceNodeId),target:this.getNode(targetNodeId),id:`edge_${index}`,metaData:metaData};
-        this.addEdge(edge);
-    }
-    /**
-     * Adds an premade edge which between the provide source and target nodes. It the nodes are not part of the graph they are added.
-     * @param {*} {source:node, targe:node} 
-     */
-    addEdge(edge){
-        this.edgeList.push(edge);
-        this.edgeMap.set(edge.id,edge);
-        this.outGoingEdgeMap.get(edge.source).push(edge);
-        this.incomingEdgeMap.get(edge.target).push(edge);
-    }
-    
-
-    /**
-     * removes an edge from the graph
-     * @param {*} edge 
-     */
-    removeEdge(edge){
-        const id=edge.id;
-        this.edgeList=this.edgeList.filter(edge=>edge.id!==id);
-
-        // update edgemaps
-        this.edgeMap.delete(id);
-        // new outgoing
-        const newOutgoing = this.getOutgoingEdges(edge.source).filter(e=>e!==edge);
-        this.outGoingEdgeMap.set(edge.source,newOutgoing);
-        const newIncoming = this.getIncomingEdges(edge.target).filter(e=>e!==edge);
-        this.incomingEdgeMap.set(edge.target,newIncoming);
-
-    }
-
-
-    /**
-     * Inserts a node into an edge. This replaced the edge with two new edges which pass through the node.
-     * @param {*} node 
-     * @param {*} edge 
-     */
-    insertNode(node,edge){
-        if(!this.nodeMap.has(node.id)){
-            this.addNode(node);
-        }
-        this.drawEdge(edge.source.id,node.id);
-        this.drawEdge(node.id,edge.target.id);
-        this.removeEdge(edge);
-    }
-
-    /**
-     * A function to return a sub graph given an arrary of nodes.
-     * @param {array} nodes - An array of nodes
-     * @param {*} options - an optional object with filterEdges:function() that filters the edges used in the traversal
-     * @returns {*} A graph object including the provided nodes and edges linking the node. If there is no path between all nodes the 
-     * object will be empty 
-     */
-    getSubGraph(nodes,options={filterEdges:(e)=>true}){
-        // check there is a path between all nodes
-        // const preorder= [...this.preorder(nodes[0])];
-        // if(nodes.some(n=>preorder.indexOf(n)===-1)){ 
-        //     // If there is at least 1 node not hit in the traversal
-        //     return new Graph();
-        // }
-        // const edges = nodes.map(n=>[...this.getOutgoingEdges(n).filter(e=>options.filterEdges(e)).filter(e=>nodes.indexOf(e.target)>-1),
-        //                             ...this.getIncomingEdges(n).filter(e=>options.filterEdges(e)).filter(e=>nodes.indexOf(e.source)>-1)]);
-        // const uniqueEdges = [...new Set(edges)];
-        // const subGraph = new Graph();
-        
-        
-        // return new Graph();
-
-        // nodes,uniqueEdges)
-       
-    }
-
-        /**
-     * A function returning 
-     * @param {*} nodes - An array of nodes
-     * @param {*} options - an optional object with filterEdges:function() that filters the edges used in the traversal
-     * @returns {*} 
-     * Not yet implimented. Should each path be a sub-graph?
-     */
-    getPaths(node1,node2,options={filterEdges:(e)=>true}){
-        // check there is a path between all nodes
-        throw new Error("Not yet implimented");
-
-       
-    }
-
-// -----------  Methods rejigged from figtree.js tree object -----------------------------
-    /**
-     * Reverses the order of the children of the given node. If 'recursive=true' then it will
-     * descend down the subtree reversing all the sub nodes.
-     *
-     * @param node
-     * @param recursive
-     */
-    // add options with edgeFilter callback
-    rotate(node, options={recursive:false}) {
-        const nodesToVisit = [...this.preorder(node)];
-        const outGoingEdges=this.getOutgoingEdges(node);
-
-            if (options.recursive) {
-                for (const n of nodesToVisit) {
-                    //Needs to avoid circulare loops 
-                    const nOutGoingEdges=this.getOutgoingEdges(n);
-                    nOutGoingEdges.reverse();
-                }
-            }else{
-                outGoingEdges.reverse();
-
-            }
-        };
-
-    /**
-     * Sorts the child branches of each node in order of increasing or decreasing number
-     * of tips. This operates recursively from the node given.
-     *
-     * @param node - the node to start sorting from
-     * @param {boolean} increasing - sorting in increasing node order or decreasing?
-     * @returns {number} - the number of tips below this node
-     */
-    order(node, increasing) {
-        // // orderNodes.call(this, node, increasing, this.treeUpdateCallback);
-        // orderNodes.call(this, node,increasing);
-        // // this.treeUpdateCallback();
-    }
-
-
-    /**
-     * A generator function that returns the nodes in a pre-order traversal. Starting at 
-     * node. An optional options objects can be used to select which edges are used in the traversal
-     * @param {*} node 
-     * @param {object} options - an optional object with filterEdges:function() that filters the edges used in the traversal
-     * @returns {IterableIterator<IterableIterator<*|*>>}
-     */
-    *preorder(node) {
-        // We have to mark nodes as visited since it is possible to cycle back
-        this.edgeList.forEach(e=>e.visited=false);
-        this.nodeList.forEach(n => n.visited=false);
-        const self = this;
-        const traverse = function *(node){
-            yield node;
-            const edges = self.getEdges(node).filter(e=>self.acyclicSelector(e));
-            // don't need all this if using acyclic edges
-            if(edges.length>0){
-                for(const edge of edges){
-                    if(!edge.visited){
-                        let nextNode;
-                        if(node===edge.source){
-                            nextNode = edge.target;
-                        }else{
-                            nextNode=edge.source;
-                        }
-                        if(!nextNode.visited){
-                            edge.visited=true;
-                            yield* traverse(nextNode);
-                        }else{
-                            edge.visited=true; // technically a back edge
-                        }
-                    }
-                }
-            }
-        };
-        yield* traverse(node);
-        this.edgeList.forEach(e=> delete e["visited"]);
-        this.nodeList.forEach(n => delete n["visited"]);
-    }
-
-    /**
-     * A generator function that returns the nodes in a post-order traversal. Starting at 
-     * node. An optional options objects can be used to select which edges are used in the traversal
-     * @param {*} node 
-     * @param {object} options - an optional object with filterEdges:function() that filters the edges used in the traversal
-     * @returns {IterableIterator<IterableIterator<*|*>>}
-     */
-    *postorder(node) {
-        // We have to mark nodes as visited since it is possible to cycle back
-        this.edgeList.forEach(e=>e.visited=false);
-        this.nodeList.forEach(n => n.visited=false);
-        const self=this;
-        const traverse = function *(node){
-            const edges = self.getEdges(node).filter(e=>self.acyclicSelector(e));
-            // don't need all this if using acyclic edges
-            if(edges.length>0){
-                for(const edge of edges){
-                    if(!edge.visited){
-                        let nextNode;
-                        if(node===edge.source){
-                            nextNode = edge.target;
-                        }else{
-                            nextNode=edge.source;
-                        }
-                        if(!nextNode.visited){
-                            edge.visited=true;
-                            yield* traverse(nextNode);
-                        }else{
-                            edge.visited=true; // technically a back edge
-                        }
-                    }
-                }  
-            }
-            yield node;
-
-        };
-        yield* traverse(node);
-        this.edgeList.forEach(e=> delete e["visited"]);
-        this.nodeList.forEach(n => delete n["visited"]);
-    }
-
 }
 
 /**
@@ -10836,13 +10172,10 @@ function createElements(svg, margins) {
     this.tree.treeUpdateCallback = () => this.update();
 }
 
-exports.ArcLayout = ArcLayout;
 exports.Bauble = Bauble;
 exports.CircleBauble = CircleBauble;
 exports.ExplodedLayout = ExplodedLayout;
 exports.FigTree = FigTree;
-exports.Graph = Graph;
-exports.Layout = Layout;
 exports.RectangularBauble = RectangularBauble;
 exports.RectangularLayout = RectangularLayout;
 exports.RootToTipPlot = RootToTipPlot;

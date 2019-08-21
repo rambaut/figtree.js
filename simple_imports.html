@@ -136,7 +136,7 @@
     const treeSVG = document.getElementById('phylogram_1a');
 
     const layout = new RectangularLayout(tree);
-    layout.setInternalNodeLabels("probability");
+    layout.internalNodeLabels="probability";
 
     const figTree = new FigTree(treeSVG, layout,
         { top: 10, bottom: 60, left: 10, right: 150},
