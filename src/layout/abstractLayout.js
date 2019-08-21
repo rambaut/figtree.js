@@ -39,7 +39,7 @@ export class AbstractLayout extends layoutInterface {
      * @param tree
      * @param settings
      */
-    constructor(tree, settings = {}) {
+    constructor(tree, settings = {},...layoutMiddlewares) {
         super();
 
         this.tree = tree;
@@ -76,6 +76,7 @@ export class AbstractLayout extends layoutInterface {
         this.updateCallback = () => {
         };
 
+        applyLayoutMiddleware.call(this,layoutMiddlewares)
 
     }
 
@@ -131,30 +132,6 @@ export class AbstractLayout extends layoutInterface {
         this.layoutKnown = true;
 
     }
-    branchPathGenerator(scales,branchCurve){
-        const branchPath =(e,i)=>{
-            const branchLine = line()
-                .x((v) => v.x)
-                .y((v) => v.y)
-                .curve(branchCurve);
-            const factor = e.v0.y-e.v1.y>0? 1:-1;
-            const dontNeedCurv = e.v0.y-e.v1.y===0?0:1
-            const output = this.settings.radius>0?
-                branchLine(
-                    [{x: 0, y: scales.y(e.v0.y) - scales.y(e.v1.y)},
-                        { x:0, y:dontNeedCurv*factor * this.settings.radius},
-                        {x:0 + dontNeedCurv*this.settings.radius, y:0},
-                        {x: scales.x(e.v1.x) - scales.x(e.v0.x), y: 0}
-                    ]):
-                branchLine(
-                    [{x: 0, y: scales.y(e.v0.y) - scales.y(e.v1.y)},
-                        {x: scales.x(e.v1.x) - scales.x(e.v0.x), y: 0}
-                    ]);
-            return(output)
-
-        }
-        return branchPath;
-    }
 
     get horizontalRange() {
         return this._horizontalRange;
@@ -169,27 +146,6 @@ export class AbstractLayout extends layoutInterface {
 
     get horizontalAxisTicks() {
         return this._horizontalTicks;
-    }
-
-    //TODO move to figtree
-
-    // set branchCurve(curve) {
-    //     this.settings.branchCurve = curve;
-    //     this.update();
-    // }
-    //
-    //
-    // get branchCurve() {
-    //     return this.settings.branchCurve;
-    // }
-
-    set branchScale(value) {
-        this.settings.branchScale = value;
-        this.update();
-    }
-
-    get branchScale() {
-        return this.settings.branchScale;
     }
 
 
@@ -547,7 +503,15 @@ export function markCollapsedNodes(c){
         }
     });
 }
-//TODO add focus implementation to layout method
-//TODO add minimum gap to layout method
-//TODO split MASKED, included ect into a visualisation flag and an included in y position flag
+
+// borrowed from redux naive implementation https://redux.js.org/advanced/middleware
+export function applyLayoutMiddleware(middlewares){
+    console.log("applying")
+    middlewares = middlewares.slice();
+    middlewares.reverse();
+    let layout = this.layout;
+    middlewares.forEach(middleware => (layout = middleware(this)(layout)));
+
+    Object.assign(this,layout);
+}
 

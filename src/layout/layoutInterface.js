@@ -326,21 +326,8 @@ export class layoutInterface {
         throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
     };
 
-    /**
-     * Generates a line() function that takes an edge and it's index and returns a line for d3 path element. It is called
-     * by the figtree class as
-     * const branchPath = this.layout.branchPathGenerator(this.scales)
-     * newBranches.append("path")
-     .attr("class", "branch-path")
-     .attr("d", (e,i) => branchPath(e,i));
-     * @param scales
-     * @param branchCurve
-     * @return {function(*, *)}
-     */
 
-    branchPathGenerator(scales,branchCurve){
-        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
-    }
+
 
     /**
      * A utility function that replaces the aspects of the settins provided here then calls update.

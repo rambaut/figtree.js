@@ -18,8 +18,8 @@ export class RectangularLayout extends AbstractLayout {
      * @param tree
      * @param settings
      */
-    constructor(tree, settings = { }) {
-        super(tree,settings);
+    constructor(tree, settings = { },...middlewares) {
+        super(tree,settings,...middlewares);
 
     }
 
@@ -35,9 +35,6 @@ export class RectangularLayout extends AbstractLayout {
     }
 
     setYPosition(vertex, currentY) {
-        // check if there are children that that are in the same group and set position to mean
-        // if do something else
-
         const includedInVertical = !vertex.node.children;
         if(!includedInVertical){
             // make this better
@@ -60,10 +57,6 @@ export class RectangularLayout extends AbstractLayout {
 
 
 }
-
-/*
- * Private methods, called by the class using the <function>.call(this) function.
- */
 
 
 
