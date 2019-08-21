@@ -37,7 +37,7 @@ export class FigTree {
     /**
      * The constructor.
      * @param svg
-     * @param layout - an instance of class Layout
+     * @param layout - an instance of class AbstractLayout
      * @param margins
      * @param settings
      */
@@ -563,7 +563,7 @@ function updateNodeBackgrounds() {
     updateNodeBackgroundStyles.call(this);
 
 }
-
+//TODO add branchCurve to figtree.js settings
 
 /**
  * Adds or updates branch lines
@@ -798,7 +798,6 @@ function updateBranchStyles(){
             // .duration(this.settings.transitionDuration)
             .attr(key,d=>branchStyles[key].call(this,d.v1.node))
     }
-
 }
 
 function updateCartoonStyles(){
@@ -836,7 +835,3 @@ function updateAnnoations(){
         annotation.call(this);
     }
 }
-
-
-//TODO add interactive callbacks to instance so that when nodes are made again they can access those functions
-//TODO transtion on incoming and outgoing objects so they match the movement in the diagram;
