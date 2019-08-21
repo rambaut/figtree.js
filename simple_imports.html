@@ -134,8 +134,11 @@
 
     const tree = Tree.parseNewick(newickString, "probability");
     const treeSVG = document.getElementById('phylogram_1a');
-
-    const layout = new RectangularLayout(tree);
+const middleware =  (that)=>(layoutFunction)=>()=>{
+    layoutFunction();
+    console.log(that.layoutKnown)
+}
+    const layout = new RectangularLayout(tree,undefined,middleware);
     layout.internalNodeLabels="probability";
 
     const figTree = new FigTree(treeSVG, layout,
@@ -145,12 +148,10 @@
                 new CircleBauble(),
             ]
         });
-    figTree.draw();
-    figTree.hilightInternalNodes();
-    figTree.onClickInternalNode(d=>console.log("clicked"));//layout.rotate());
-
-
-        figTree.onClickBranch(layout.reroot());
+    figTree.draw()
+        .hilightInternalNodes()
+        .onClickInternalNode(d=>console.log("clicked"))//layout.rotate());
+        .onClickBranch(layout.reroot());
 
     // figTree.addToolTip('#root', "The root node - represents the most recent<br>common ancestor of the whole tree");
     // figTree.addToolTip('.internal-node .node-shape', "This is an internal node - it is the most recent<br>common ancestor of the viruses to the right" );

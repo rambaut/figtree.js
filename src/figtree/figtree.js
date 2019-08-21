@@ -1,5 +1,5 @@
 "use strict";
-import {select,easeLinear,scaleLinear,axisBottom,mouse,event,format} from "d3";
+import {select,easeLinear,scaleLinear,axisBottom,mouse,event,format,curveStepBefore,line} from "d3";
 
 /** @module figtree */
 // const d3 = require("d3");
@@ -24,6 +24,8 @@ export class FigTree {
             transitionEase:easeLinear,
             tickFormat:format(".2f"),
             ticks:5,
+            branchCurve:curveStepBefore,
+            curveRadius:0,
 
         };
     }
@@ -407,6 +409,11 @@ export class FigTree {
         return this;
 
     }
+
+    updateSettings(newSettings){
+        this.settings={...this.settings,...newSettings};
+        this.update();
+    }
 }
 
 /*
@@ -563,7 +570,6 @@ function updateNodeBackgrounds() {
     updateNodeBackgroundStyles.call(this);
 
 }
-//TODO add branchCurve to figtree.js settings
 
 /**
  * Adds or updates branch lines
@@ -577,7 +583,7 @@ function updateBranches() {
     //     .x((v) => v.x)
     //     .y((v) => v.y)
     //     .curve(this.layout.branchCurve);
-    const branchPath = this.layout.branchPathGenerator(this.scales)
+    const branchPath = branchPathGenerator.call(this);
 
     // DATA JOIN
     // Join new data with old elements, if any.
@@ -834,4 +840,40 @@ function updateAnnoations(){
     for( const annotation of this._annotations){
         annotation.call(this);
     }
+}
+/**
+ * Generates a line() function that takes an edge and it's index and returns a line for d3 path element. It is called
+ * by the figtree class as
+ * const branchPath = this.layout.branchPathGenerator(this.scales)
+ * newBranches.append("path")
+ .attr("class", "branch-path")
+ .attr("d", (e,i) => branchPath(e,i));
+ * @param scales
+ * @param branchCurve
+ * @return {function(*, *)}
+ */
+
+function branchPathGenerator(){
+    const branchPath =(e,i)=>{
+        const branchLine = line()
+            .x((v) => v.x)
+            .y((v) => v.y)
+            .curve(this.settings.branchCurve);
+        const factor = e.v0.y-e.v1.y>0? 1:-1;
+        const dontNeedCurve = e.v0.y-e.v1.y===0?0:1;
+        const output = this.settings.curveRadius>0?
+            branchLine(
+                [{x: 0, y: this.scales.y(e.v0.y) - this.scales.y(e.v1.y)},
+                    { x:0, y:dontNeedCurve*factor * this.settings.curveRadius},
+                    {x:0 + dontNeedCurve*this.settings.curveRadius, y:0},
+                    {x: this.scales.x(e.v1.x) - this.scales.x(e.v0.x), y: 0}
+                ]):
+            branchLine(
+                [{x: 0, y: this.scales.y(e.v0.y) - this.scales.y(e.v1.y)},
+                    {x: this.scales.x(e.v1.x) - this.scales.x(e.v0.x), y: 0}
+                ]);
+        return(output)
+
+    };
+    return branchPath;
 }

@@ -6347,6 +6347,52 @@
 	  bezierCurveTo: function(x1, y1, x2, y2, x, y) { this._context.bezierCurveTo(y1, x1, y2, x2, y, x); }
 	};
 
+	function Step(context, t) {
+	  this._context = context;
+	  this._t = t;
+	}
+
+	Step.prototype = {
+	  areaStart: function() {
+	    this._line = 0;
+	  },
+	  areaEnd: function() {
+	    this._line = NaN;
+	  },
+	  lineStart: function() {
+	    this._x = this._y = NaN;
+	    this._point = 0;
+	  },
+	  lineEnd: function() {
+	    if (0 < this._t && this._t < 1 && this._point === 2) this._context.lineTo(this._x, this._y);
+	    if (this._line || (this._line !== 0 && this._point === 1)) this._context.closePath();
+	    if (this._line >= 0) this._t = 1 - this._t, this._line = 1 - this._line;
+	  },
+	  point: function(x, y) {
+	    x = +x, y = +y;
+	    switch (this._point) {
+	      case 0: this._point = 1; this._line ? this._context.lineTo(x, y) : this._context.moveTo(x, y); break;
+	      case 1: this._point = 2; // proceed
+	      default: {
+	        if (this._t <= 0) {
+	          this._context.lineTo(this._x, y);
+	          this._context.lineTo(x, y);
+	        } else {
+	          var x1 = this._x * (1 - this._t) + x * this._t;
+	          this._context.lineTo(x1, this._y);
+	          this._context.lineTo(x1, y);
+	        }
+	        break;
+	      }
+	    }
+	    this._x = x, this._y = y;
+	  }
+	};
+
+	function stepBefore(context) {
+	  return new Step(context, 0);
+	}
+
 	const Type = {
 	  DISCRETE: Symbol("DISCRETE"),
 	  BOOLEAN: Symbol("BOOLEAN"),
@@ -8053,25 +8099,9 @@
 	  }
 
 	  /**
-	   * Generates a line() function that takes an edge and it's index and returns a line for d3 path element. It is called
-	   * by the figtree class as
-	   * const branchPath = this.layout.branchPathGenerator(this.scales)
-	   * newBranches.append("path")
-	   .attr("class", "branch-path")
-	   .attr("d", (e,i) => branchPath(e,i));
-	   * @param scales
-	   * @param branchCurve
-	   * @return {function(*, *)}
-	   */
-	  branchPathGenerator(scales, branchCurve) {
-	    throw new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class");
-	  }
-	  /**
 	   * A utility function that replaces the aspects of the settins provided here then calls update.
 	   * @param newSettings
 	   */
-
-
 	  updateSettings(newSettings) {
 	    throw new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class");
 	  }
@@ -8118,7 +8148,7 @@
 	   */
 
 
-	  constructor(tree, settings = {}) {
+	  constructor(tree, settings = {}, ...layoutMiddlewares) {
 	    super();
 	    this.tree = tree;
 	    this.settings = { ...AbstractLayout.DEFAULT_SETTINGS(),
@@ -8146,6 +8176,8 @@
 
 
 	    this.updateCallback = () => {};
+
+	    applyLayoutMiddleware.call(this, layoutMiddlewares);
 	  }
 
 	  layout() {
@@ -8194,36 +8226,6 @@
 	    this.layoutKnown = true;
 	  }
 
-	  branchPathGenerator(scales, branchCurve) {
-	    const branchPath = (e, i) => {
-	      const branchLine = line().x(v => v.x).y(v => v.y).curve(branchCurve);
-	      const factor = e.v0.y - e.v1.y > 0 ? 1 : -1;
-	      const dontNeedCurv = e.v0.y - e.v1.y === 0 ? 0 : 1;
-	      const output = this.settings.radius > 0 ? branchLine([{
-	        x: 0,
-	        y: scales.y(e.v0.y) - scales.y(e.v1.y)
-	      }, {
-	        x: 0,
-	        y: dontNeedCurv * factor * this.settings.radius
-	      }, {
-	        x: 0 + dontNeedCurv * this.settings.radius,
-	        y: 0
-	      }, {
-	        x: scales.x(e.v1.x) - scales.x(e.v0.x),
-	        y: 0
-	      }]) : branchLine([{
-	        x: 0,
-	        y: scales.y(e.v0.y) - scales.y(e.v1.y)
-	      }, {
-	        x: scales.x(e.v1.x) - scales.x(e.v0.x),
-	        y: 0
-	      }]);
-	      return output;
-	    };
-
-	    return branchPath;
-	  }
-
 	  get horizontalRange() {
 	    return this._horizontalRange;
 	  }
@@ -8238,25 +8240,6 @@
 
 	  get horizontalAxisTicks() {
 	    return this._horizontalTicks;
-	  } //TODO move to figtree
-	  // set branchCurve(curve) {
-	  //     this.settings.branchCurve = curve;
-	  //     this.update();
-	  // }
-	  //
-	  //
-	  // get branchCurve() {
-	  //     return this.settings.branchCurve;
-	  // }
-
-
-	  set branchScale(value) {
-	    this.settings.branchScale = value;
-	    this.update();
-	  }
-
-	  get branchScale() {
-	    return this.settings.branchScale;
 	  }
 
 	  set internalNodeLabelAnnotationName(annotationName) {
@@ -8586,9 +8569,16 @@
 	      v.visibility = VertexStyle$1.IGNORED;
 	    }
 	  });
-	} //TODO add focus implementation to layout method
-	//TODO add minimum gap to layout method
-	//TODO split MASKED, included ect into a visualisation flag and an included in y position flag
+	} // borrowed from redux naive implementation https://redux.js.org/advanced/middleware
+
+	function applyLayoutMiddleware(middlewares) {
+	  console.log("applying");
+	  middlewares = middlewares.slice();
+	  middlewares.reverse();
+	  let layout = this.layout;
+	  middlewares.forEach(middleware => layout = middleware(this)(layout));
+	  Object.assign(this, layout);
+	}
 
 	/**
 	 * The rectangular layout class
@@ -8601,8 +8591,8 @@
 	   * @param tree
 	   * @param settings
 	   */
-	  constructor(tree, settings = {}) {
-	    super(tree, settings);
+	  constructor(tree, settings = {}, ...middlewares) {
+	    super(tree, settings, ...middlewares);
 	  }
 
 	  getTreeNodes() {
@@ -8618,8 +8608,6 @@
 	  }
 
 	  setYPosition(vertex, currentY) {
-	    // check if there are children that that are in the same group and set position to mean
-	    // if do something else
 	    const includedInVertical = !vertex.node.children;
 
 	    if (!includedInVertical) {
@@ -8640,9 +8628,6 @@
 	  }
 
 	}
-	/*
-	 * Private methods, called by the class using the <function>.call(this) function.
-	 */
 
 	/**
 	 * The TransmissionLayout class
@@ -8977,7 +8962,9 @@
 	      transitionDuration: 500,
 	      transitionEase: linear$1,
 	      tickFormat: format(".2f"),
-	      ticks: 5
+	      ticks: 5,
+	      branchCurve: stepBefore,
+	      curveRadius: 0
 	    };
 	  }
 
@@ -9358,6 +9345,13 @@
 	    return this;
 	  }
 
+	  updateSettings(newSettings) {
+	    this.settings = { ...this.settings,
+	      ...newSettings
+	    };
+	    this.update();
+	  }
+
 	}
 	/*
 	 * Private methods, called by the class using the <function>.call(this) function.
@@ -9431,8 +9425,7 @@
 
 	  nodes.exit().remove();
 	  updateNodeBackgroundStyles.call(this);
-	} //TODO add branchCurve to figtree.js settings
-
+	}
 	/**
 	 * Adds or updates branch lines
 	 */
@@ -9445,7 +9438,7 @@
 	  //     .y((v) => v.y)
 	  //     .curve(this.layout.branchCurve);
 
-	  const branchPath = this.layout.branchPathGenerator(this.scales); // DATA JOIN
+	  const branchPath = branchPathGenerator.call(this); // DATA JOIN
 	  // Join new data with old elements, if any.
 
 	  const branches = branchesLayer.selectAll("g .branch").data(this.layout.edges, e => `b_${e.key}`); // ENTER
@@ -9591,6 +9584,48 @@
 	  for (const annotation of this._annotations) {
 	    annotation.call(this);
 	  }
+	}
+	/**
+	 * Generates a line() function that takes an edge and it's index and returns a line for d3 path element. It is called
+	 * by the figtree class as
+	 * const branchPath = this.layout.branchPathGenerator(this.scales)
+	 * newBranches.append("path")
+	 .attr("class", "branch-path")
+	 .attr("d", (e,i) => branchPath(e,i));
+	 * @param scales
+	 * @param branchCurve
+	 * @return {function(*, *)}
+	 */
+
+
+	function branchPathGenerator() {
+	  const branchPath = (e, i) => {
+	    const branchLine = line().x(v => v.x).y(v => v.y).curve(this.settings.branchCurve);
+	    const factor = e.v0.y - e.v1.y > 0 ? 1 : -1;
+	    const dontNeedCurve = e.v0.y - e.v1.y === 0 ? 0 : 1;
+	    const output = this.settings.curveRadius > 0 ? branchLine([{
+	      x: 0,
+	      y: this.scales.y(e.v0.y) - this.scales.y(e.v1.y)
+	    }, {
+	      x: 0,
+	      y: dontNeedCurve * factor * this.settings.curveRadius
+	    }, {
+	      x: 0 + dontNeedCurve * this.settings.curveRadius,
+	      y: 0
+	    }, {
+	      x: this.scales.x(e.v1.x) - this.scales.x(e.v0.x),
+	      y: 0
+	    }]) : branchLine([{
+	      x: 0,
+	      y: this.scales.y(e.v0.y) - this.scales.y(e.v1.y)
+	    }, {
+	      x: this.scales.x(e.v1.x) - this.scales.x(e.v0.x),
+	      y: 0
+	    }]);
+	    return output;
+	  };
+
+	  return branchPath;
 	}
 
 	/**
