@@ -134,11 +134,19 @@
 
     const tree = Tree.parseNewick(newickString, "probability");
     const treeSVG = document.getElementById('phylogram_1a');
-const middleware =  (that)=>(layoutFunction)=>()=>{
-    layoutFunction();
-    console.log(that.layoutKnown)
+const middleware1 =  (context)=>(layoutFunction)=>()=>{
+    layoutFunction.call(context);
+    console.log("updating with middleware");
 }
-    const layout = new RectangularLayout(tree,undefined,middleware);
+
+const middlewareCollapse=(context)=>(layoutFunction)=>()=> {
+    layoutFunction.call(context);
+    context._vertices.forEach(v=>v.y=1);
+    context._verticalRange = [0, 2];
+}
+
+    const layout = new RectangularLayout(tree,undefined,middleware1,middlewareCollapse);
+
     layout.internalNodeLabels="probability";
 
     const figTree = new FigTree(treeSVG, layout,
