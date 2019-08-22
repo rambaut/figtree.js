@@ -8531,13 +8531,13 @@ function markCollapsedNodes(c){
 
 // borrowed from redux naive implementation https://redux.js.org/advanced/middleware
 function applyLayoutMiddleware(middlewares){
-    console.log("applying");
     middlewares = middlewares.slice();
     middlewares.reverse();
     let layout = this.layout;
-    middlewares.forEach(middleware => (layout = middleware(this)(layout)));
-
-    Object.assign(this,layout);
+    middlewares.forEach(middleware => {
+        layout = middleware(this)(layout);
+    });
+    this.layout = layout;
 }
 
 /**
