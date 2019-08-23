@@ -8148,7 +8148,7 @@
 	   */
 
 
-	  constructor(tree, settings = {}, ...layoutMiddlewares) {
+	  constructor(tree, settings = {}) {
 	    super();
 	    this.tree = tree;
 	    this.settings = { ...AbstractLayout.DEFAULT_SETTINGS(),
@@ -8176,8 +8176,6 @@
 
 
 	    this.updateCallback = () => {};
-
-	    applyLayoutMiddleware.call(this, layoutMiddlewares);
 	  }
 
 	  layout() {
@@ -8475,6 +8473,30 @@
 	    };
 	    this.update();
 	  }
+	  /**
+	   * A function for extending the layout method of a layout. It wraps
+	   * @param layout
+	   * @param middlewares
+	   */
+	  // borrowed from redux naive implementation https://redux.js.org/advanced/middleware
+
+
+	  extendLayout(...middlewares) {
+	    middlewares = middlewares.slice();
+	    middlewares.reverse();
+	    let layout = this.layout.bind(this);
+	    middlewares.forEach(middleware => {
+	      const wrappedMiddleware = nextLayout => context => () => {
+	        nextLayout(context);
+	        middleware(context);
+	      };
+
+	      layout = wrappedMiddleware(layout)(this);
+	    });
+	    this.layout = layout;
+	    this.layoutKnown = false;
+	    return this;
+	  }
 
 	}
 	/*
@@ -8572,16 +8594,6 @@
 	      v.visibility = VertexStyle$1.IGNORED;
 	    }
 	  });
-	} // borrowed from redux naive implementation https://redux.js.org/advanced/middleware
-
-	function applyLayoutMiddleware(middlewares) {
-	  middlewares = middlewares.slice();
-	  middlewares.reverse();
-	  let layout = this.layout;
-	  middlewares.forEach(middleware => {
-	    layout = middleware(this)(layout);
-	  });
-	  this.layout = layout;
 	}
 
 	/**
