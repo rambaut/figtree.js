@@ -7,7 +7,7 @@ import {layoutInterface} from "./layoutInterface";
 
 export const  VertexStyle = {
     INCLUDED:Symbol("INCLUDED"),// Only included nodes are sent to the figtree class
-    IGNORED:Symbol('IGNORED'), // Ignored nodes are just that ignored in everyway
+    IGNORED:Symbol('IGNORED'), // Ignored nodes are just that ignored in every way
     HIDDEN:Symbol("HIDDEN"), // The only difference between hidden and included nodes is that hidden nodes are not sent to the figtree class
     MASKED:Symbol("MASKED") // Masked nodes have an x and y coordinate but are then ignored. They don't count towards their parent's x and y
 }
@@ -83,8 +83,9 @@ export class AbstractLayout extends layoutInterface {
     layout() {
         this._horizontalScale = this.updateHorizontalScale();
 
-        makeVerticesFromNodes.call(this, this.getTreeNodes());
-        makeEdgesFromNodes.call(this, this.getTreeNodes());
+        const treeNodes = this.getTreeNodes();
+        makeVerticesFromNodes.call(this, treeNodes);
+        makeEdgesFromNodes.call(this, treeNodes);
         // get the nodes
 
         let currentY = this.setInitialY();
@@ -108,7 +109,8 @@ export class AbstractLayout extends layoutInterface {
 
 
         // update the node locations (vertices)
-        this._vertices.forEach((v) => {
+        treeNodes.forEach((n) => {
+            const v = this._nodeMap.get(n);
             if (!(v.visibility === VertexStyle.IGNORED)) {
 
                 currentY = this.setYPosition(v, currentY);
@@ -125,7 +127,7 @@ export class AbstractLayout extends layoutInterface {
         this._edges
             .forEach((e) => {
                 setupEdge.call(this, e)
-            })
+            });
 
 // update verticalRange so that we count tips that are in cartoons but not those that are ignored
         this._verticalRange = [0, currentY];
@@ -209,6 +211,7 @@ export class AbstractLayout extends layoutInterface {
 
 
     reroot() {
+        this.layoutKnown=false;
         return (edge, position) => {
             this.tree.reroot(edge.v1.node, position);
             this.update();

@@ -145,7 +145,7 @@ const middlewareCollapse=(context)=>(layoutFunction)=>()=> {
     context._verticalRange = [0, 2];
 }
 
-    const layout = new RectangularLayout(tree,undefined,middleware1,middlewareCollapse);
+    const layout = new RectangularLayout(tree,{});
 
     layout.internalNodeLabels="probability";
 
