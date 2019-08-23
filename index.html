@@ -146,7 +146,7 @@
     figTree.hilightInternalNodes();
     figTree.onClickNode(layout.rotate());
 
-    layout.setInternalNodeLabels("probability");
+    layout.internalNodeLabels="probability";
 
     figTree.addToolTip('#root', "The root node - represents the most recent<br>common ancestor of the whole tree");
     figTree.addToolTip('.internal-node .node-shape', "This is an internal node - it is the most recent<br>common ancestor of the viruses to the right.<br>Click the node to change the order of the descendents." );
@@ -431,7 +431,7 @@
     });
     figTree.draw();
 
-    layout.setInternalNodeLabels("probability");
+    layout.internalNodeLabels="probability";
     layout.cartoon(tree.tipMap.get("virus1").parent);
 
     // figTree.addLabels('.external-node', FigTree.nodeInfo);

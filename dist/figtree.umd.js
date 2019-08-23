@@ -8114,7 +8114,7 @@
 	  INCLUDED: Symbol("INCLUDED"),
 	  // Only included nodes are sent to the figtree class
 	  IGNORED: Symbol('IGNORED'),
-	  // Ignored nodes are just that ignored in everyway
+	  // Ignored nodes are just that ignored in every way
 	  HIDDEN: Symbol("HIDDEN"),
 	  // The only difference between hidden and included nodes is that hidden nodes are not sent to the figtree class
 	  MASKED: Symbol("MASKED") // Masked nodes have an x and y coordinate but are then ignored. They don't count towards their parent's x and y
@@ -8182,8 +8182,9 @@
 
 	  layout() {
 	    this._horizontalScale = this.updateHorizontalScale();
-	    makeVerticesFromNodes.call(this, this.getTreeNodes());
-	    makeEdgesFromNodes.call(this, this.getTreeNodes()); // get the nodes
+	    const treeNodes = this.getTreeNodes();
+	    makeVerticesFromNodes.call(this, treeNodes);
+	    makeEdgesFromNodes.call(this, treeNodes); // get the nodes
 
 	    let currentY = this.setInitialY();
 	    let currentX = this.setInitialX(); //CARTOONS set up
@@ -8204,7 +8205,9 @@
 	    }); // update the node locations (vertices)
 
 
-	    this._vertices.forEach(v => {
+	    treeNodes.forEach(n => {
+	      const v = this._nodeMap.get(n);
+
 	      if (!(v.visibility === VertexStyle$1.IGNORED)) {
 	        currentY = this.setYPosition(v, currentY);
 	        currentX = this.setXPosition(v, currentX);
@@ -8215,7 +8218,6 @@
 	        setVertexLabels.call(this, v);
 	      }
 	    }); //Update edge locations
-
 
 	    this._edges.forEach(e => {
 	      setupEdge.call(this, e);
@@ -8295,6 +8297,7 @@
 	  }
 
 	  reroot() {
+	    this.layoutKnown = false;
 	    return (edge, position) => {
 	      this.tree.reroot(edge.v1.node, position);
 	      this.update();
