@@ -139,19 +139,23 @@ const middleware1 =  (context)=>(layoutFunction)=>()=>{
     console.log("updating with middleware");
 }
 
-const middlewareCollapse=(context)=>(layoutFunction)=>()=> {
-    layoutFunction.call(context);
-    context._vertices.forEach(v=>v.y=1);
-    context._verticalRange = [0, 2];
+const middlewareCollapse=(layout)=> {
+    // layoutFunction.call(context);
+    layout._vertices.forEach(v=>v.y=1);
 }
 
-    const layout = new RectangularLayout(tree,{});
+const updateRange=layout=>{
+    layout._verticalRange = [0, 2];
+
+}
+
+    const layout = new RectangularLayout(tree,{}).extendLayout(middlewareCollapse,updateRange)
 
     layout.internalNodeLabels="probability";
 
     const figTree = new FigTree(treeSVG, layout,
         { top: 10, bottom: 60, left: 10, right: 150},
-        { hoverBorder: 2, backgroundBorder: 2,
+        { hoverBorder: 2, backgroundBorder: 5,
             baubles: [
                 new CircleBauble(),
             ]
@@ -170,7 +174,7 @@ const middlewareCollapse=(context)=>(layoutFunction)=>()=> {
     // document.getElementById('sort_up_button').onclick = function() {
     //     tree.order(tree.rootNode, false);
     // };
-    // document.getElementById('sort_down_button').onclick = function() {
+    // document.getElementById('sort_down_button').onclick = function
     //     tree.order(tree.rootNode, true);
     // };
     //
