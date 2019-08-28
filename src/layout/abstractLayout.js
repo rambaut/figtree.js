@@ -1,13 +1,12 @@
 "use strict";
 import {format,curveStepBefore,max,min,line,mean,scaleLinear,curveLinear} from "d3";
-import {Type} from "../tree";
+import {Tree, Type} from "../tree";
 import {layoutInterface} from "./layoutInterface";
 
 /** @module layout */
 
 export const  VertexStyle = {
     INCLUDED:Symbol("INCLUDED"),// Only included nodes are sent to the figtree class
-    IGNORED:Symbol('IGNORED'), // Ignored nodes are just that ignored in every way
     HIDDEN:Symbol("HIDDEN"), // The only difference between hidden and included nodes is that hidden nodes are not sent to the figtree class
     MASKED:Symbol("MASKED") // Masked nodes have an x and y coordinate but are then ignored. They don't count towards their parent's x and y
 }
@@ -27,7 +26,6 @@ export class AbstractLayout extends layoutInterface {
         return {
             lengthFormat: format(".2f"),
             horizontalScale: null, // a scale that converts height to 0,1  domain. default is 0 = highest tip
-            includedInVerticalRange: node => !node.children,
             branchScale: 1,
             radiusOfCurve:0,
 
@@ -47,7 +45,7 @@ export class AbstractLayout extends layoutInterface {
 
         // default ranges - these should be set in layout()
         this._horizontalRange = [0.0, 1.0];
-        this._verticalRange = [0, this.tree.nodeList.filter(this.settings.includedInVerticalRange).length - 1];
+        this._verticalRange = [0, this.tree.externalNodes.length - 1];
         this._horizontalTicks = [0, 0.5, 1];
 
         this._edges = [];
@@ -57,19 +55,20 @@ export class AbstractLayout extends layoutInterface {
         this._nodeMap = new Map();
 
         this._cartoonStore = [];
-        this._activeCartoons = [];
 
         this._branchLabelAnnotationName = null;
         this._internalNodeLabelAnnotationName = null;
         this._externalNodeLabelAnnotationName = null;
 
+        this._ignoredNodes=[];
+
         this.layoutKnown = false;
 
         // called whenever the tree changes...
-        this.tree.treeUpdateCallback = () => {
-            this.layoutKnown = false;
-            this.update();
-        };
+        this.tree.subscribeCallback( () => {
+                                    this.layoutKnown = false;
+                                     this.update();
+        });
 
 
         // create an empty callback function
@@ -89,27 +88,10 @@ export class AbstractLayout extends layoutInterface {
         let currentY = this.setInitialY();
         let currentX = this.setInitialX();
 
-        //CARTOONS set up
-        // filter so just showing the most ancestral;
-        const allCartoonDescendents = [];
-        this._cartoonStore.forEach(c => {
-            if (allCartoonDescendents.indexOf(c.node) === -1) {
-                allCartoonDescendents.push(...[...this.tree.postorder(c.node)].filter(n => n !== c.node))
-            }
-        });
-
-        this._activeCartoons = this._cartoonStore.filter(c => allCartoonDescendents.indexOf(c.node) === -1);
-
-        this._activeCartoons.filter(c => c.format === 'collapse')
-            .forEach(c => {
-                markCollapsedNodes.call(this, c);
-            });
-
 
         // update the node locations (vertices)
         treeNodes.forEach((n) => {
             const v = this._nodeMap.get(n);
-            if (!(v.visibility === VertexStyle.IGNORED)) {
 
                 currentY = this.setYPosition(v, currentY);
                 currentX = this.setXPosition(v, currentX);
@@ -117,7 +99,6 @@ export class AbstractLayout extends layoutInterface {
                 v.id = v.node.id;
                 setVertexClasses.call(this, v);
                 setVertexLabels.call(this, v);
-            }
         });
 
 
@@ -222,12 +203,25 @@ export class AbstractLayout extends layoutInterface {
         if (node.children) {
             if (this._cartoonStore.filter(c => c.format === "cartoon").find(c => c.node === node)) {
                 this._cartoonStore = this._cartoonStore.filter(c => !(c.format === "cartoon" && c.node === node));
+
+                [...this.tree.postorder(node)]
+                    .filter(n=>n!==node)
+                    .map(n=>this._nodeMap.get(n))
+                    .forEach(v=>v.visibility = v.visibility===VertexStyle.HIDDEN?VertexStyle.INCLUDED:v.visibility);
+
             } else {
                 this._cartoonStore.push({
                     node: node,
                     format: "cartoon"
                 })
             }
+            // hide children vertices
+            this._cartoonStore.forEach(c=>{
+                [...this.tree.postorder(c.node)]
+                    .filter(n=>n!==c.node)
+                    .forEach(n=>this.hideNode(n))
+            });
+
             this.layoutKnown = false;
             this.update();
         }
@@ -263,15 +257,20 @@ export class AbstractLayout extends layoutInterface {
     }
 
     ignoreNode(node) {
-        const vertex = this.nodeMap.get(node);
-        vertex.visibility = VertexStyle.IGNORED;
+        this._ignoredNodes.push(node);
         this.layoutKnown = false;
     }
 
     includeNode(node) {
+        this._ignoredNodes = this._ignoredNodes.filter(n=>n!==node);
+
         const vertex = this.nodeMap.get(node);
         vertex.visibility = VertexStyle.INCLUDED;
         this.layoutKnown = false;
+    }
+
+    getChildVertices(vertex){
+        return vertex.node.children.map(child=>this._nodeMap.get(child)).filter(child=>child.visibility===VertexStyle.INCLUDED||child.visibility===VertexStyle.HIDDEN);
     }
 
 
@@ -301,16 +300,18 @@ export class AbstractLayout extends layoutInterface {
         if (!this.layoutKnown) {
             this.layout();
         }
-        const cartoons = [];
+
         // Handle cartoons
-        this._activeCartoons.forEach(c => {
+        // here we handle what's active and what isn't.
+        const cartoons = [];
+        const ancestralCartoons = getMostAncestralCartoons.call(this,this._cartoonStore);
+        ancestralCartoons
+            .forEach(c => {
 
 
             const cartoonNodeDecedents = [...this.tree.postorder(c.node)].filter(n => n !== c.node);
             const cartoonVertex = this._nodeMap.get(c.node);
-
             const cartoonVertexDecedents = cartoonNodeDecedents.map(n => this._nodeMap.get(n));
-            cartoonVertexDecedents.forEach(v => v.visibility = VertexStyle.HIDDEN);
             const newTopVertex = {
                 x: max(cartoonVertexDecedents, d => d.x),
                 y: max(cartoonVertexDecedents, d => d.y),
@@ -325,9 +326,9 @@ export class AbstractLayout extends layoutInterface {
             cartoonVertex.y = mean([newTopVertex, newBottomVertex], d => d.y)
             let currentNode = cartoonVertex.node;
             while (currentNode.parent) {
-                const parentVertex = this._nodeMap.get(currentNode.parent)
-                if (!this.settings.includedInVerticalRange(parentVertex.node)) {
-                    parentVertex.y = mean(parentVertex.node.children, (child) => this._nodeMap.get(child).y)
+                const parentVertex = this._nodeMap.get(currentNode.parent);
+                if (!parentVertex.node.children ) {
+                    parentVertex.y = mean(this.getChildVertices(parentVertex), (child) => this._nodeMap.get(child).y)
                 }
                 currentNode = parentVertex.node;
 
@@ -338,8 +339,8 @@ export class AbstractLayout extends layoutInterface {
                 classes: cartoonVertex.classes,
                 id: `${cartoonVertex.id}-cartoon`, node: c.node
             })
-        })
-
+        });
+        console.log(cartoons)
         return cartoons;
 
     }
@@ -373,11 +374,7 @@ export class AbstractLayout extends layoutInterface {
         this.settings={...this.settings,...newSettings};
         this.update();
     }
-    /**
-     * A function for extending the layout method of a layout. It wraps
-     * @param layout
-     * @param middlewares
-     */
+
 // borrowed from redux naive implementation https://redux.js.org/advanced/middleware
     extendLayout(...middlewares){
         middlewares = middlewares.slice();
@@ -395,6 +392,7 @@ export class AbstractLayout extends layoutInterface {
         this.layoutKnown=false;
         return this;
     }
+
 }
 
 /*
@@ -403,11 +401,10 @@ export class AbstractLayout extends layoutInterface {
 export function makeVerticesFromNodes(nodes){
     nodes.forEach((n, i) => {
 
-        if(!this._nodeMap.has(n)){
+        if(!this._nodeMap.has(n)&&!this._ignoredNodes.includes(n)){
             const vertex = {
                 node: n,
                 key: n.id,
-                focused:false,
                 visibility:VertexStyle.INCLUDED
                 // key: Symbol(n.id).toString()
             };
@@ -525,5 +522,20 @@ export function markCollapsedNodes(c){
     });
 }
 
+export function markHiddenNodes(c){
+    const cartoonNodeDecedents = [...this.tree.postorder(c.node)].filter(n=>n!==c.node);
 
+    cartoonNodeDecedents.forEach(n=> {
+        const v = this._nodeMap.get(n);
+        v.visibility = VertexStyle.HIDDEN;
+    });
+}
+export function getMostAncestralCartoons(cartoons){
+    const cartoonNodes = cartoons.map(c=>c.node);
+    const mostAncestralNode = cartoonNodes.filter(n=>![...Tree.pathToRoot(n)].filter(m=>m!==n).some(n=>cartoonNodes.includes(n)));
 
+    return cartoons.filter(c=>mostAncestralNode.includes(c.node));
+
+}
+
+//TODO fix bug cartoons.

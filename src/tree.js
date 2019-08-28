@@ -352,12 +352,15 @@ export class Tree {
      * @param {boolean} increasing - sorting in increasing node order or decreasing?
      * @returns {number} - the number of tips below this node
      */
+
+
     orderByNodeDensity(increasing = true, node = this.rootNode) {
         const factor = increasing ? 1 : -1;
         orderNodes.call(this, node, (nodeA, countA, nodeB, countB) => {
             return (countA - countB) * factor;
         });
         this.treeUpdateCallback();
+        return this;
     }
 
     /**
@@ -374,6 +377,7 @@ export class Tree {
         orderNodes.call(this, node, ordering);
 
         this.treeUpdateCallback();
+        return this;
     }
 
     lastCommonAncestor(node1, node2) {
@@ -791,6 +795,18 @@ export class Tree {
 
         this.treeUpdateCallback();
 
+    }
+
+    /**
+     * A class function that subscribes a to be called when the tree updates.
+     * @param func - function to be called when the tree updates
+     */
+    subscribeCallback(func){
+        const currentCallback = this.treeUpdateCallback;
+        this.treeUpdateCallback = () =>{
+            currentCallback();
+            func();
+        }
     }
 
     /**

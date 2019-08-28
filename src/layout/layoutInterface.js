@@ -124,7 +124,7 @@ export class layoutInterface {
     }
     /**
      * A utility function for rotating a node
-     * @returns {rotate}
+     * @returns {*}
      */
     rotate() {
         throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
@@ -319,14 +319,34 @@ export class layoutInterface {
     }
 
     /**
-     * A method which returns the nodes of the tree in the order in which they will be assigned Y and X coordinates.
-     * @return {IterableIterator<*>[]}
+     * A method which returns the nodes of the tree in the order in which they will be assigned Y and X coordinates. This filters the nodes
+     * so that ignored nodes are not returned.
+     * @return {Array[]}
      */
     getTreeNodes() {
-        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+        return [...this._getTreeNodes()].filter(n=>!this._ignoredNodes.includes(n))
+
     };
+    /**
+     * A private method which returns the nodes of the tree in the order in which they will be assigned Y and X coordinates.
+     * This function is passed to getTreeNodes() methods which filters out the ignoredNodes. This funciton should be overwritten
+     * but only called if the ignored nodes are needed.
+     * @return {Array[]}
+     */
+    _getTreeNodes(){
+    throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
 
-
+    /**
+     * A helper function that returns an array of verticies corresponding to a vertex's node's children. This method is useful
+     * because it handles the logic determining whether or not a vertex is included, hidden, masked ect.
+     *
+     * @param vertex
+     * @return {*}
+     */
+    getChildVertices(vertex){
+        return vertex.node.children.map(child=>this._nodeMap.get(child)).filter(child=>child.visibility===VertexStyle.INCLUDED||child.visibility===VertexStyle.HIDDEN);
+    }
 
 
     /**
@@ -336,6 +356,17 @@ export class layoutInterface {
     updateSettings(newSettings){
         throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
     }
+
+    /**
+     * A method that updates a layout's layout function. middlewares should take one parameter which will be this layout.
+     * They can then use this parameter to access the methods and state of the layout.
+     * @param middlewares - function to be called after the original layout function
+     * @return {layout}
+     */
+    extendLayout(...middlewares){
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+
 
 }
 

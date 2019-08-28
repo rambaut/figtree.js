@@ -18,12 +18,12 @@ export class RectangularLayout extends AbstractLayout {
      * @param tree
      * @param settings
      */
-    constructor(tree, settings = { },...middlewares) {
-        super(tree,settings,...middlewares);
+    constructor(tree, settings = { }) {
+        super(tree,settings);
 
     }
 
-    getTreeNodes() {
+    _getTreeNodes() {
         return [...this.tree.postorder()]
     }
 
@@ -37,8 +37,7 @@ export class RectangularLayout extends AbstractLayout {
     setYPosition(vertex, currentY) {
         const includedInVertical = !vertex.node.children;
         if(!includedInVertical){
-            // make this better
-            const vertexChildren = vertex.node.children.map(child=>this._nodeMap.get(child)).filter(child=>child.visibility===VertexStyle.INCLUDED||child.visibility===VertexStyle.HIDDEN);
+            const vertexChildren = this.getChildVertices(vertex);
             vertex.y = mean(vertexChildren,(child) => child.y);
         }
         else{

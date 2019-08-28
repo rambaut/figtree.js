@@ -40,7 +40,7 @@ export class ExplodedLayout extends RectangularLayout {
         super(tree, {...ExplodedLayout.DEFAULT_SETTINGS(), ...settings});
     }
 
-    getTreeNodes() {
+    _getTreeNodes() {
         // order first by grouping annotation and then by postorder
         const postOrderNodes = [...this.tree.postorder()];
 
