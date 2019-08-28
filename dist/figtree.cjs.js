@@ -6730,12 +6730,15 @@ class Tree {
      * @param {boolean} increasing - sorting in increasing node order or decreasing?
      * @returns {number} - the number of tips below this node
      */
+
+
     orderByNodeDensity(increasing = true, node = this.rootNode) {
         const factor = increasing ? 1 : -1;
         orderNodes.call(this, node, (nodeA, countA, nodeB, countB) => {
             return (countA - countB) * factor;
         });
         this.treeUpdateCallback();
+        return this;
     }
 
     /**
@@ -6752,6 +6755,7 @@ class Tree {
         orderNodes.call(this, node, ordering);
 
         this.treeUpdateCallback();
+        return this;
     }
 
     lastCommonAncestor(node1, node2) {
@@ -7169,6 +7173,18 @@ class Tree {
 
         this.treeUpdateCallback();
 
+    }
+
+    /**
+     * A class function that subscribes a to be called when the tree updates.
+     * @param func - function to be called when the tree updates
+     */
+    subscribeCallback(func){
+        const currentCallback = this.treeUpdateCallback;
+        this.treeUpdateCallback = () =>{
+            currentCallback();
+            func();
+        };
     }
 
     /**
@@ -7814,7 +7830,7 @@ class layoutInterface {
     }
     /**
      * A utility function for rotating a node
-     * @returns {rotate}
+     * @returns {*}
      */
     rotate() {
         throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
@@ -8009,14 +8025,34 @@ class layoutInterface {
     }
 
     /**
-     * A method which returns the nodes of the tree in the order in which they will be assigned Y and X coordinates.
-     * @return {IterableIterator<*>[]}
+     * A method which returns the nodes of the tree in the order in which they will be assigned Y and X coordinates. This filters the nodes
+     * so that ignored nodes are not returned.
+     * @return {Array[]}
      */
     getTreeNodes() {
-        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+        return [...this._getTreeNodes()].filter(n=>!this._ignoredNodes.includes(n))
+
     };
+    /**
+     * A private method which returns the nodes of the tree in the order in which they will be assigned Y and X coordinates.
+     * This function is passed to getTreeNodes() methods which filters out the ignoredNodes. This funciton should be overwritten
+     * but only called if the ignored nodes are needed.
+     * @return {Array[]}
+     */
+    _getTreeNodes(){
+    throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
 
-
+    /**
+     * A helper function that returns an array of verticies corresponding to a vertex's node's children. This method is useful
+     * because it handles the logic determining whether or not a vertex is included, hidden, masked ect.
+     *
+     * @param vertex
+     * @return {*}
+     */
+    getChildVertices(vertex){
+        return vertex.node.children.map(child=>this._nodeMap.get(child)).filter(child=>child.visibility===VertexStyle.INCLUDED||child.visibility===VertexStyle.HIDDEN);
+    }
 
 
     /**
@@ -8027,13 +8063,23 @@ class layoutInterface {
         throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
     }
 
+    /**
+     * A method that updates a layout's layout function. middlewares should take one parameter which will be this layout.
+     * They can then use this parameter to access the methods and state of the layout.
+     * @param middlewares - function to be called after the original layout function
+     * @return {layout}
+     */
+    extendLayout(...middlewares){
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+    }
+
+
 }
 
 /** @module layout */
 
 const  VertexStyle$1 = {
     INCLUDED:Symbol("INCLUDED"),// Only included nodes are sent to the figtree class
-    IGNORED:Symbol('IGNORED'), // Ignored nodes are just that ignored in every way
     HIDDEN:Symbol("HIDDEN"), // The only difference between hidden and included nodes is that hidden nodes are not sent to the figtree class
     MASKED:Symbol("MASKED") // Masked nodes have an x and y coordinate but are then ignored. They don't count towards their parent's x and y
 };
@@ -8053,7 +8099,6 @@ class AbstractLayout extends layoutInterface {
         return {
             lengthFormat: format(".2f"),
             horizontalScale: null, // a scale that converts height to 0,1  domain. default is 0 = highest tip
-            includedInVerticalRange: node => !node.children,
             branchScale: 1,
             radiusOfCurve:0,
 
@@ -8073,7 +8118,7 @@ class AbstractLayout extends layoutInterface {
 
         // default ranges - these should be set in layout()
         this._horizontalRange = [0.0, 1.0];
-        this._verticalRange = [0, this.tree.nodeList.filter(this.settings.includedInVerticalRange).length - 1];
+        this._verticalRange = [0, this.tree.externalNodes.length - 1];
         this._horizontalTicks = [0, 0.5, 1];
 
         this._edges = [];
@@ -8083,19 +8128,20 @@ class AbstractLayout extends layoutInterface {
         this._nodeMap = new Map();
 
         this._cartoonStore = [];
-        this._activeCartoons = [];
 
         this._branchLabelAnnotationName = null;
         this._internalNodeLabelAnnotationName = null;
         this._externalNodeLabelAnnotationName = null;
 
+        this._ignoredNodes=[];
+
         this.layoutKnown = false;
 
         // called whenever the tree changes...
-        this.tree.treeUpdateCallback = () => {
-            this.layoutKnown = false;
-            this.update();
-        };
+        this.tree.subscribeCallback( () => {
+                                    this.layoutKnown = false;
+                                     this.update();
+        });
 
 
         // create an empty callback function
@@ -8115,27 +8161,10 @@ class AbstractLayout extends layoutInterface {
         let currentY = this.setInitialY();
         let currentX = this.setInitialX();
 
-        //CARTOONS set up
-        // filter so just showing the most ancestral;
-        const allCartoonDescendents = [];
-        this._cartoonStore.forEach(c => {
-            if (allCartoonDescendents.indexOf(c.node) === -1) {
-                allCartoonDescendents.push(...[...this.tree.postorder(c.node)].filter(n => n !== c.node));
-            }
-        });
-
-        this._activeCartoons = this._cartoonStore.filter(c => allCartoonDescendents.indexOf(c.node) === -1);
-
-        this._activeCartoons.filter(c => c.format === 'collapse')
-            .forEach(c => {
-                markCollapsedNodes.call(this, c);
-            });
-
 
         // update the node locations (vertices)
         treeNodes.forEach((n) => {
             const v = this._nodeMap.get(n);
-            if (!(v.visibility === VertexStyle$1.IGNORED)) {
 
                 currentY = this.setYPosition(v, currentY);
                 currentX = this.setXPosition(v, currentX);
@@ -8143,7 +8172,6 @@ class AbstractLayout extends layoutInterface {
                 v.id = v.node.id;
                 setVertexClasses.call(this, v);
                 setVertexLabels.call(this, v);
-            }
         });
 
 
@@ -8248,12 +8276,25 @@ class AbstractLayout extends layoutInterface {
         if (node.children) {
             if (this._cartoonStore.filter(c => c.format === "cartoon").find(c => c.node === node)) {
                 this._cartoonStore = this._cartoonStore.filter(c => !(c.format === "cartoon" && c.node === node));
+
+                [...this.tree.postorder(node)]
+                    .filter(n=>n!==node)
+                    .map(n=>this._nodeMap.get(n))
+                    .forEach(v=>v.visibility = v.visibility===VertexStyle$1.HIDDEN?VertexStyle$1.INCLUDED:v.visibility);
+
             } else {
                 this._cartoonStore.push({
                     node: node,
                     format: "cartoon"
                 });
             }
+            // hide children vertices
+            this._cartoonStore.forEach(c=>{
+                [...this.tree.postorder(c.node)]
+                    .filter(n=>n!==c.node)
+                    .forEach(n=>this.hideNode(n));
+            });
+
             this.layoutKnown = false;
             this.update();
         }
@@ -8289,15 +8330,20 @@ class AbstractLayout extends layoutInterface {
     }
 
     ignoreNode(node) {
-        const vertex = this.nodeMap.get(node);
-        vertex.visibility = VertexStyle$1.IGNORED;
+        this._ignoredNodes.push(node);
         this.layoutKnown = false;
     }
 
     includeNode(node) {
+        this._ignoredNodes = this._ignoredNodes.filter(n=>n!==node);
+
         const vertex = this.nodeMap.get(node);
         vertex.visibility = VertexStyle$1.INCLUDED;
         this.layoutKnown = false;
+    }
+
+    getChildVertices(vertex){
+        return vertex.node.children.map(child=>this._nodeMap.get(child)).filter(child=>child.visibility===VertexStyle$1.INCLUDED||child.visibility===VertexStyle$1.HIDDEN);
     }
 
 
@@ -8327,16 +8373,18 @@ class AbstractLayout extends layoutInterface {
         if (!this.layoutKnown) {
             this.layout();
         }
-        const cartoons = [];
+
         // Handle cartoons
-        this._activeCartoons.forEach(c => {
+        // here we handle what's active and what isn't.
+        const cartoons = [];
+        const ancestralCartoons = getMostAncestralCartoons.call(this,this._cartoonStore);
+        ancestralCartoons
+            .forEach(c => {
 
 
             const cartoonNodeDecedents = [...this.tree.postorder(c.node)].filter(n => n !== c.node);
             const cartoonVertex = this._nodeMap.get(c.node);
-
             const cartoonVertexDecedents = cartoonNodeDecedents.map(n => this._nodeMap.get(n));
-            cartoonVertexDecedents.forEach(v => v.visibility = VertexStyle$1.HIDDEN);
             const newTopVertex = {
                 x: max(cartoonVertexDecedents, d => d.x),
                 y: max(cartoonVertexDecedents, d => d.y),
@@ -8352,8 +8400,8 @@ class AbstractLayout extends layoutInterface {
             let currentNode = cartoonVertex.node;
             while (currentNode.parent) {
                 const parentVertex = this._nodeMap.get(currentNode.parent);
-                if (!this.settings.includedInVerticalRange(parentVertex.node)) {
-                    parentVertex.y = mean(parentVertex.node.children, (child) => this._nodeMap.get(child).y);
+                if (!parentVertex.node.children ) {
+                    parentVertex.y = mean(this.getChildVertices(parentVertex), (child) => this._nodeMap.get(child).y);
                 }
                 currentNode = parentVertex.node;
 
@@ -8365,7 +8413,7 @@ class AbstractLayout extends layoutInterface {
                 id: `${cartoonVertex.id}-cartoon`, node: c.node
             });
         });
-
+        console.log(cartoons);
         return cartoons;
 
     }
@@ -8399,11 +8447,7 @@ class AbstractLayout extends layoutInterface {
         this.settings={...this.settings,...newSettings};
         this.update();
     }
-    /**
-     * A function for extending the layout method of a layout. It wraps
-     * @param layout
-     * @param middlewares
-     */
+
 // borrowed from redux naive implementation https://redux.js.org/advanced/middleware
     extendLayout(...middlewares){
         middlewares = middlewares.slice();
@@ -8421,6 +8465,7 @@ class AbstractLayout extends layoutInterface {
         this.layoutKnown=false;
         return this;
     }
+
 }
 
 /*
@@ -8429,11 +8474,10 @@ class AbstractLayout extends layoutInterface {
 function makeVerticesFromNodes(nodes){
     nodes.forEach((n, i) => {
 
-        if(!this._nodeMap.has(n)){
+        if(!this._nodeMap.has(n)&&!this._ignoredNodes.includes(n)){
             const vertex = {
                 node: n,
                 key: n.id,
-                focused:false,
                 visibility:VertexStyle$1.INCLUDED
                 // key: Symbol(n.id).toString()
             };
@@ -8535,20 +8579,15 @@ function setEdgeLabels(e){
         null );
     e.labelBelow = e.v1.node.parent.children[0] !== e.v1.node;
 }
+function getMostAncestralCartoons(cartoons){
+    const cartoonNodes = cartoons.map(c=>c.node);
+    const mostAncestralNode = cartoonNodes.filter(n=>![...Tree.pathToRoot(n)].filter(m=>m!==n).some(n=>cartoonNodes.includes(n)));
 
-function markCollapsedNodes(c){
-    const cartoonNodeDecedents = [...this.tree.postorder(c.node)].filter(n=>n!==c.node);
+    return cartoons.filter(c=>mostAncestralNode.includes(c.node));
 
-    const cartoonVertexDecedents = cartoonNodeDecedents.map(n=>this._nodeMap.get(n));
-
-    const mostDiverged = this._nodeMap.get(cartoonNodeDecedents.find(n=>n.height===max(cartoonNodeDecedents,d=>d.height)));
-    cartoonVertexDecedents.forEach(v=> {
-        v.visibility = VertexStyle$1.HIDDEN;
-        if (v === mostDiverged) {
-            v.visibility = VertexStyle$1.IGNORED;
-        }
-    });
 }
+
+//TODO fix bug cartoons.
 
 /**
  * The rectangular layout class
@@ -8562,12 +8601,12 @@ class RectangularLayout extends AbstractLayout {
      * @param tree
      * @param settings
      */
-    constructor(tree, settings = { },...middlewares) {
-        super(tree,settings,...middlewares);
+    constructor(tree, settings = { }) {
+        super(tree,settings);
 
     }
 
-    getTreeNodes() {
+    _getTreeNodes() {
         return [...this.tree.postorder()]
     }
 
@@ -8581,8 +8620,7 @@ class RectangularLayout extends AbstractLayout {
     setYPosition(vertex, currentY) {
         const includedInVertical = !vertex.node.children;
         if(!includedInVertical){
-            // make this better
-            const vertexChildren = vertex.node.children.map(child=>this._nodeMap.get(child)).filter(child=>child.visibility===VertexStyle$1.INCLUDED||child.visibility===VertexStyle$1.HIDDEN);
+            const vertexChildren = this.getChildVertices(vertex);
             vertex.y = mean(vertexChildren,(child) => child.y);
         }
         else{
@@ -8679,7 +8717,7 @@ class ExplodedLayout extends RectangularLayout {
         super(tree, {...ExplodedLayout.DEFAULT_SETTINGS(), ...settings});
     }
 
-    getTreeNodes() {
+    _getTreeNodes() {
         // order first by grouping annotation and then by postorder
         const postOrderNodes = [...this.tree.postorder()];
 

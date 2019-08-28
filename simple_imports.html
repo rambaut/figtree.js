@@ -134,22 +134,8 @@
 
     const tree = Tree.parseNewick(newickString, "probability");
     const treeSVG = document.getElementById('phylogram_1a');
-const middleware1 =  (context)=>(layoutFunction)=>()=>{
-    layoutFunction.call(context);
-    console.log("updating with middleware");
-}
 
-const middlewareCollapse=(layout)=> {
-    // layoutFunction.call(context);
-    layout._vertices.forEach(v=>v.y=1);
-}
-
-const updateRange=layout=>{
-    layout._verticalRange = [0, 2];
-
-}
-
-    const layout = new RectangularLayout(tree,{}).extendLayout(middlewareCollapse,updateRange)
+    const layout = new RectangularLayout(tree,{})
 
     layout.internalNodeLabels="probability";
 
@@ -162,7 +148,7 @@ const updateRange=layout=>{
         });
     figTree.draw()
         .hilightInternalNodes()
-        .onClickInternalNode(d=>console.log("clicked"))//layout.rotate());
+        .onClickInternalNode(layout.rotate())
         .onClickBranch(layout.reroot());
 
     // figTree.addToolTip('#root', "The root node - represents the most recent<br>common ancestor of the whole tree");

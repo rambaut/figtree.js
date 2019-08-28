@@ -432,15 +432,15 @@
     figTree.draw();
 
     layout.internalNodeLabels="probability";
-    layout.cartoon(tree.tipMap.get("virus1").parent);
+    layout.cartoon(layout.nodeMap.get(tree.tipMap.get("virus1").parent));
 
     // figTree.addLabels('.external-node', FigTree.nodeInfo);
     figTree.addToolTip('.node', layout.nodeInfo);
 
     figTree.hilightBranches();
-    figTree.onClickBranch((e)=>layout.collapse(e.v1.node));
+    figTree.onClickBranch((e)=>layout.collapse(e.v1));
     figTree.hilightInternalNodes();
-    figTree.onClickNode((v)=>layout.cartoon(v.node));
+    figTree.onClickNode((v)=>layout.cartoon(v));
 
     // tree.annotateNodesFromTips("host");
 
