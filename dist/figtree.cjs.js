@@ -8699,9 +8699,6 @@ class TransmissionLayout extends AbstractLayout {
 
             return [...this.tree.postorder()]
         }
-
-
-
 }
 
 function transmissionMiddleWare(context){
@@ -8752,7 +8749,7 @@ function orderTreeNodes(a,countA,b,countB,parent){
  * Only works for 'up' directions
  *
  */
-class ExplodedLayout extends RectangularLayout {
+class ExplodedLayout extends AbstractLayout {
 
     static DEFAULT_SETTINGS() {
         return {
@@ -8760,8 +8757,7 @@ class ExplodedLayout extends RectangularLayout {
             direction:"up",
             interGroupGap:10,
             intraGroupGap:5,
-            focusFactor:1,
-
+            groupOrdering:(a,b)=>a<b?-1:1,
         }
     };
 
@@ -8775,21 +8771,19 @@ class ExplodedLayout extends RectangularLayout {
         super(tree, {...ExplodedLayout.DEFAULT_SETTINGS(), ...settings});
     }
 
+
     _getTreeNodes() {
         // order first by grouping annotation and then by postorder
         const postOrderNodes = [...this.tree.postorder()];
 
-        const groupHeights = new Map();
-        for(const group of this.tree.annotations[this.settings.groupingAnnotation].values){
-            const height = min(postOrderNodes.filter(n=>n.annotations[this.settings.groupingAnnotation]===group),d=>d.height);
-            groupHeights.set(group,height);
-        }
         // sort by location and then by post order order but we want all import/export banches to be last
         return([...this.tree.postorder()].sort((a,b)=>{
-            if(a.annotations[this.settings.groupingAnnotation]===b.annotations[this.settings.groupingAnnotation]){
+            const aGroup = a.annotations[this.settings.groupingAnnotation];
+            const bGroup = b.annotations[this.settings.groupingAnnotation];
+            if(aGroup===bGroup){
                 return postOrderNodes.indexOf(a)-postOrderNodes.indexOf(b);
             }else{
-                    return -1*(groupHeights.get(a.annotations[this.settings.groupingAnnotation]) -  groupHeights.get(b.annotations[this.settings.groupingAnnotation]))
+                    return this.settings.groupOrdering(aGroup,bGroup)
                 }
         }))
 
@@ -8801,16 +8795,11 @@ class ExplodedLayout extends RectangularLayout {
         // if do something else
         if(currentY===this.setInitialY()) {
             this._currentGroup = vertex.node.annotations[this.settings.groupingAnnotation];
-        }        const includedInVertical = this.settings.includedInVerticalRange(vertex.node);
-        if (!includedInVertical) {
-            vertex.y = mean(vertex.node.children,(child) => {
-                const childVertex = this._nodeMap.get(child);
-                if(childVertex.visibility===VertexStyle$1.INCLUDED||childVertex.visibility===VertexStyle$1.HIDDEN){
-                    return childVertex.y
-                }else{
-                    return null;
-                }
-            });
+        }
+       // First if this isn't tip like
+        if (vertex.node.children&&vertex.node.children.length>1) {
+            const vertexChildren = this.getChildVertices(vertex);
+            vertex.y = mean(vertexChildren,(child) => child.y);
             if(vertex.node.parent){
                 if(vertex.node.annotations[this.settings.groupingAnnotation]!==vertex.node.parent.annotations[this.settings.groupingAnnotation]){
                     this._newIntraGroupNext=true;
@@ -8818,14 +8807,20 @@ class ExplodedLayout extends RectangularLayout {
             }
 
         } else {
+
+        //It's a tip or tip-like
             if(vertex.node.annotations[this.settings.groupingAnnotation]!==this._currentGroup){
+                //This the the first time in the new group
                 currentY+=this.settings.interGroupGap;
+                //Reset this flag
                 this._newIntraGroupNext = false;
             }
             else if(this._newIntraGroupNext){
+                //It's a tip in a new circulation
                 currentY+=this.settings.intraGroupGap;
                 this._newIntraGroupNext = false;
             }else{
+                //Just the same ciruclation
                 currentY += 1;
             }
             this._currentGroup= vertex.node.annotations[this.settings.groupingAnnotation];

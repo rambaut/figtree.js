@@ -57,9 +57,6 @@ export class TransmissionLayout extends AbstractLayout {
 
             return [...this.tree.postorder()]
         }
-
-
-
 }
 
 function transmissionMiddleWare(context){
