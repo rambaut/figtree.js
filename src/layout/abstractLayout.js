@@ -227,23 +227,6 @@ export class AbstractLayout extends layoutInterface {
         }
     }
 
-
-    collapse(vertex) {
-        const node = vertex.node;
-        if (node.children) {
-            if (this._cartoonStore.filter(c => c.format === "collapse").find(c => c.node === node)) {
-                this._cartoonStore = this._cartoonStore.filter(c => !(c.format === "collapse" && c.node === node));
-            } else {
-                this._cartoonStore.push({
-                    node: node,
-                    format: "collapse"
-                })
-            }
-            this.layoutKnown = false;
-            this.update();
-        }
-    }
-
     maskNode(node) {
         const vertex = this.nodeMap.get(node);
         vertex.visibility = VertexStyle.MASKED;
@@ -340,7 +323,6 @@ export class AbstractLayout extends layoutInterface {
                 id: `${cartoonVertex.id}-cartoon`, node: c.node
             })
         });
-        console.log(cartoons)
         return cartoons;
 
     }
@@ -392,6 +374,18 @@ export class AbstractLayout extends layoutInterface {
         this.layoutKnown=false;
         return this;
     }
+
+    setInitialY() {
+        return -0.5;
+    }
+    setInitialX() {
+        return 0;
+    }
+    setXPosition(vertex,currentX){
+        vertex.x = this._horizontalScale(vertex.node.height*this.settings.branchScale);
+        return 0;
+    }
+
 
 }
 
@@ -508,28 +502,7 @@ export function setEdgeLabels(e){
     e.labelBelow = e.v1.node.parent.children[0] !== e.v1.node;
 }
 
-export function markCollapsedNodes(c){
-    const cartoonNodeDecedents = [...this.tree.postorder(c.node)].filter(n=>n!==c.node);
 
-    const cartoonVertexDecedents = cartoonNodeDecedents.map(n=>this._nodeMap.get(n));
-
-    const mostDiverged = this._nodeMap.get(cartoonNodeDecedents.find(n=>n.height===max(cartoonNodeDecedents,d=>d.height)));
-    cartoonVertexDecedents.forEach(v=> {
-        v.visibility = VertexStyle.HIDDEN;
-        if (v === mostDiverged) {
-            v.visibility = VertexStyle.IGNORED;
-        }
-    });
-}
-
-export function markHiddenNodes(c){
-    const cartoonNodeDecedents = [...this.tree.postorder(c.node)].filter(n=>n!==c.node);
-
-    cartoonNodeDecedents.forEach(n=> {
-        const v = this._nodeMap.get(n);
-        v.visibility = VertexStyle.HIDDEN;
-    });
-}
 export function getMostAncestralCartoons(cartoons){
     const cartoonNodes = cartoons.map(c=>c.node);
     const mostAncestralNode = cartoonNodes.filter(n=>![...Tree.pathToRoot(n)].filter(m=>m!==n).some(n=>cartoonNodes.includes(n)));
@@ -538,4 +511,26 @@ export function getMostAncestralCartoons(cartoons){
 
 }
 
-//TODO fix bug cartoons.
+/**
+ * This is a helper function that updates a vertices y position by a specified amount. The function is meant to open a gap
+ * in the tree below vertices that are moved up and above vertices that are moved down. A side effect of the function is
+ * that vertices not listed are moved up (if they are above the selected vertices and the vertices are moved up) and
+ * down if they are below the selected vertices and the vertices are moved down. It is meant to be called with this
+ * referring to the layout. Remember that the top of plot has y position 0. So positive numbers move the vertices to
+ * positions lower on the screen.
+ * @param delta
+ * @param vertices
+ */
+
+export function updateVerticesY(delta,...vertices){
+
+    if(delta>0){
+        this._vertices.filter(v=>v.y>d3.max(vertices,v=>v.y))
+            .forEach(v=>v.y+=delta);
+    }
+    else if(delta<0){
+        this._vertices.filter(v=>v.y<d3.min(vertices,v=>v.y))
+            .forEach(v=>v.y+=delta);
+    }
+    vertices.forEach(v=>v.y+=delta);
+}

@@ -6757,6 +6757,12 @@ class Tree {
         this.treeUpdateCallback();
         return this;
     }
+    _order(ordering, node = this.rootNode) {
+
+        orderNodes.call(this, node, ordering);
+
+        return this;
+    }
 
     lastCommonAncestor(node1, node2) {
 
@@ -7452,7 +7458,7 @@ function orderNodes(node, ordering, callback = null) {
 
         // sort the children using the provided function
         node.children.sort((a, b) => {
-            return ordering(a, counts.get(a), b, counts.get(b))
+            return ordering(a, counts.get(a), b, counts.get(b),node)
         });
 
         if (callback) callback();
@@ -8300,23 +8306,6 @@ class AbstractLayout extends layoutInterface {
         }
     }
 
-
-    collapse(vertex) {
-        const node = vertex.node;
-        if (node.children) {
-            if (this._cartoonStore.filter(c => c.format === "collapse").find(c => c.node === node)) {
-                this._cartoonStore = this._cartoonStore.filter(c => !(c.format === "collapse" && c.node === node));
-            } else {
-                this._cartoonStore.push({
-                    node: node,
-                    format: "collapse"
-                });
-            }
-            this.layoutKnown = false;
-            this.update();
-        }
-    }
-
     maskNode(node) {
         const vertex = this.nodeMap.get(node);
         vertex.visibility = VertexStyle$1.MASKED;
@@ -8413,7 +8402,6 @@ class AbstractLayout extends layoutInterface {
                 id: `${cartoonVertex.id}-cartoon`, node: c.node
             });
         });
-        console.log(cartoons);
         return cartoons;
 
     }
@@ -8465,6 +8453,18 @@ class AbstractLayout extends layoutInterface {
         this.layoutKnown=false;
         return this;
     }
+
+    setInitialY() {
+        return -0.5;
+    }
+    setInitialX() {
+        return 0;
+    }
+    setXPosition(vertex,currentX){
+        vertex.x = this._horizontalScale(vertex.node.height*this.settings.branchScale);
+        return 0;
+    }
+
 
 }
 
@@ -8579,6 +8579,8 @@ function setEdgeLabels(e){
         null );
     e.labelBelow = e.v1.node.parent.children[0] !== e.v1.node;
 }
+
+
 function getMostAncestralCartoons(cartoons){
     const cartoonNodes = cartoons.map(c=>c.node);
     const mostAncestralNode = cartoonNodes.filter(n=>![...Tree.pathToRoot(n)].filter(m=>m!==n).some(n=>cartoonNodes.includes(n)));
@@ -8587,7 +8589,29 @@ function getMostAncestralCartoons(cartoons){
 
 }
 
-//TODO fix bug cartoons.
+/**
+ * This is a helper function that updates a vertices y position by a specified amount. The function is meant to open a gap
+ * in the tree below vertices that are moved up and above vertices that are moved down. A side effect of the function is
+ * that vertices not listed are moved up (if they are above the selected vertices and the vertices are moved up) and
+ * down if they are below the selected vertices and the vertices are moved down. It is meant to be called with this
+ * referring to the layout. Remember that the top of plot has y position 0. So positive numbers move the vertices to
+ * positions lower on the screen.
+ * @param delta
+ * @param vertices
+ */
+
+function updateVerticesY(delta,...vertices){
+
+    if(delta>0){
+        this._vertices.filter(v=>v.y>d3.max(vertices,v=>v.y))
+            .forEach(v=>v.y+=delta);
+    }
+    else if(delta<0){
+        this._vertices.filter(v=>v.y<d3.min(vertices,v=>v.y))
+            .forEach(v=>v.y+=delta);
+    }
+    vertices.forEach(v=>v.y+=delta);
+}
 
 /**
  * The rectangular layout class
@@ -8610,13 +8634,6 @@ class RectangularLayout extends AbstractLayout {
         return [...this.tree.postorder()]
     }
 
-    setInitialY() {
-        return -0.5;
-    }
-    setInitialX() {
-        return 0;
-    }
-
     setYPosition(vertex, currentY) {
         const includedInVertical = !vertex.node.children;
         if(!includedInVertical){
@@ -8630,10 +8647,6 @@ class RectangularLayout extends AbstractLayout {
         return currentY;
     }
 
-    setXPosition(vertex,currentX){
-        vertex.x = this._horizontalScale(vertex.node.height*this.settings.branchScale);
-        return 0;
-    }
 
 
 
@@ -8642,7 +8655,8 @@ class RectangularLayout extends AbstractLayout {
 
 /**
  * The TransmissionLayout class
- * Only works for 'up' directions
+ * up orders the tree in increasing node density and puts transmission up
+ * down orders tree in decreasing node density and puts the transmissions down
  *
  */
 class TransmissionLayout extends AbstractLayout {
@@ -8661,32 +8675,76 @@ class TransmissionLayout extends AbstractLayout {
      * @param settings
      */
     constructor(tree, settings = {}) {
-        const groupingAnnotation = {...TransmissionLayout.DEFAULT_SETTINGS(),...settings}['groupingAnnotation'];
+        // Rotate the tree so that jumps are always on top/bottom depending on settings
         // defined here so we can use the groupingAnnotation key
         super(tree, {...TransmissionLayout.DEFAULT_SETTINGS(), ...settings});
+        this.extendLayout(transmissionMiddleWare);
     }
 
-    //TODO rework this so it loops through twice and updates accordinglin when there is a group change.
     setYPosition(vertex, currentY) {
-        const node = vertex.node;
-        const includedInVerticalRange = !node.children || (node.children.length===1 && node.annotations[this.settings.groupingAnnotation]!==node.children[0].annotations[this.settings.groupingAnnotation]);
-        if (!includedInVertical) {
-            const vertexChildren = vertex.node.children.map(child=>this._nodeMap.get(child)).filter(child=>child.visibility===VertexStyle$1.INCLUDED||child.visibility===VertexStyle$1.HIDDEN);
-            vertex.y = mean(vertexChildren,(child) => child.y);
-
-        } else {
-            if(vertex.node.children &&(  vertex.node.children.length===1 && vertex.node.annotations[this.settings.groupingAnnotation]!==vertex.node.children[0].annotations[this.settings.groupingAnnotation])){
-                currentY+=this.settings.groupGap;
-            }else{
-                currentY += 1;
+            const includedInVertical = !vertex.node.children;
+            if(!includedInVertical){
+                const vertexChildren = this.getChildVertices(vertex);
+                vertex.y = mean(vertexChildren,(child) => child.y);
             }
-            vertex.y = currentY;
+            else{
+                currentY += 1;
+                vertex.y = currentY;
+            }
+            return currentY;
         }
-        this._previousVertexFocused=vertex.focused;
+        _getTreeNodes() {
 
-        return currentY;
+            this.tree._order(orderTreeNodes.bind(this));
+
+            return [...this.tree.postorder()]
+        }
+
+
+
+}
+
+function transmissionMiddleWare(context){
+    // If direction is up start at bottom if direction is down start at top
+    let sorting =(a,b)=>-1;
+    let gap = context.settings.groupGap;
+    if(context.settings.direction.toLowerCase()==="up"){
+        sorting = (a,b) => a.y-b.y;
+        gap*=-1;
+    }else if(context.settings.direction.toLowerCase()==="down"){
+        sorting=(a,b)=>b.y-a.y;
     }
+    context._vertices.sort(sorting)
+        .forEach(vertex=>{
+            //We don't touch the root
+            if(vertex.node.parent){
+                //Is there a state change
+                if(vertex.node.annotations[context.settings.groupingAnnotation]!==vertex.node.parent.annotations[context.settings.groupingAnnotation]){
+                    //Get descendent vertices
+                    const vertices =[...context.tree.postorder(vertex.node)].map(n=>context._nodeMap.get(n));
+                        updateVerticesY.call(context,gap,...vertices);
+                }
+            }
+        });
 
+    context._verticalRange =d3.extent(context._vertices,v=>v.y);
+
+}
+
+
+function orderTreeNodes(a,countA,b,countB,parent){
+    const factor = this.settings.direction==="up"? -1:1;
+    const aGroup = a.annotations[this.settings.groupingAnnotation];
+    const bGroup = b.annotations[this.settings.groupingAnnotation];
+    const parentGroup = parent.annotations[this.settings.groupingAnnotation];
+
+    if(aGroup===bGroup||aGroup!==parentGroup&&bGroup!==parentGroup){
+        return factor*(countA-countB)
+    }else if(aGroup!==parentGroup){
+        return factor; //A first if up
+    }else if(bGroup!==parentGroup){
+        return factor*-1; //B first if up;
+    }
 }
 
 /**

@@ -27,13 +27,6 @@ export class RectangularLayout extends AbstractLayout {
         return [...this.tree.postorder()]
     }
 
-    setInitialY() {
-        return -0.5;
-    }
-    setInitialX() {
-        return 0;
-    }
-
     setYPosition(vertex, currentY) {
         const includedInVertical = !vertex.node.children;
         if(!includedInVertical){
@@ -47,10 +40,6 @@ export class RectangularLayout extends AbstractLayout {
         return currentY;
     }
 
-    setXPosition(vertex,currentX){
-        vertex.x = this._horizontalScale(vertex.node.height*this.settings.branchScale);
-        return 0;
-    }
 
 
 
