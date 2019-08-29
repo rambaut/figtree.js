@@ -58,7 +58,7 @@ export class ExplodedLayout extends AbstractLayout {
             this._currentGroup = vertex.node.annotations[this.settings.groupingAnnotation];
         }
        // First if this isn't tip like
-        if (vertex.node.children&&vertex.node.children.length>1) {
+        if (vertex.node.children&&(vertex.node.children.length>1||vertex.node.annotations[this.settings.groupingAnnotation]!==vertex.node.parent.annotations[this.settings.groupingAnnotation])) {
             const vertexChildren = this.getChildVertices(vertex);
             vertex.y = mean(vertexChildren,(child) => child.y);
             if(vertex.node.parent){

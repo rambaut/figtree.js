@@ -253,7 +253,20 @@ export class AbstractLayout extends layoutInterface {
     }
 
     getChildVertices(vertex){
-        return vertex.node.children.map(child=>this._nodeMap.get(child)).filter(child=>child.visibility===VertexStyle.INCLUDED||child.visibility===VertexStyle.HIDDEN);
+
+        // return vertex.node.children.map(child=>this._nodeMap.get(child)).filter(child=>child.visibility===VertexStyle.INCLUDED||child.visibility===VertexStyle.HIDDEN);
+        const children =  vertex.node.children.filter(n=>!this._ignoredNodes.includes(n)).map(child=>this._nodeMap.get(child));
+
+
+        try{
+            return children.filter(child=>child.visibility!==VertexStyle.MASKED);
+        }catch{
+            console.group(`${vertex.node.id}`);
+            console.log(vertex);
+            console.log(children);
+            console.groupEnd();
+        }
+
     }
 
 
@@ -525,11 +538,11 @@ export function getMostAncestralCartoons(cartoons){
 export function updateVerticesY(delta,...vertices){
 
     if(delta>0){
-        this._vertices.filter(v=>v.y>d3.max(vertices,v=>v.y))
+        this._vertices.filter(v=>v.y>max(vertices,v=>v.y))
             .forEach(v=>v.y+=delta);
     }
     else if(delta<0){
-        this._vertices.filter(v=>v.y<d3.min(vertices,v=>v.y))
+        this._vertices.filter(v=>v.y<min(vertices,v=>v.y))
             .forEach(v=>v.y+=delta);
     }
     vertices.forEach(v=>v.y+=delta);

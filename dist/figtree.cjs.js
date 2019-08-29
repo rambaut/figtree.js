@@ -251,6 +251,44 @@ function number(x) {
   return x === null ? NaN : +x;
 }
 
+function extent(values, valueof) {
+  var n = values.length,
+      i = -1,
+      value,
+      min,
+      max;
+
+  if (valueof == null) {
+    while (++i < n) { // Find the first comparable value.
+      if ((value = values[i]) != null && value >= value) {
+        min = max = value;
+        while (++i < n) { // Compare the remaining values.
+          if ((value = values[i]) != null) {
+            if (min > value) min = value;
+            if (max < value) max = value;
+          }
+        }
+      }
+    }
+  }
+
+  else {
+    while (++i < n) { // Find the first comparable value.
+      if ((value = valueof(values[i], i, values)) != null && value >= value) {
+        min = max = value;
+        while (++i < n) { // Compare the remaining values.
+          if ((value = valueof(values[i], i, values)) != null) {
+            if (min > value) min = value;
+            if (max < value) max = value;
+          }
+        }
+      }
+    }
+  }
+
+  return [min, max];
+}
+
 var e10 = Math.sqrt(50),
     e5 = Math.sqrt(10),
     e2 = Math.sqrt(2);
@@ -8332,13 +8370,20 @@ class AbstractLayout extends layoutInterface {
     }
 
     getChildVertices(vertex){
-        console.group(`${vertex.node.id}`);
-        console.log(vertex);
+
         // return vertex.node.children.map(child=>this._nodeMap.get(child)).filter(child=>child.visibility===VertexStyle.INCLUDED||child.visibility===VertexStyle.HIDDEN);
-        const children =  vertex.node.children.map(child=>this._nodeMap.get(child));
-        console.log(children);
-        console.groupEnd();
-            return children.filter(child=>child.visibility===VertexStyle$1.INCLUDED||child.visibility===VertexStyle$1.HIDDEN);
+        const children =  vertex.node.children.filter(n=>!this._ignoredNodes.includes(n)).map(child=>this._nodeMap.get(child));
+
+
+        try{
+            return children.filter(child=>child.visibility!==VertexStyle$1.MASKED);
+        }catch{
+            console.group(`${vertex.node.id}`);
+            console.log(vertex);
+            console.log(children);
+            console.groupEnd();
+        }
+
     }
 
 
@@ -8609,11 +8654,11 @@ function getMostAncestralCartoons(cartoons){
 function updateVerticesY(delta,...vertices){
 
     if(delta>0){
-        this._vertices.filter(v=>v.y>d3.max(vertices,v=>v.y))
+        this._vertices.filter(v=>v.y>max(vertices,v=>v.y))
             .forEach(v=>v.y+=delta);
     }
     else if(delta<0){
-        this._vertices.filter(v=>v.y<d3.min(vertices,v=>v.y))
+        this._vertices.filter(v=>v.y<min(vertices,v=>v.y))
             .forEach(v=>v.y+=delta);
     }
     vertices.forEach(v=>v.y+=delta);
@@ -8641,12 +8686,20 @@ class RectangularLayout extends AbstractLayout {
     }
 
     setYPosition(vertex, currentY) {
+
         const includedInVertical = !vertex.node.children;
-        if(!includedInVertical){
+        if(!includedInVertical) {
+
             const vertexChildren = this.getChildVertices(vertex);
-            vertex.y = mean(vertexChildren,(child) => child.y);
-        }
-        else{
+            vertex.y = mean(vertexChildren, (child) => child.y);
+            if (vertex.node.children.length === 1) {
+                console.group('inserted');
+                console.log(vertex);
+                console.log(vertexChildren);
+                console.log(vertex.y);
+                console.groupEnd();
+            }
+        }else{
             currentY += 1;
             vertex.y = currentY;
         }
@@ -8730,7 +8783,7 @@ function transmissionMiddleWare(context){
             }
         });
 
-    context._verticalRange =d3.extent(context._vertices,v=>v.y);
+    context._verticalRange =extent(context._vertices,v=>v.y);
 
 }
 
@@ -8803,7 +8856,7 @@ class ExplodedLayout extends AbstractLayout {
             this._currentGroup = vertex.node.annotations[this.settings.groupingAnnotation];
         }
        // First if this isn't tip like
-        if (vertex.node.children&&vertex.node.children.length>1) {
+        if (vertex.node.children&&(vertex.node.children.length>1||vertex.node.annotations[this.settings.groupingAnnotation]!==vertex.node.parent.annotations[this.settings.groupingAnnotation])) {
             const vertexChildren = this.getChildVertices(vertex);
             vertex.y = mean(vertexChildren,(child) => child.y);
             if(vertex.node.parent){

@@ -2,7 +2,7 @@
 
 /** @module layout */
 
-import {mean} from "d3";
+import {mean,extent} from "d3";
 import {AbstractLayout, updateVerticesY, VertexStyle} from "./abstractLayout";
 
 
@@ -82,7 +82,7 @@ function transmissionMiddleWare(context){
             }
         });
 
-    context._verticalRange =d3.extent(context._vertices,v=>v.y);
+    context._verticalRange =extent(context._vertices,v=>v.y);
 
 }
 
