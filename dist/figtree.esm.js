@@ -8328,7 +8328,13 @@ class AbstractLayout extends layoutInterface {
     }
 
     getChildVertices(vertex){
-        return vertex.node.children.map(child=>this._nodeMap.get(child)).filter(child=>child.visibility===VertexStyle$1.INCLUDED||child.visibility===VertexStyle$1.HIDDEN);
+        console.group(`${vertex.node.id}`);
+        console.log(vertex);
+        // return vertex.node.children.map(child=>this._nodeMap.get(child)).filter(child=>child.visibility===VertexStyle.INCLUDED||child.visibility===VertexStyle.HIDDEN);
+        const children =  vertex.node.children.map(child=>this._nodeMap.get(child));
+        console.log(children);
+        console.groupEnd();
+            return children.filter(child=>child.visibility===VertexStyle$1.INCLUDED||child.visibility===VertexStyle$1.HIDDEN);
     }
 
 
