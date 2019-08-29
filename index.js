@@ -1,6 +1,6 @@
 import { Tree, Type } from "./src/tree.js";
 import { RectangularLayout } from "./src/layout/rectangularlayout.js";
-import {TransmissionLayout} from "./src/transmissionlayout.js"
+import {TransmissionLayout} from "./src/layout/transmissionlayout.js"
 import {ExplodedLayout} from "./src/explodedlayout.js"
 import {Bauble,CircleBauble,RectangularBauble } from "./src/figtree/bauble.js"
 import {FigTree} from "./src/figtree/figtree.js";

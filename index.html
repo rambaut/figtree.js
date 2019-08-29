@@ -162,10 +162,10 @@
     };
 
     document.getElementById('rectangular_button').onclick = function() {
-        figTree.branchCurve = d3.curveStepBefore;
+        figTree.updateSettings({branchCurve:d3.curveStepBefore});
     };
     document.getElementById('triangular_button').onclick = function() {
-        figTree.branchCurve = d3.curveNatural;
+        figTree.updateSettings({branchCurve:d3.curveNatural});
     };
 
 </script>
@@ -264,31 +264,6 @@
 </script>
 
 <div>
-    <figure>
-        <svg id="transmission-1"  width="600" height="300"></svg>
-    </figure>
-</div>
-
-<script type="module">
-    import { Tree, TransmissionLayout,CircleBauble,FigTree} from "./dist/figtree.esm.js"
-    const newickString =
-        '((((((virus1:0.1,virus2:0.12):0.08,(virus3:0.011,virus4:0.0087):0.15):0.03,virus5:0.21):0.2,(virus6:0.45,virus7:0.4):0.02):0.1,virus8:0.4):0.1,(virus9:0.04,virus10:0.03):0.6);';
-
-    const tree = Tree.parseNewick(newickString);
-    const treeSVG = document.getElementById('transmission-1');
-    const layout = new TransmissionLayout(tree);
-    const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150},
-        { hoverBorder: 2, backgroundBorder: 2,
-            baubles: [
-                new CircleBauble(),
-            ]
-        });
-    figTree.draw();
-    figTree.hilightInternalNodes();
-    figTree.onClickNode(layout.rotate())
-</script>
-
-<div>
     <svg id="tree-3-svg"  width="600" height="600"></svg>
     <svg id="rrt-3-svg"  width="600" height="600"></svg>
 </div>
@@ -371,6 +346,19 @@
             #phylogram_3 .host-whale .node-shape {
                 fill: #541753;
             }
+
+            #phylogram_3  .host-camel .cartoon-path {
+                fill: #e58d48;
+            }
+            #phylogram_3  .host-human  .cartoon-path{
+                fill: #366c9d;
+            }
+            #phylogram_3  .host-bat .cartoon-path {
+                fill: #235a64;
+            }
+            #phylogram_3  .host-whale .cartoon-path {
+                fill: #541753;
+            }
             #phylogram_3 .branch {
                 stroke-width: 4;
                 stroke: #8c969c;
@@ -398,7 +386,7 @@
 
 
 <script type="module">
-    import { Tree, RectangularLayout,RectangularBauble,CircleBauble,FigTree} from "./dist/figtree.esm.js"
+    import { Tree, TransmissionLayout,RectangularBauble,CircleBauble,FigTree} from "./dist/figtree.esm.js"
 
 
     const newickString =
@@ -406,7 +394,8 @@
 
     const tree = Tree.parseNewick(newickString, "probability", undefined, true);
     const treeSVG = document.getElementById('phylogram_3');
-    const layout = new RectangularLayout(tree);
+    const layout = new TransmissionLayout(tree,{groupGap:9,direction:"down"});
+
     const figTree = new FigTree(treeSVG, layout,
         { top: 10, bottom: 60, left: 10, right: 150},
         {   hoverBorder: 2, backgroundBorder: 2,
@@ -415,7 +404,6 @@
                 new RectangularBauble({ vertexFilter: (v) => v.degree === 2})
             ]
         });
-
 
     tree.annotateTips({
         "virus1": { host: "camel" },
@@ -429,6 +417,8 @@
         "virus9": { host: "whale" },
         "virus10": { host: "whale" }
     });
+
+    tree.annotateNodesFromTips("host");
     figTree.draw();
 
     layout.internalNodeLabels="probability";
@@ -438,7 +428,6 @@
     figTree.addToolTip('.node', layout.nodeInfo);
 
     figTree.hilightBranches();
-    figTree.onClickBranch((e)=>layout.collapse(e.v1));
     figTree.hilightInternalNodes();
     figTree.onClickNode((v)=>layout.cartoon(v));
 

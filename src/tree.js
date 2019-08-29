@@ -379,6 +379,12 @@ export class Tree {
         this.treeUpdateCallback();
         return this;
     }
+    _order(ordering, node = this.rootNode) {
+
+        orderNodes.call(this, node, ordering);
+
+        return this;
+    }
 
     lastCommonAncestor(node1, node2) {
 
@@ -1074,7 +1080,7 @@ function orderNodes(node, ordering, callback = null) {
 
         // sort the children using the provided function
         node.children.sort((a, b) => {
-            return ordering(a, counts.get(a), b, counts.get(b))
+            return ordering(a, counts.get(a), b, counts.get(b),node)
         });
 
         if (callback) callback();
