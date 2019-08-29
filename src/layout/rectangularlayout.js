@@ -28,12 +28,20 @@ export class RectangularLayout extends AbstractLayout {
     }
 
     setYPosition(vertex, currentY) {
+
         const includedInVertical = !vertex.node.children;
-        if(!includedInVertical){
+        if(!includedInVertical) {
+
             const vertexChildren = this.getChildVertices(vertex);
-            vertex.y = mean(vertexChildren,(child) => child.y);
-        }
-        else{
+            vertex.y = mean(vertexChildren, (child) => child.y);
+            if (vertex.node.children.length === 1) {
+                console.group('inserted');
+                console.log(vertex)
+                console.log(vertexChildren);
+                console.log(vertex.y);
+                console.groupEnd();
+            }
+        }else{
             currentY += 1;
             vertex.y = currentY;
         }
