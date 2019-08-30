@@ -53,7 +53,7 @@ export class TransmissionLayout extends AbstractLayout {
         }
         _getTreeNodes() {
 
-            this.tree._order(orderTreeNodes.bind(this));
+            // this.tree._order(orderTreeNodes.bind(this));
 
             return [...this.tree.postorder()]
         }
@@ -87,19 +87,5 @@ function transmissionMiddleWare(context){
 }
 
 
-function orderTreeNodes(a,countA,b,countB,parent){
-    const factor = this.settings.direction==="up"? -1:1;
-    const aGroup = a.annotations[this.settings.groupingAnnotation];
-    const bGroup = b.annotations[this.settings.groupingAnnotation];
-    const parentGroup = parent.annotations[this.settings.groupingAnnotation];
-
-    if(aGroup===bGroup||aGroup!==parentGroup&&bGroup!==parentGroup){
-        return factor*(countA-countB)
-    }else if(aGroup!==parentGroup){
-        return factor; //A first if up
-    }else if(bGroup!==parentGroup){
-        return factor*-1; //B first if up;
-    }
-}
 
 

@@ -10425,7 +10425,7 @@
 	}
 	/**
 	 * This is a helper function that updates a vertices y position by a specified amount. The function is meant to open a gap
-	 * in the tree below vertices that are moved up and above vertices that are moved down. A side effect of the function is
+	 * in the tree around vertices that are moved. A side effect of the function is
 	 * that vertices not listed are moved up (if they are above the selected vertices and the vertices are moved up) and
 	 * down if they are below the selected vertices and the vertices are moved down. It is meant to be called with this
 	 * referring to the layout. Remember that the top of plot has y position 0. So positive numbers move the vertices to
@@ -10445,7 +10445,7 @@
 	        return v.y;
 	      });
 	    }).forEach(function (v) {
-	      return v.y += delta;
+	      return v.y += 2 * delta;
 	    });
 	  } else if (delta < 0) {
 	    this._vertices.filter(function (v) {
@@ -10453,7 +10453,7 @@
 	        return v.y;
 	      });
 	    }).forEach(function (v) {
-	      return v.y += delta;
+	      return v.y += 2 * delta;
 	    });
 	  }
 
@@ -10584,8 +10584,7 @@
 	  }, {
 	    key: "_getTreeNodes",
 	    value: function _getTreeNodes() {
-	      this.tree._order(orderTreeNodes.bind(this));
-
+	      // this.tree._order(orderTreeNodes.bind(this));
 	      return toConsumableArray(this.tree.postorder());
 	    }
 	  }]);
@@ -10631,21 +10630,6 @@
 	  context._verticalRange = extent(context._vertices, function (v) {
 	    return v.y;
 	  });
-	}
-
-	function orderTreeNodes(a, countA, b, countB, parent) {
-	  var factor = this.settings.direction === "up" ? -1 : 1;
-	  var aGroup = a.annotations[this.settings.groupingAnnotation];
-	  var bGroup = b.annotations[this.settings.groupingAnnotation];
-	  var parentGroup = parent.annotations[this.settings.groupingAnnotation];
-
-	  if (aGroup === bGroup || aGroup !== parentGroup && bGroup !== parentGroup) {
-	    return factor * (countA - countB);
-	  } else if (aGroup !== parentGroup) {
-	    return factor; //A first if up
-	  } else if (bGroup !== parentGroup) {
-	    return factor * -1; //B first if up;
-	  }
 	}
 
 	/**
