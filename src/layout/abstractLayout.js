@@ -526,7 +526,7 @@ export function getMostAncestralCartoons(cartoons){
 
 /**
  * This is a helper function that updates a vertices y position by a specified amount. The function is meant to open a gap
- * in the tree below vertices that are moved up and above vertices that are moved down. A side effect of the function is
+ * in the tree around vertices that are moved. A side effect of the function is
  * that vertices not listed are moved up (if they are above the selected vertices and the vertices are moved up) and
  * down if they are below the selected vertices and the vertices are moved down. It is meant to be called with this
  * referring to the layout. Remember that the top of plot has y position 0. So positive numbers move the vertices to
@@ -539,11 +539,11 @@ export function updateVerticesY(delta,...vertices){
 
     if(delta>0){
         this._vertices.filter(v=>v.y>max(vertices,v=>v.y))
-            .forEach(v=>v.y+=delta);
+            .forEach(v=>v.y+=2*delta);
     }
     else if(delta<0){
         this._vertices.filter(v=>v.y<min(vertices,v=>v.y))
-            .forEach(v=>v.y+=delta);
+            .forEach(v=>v.y+=2*delta);
     }
     vertices.forEach(v=>v.y+=delta);
 }
