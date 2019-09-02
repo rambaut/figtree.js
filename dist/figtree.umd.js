@@ -10500,14 +10500,6 @@
 	        vertex.y = mean(vertexChildren, function (child) {
 	          return child.y;
 	        });
-
-	        if (vertex.node.children.length === 1) {
-	          console.group('inserted');
-	          console.log(vertex);
-	          console.log(vertexChildren);
-	          console.log(vertex.y);
-	          console.groupEnd();
-	        }
 	      } else {
 	        currentY += 1;
 	        vertex.y = currentY;
