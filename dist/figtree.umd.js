@@ -11039,6 +11039,7 @@
 	    };
 	    this._annotations = [];
 	    this.svg = svg;
+	    this.drawn = false;
 	    return this;
 	  }
 
@@ -11093,6 +11094,7 @@
 	        _this.update();
 	      };
 
+	      this.drawn = true;
 	      this.update();
 	      return this;
 	    }
@@ -11103,6 +11105,10 @@
 	  }, {
 	    key: "update",
 	    value: function update() {
+	      if (!this.drawn) {
+	        return;
+	      }
+
 	      var width, height;
 
 	      if (Object.keys(this.settings).indexOf("width") > -1) {
@@ -11351,12 +11357,12 @@
 
 	        var selected = _this7.svgSelection.selectAll("".concat(selection ? selection : ".branch"));
 
-	        selected.on("mouseover", function (d, i) {
-	          action.enter(d);
+	        selected.on("mouseover", function (d, i, n) {
+	          action.enter(d, i, n);
 	          self.update();
 	        });
-	        selected.on("mouseout", function (d, i) {
-	          action.exit(d);
+	        selected.on("mouseout", function (d, i, n) {
+	          action.exit(d, i, n);
 	          self.update();
 	        });
 	      });
@@ -11403,8 +11409,20 @@
 	  }, {
 	    key: "updateSettings",
 	    value: function updateSettings(newSettings) {
+	      //update style maps
+	      if (newSettings.styles) {
+	        newSettings.styles = objectSpread({}, this.settings.styles, newSettings.styles);
+	      }
+
 	      this.settings = objectSpread({}, this.settings, newSettings);
 	      this.update();
+	    }
+	  }, {
+	    key: "updateStyles",
+	    value: function updateStyles() {
+	      updateBranchStyles.call(this);
+	      updateNodeStyles.call(this);
+	      updateNodeBackgroundStyles.call(this);
 	    }
 	  }, {
 	    key: "treeLayout",

@@ -9101,6 +9101,7 @@ class FigTree {
         this._annotations =[];
 
         this.svg=svg;
+        this.drawn = false;
 
         return this;
     }
@@ -9156,7 +9157,7 @@ class FigTree {
         this.layout.updateCallback = () => {
             this.update();
         };
-
+        this.drawn=true;
         this.update();
         return this;
 
@@ -9166,7 +9167,9 @@ class FigTree {
      * Updates the tree when it has changed
      */
     update() {
-
+        if(!this.drawn){
+            return
+        }
         let width,height;
         if(Object.keys(this.settings).indexOf("width")>-1){
             width =this. settings.width;
@@ -9394,12 +9397,12 @@ class FigTree {
         this.callbacks.branches.push(()=>{
             const self = this;
             const selected = this.svgSelection.selectAll(`${selection ? selection : ".branch"}`);
-            selected.on("mouseover", function (d, i) {
-                action.enter(d);
+            selected.on("mouseover", function (d, i,n) {
+                action.enter(d,i,n);
                 self.update();
             });
-            selected.on("mouseout", function (d, i) {
-                action.exit(d);
+            selected.on("mouseout", function (d, i,n) {
+                action.exit(d,i,n);
                 self.update();
             });
         });
@@ -9448,8 +9451,19 @@ class FigTree {
     }
 
     updateSettings(newSettings){
+        //update style maps
+        if(newSettings.styles) {
+            newSettings.styles = {...this.settings.styles, ...newSettings.styles};
+        }
+
         this.settings={...this.settings,...newSettings};
         this.update();
+    }
+
+    updateStyles(){
+        updateBranchStyles.call(this);
+        updateNodeStyles.call(this);
+        updateNodeBackgroundStyles.call(this);
     }
 }
 
