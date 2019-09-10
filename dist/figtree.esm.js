@@ -6438,6 +6438,13 @@ const Type = {
  * The Tree class
  */
 class Tree {
+
+    static DEFAULT_SETTINGS() {
+        return {
+            lengthsKnown:true,
+            heightsKnown:false,
+        }
+    }
     /**
      * The constructor takes an object for the root node. The tree structure is
      * defined as nested node objects.
@@ -6445,9 +6452,12 @@ class Tree {
      * @constructor
      * @param {object} rootNode - The root node of the tree as an object.
      */
-    constructor(rootNode = {}) {
-        this.heightsKnown = false;
-        this.lengthsKnown = true;
+    constructor(rootNode = {},settings={}) {
+
+        this.settings = {...Tree.DEFAULT_SETTINGS(), ...settings};
+
+        this.heightsKnown = this.settings.heightsKnown;
+        this.lengthsKnown = this.settings.lengthsKnown;
         this.root = makeNode.call(this,{...rootNode,...{length:0}});
         // This converts all the json objects to Node instances
         setUpNodes.call(this,this.root);
