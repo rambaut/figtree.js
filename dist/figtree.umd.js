@@ -7335,22 +7335,35 @@
 	var Tree =
 	/*#__PURE__*/
 	function () {
-	  /**
-	   * The constructor takes an object for the root node. The tree structure is
-	   * defined as nested node objects.
-	   *
-	   * @constructor
-	   * @param {object} rootNode - The root node of the tree as an object.
-	   */
+	  createClass(Tree, null, [{
+	    key: "DEFAULT_SETTINGS",
+	    value: function DEFAULT_SETTINGS() {
+	      return {
+	        lengthsKnown: true,
+	        heightsKnown: false
+	      };
+	    }
+	    /**
+	     * The constructor takes an object for the root node. The tree structure is
+	     * defined as nested node objects.
+	     *
+	     * @constructor
+	     * @param {object} rootNode - The root node of the tree as an object.
+	     */
+
+	  }]);
+
 	  function Tree() {
 	    var _this = this;
 
 	    var rootNode = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+	    var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
 	    classCallCheck(this, Tree);
 
-	    this.heightsKnown = false;
-	    this.lengthsKnown = true;
+	    this.settings = objectSpread({}, Tree.DEFAULT_SETTINGS(), settings);
+	    this.heightsKnown = this.settings.heightsKnown;
+	    this.lengthsKnown = this.settings.lengthsKnown;
 	    this.root = makeNode.call(this, objectSpread({}, rootNode, {
 	      length: 0
 	    })); // This converts all the json objects to Node instances
