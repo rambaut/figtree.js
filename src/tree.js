@@ -1118,7 +1118,7 @@ function calculateHeights() {
  */
 function calculateLengths(){
 
-    this.nodeList.forEach((node)=> node._length =node.parent? node.height - node.parent.height:0);
+    this.nodeList.forEach((node)=> node._length =node.parent? node.parent.height- node.height:0);
     this.lengthsKnown=true;
     this.treeUpdateCallback();
 
