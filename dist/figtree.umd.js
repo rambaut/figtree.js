@@ -8968,7 +8968,7 @@
 
 	function calculateLengths() {
 	  this.nodeList.forEach(function (node) {
-	    return node.length = node.parent ? node.height - node.parent.height : 0;
+	    return node._length = node.parent ? node.height - node.parent.height : 0;
 	  });
 	  this.lengthsKnown = true;
 	  this.treeUpdateCallback();
