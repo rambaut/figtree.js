@@ -6983,6 +6983,7 @@ class Tree {
         node.parent = splitNode;
         node._length = oldLength-splitNode.length;
         this.nodesUpdated=true;
+        this.heightsKnown=false;
         return splitNode;
     }
 
