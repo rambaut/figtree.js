@@ -1137,7 +1137,6 @@
 	}
 
 	var ascendingBisect = bisector(ascending);
-	var bisectRight = ascendingBisect.right;
 
 	function number(x) {
 	  return x === null ? NaN : +x;
@@ -1179,58 +1178,6 @@
 	  }
 
 	  return [min, max];
-	}
-
-	var e10 = Math.sqrt(50),
-	    e5 = Math.sqrt(10),
-	    e2 = Math.sqrt(2);
-
-	function ticks(start, stop, count) {
-	  var reverse,
-	      i = -1,
-	      n,
-	      ticks,
-	      step;
-
-	  stop = +stop, start = +start, count = +count;
-	  if (start === stop && count > 0) return [start];
-	  if (reverse = stop < start) n = start, start = stop, stop = n;
-	  if ((step = tickIncrement(start, stop, count)) === 0 || !isFinite(step)) return [];
-
-	  if (step > 0) {
-	    start = Math.ceil(start / step);
-	    stop = Math.floor(stop / step);
-	    ticks = new Array(n = Math.ceil(stop - start + 1));
-	    while (++i < n) ticks[i] = (start + i) * step;
-	  } else {
-	    start = Math.floor(start * step);
-	    stop = Math.ceil(stop * step);
-	    ticks = new Array(n = Math.ceil(start - stop + 1));
-	    while (++i < n) ticks[i] = (start - i) / step;
-	  }
-
-	  if (reverse) ticks.reverse();
-
-	  return ticks;
-	}
-
-	function tickIncrement(start, stop, count) {
-	  var step = (stop - start) / Math.max(0, count),
-	      power = Math.floor(Math.log(step) / Math.LN10),
-	      error = step / Math.pow(10, power);
-	  return power >= 0
-	      ? (error >= e10 ? 10 : error >= e5 ? 5 : error >= e2 ? 2 : 1) * Math.pow(10, power)
-	      : -Math.pow(10, -power) / (error >= e10 ? 10 : error >= e5 ? 5 : error >= e2 ? 2 : 1);
-	}
-
-	function tickStep(start, stop, count) {
-	  var step0 = Math.abs(stop - start) / Math.max(0, count),
-	      step1 = Math.pow(10, Math.floor(Math.log(step0) / Math.LN10)),
-	      error = step0 / step1;
-	  if (error >= e10) step1 *= 10;
-	  else if (error >= e5) step1 *= 5;
-	  else if (error >= e2) step1 *= 2;
-	  return stop < start ? -step1 : step1;
 	}
 
 	function max(values, valueof) {
@@ -4320,6 +4267,44 @@
 	selection.prototype.interrupt = selection_interrupt;
 	selection.prototype.transition = selection_transition;
 
+	function ascending$2(a, b) {
+	  return a < b ? -1 : a > b ? 1 : a >= b ? 0 : NaN;
+	}
+
+	function bisector$1(compare) {
+	  if (compare.length === 1) compare = ascendingComparator$1(compare);
+	  return {
+	    left: function(a, x, lo, hi) {
+	      if (lo == null) lo = 0;
+	      if (hi == null) hi = a.length;
+	      while (lo < hi) {
+	        var mid = lo + hi >>> 1;
+	        if (compare(a[mid], x) < 0) lo = mid + 1;
+	        else hi = mid;
+	      }
+	      return lo;
+	    },
+	    right: function(a, x, lo, hi) {
+	      if (lo == null) lo = 0;
+	      if (hi == null) hi = a.length;
+	      while (lo < hi) {
+	        var mid = lo + hi >>> 1;
+	        if (compare(a[mid], x) > 0) hi = mid;
+	        else lo = mid + 1;
+	      }
+	      return lo;
+	    }
+	  };
+	}
+
+	function ascendingComparator$1(f) {
+	  return function(d, x) {
+	    return ascending$2(f(d), x);
+	  };
+	}
+
+	var ascendingBisect$1 = bisector$1(ascending$2);
+
 	var pi$1 = Math.PI;
 
 	var pi$2 = Math.PI,
@@ -4560,6 +4545,44 @@
 
 	  return set;
 	}
+
+	function ascending$3(a, b) {
+	  return a < b ? -1 : a > b ? 1 : a >= b ? 0 : NaN;
+	}
+
+	function bisector$2(compare) {
+	  if (compare.length === 1) compare = ascendingComparator$2(compare);
+	  return {
+	    left: function(a, x, lo, hi) {
+	      if (lo == null) lo = 0;
+	      if (hi == null) hi = a.length;
+	      while (lo < hi) {
+	        var mid = lo + hi >>> 1;
+	        if (compare(a[mid], x) < 0) lo = mid + 1;
+	        else hi = mid;
+	      }
+	      return lo;
+	    },
+	    right: function(a, x, lo, hi) {
+	      if (lo == null) lo = 0;
+	      if (hi == null) hi = a.length;
+	      while (lo < hi) {
+	        var mid = lo + hi >>> 1;
+	        if (compare(a[mid], x) > 0) hi = mid;
+	        else lo = mid + 1;
+	      }
+	      return lo;
+	    }
+	  };
+	}
+
+	function ascendingComparator$2(f) {
+	  return function(d, x) {
+	    return ascending$3(f(d), x);
+	  };
+	}
+
+	var ascendingBisect$2 = bisector$2(ascending$3);
 
 	var EOL = {},
 	    EOF = {},
@@ -5493,12 +5516,141 @@
 
 	var sum = adder();
 
+	function ascending$4(a, b) {
+	  return a < b ? -1 : a > b ? 1 : a >= b ? 0 : NaN;
+	}
+
+	function bisector$3(compare) {
+	  if (compare.length === 1) compare = ascendingComparator$3(compare);
+	  return {
+	    left: function(a, x, lo, hi) {
+	      if (lo == null) lo = 0;
+	      if (hi == null) hi = a.length;
+	      while (lo < hi) {
+	        var mid = lo + hi >>> 1;
+	        if (compare(a[mid], x) < 0) lo = mid + 1;
+	        else hi = mid;
+	      }
+	      return lo;
+	    },
+	    right: function(a, x, lo, hi) {
+	      if (lo == null) lo = 0;
+	      if (hi == null) hi = a.length;
+	      while (lo < hi) {
+	        var mid = lo + hi >>> 1;
+	        if (compare(a[mid], x) > 0) hi = mid;
+	        else lo = mid + 1;
+	      }
+	      return lo;
+	    }
+	  };
+	}
+
+	function ascendingComparator$3(f) {
+	  return function(d, x) {
+	    return ascending$4(f(d), x);
+	  };
+	}
+
+	var ascendingBisect$3 = bisector$3(ascending$4);
+
 	var lengthSum = adder();
 
 	var areaSum$1 = adder(),
 	    areaRingSum$1 = adder();
 
 	var lengthSum$1 = adder();
+
+	function ascending$5(a, b) {
+	  return a < b ? -1 : a > b ? 1 : a >= b ? 0 : NaN;
+	}
+
+	function bisector$4(compare) {
+	  if (compare.length === 1) compare = ascendingComparator$4(compare);
+	  return {
+	    left: function(a, x, lo, hi) {
+	      if (lo == null) lo = 0;
+	      if (hi == null) hi = a.length;
+	      while (lo < hi) {
+	        var mid = lo + hi >>> 1;
+	        if (compare(a[mid], x) < 0) lo = mid + 1;
+	        else hi = mid;
+	      }
+	      return lo;
+	    },
+	    right: function(a, x, lo, hi) {
+	      if (lo == null) lo = 0;
+	      if (hi == null) hi = a.length;
+	      while (lo < hi) {
+	        var mid = lo + hi >>> 1;
+	        if (compare(a[mid], x) > 0) hi = mid;
+	        else lo = mid + 1;
+	      }
+	      return lo;
+	    }
+	  };
+	}
+
+	function ascendingComparator$4(f) {
+	  return function(d, x) {
+	    return ascending$5(f(d), x);
+	  };
+	}
+
+	var ascendingBisect$4 = bisector$4(ascending$5);
+	var bisectRight = ascendingBisect$4.right;
+
+	var e10 = Math.sqrt(50),
+	    e5 = Math.sqrt(10),
+	    e2 = Math.sqrt(2);
+
+	function ticks(start, stop, count) {
+	  var reverse,
+	      i = -1,
+	      n,
+	      ticks,
+	      step;
+
+	  stop = +stop, start = +start, count = +count;
+	  if (start === stop && count > 0) return [start];
+	  if (reverse = stop < start) n = start, start = stop, stop = n;
+	  if ((step = tickIncrement(start, stop, count)) === 0 || !isFinite(step)) return [];
+
+	  if (step > 0) {
+	    start = Math.ceil(start / step);
+	    stop = Math.floor(stop / step);
+	    ticks = new Array(n = Math.ceil(stop - start + 1));
+	    while (++i < n) ticks[i] = (start + i) * step;
+	  } else {
+	    start = Math.floor(start * step);
+	    stop = Math.ceil(stop * step);
+	    ticks = new Array(n = Math.ceil(start - stop + 1));
+	    while (++i < n) ticks[i] = (start - i) / step;
+	  }
+
+	  if (reverse) ticks.reverse();
+
+	  return ticks;
+	}
+
+	function tickIncrement(start, stop, count) {
+	  var step = (stop - start) / Math.max(0, count),
+	      power = Math.floor(Math.log(step) / Math.LN10),
+	      error = step / Math.pow(10, power);
+	  return power >= 0
+	      ? (error >= e10 ? 10 : error >= e5 ? 5 : error >= e2 ? 2 : 1) * Math.pow(10, power)
+	      : -Math.pow(10, -power) / (error >= e10 ? 10 : error >= e5 ? 5 : error >= e2 ? 2 : 1);
+	}
+
+	function tickStep(start, stop, count) {
+	  var step0 = Math.abs(stop - start) / Math.max(0, count),
+	      step1 = Math.pow(10, Math.floor(Math.log(step0) / Math.LN10)),
+	      error = step0 / step1;
+	  if (error >= e10) step1 *= 10;
+	  else if (error >= e5) step1 *= 5;
+	  else if (error >= e2) step1 *= 2;
+	  return stop < start ? -step1 : step1;
+	}
 
 	function initRange(domain, range) {
 	  switch (arguments.length) {
@@ -7321,6 +7473,29 @@
 	  return new Step(context, 0);
 	}
 
+	function maxIndex(values, valueof) {
+	  let max;
+	  let maxIndex = -1;
+	  let index = -1;
+	  if (valueof === undefined) {
+	    for (const value of values) {
+	      ++index;
+	      if (value != null
+	          && (max < value || (max === undefined && value >= value))) {
+	        max = value, maxIndex = index;
+	      }
+	    }
+	  } else {
+	    for (let value of values) {
+	      if ((value = valueof(value, ++index, values)) != null
+	          && (max < value || (max === undefined && value >= value))) {
+	        max = value, maxIndex = index;
+	      }
+	    }
+	  }
+	  return maxIndex;
+	}
+
 	var Type = {
 	  DISCRETE: Symbol("DISCRETE"),
 	  BOOLEAN: Symbol("BOOLEAN"),
@@ -7365,7 +7540,8 @@
 	    this.heightsKnown = this.settings.heightsKnown;
 	    this.lengthsKnown = this.settings.lengthsKnown;
 	    this.root = makeNode.call(this, objectSpread({}, rootNode, {
-	      length: 0
+	      length: 0,
+	      level: 0
 	    })); // This converts all the json objects to Node instances
 
 	    setUpNodes.call(this, this.root);
@@ -7893,9 +8069,9 @@
 	          return n2.id;
 	        }).indexOf(n1.id) > -1;
 	      });
-	      var lastSharedAncestor = sharedAncestors.reduce(function (acc, curr) {
-	        return acc = acc.level > curr.level ? acc : curr;
-	      });
+	      var lastSharedAncestor = sharedAncestors[maxIndex(sharedAncestors, function (node) {
+	        return node.level;
+	      })];
 	      return lastSharedAncestor;
 	    }
 	  }, {
@@ -7916,8 +8092,8 @@
 	      return sum;
 	    }
 	    /**
-	     * Returns a new tree instance with  only the nodes provided and their path to the root. After this traversal, unspecified
-	     * degree two nodes will be remove. The subtree will consist of the root and then the last common ancestor.
+	     * Returns a new tree instance with  only the nodes provided and the path to their MRCA. After this traversal, unspecified
+	     * degree two nodes will be removed. The subtree will consist of the root and then the last common ancestor.
 	     * The nodes of the new tree will be copies of the those in the original, but they will share
 	     * ids, annotations, and names.
 	     * @param chosenNodes
@@ -7927,8 +8103,6 @@
 	  }, {
 	    key: "subTree",
 	    value: function subTree(chosenNodes) {
-	      var _this4 = this;
-
 	      var sharedNodes = toConsumableArray(chosenNodes.map(function (node) {
 	        return toConsumableArray(Tree.pathToRoot(node));
 	      })) // get all the paths to the root
@@ -7938,8 +8112,8 @@
 	      .filter(function (node, i, all) {
 	        return all.filter(function (x) {
 	          return x === node;
-	        }).length > 1;
-	      }) // filter to nodes that appear in more than one path
+	        }).length === chosenNodes.length;
+	      }) // filter to nodes that appear in every path
 	      .reduce(function (acc, curr) {
 	        // reduce to the unique set.
 	        if (!acc.includes(curr)) {
@@ -7949,58 +8123,19 @@
 	        return acc;
 	      }, []);
 
-	      var newNodesObjects = [].concat(toConsumableArray(sharedNodes), toConsumableArray(chosenNodes.filter(function (n) {
-	        return !sharedNodes.includes(n);
-	      }))).map(function (node) {
-	        var newNodeObject = {
-	          id: node.id,
-	          annotations: node.annotations
-	        };
+	      var mrca = sharedNodes[maxIndex(sharedNodes, function (n) {
+	        return n.level;
+	      })]; // intermediate nodes with show up as
 
-	        if (node.name) {
-	          newNodeObject.name = node.name;
-	        }
+	      var subtree = new Tree(mrca.toJSON()); // now remove degree 2 nodes that were not specified;
 
-	        return newNodeObject;
-	      });
-	      var newNodeMap = new Map(newNodesObjects.map(function (n) {
-	        return [n.id, n];
-	      })); // set children set lengths
-
-	      newNodesObjects.forEach(function (node) {
-	        var currentNode = _this4.nodeMap.get(node.id);
-
-	        var length = 0;
-
-	        while (currentNode.parent && !newNodeMap.has(currentNode.parent.id)) {
-	          length += currentNode.length;
-	          currentNode = currentNode.parent;
-	        }
-
-	        length += currentNode.length;
-	        var parent = currentNode.parent ? newNodeMap.get(currentNode.parent.id) : null;
-	        node.parent = parent;
-	        node.length = length;
-
-	        if (parent) {
-	          parent.children = parent.children ? parent.children.concat(node) : [node];
-	        }
-	      }); // intermediate nodes with show up as
-
-	      var subtree = new Tree(newNodeMap.get(this.root.id)); // now remove degree 2 nodes that were not specified;
-
-	      toConsumableArray(subtree.postorder()).forEach(function (node) {
-	        if (node.children) {
-	          if (node.children.length === 1) {
-	            if (!chosenNodes.map(function (n) {
-	              return n.id;
-	            }).includes(node.id)) {
-	              subtree.removeNode(node);
-	            }
-	          }
+	      subtree.externalNodes.forEach(function (node) {
+	        if (!chosenNodes.map(function (n) {
+	          return n.id;
+	        }).includes(node.id)) {
+	          subtree.removeNode(node);
 	        }
 	      });
-
 	      return subtree;
 	    }
 	    /**
@@ -8050,10 +8185,10 @@
 	  }, {
 	    key: "rootToTipLengths",
 	    value: function rootToTipLengths() {
-	      var _this5 = this;
+	      var _this4 = this;
 
 	      return this.externalNodes.map(function (tip) {
-	        return _this5.rootToTipLength(tip);
+	        return _this4.rootToTipLength(tip);
 	      });
 	    }
 	    /**
@@ -8065,7 +8200,7 @@
 	  }, {
 	    key: "splitBranches",
 	    value: function splitBranches() {
-	      var _this6 = this;
+	      var _this5 = this;
 
 	      var splits = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
@@ -8083,13 +8218,13 @@
 	                  time = _ref3[0],
 	                  id = _ref3[1];
 
-	              splitNode = _this6.splitBranch(splitNode, time);
+	              splitNode = _this5.splitBranch(splitNode, time);
 	              splitNode.id = id;
 	            });
 	          }
 	        } else {
 	          // if no splitLocations are given then split it in the middle.
-	          _this6.splitBranch(node, 0.5);
+	          _this5.splitBranch(node, 0.5);
 	        }
 	      });
 
@@ -8953,11 +9088,11 @@
 
 
 	function calculateHeights() {
-	  var _this7 = this;
+	  var _this6 = this;
 
 	  var maxRTT = max(this.rootToTipLengths());
 	  this.nodeList.forEach(function (node) {
-	    return node._height = _this7.origin - _this7.offset - (maxRTT - _this7.rootToTipLength(node));
+	    return node._height = _this6.origin - _this6.offset - (maxRTT - _this6.rootToTipLength(node));
 	  });
 	  this.heightsKnown = true;
 	  this.treeUpdateCallback();
@@ -9075,7 +9210,8 @@
 	      for (var _iterator10 = node.children[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
 	        var child = _step10.value;
 	        var childNode = makeNode.call(this, objectSpread({}, child, {
-	          parent: node
+	          parent: node,
+	          level: node.level + 1
 	        }));
 	        childrenNodes.push(childNode);
 	        setUpNodes.call(this, childNode);
@@ -9100,7 +9236,7 @@
 	}
 
 	function setUpArraysAndMaps() {
-	  var _this8 = this;
+	  var _this7 = this;
 
 	  this._nodeList = toConsumableArray(this.preorder());
 	  this.nodesUpdated = false;
@@ -9112,7 +9248,7 @@
 	    }
 
 	    if (node.annotations) {
-	      _this8.addAnnotations(node.annotations);
+	      _this7.addAnnotations(node.annotations);
 	    }
 	  });
 
@@ -9170,6 +9306,22 @@
 	      this.children = [].concat(toConsumableArray(this._children), [newNode]);
 
 	      this._tree.addAnnotations(newNode.annotations);
+	    }
+	  }, {
+	    key: "toJSON",
+	    value: function toJSON() {
+	      return {
+	        id: this.id,
+	        name: this.name,
+	        length: this.length,
+	        height: this.height,
+	        label: this.label,
+	        level: this.level,
+	        annotations: this.annotations,
+	        children: this.children && this.children.length > 0 ? this.children.map(function (child) {
+	          return child.toJSON();
+	        }) : null
+	      };
 	    }
 	  }, {
 	    key: "level",
@@ -9272,12 +9424,12 @@
 	      return this._parent;
 	    },
 	    set: function set(node) {
-	      var _this9 = this;
+	      var _this8 = this;
 
 	      this._parent = node;
 
 	      if (this._parent.children.filter(function (c) {
-	        return c === _this9;
+	        return c === _this8;
 	      }).length === 0) {
 	        this._parent.children.push(this);
 	      }

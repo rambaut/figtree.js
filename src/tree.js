@@ -3,7 +3,8 @@
 /** @module tree */
 
 import uuid from "uuid";
-import {max} from "d3";
+import {max,} from "d3";
+import {maxIndex,minIndex} from "d3-array";
 // for unique node ids
 export const Type = {
     DISCRETE : Symbol("DISCRETE"),
@@ -42,7 +43,7 @@ export class Tree {
 
         this.heightsKnown = this.settings.heightsKnown;
         this.lengthsKnown = this.settings.lengthsKnown;
-        this.root = makeNode.call(this,{...rootNode,...{length:0}});
+        this.root = makeNode.call(this,{...rootNode,...{length:0,level:0}});
         // This converts all the json objects to Node instances
         setUpNodes.call(this,this.root);
 
@@ -402,7 +403,7 @@ export class Tree {
         const path2 = [...Tree.pathToRoot(node2)];
       
         const sharedAncestors = path1.filter(n1=>path2.map(n2=>n2.id).indexOf(n1.id)>-1);
-        const lastSharedAncestor = sharedAncestors.reduce((acc,curr)=>acc = acc.level>curr.level?acc:curr);
+        const lastSharedAncestor = sharedAncestors[maxIndex(sharedAncestors,node=>node.level)];
         return lastSharedAncestor;
       
     }
@@ -423,8 +424,8 @@ export class Tree {
     }
 
     /**
-     * Returns a new tree instance with  only the nodes provided and their path to the root. After this traversal, unspecified
-     * degree two nodes will be remove. The subtree will consist of the root and then the last common ancestor.
+     * Returns a new tree instance with  only the nodes provided and the path to their MRCA. After this traversal, unspecified
+     * degree two nodes will be removed. The subtree will consist of the root and then the last common ancestor.
      * The nodes of the new tree will be copies of the those in the original, but they will share
      * ids, annotations, and names.
      * @param chosenNodes
@@ -434,56 +435,27 @@ export class Tree {
 
         const sharedNodes = [...chosenNodes.map(node=>[...Tree.pathToRoot(node)])] // get all the paths to the root
             .reduce((acc,curr)=> [...acc,...curr],[]) // unpack the paths
-            .filter((node,i,all)=> all.filter(x=>x===node).length>1) // filter to nodes that appear in more than one path
+            .filter((node,i,all)=> all.filter(x=>x===node).length===chosenNodes.length)        // filter to nodes that appear in every path
             .reduce((acc,curr)=> { // reduce to the unique set.
                 if(!acc.includes(curr)){
                     acc.push(curr)
                 }
                 return acc;
-            },[])
-        const newNodesObjects = [...sharedNodes,...chosenNodes.filter(n=>!sharedNodes.includes(n))].map(node=> {
-                const newNodeObject = {
-                    id:node.id,
-                    annotations: node.annotations,
-            };
-            if(node.name){
-                newNodeObject.name=node.name;
-            }
-            return newNodeObject;
+            },[]);
 
-        });
-        const newNodeMap = new Map(newNodesObjects.map(n=>[n.id,n]));
-        // set children set lengths
-        newNodesObjects.forEach(node=>{
-            let currentNode = this.nodeMap.get(node.id);
-            let length=0;
-            while(currentNode.parent&&!newNodeMap.has(currentNode.parent.id)){
-                length+=currentNode.length;
-                currentNode = currentNode.parent;
-            }
-            length+=currentNode.length;
-            const parent = currentNode.parent? newNodeMap.get(currentNode.parent.id): null;
-            node.parent = parent;
-            node.length = length;
-            if(parent) {
-                parent.children = parent.children ? parent.children.concat(node) : [node];
-            }
+        const mrca = sharedNodes[maxIndex(sharedNodes,n=>n.level)];
 
-        })
         // intermediate nodes with show up as
-        const subtree = new Tree(newNodeMap.get(this.root.id));
+        const subtree = new Tree(mrca.toJSON());
 
         // now remove degree 2 nodes that were not specified;
 
-        [...subtree.postorder()].forEach(node=>{
-            if(node.children){
-                if(node.children.length===1){
+        subtree.externalNodes.forEach(node=>{
                     if(!chosenNodes.map(n=>n.id).includes(node.id)){
                         subtree.removeNode(node);
                     }
-                }
-            }
-        })
+                });
+
         return subtree;
     }
 
@@ -1214,7 +1186,7 @@ function setUpNodes(node){
     if(node.children){
         const childrenNodes=[]
         for(const child of node.children){
-            const childNode = makeNode.call(this,{...child,parent:node})
+            const childNode = makeNode.call(this,{...child,parent:node,level:node.level+1})
             childrenNodes.push(childNode);
             setUpNodes.call(this,childNode);
         }
@@ -1357,6 +1329,19 @@ class Node{
     set id(value){
         this._id = value;
     }
+
+    toJSON(){
+        return ({
+                id: this.id,
+                name:this.name,
+                length:this.length,
+                height:this.height,
+                label:this.label,
+                level:this.level,
+                annotations:this.annotations,
+                children: this.children && this.children.length>0? this.children.map(child=>child.toJSON()):null,
+                });
+}
 
 
 }
