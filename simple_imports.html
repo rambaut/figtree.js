@@ -116,6 +116,8 @@
 <div>
     <figure>
         <svg id="phylogram_1a"  width="600" height="500"></svg>
+        <svg id="phylogram_1b"  width="600" height="500"></svg>
+
     </figure>
     <!--<button id="sort_up_button">Sort ascending</button>-->
     <!--<button id="sort_down_button">Sort descending</button>-->
@@ -150,6 +152,26 @@
         .hilightInternalNodes()
         .onClickInternalNode(layout.rotate())
         .onClickBranch(layout.reroot());
+
+
+
+    const treeSVG2 = document.getElementById('phylogram_1b');
+
+    const layout2 = new RectangularLayout(tree.subTree([tree.getExternalNode("virus2"),tree.getExternalNode("virus7"),tree.getExternalNode("virus6")]))
+
+    layout.internalNodeLabels="probability";
+
+    const figTree2 = new FigTree(treeSVG2, layout2,
+        { top: 10, bottom: 60, left: 10, right: 150},
+        { hoverBorder: 2, backgroundBorder: 5,
+            baubles: [
+                new CircleBauble(),
+            ]
+        });
+    figTree2.draw()
+        .hilightInternalNodes()
+        .onClickInternalNode(layout2.rotate())
+        .onClickBranch(layout2.reroot());
 
     // figTree.addToolTip('#root', "The root node - represents the most recent<br>common ancestor of the whole tree");
     // figTree.addToolTip('.internal-node .node-shape', "This is an internal node - it is the most recent<br>common ancestor of the viruses to the right" );
