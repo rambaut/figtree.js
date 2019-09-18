@@ -8948,7 +8948,7 @@
 	      try {
 	        for (var _iterator6 = nexusTokens[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
 	          var section = _step6.value;
-	          var workingSection = section.split(/\n/);
+	          var workingSection = section.replace(/^\s+|\s+$/g, '').split(/\n/);
 	          var sectionTitle = workingSection.shift();
 
 	          if (sectionTitle.toLowerCase().trim() === "trees;") {
@@ -8974,14 +8974,17 @@
 	                        tipNameMap.set(taxaData[0], taxaData[1]);
 	                      }
 	                    } else {
+	                      // if(tipNameMap.size>0) {
+	                      var treeString = token.substring(token.indexOf("("));
+	                      var thisTree = Tree.parseNewick(treeString);
+
 	                      if (tipNameMap.size > 0) {
-	                        var treeString = token.substring(token.indexOf("("));
-	                        var thisTree = Tree.parseNewick(treeString);
 	                        thisTree.externalNodes.forEach(function (tip) {
 	                          return tip.name = tipNameMap.get(tip.name);
 	                        });
-	                        trees.push(thisTree);
 	                      }
+
+	                      trees.push(thisTree);
 	                    }
 	                  }
 	                }
