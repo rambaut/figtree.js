@@ -1004,7 +1004,7 @@ export class Tree {
         }
 
         for(const section of nexusTokens){
-            const workingSection = section.split(/\n/);
+            const workingSection = section.replace(/^\s+|\s+$/g, '').split(/\n/);
             const sectionTitle = workingSection.shift();
             if(sectionTitle.toLowerCase().trim() ==="trees;"){
                 let inTaxaMap=false;
@@ -1021,12 +1021,14 @@ export class Tree {
                                 tipNameMap.set(taxaData[0],taxaData[1]);
                             }
                         }else{
-                            if(tipNameMap.size>0) {
+                            // if(tipNameMap.size>0) {
                                 const treeString = token.substring(token.indexOf("("));
                                 const thisTree = Tree.parseNewick(treeString);
-                                thisTree.externalNodes.forEach(tip => tip.name = tipNameMap.get(tip.name))
+                                if(tipNameMap.size>0) {
+                                    thisTree.externalNodes.forEach(tip => tip.name = tipNameMap.get(tip.name));
+                                }
                                 trees.push(thisTree);
-                            }
+
                         }
                     }
                 }
