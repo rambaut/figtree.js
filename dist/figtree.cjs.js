@@ -9281,7 +9281,7 @@ class FigTree {
         // get the size of the svg we are drawing on
         let width,height;
         if(Object.keys(this.settings).indexOf("width")>-1){
-            width =this. settings.width;
+            width =this.settings.width;
         }else{
             width = this.svg.getBoundingClientRect().width;
         }
@@ -9343,7 +9343,7 @@ class FigTree {
         }
         let width,height;
         if(Object.keys(this.settings).indexOf("width")>-1){
-            width =this. settings.width;
+            width =this.settings.width;
         }else{
             width = this.svg.getBoundingClientRect().width;
         }
