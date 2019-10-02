@@ -6641,7 +6641,6 @@ class Tree {
         // This converts all the json objects to Node instances
         setUpNodes.call(this,this.root);
 
-        this._origin = 0;
         this.annotations = {};
         this._nodeList = [...this.preorder()];
         this._nodeList.forEach( (node) => {
@@ -6657,7 +6656,6 @@ class Tree {
         this._tipMap = new Map(this.externalNodes.map( (tip) => [tip.name, tip] ));
 
         this.nodesUpdated = false;
-        this.offset = 0;
         // a callback function that is called whenever the tree is changed
         this.treeUpdateCallback = () => {};
     };
@@ -6770,14 +6768,6 @@ class Tree {
      */
     getHeight(node) {
         return node.height;
-    }
-
-    set origin(value){
-        this._origin = value;
-        this.heightsKnown=false;
-    }
-    get origin(){
-        return this._origin;
     }
 
     /**
@@ -7668,12 +7658,11 @@ function orderNodes(node, ordering, callback = null) {
 /**
  * A private recursive function that calculates the height of each node (with the most
  * diverged tip from the root having height given by origin).
- * @param origin
  */
 function calculateHeights() {
 
     const maxRTT = max(this.rootToTipLengths());
-    this.nodeList.forEach((node) => node._height = this.origin -this.offset- (maxRTT - this.rootToTipLength(node)) );
+    this.nodeList.forEach((node) => node._height =  maxRTT - this.rootToTipLength(node));
     this.heightsKnown = true;
     this.treeUpdateCallback();
 }
