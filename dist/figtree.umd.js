@@ -7545,7 +7545,6 @@
 	    })); // This converts all the json objects to Node instances
 
 	    setUpNodes.call(this, this.root);
-	    this._origin = 0;
 	    this.annotations = {};
 	    this._nodeList = toConsumableArray(this.preorder());
 
@@ -7566,8 +7565,7 @@
 	    this._tipMap = new Map(this.externalNodes.map(function (tip) {
 	      return [tip.name, tip];
 	    }));
-	    this.nodesUpdated = false;
-	    this.offset = 0; // a callback function that is called whenever the tree is changed
+	    this.nodesUpdated = false; // a callback function that is called whenever the tree is changed
 
 	    this.treeUpdateCallback = function () {};
 	  }
@@ -7626,14 +7624,14 @@
 	    value: function getHeight(node) {
 	      return node.height;
 	    }
-	  }, {
-	    key: "preorder",
-
 	    /**
 	     * A generator function that returns the nodes in a pre-order traversal.
 	     *
 	     * @returns {IterableIterator<IterableIterator<*|*>>}
 	     */
+
+	  }, {
+	    key: "preorder",
 	    value:
 	    /*#__PURE__*/
 	    regenerator.mark(function preorder() {
@@ -8672,15 +8670,6 @@
 
 	      return this._tipMap;
 	    }
-	  }, {
-	    key: "origin",
-	    set: function set(value) {
-	      this._origin = value;
-	      this.heightsKnown = false;
-	    },
-	    get: function get() {
-	      return this._origin;
-	    }
 	  }], [{
 	    key: "pathToRoot",
 	    value:
@@ -9086,7 +9075,6 @@
 	/**
 	 * A private recursive function that calculates the height of each node (with the most
 	 * diverged tip from the root having height given by origin).
-	 * @param origin
 	 */
 
 
@@ -9095,7 +9083,7 @@
 
 	  var maxRTT = max(this.rootToTipLengths());
 	  this.nodeList.forEach(function (node) {
-	    return node._height = _this6.origin - _this6.offset - (maxRTT - _this6.rootToTipLength(node));
+	    return node._height = maxRTT - _this6.rootToTipLength(node);
 	  });
 	  this.heightsKnown = true;
 	  this.treeUpdateCallback();
