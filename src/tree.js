@@ -1301,8 +1301,9 @@ class Node{
         this._tree.nodesUpdated = true;
     }
     addChild(node){
-        const newNode = new Node({...node,tree:this._tree});
+        const newNode = new Node({...node,tree:this._tree,level:this._level+1});
         this.children = [...this._children,newNode];
+        setUpNodes.call(this._tree,newNode);
         this._tree.addAnnotations(newNode.annotations);
         this._tree.nodesUpdated = true;
     }

@@ -9294,9 +9294,11 @@
 	    key: "addChild",
 	    value: function addChild(node) {
 	      var newNode = new Node(objectSpread({}, node, {
-	        tree: this._tree
+	        tree: this._tree,
+	        level: this._level + 1
 	      }));
 	      this.children = [].concat(toConsumableArray(this._children), [newNode]);
+	      setUpNodes.call(this._tree, newNode);
 
 	      this._tree.addAnnotations(newNode.annotations);
 
