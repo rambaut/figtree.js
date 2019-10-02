@@ -7888,9 +7888,10 @@ class Node{
         this._tree.nodesUpdated = true;
     }
     addChild(node){
-        const newNode = new Node(node);
+        const newNode = new Node({...node,tree:this._tree});
         this.children = [...this._children,newNode];
         this._tree.addAnnotations(newNode.annotations);
+        this._tree.nodesUpdated = true;
     }
     get parent() {
         return this._parent;

@@ -9305,10 +9305,14 @@
 	  createClass(Node, [{
 	    key: "addChild",
 	    value: function addChild(node) {
-	      var newNode = new Node(node);
+	      var newNode = new Node(objectSpread({}, node, {
+	        tree: this._tree
+	      }));
 	      this.children = [].concat(toConsumableArray(this._children), [newNode]);
 
 	      this._tree.addAnnotations(newNode.annotations);
+
+	      this._tree.nodesUpdated = true;
 	    }
 	  }, {
 	    key: "toJSON",
