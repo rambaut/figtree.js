@@ -395,7 +395,7 @@
     const tree = Tree.parseNewick(newickString, "probability");
     tree.orderByNodeDensity();
     const treeSVG = document.getElementById('phylogram_3');
-    const layout = new ExplodedLayout(tree,{groupGap:9,direction:"down"});
+    const layout = new ExplodedLayout(tree,{groupGap:9,direction:"down",offset:1});
 
     const figTree = new FigTree(treeSVG, layout,
         { top: 10, bottom: 60, left: 10, right: 150},
@@ -403,7 +403,11 @@
             baubles: [
                 new CircleBauble({ vertexFilter: (v) => v.degree !== 2 }),
                 new RectangularBauble({ vertexFilter: (v) => v.degree === 2})
-            ]
+            ],
+            // branchScale:10,
+            origin:1,
+            branchScale:2,
+            reverseAxis:true
         });
 
     tree.annotateTips({

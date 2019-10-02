@@ -8293,15 +8293,14 @@ class AbstractLayout extends layoutInterface {
 
     /**
      * The default layout settings
-     * @return {{lengthFormat: *, horizontalScale: null, branchScale: number, radiusOfCurve: number, includedInVerticalRange: (function(*): boolean)}}
+     * @return {{lengthFormat: *, horizontalScale: null}}
      * @constructor
      */
     static DEFAULT_SETTINGS() {
         return {
             lengthFormat: format(".2f"),
             horizontalScale: null, // a scale that converts height to 0,1  domain. default is 0 = highest tip
-            branchScale: 1,
-            radiusOfCurve:0,
+            offset:0,
 
         }
     }
@@ -8636,7 +8635,7 @@ class AbstractLayout extends layoutInterface {
     }
     updateHorizontalScale() {
         const newScale = this.settings.horizontalScale ? this.settings.horizontalScale :
-            linear$2().domain([this.tree.rootNode.height*this.settings.branchScale, this.tree.origin]).range(this._horizontalRange);
+            linear$2().domain([this.tree.rootNode.height+this.settings.offset, 0]).range(this._horizontalRange);
         return newScale;
     }
     updateSettings(newSettings){
@@ -8644,7 +8643,7 @@ class AbstractLayout extends layoutInterface {
         this.update();
     }
 
-// borrowed from redux naive implementation https://redux.js.org/advanced/middleware
+// inspired by redux naive implementation https://redux.js.org/advanced/middleware
     extendLayout(...middlewares){
         middlewares = middlewares.slice();
         middlewares.reverse();
@@ -8669,7 +8668,7 @@ class AbstractLayout extends layoutInterface {
         return 0;
     }
     setXPosition(vertex,currentX){
-        vertex.x = this._horizontalScale(vertex.node.height*this.settings.branchScale);
+        vertex.x = this._horizontalScale(vertex.node.height+this.settings.offset);
         return 0;
     }
 
@@ -9220,7 +9219,9 @@ class FigTree {
             ticks:5,
             branchCurve:stepBefore,
             curveRadius:0,
-
+            origin:0,
+            reverseAxis:false,
+            branchScale:1,
         };
     }
     static DEFAULT_STYLES(){
@@ -9907,7 +9908,13 @@ function updateCartoons(){
 function addAxis() {
 
 
-    const xAxis = axisBottom( linear$2().domain(this.layout.horizontalScale.domain()).range(this.scales.x.range()))
+    //x scale nodeHeight [root,0] => pixels
+    // node Height [root,0] => [ orgin+root,orign] => pixels
+
+
+    const reverse = this.settings.reverseAxis? -1:1;
+    const domain = [this.settings.origin+reverse*(this.settings.offset+this.layout.horizontalScale.domain()[0]),this.settings.origin];
+    const xAxis = axisBottom( linear$2().domain(domain).range(this.scales.x.range()))
         .ticks(this.settings.ticks).tickFormat(this.settings.tickFormat);
 
     const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
@@ -9934,7 +9941,10 @@ function addAxis() {
 }
 
 function updateAxis(){
-    const xAxis = axisBottom( linear$2().domain(this.layout.horizontalScale.domain()).range(this.scales.x.range()))
+    const reverse = this.settings.reverseAxis? -1:1;
+
+    const domain = [this.settings.origin+reverse*this.settings.branchScale*this.layout.horizontalScale.domain()[0],this.settings.origin];
+    const xAxis = axisBottom(linear$2().domain(domain).range(this.scales.x.range()))
         .ticks(this.settings.ticks).tickFormat(this.settings.tickFormat);
 
     const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
