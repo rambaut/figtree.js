@@ -9984,7 +9984,7 @@
 
 	    /**
 	     * The default layout settings
-	     * @return {{lengthFormat: *, horizontalScale: null, branchScale: number, radiusOfCurve: number, includedInVerticalRange: (function(*): boolean)}}
+	     * @return {{lengthFormat: *, horizontalScale: null}}
 	     * @constructor
 	     */
 	    value: function DEFAULT_SETTINGS() {
@@ -9992,8 +9992,7 @@
 	        lengthFormat: format(".2f"),
 	        horizontalScale: null,
 	        // a scale that converts height to 0,1  domain. default is 0 = highest tip
-	        branchScale: 1,
-	        radiusOfCurve: 0
+	        offset: 0
 	      };
 	    }
 	    /**
@@ -10238,7 +10237,7 @@
 	  }, {
 	    key: "updateHorizontalScale",
 	    value: function updateHorizontalScale() {
-	      var newScale = this.settings.horizontalScale ? this.settings.horizontalScale : linear$2().domain([this.tree.rootNode.height * this.settings.branchScale, this.tree.origin]).range(this._horizontalRange);
+	      var newScale = this.settings.horizontalScale ? this.settings.horizontalScale : linear$2().domain([this.tree.rootNode.height + this.settings.offset, 0]).range(this._horizontalRange);
 	      return newScale;
 	    }
 	  }, {
@@ -10246,7 +10245,7 @@
 	    value: function updateSettings(newSettings) {
 	      this.settings = objectSpread({}, this.settings, newSettings);
 	      this.update();
-	    } // borrowed from redux naive implementation https://redux.js.org/advanced/middleware
+	    } // inspired by redux naive implementation https://redux.js.org/advanced/middleware
 
 	  }, {
 	    key: "extendLayout",
@@ -10289,7 +10288,7 @@
 	  }, {
 	    key: "setXPosition",
 	    value: function setXPosition(vertex, currentX) {
-	      vertex.x = this._horizontalScale(vertex.node.height * this.settings.branchScale);
+	      vertex.x = this._horizontalScale(vertex.node.height + this.settings.offset);
 	      return 0;
 	    }
 	  }, {
@@ -11127,7 +11126,10 @@
 	        tickFormat: format(".2f"),
 	        ticks: 5,
 	        branchCurve: stepBefore,
-	        curveRadius: 0
+	        curveRadius: 0,
+	        origin: 0,
+	        reverseAxis: false,
+	        branchScale: 1
 	      };
 	    }
 	  }, {
@@ -11869,7 +11871,11 @@
 
 
 	function addAxis() {
-	  var xAxis = axisBottom(linear$2().domain(this.layout.horizontalScale.domain()).range(this.scales.x.range())).ticks(this.settings.ticks).tickFormat(this.settings.tickFormat);
+	  //x scale nodeHeight [root,0] => pixels
+	  // node Height [root,0] => [ orgin+root,orign] => pixels
+	  var reverse = this.settings.reverseAxis ? -1 : 1;
+	  var domain = [this.settings.origin + reverse * (this.settings.offset + this.layout.horizontalScale.domain()[0]), this.settings.origin];
+	  var xAxis = axisBottom(linear$2().domain(domain).range(this.scales.x.range())).ticks(this.settings.ticks).tickFormat(this.settings.tickFormat);
 	  var xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
 	  var axesLayer = this.svgSelection.select(".axes-layer");
 	  axesLayer.append("g").attr("id", "x-axis").attr("class", "axis").attr("transform", "translate(0, ".concat(this.scales.height - this.margins.bottom + 5, ")")).call(xAxis);
@@ -11877,7 +11883,9 @@
 	}
 
 	function updateAxis() {
-	  var xAxis = axisBottom(linear$2().domain(this.layout.horizontalScale.domain()).range(this.scales.x.range())).ticks(this.settings.ticks).tickFormat(this.settings.tickFormat);
+	  var reverse = this.settings.reverseAxis ? -1 : 1;
+	  var domain = [this.settings.origin + reverse * this.settings.branchScale * this.layout.horizontalScale.domain()[0], this.settings.origin];
+	  var xAxis = axisBottom(linear$2().domain(domain).range(this.scales.x.range())).ticks(this.settings.ticks).tickFormat(this.settings.tickFormat);
 	  var xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
 	  var axesLayer = this.svgSelection.select(".axes-layer");
 	  axesLayer.select("#x-axis").transition().duration(this.settings.transitionDuration).ease(this.settings.transitionEase).attr("transform", "translate(0, ".concat(this.scales.height - this.margins.bottom + 5, ")")).call(xAxis);

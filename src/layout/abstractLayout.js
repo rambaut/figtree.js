@@ -19,15 +19,14 @@ export class AbstractLayout extends layoutInterface {
 
     /**
      * The default layout settings
-     * @return {{lengthFormat: *, horizontalScale: null, branchScale: number, radiusOfCurve: number, includedInVerticalRange: (function(*): boolean)}}
+     * @return {{lengthFormat: *, horizontalScale: null}}
      * @constructor
      */
     static DEFAULT_SETTINGS() {
         return {
             lengthFormat: format(".2f"),
             horizontalScale: null, // a scale that converts height to 0,1  domain. default is 0 = highest tip
-            branchScale: 1,
-            radiusOfCurve:0,
+            offset:0,
 
         }
     }
@@ -362,7 +361,7 @@ export class AbstractLayout extends layoutInterface {
     }
     updateHorizontalScale() {
         const newScale = this.settings.horizontalScale ? this.settings.horizontalScale :
-            scaleLinear().domain([this.tree.rootNode.height*this.settings.branchScale, this.tree.origin]).range(this._horizontalRange);
+            scaleLinear().domain([this.tree.rootNode.height+this.settings.offset, 0]).range(this._horizontalRange);
         return newScale;
     }
     updateSettings(newSettings){
@@ -370,7 +369,7 @@ export class AbstractLayout extends layoutInterface {
         this.update();
     }
 
-// borrowed from redux naive implementation https://redux.js.org/advanced/middleware
+// inspired by redux naive implementation https://redux.js.org/advanced/middleware
     extendLayout(...middlewares){
         middlewares = middlewares.slice();
         middlewares.reverse();
@@ -395,7 +394,7 @@ export class AbstractLayout extends layoutInterface {
         return 0;
     }
     setXPosition(vertex,currentX){
-        vertex.x = this._horizontalScale(vertex.node.height*this.settings.branchScale);
+        vertex.x = this._horizontalScale(vertex.node.height+this.settings.offset);
         return 0;
     }
 

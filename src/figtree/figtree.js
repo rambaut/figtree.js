@@ -26,7 +26,9 @@ export class FigTree {
             ticks:5,
             branchCurve:curveStepBefore,
             curveRadius:0,
-
+            origin:0,
+            reverseAxis:false,
+            branchScale:1,
         };
     }
     static DEFAULT_STYLES(){
@@ -713,8 +715,14 @@ function updateCartoons(){
 function addAxis() {
 
 
-    const xAxis = axisBottom( scaleLinear().domain(this.layout.horizontalScale.domain()).range(this.scales.x.range()))
-        .ticks(this.settings.ticks).tickFormat(this.settings.tickFormat)
+    //x scale nodeHeight [root,0] => pixels
+    // node Height [root,0] => [ orgin+root,orign] => pixels
+
+
+    const reverse = this.settings.reverseAxis? -1:1;
+    const domain = [this.settings.origin+reverse*(this.settings.offset+this.layout.horizontalScale.domain()[0]),this.settings.origin]
+    const xAxis = axisBottom( scaleLinear().domain(domain).range(this.scales.x.range()))
+        .ticks(this.settings.ticks).tickFormat(this.settings.tickFormat);
 
     const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
 
@@ -740,8 +748,11 @@ function addAxis() {
 }
 
 function updateAxis(){
-    const xAxis = axisBottom( scaleLinear().domain(this.layout.horizontalScale.domain()).range(this.scales.x.range()))
-        .ticks(this.settings.ticks).tickFormat(this.settings.tickFormat)
+    const reverse = this.settings.reverseAxis? -1:1;
+
+    const domain = [this.settings.origin+reverse*this.settings.branchScale*this.layout.horizontalScale.domain()[0],this.settings.origin];
+    const xAxis = axisBottom(scaleLinear().domain(domain).range(this.scales.x.range()))
+        .ticks(this.settings.ticks).tickFormat(this.settings.tickFormat);
 
     const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
 
