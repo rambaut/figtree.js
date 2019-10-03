@@ -568,8 +568,8 @@ export class Tree {
             return;
         }
 
-        for(const descendents of tree.postorder(node)){
-            tree.removeNode(node)
+        for(const descendents of this.postorder(node)){
+            this.removeNode(node)
         }
         this.nodesUpdated=true;
         return this;
