@@ -8311,9 +8311,9 @@
 	      var _iteratorError5 = undefined;
 
 	      try {
-	        for (var _iterator5 = tree.postorder(node)[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+	        for (var _iterator5 = this.postorder(node)[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
 	          var descendents = _step5.value;
-	          tree.removeNode(node);
+	          this.removeNode(node);
 	        }
 	      } catch (err) {
 	        _didIteratorError5 = true;
