@@ -8125,8 +8125,7 @@
 	        return n.level;
 	      })]; // intermediate nodes with show up as
 
-	      var subtree = new Tree(mrca.toJSON()); // now remove degree 2 nodes that were not specified;
-
+	      var subtree = new Tree(mrca.toJSON());
 	      subtree.externalNodes.forEach(function (node) {
 	        if (!chosenNodes.map(function (n) {
 	          return n.id;
@@ -8292,6 +8291,47 @@
 	      }
 
 	      this.nodesUpdated = true;
+	      return this;
+	    }
+	    /**
+	     * deletes a node and all it's descendents from the tree;
+	     * @param node
+	     * @return {*}
+	     */
+
+	  }, {
+	    key: "removeClade",
+	    value: function removeClade(node) {
+	      if (node === this.root) {
+	        return;
+	      }
+
+	      var _iteratorNormalCompletion5 = true;
+	      var _didIteratorError5 = false;
+	      var _iteratorError5 = undefined;
+
+	      try {
+	        for (var _iterator5 = tree.postorder(node)[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+	          var descendents = _step5.value;
+	          tree.removeNode(node);
+	        }
+	      } catch (err) {
+	        _didIteratorError5 = true;
+	        _iteratorError5 = err;
+	      } finally {
+	        try {
+	          if (!_iteratorNormalCompletion5 && _iterator5["return"] != null) {
+	            _iterator5["return"]();
+	          }
+	        } finally {
+	          if (_didIteratorError5) {
+	            throw _iteratorError5;
+	          }
+	        }
+	      }
+
+	      this.nodesUpdated = true;
+	      return this;
 	    }
 	    /**
 	     * Set one or more annotations for the tips.
@@ -8714,15 +8754,15 @@
 	      var annotationKeyNext = true;
 	      var annotationKey;
 	      var isAnnotationARange = false;
-	      var _iteratorNormalCompletion5 = true;
-	      var _didIteratorError5 = false;
-	      var _iteratorError5 = undefined;
+	      var _iteratorNormalCompletion6 = true;
+	      var _didIteratorError6 = false;
+	      var _iteratorError6 = undefined;
 
 	      try {
-	        for (var _iterator5 = tokens.filter(function (token) {
+	        for (var _iterator6 = tokens.filter(function (token) {
 	          return token.length > 0;
-	        })[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-	          var token = _step5.value;
+	        })[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+	          var token = _step6.value;
 
 	          // console.log(`Token ${i}: ${token}, level: ${level}`);
 	          if (inAnnotation) {
@@ -8896,16 +8936,16 @@
 	          }
 	        }
 	      } catch (err) {
-	        _didIteratorError5 = true;
-	        _iteratorError5 = err;
+	        _didIteratorError6 = true;
+	        _iteratorError6 = err;
 	      } finally {
 	        try {
-	          if (!_iteratorNormalCompletion5 && _iterator5["return"] != null) {
-	            _iterator5["return"]();
+	          if (!_iteratorNormalCompletion6 && _iterator6["return"] != null) {
+	            _iterator6["return"]();
 	          }
 	        } finally {
-	          if (_didIteratorError5) {
-	            throw _iteratorError5;
+	          if (_didIteratorError6) {
+	            throw _iteratorError6;
 	          }
 	        }
 	      }
@@ -8930,13 +8970,13 @@
 	        throw Error("File does not begin with #NEXUS is it a nexus file?");
 	      }
 
-	      var _iteratorNormalCompletion6 = true;
-	      var _didIteratorError6 = false;
-	      var _iteratorError6 = undefined;
+	      var _iteratorNormalCompletion7 = true;
+	      var _didIteratorError7 = false;
+	      var _iteratorError7 = undefined;
 
 	      try {
-	        for (var _iterator6 = nexusTokens[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-	          var section = _step6.value;
+	        for (var _iterator7 = nexusTokens[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+	          var section = _step7.value;
 	          var workingSection = section.replace(/^\s+|\s+$/g, '').split(/\n/);
 	          var sectionTitle = workingSection.shift();
 
@@ -8944,13 +8984,13 @@
 	            (function () {
 	              var inTaxaMap = false;
 	              var tipNameMap = new Map();
-	              var _iteratorNormalCompletion7 = true;
-	              var _didIteratorError7 = false;
-	              var _iteratorError7 = undefined;
+	              var _iteratorNormalCompletion8 = true;
+	              var _didIteratorError8 = false;
+	              var _iteratorError8 = undefined;
 
 	              try {
-	                for (var _iterator7 = workingSection[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-	                  var token = _step7.value;
+	                for (var _iterator8 = workingSection[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+	                  var token = _step8.value;
 
 	                  if (token.trim().toLowerCase() === "translate") {
 	                    inTaxaMap = true;
@@ -8978,16 +9018,16 @@
 	                  }
 	                }
 	              } catch (err) {
-	                _didIteratorError7 = true;
-	                _iteratorError7 = err;
+	                _didIteratorError8 = true;
+	                _iteratorError8 = err;
 	              } finally {
 	                try {
-	                  if (!_iteratorNormalCompletion7 && _iterator7["return"] != null) {
-	                    _iterator7["return"]();
+	                  if (!_iteratorNormalCompletion8 && _iterator8["return"] != null) {
+	                    _iterator8["return"]();
 	                  }
 	                } finally {
-	                  if (_didIteratorError7) {
-	                    throw _iteratorError7;
+	                  if (_didIteratorError8) {
+	                    throw _iteratorError8;
 	                  }
 	                }
 	              }
@@ -8995,16 +9035,16 @@
 	          }
 	        }
 	      } catch (err) {
-	        _didIteratorError6 = true;
-	        _iteratorError6 = err;
+	        _didIteratorError7 = true;
+	        _iteratorError7 = err;
 	      } finally {
 	        try {
-	          if (!_iteratorNormalCompletion6 && _iterator6["return"] != null) {
-	            _iterator6["return"]();
+	          if (!_iteratorNormalCompletion7 && _iterator7["return"] != null) {
+	            _iterator7["return"]();
 	          }
 	        } finally {
-	          if (_didIteratorError6) {
-	            throw _iteratorError6;
+	          if (_didIteratorError7) {
+	            throw _iteratorError7;
 	          }
 	        }
 	      }
@@ -9035,29 +9075,29 @@
 	  if (node.children) {
 	    // count the number of descendents for each child
 	    var counts = new Map();
-	    var _iteratorNormalCompletion8 = true;
-	    var _didIteratorError8 = false;
-	    var _iteratorError8 = undefined;
+	    var _iteratorNormalCompletion9 = true;
+	    var _didIteratorError9 = false;
+	    var _iteratorError9 = undefined;
 
 	    try {
-	      for (var _iterator8 = node.children[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-	        var child = _step8.value;
+	      for (var _iterator9 = node.children[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+	        var child = _step9.value;
 	        var value = orderNodes(child, ordering, callback);
 	        counts.set(child, value);
 	        count += value;
 	      } // sort the children using the provided function
 
 	    } catch (err) {
-	      _didIteratorError8 = true;
-	      _iteratorError8 = err;
+	      _didIteratorError9 = true;
+	      _iteratorError9 = err;
 	    } finally {
 	      try {
-	        if (!_iteratorNormalCompletion8 && _iterator8["return"] != null) {
-	          _iterator8["return"]();
+	        if (!_iteratorNormalCompletion9 && _iterator9["return"] != null) {
+	          _iterator9["return"]();
 	        }
 	      } finally {
-	        if (_didIteratorError8) {
-	          throw _iteratorError8;
+	        if (_didIteratorError9) {
+	          throw _iteratorError9;
 	        }
 	      }
 	    }
@@ -9193,13 +9233,13 @@
 	function setUpNodes(node) {
 	  if (node.children) {
 	    var childrenNodes = [];
-	    var _iteratorNormalCompletion10 = true;
-	    var _didIteratorError10 = false;
-	    var _iteratorError10 = undefined;
+	    var _iteratorNormalCompletion11 = true;
+	    var _didIteratorError11 = false;
+	    var _iteratorError11 = undefined;
 
 	    try {
-	      for (var _iterator10 = node.children[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-	        var child = _step10.value;
+	      for (var _iterator11 = node.children[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+	        var child = _step11.value;
 	        var childNode = makeNode.call(this, objectSpread({}, child, {
 	          parent: node,
 	          level: node.level + 1
@@ -9208,16 +9248,16 @@
 	        setUpNodes.call(this, childNode);
 	      }
 	    } catch (err) {
-	      _didIteratorError10 = true;
-	      _iteratorError10 = err;
+	      _didIteratorError11 = true;
+	      _iteratorError11 = err;
 	    } finally {
 	      try {
-	        if (!_iteratorNormalCompletion10 && _iterator10["return"] != null) {
-	          _iterator10["return"]();
+	        if (!_iteratorNormalCompletion11 && _iterator11["return"] != null) {
+	          _iterator11["return"]();
 	        }
 	      } finally {
-	        if (_didIteratorError10) {
-	          throw _iteratorError10;
+	        if (_didIteratorError11) {
+	          throw _iteratorError11;
 	        }
 	      }
 	    }
@@ -9389,26 +9429,26 @@
 	    },
 	    set: function set(value) {
 	      this._children = value;
-	      var _iteratorNormalCompletion11 = true;
-	      var _didIteratorError11 = false;
-	      var _iteratorError11 = undefined;
+	      var _iteratorNormalCompletion12 = true;
+	      var _didIteratorError12 = false;
+	      var _iteratorError12 = undefined;
 
 	      try {
-	        for (var _iterator11 = this._children[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-	          var child = _step11.value;
+	        for (var _iterator12 = this._children[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+	          var child = _step12.value;
 	          child.parent = this;
 	        }
 	      } catch (err) {
-	        _didIteratorError11 = true;
-	        _iteratorError11 = err;
+	        _didIteratorError12 = true;
+	        _iteratorError12 = err;
 	      } finally {
 	        try {
-	          if (!_iteratorNormalCompletion11 && _iterator11["return"] != null) {
-	            _iterator11["return"]();
+	          if (!_iteratorNormalCompletion12 && _iterator12["return"] != null) {
+	            _iterator12["return"]();
 	          }
 	        } finally {
-	          if (_didIteratorError11) {
-	            throw _iteratorError11;
+	          if (_didIteratorError12) {
+	            throw _iteratorError12;
 	          }
 	        }
 	      }

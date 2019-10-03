@@ -7024,7 +7024,6 @@ class Tree {
         // intermediate nodes with show up as
         const subtree = new Tree(mrca.toJSON());
 
-        // now remove degree 2 nodes that were not specified;
 
         subtree.externalNodes.forEach(node=>{
                     if(!chosenNodes.map(n=>n.id).includes(node.id)){
@@ -7142,6 +7141,24 @@ class Tree {
             this.removeNode(node.parent); // if it's a tip then remove it's parent which is now degree two;
         }
         this.nodesUpdated = true;
+        return this;
+    }
+
+    /**
+     * deletes a node and all it's descendents from the tree;
+     * @param node
+     * @return {*}
+     */
+    removeClade(node) {
+        if(node===this.root){
+            return;
+        }
+
+        for(const descendents of tree.postorder(node)){
+            tree.removeNode(node);
+        }
+        this.nodesUpdated=true;
+        return this;
     }
 
     /**
