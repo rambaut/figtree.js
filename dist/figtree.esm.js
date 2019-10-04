@@ -7155,7 +7155,6 @@ class Tree {
         if(node===this.root){
             return;
         }
-    console.group("removing clade");
         for(const descendent of this.postorder(node)){
             this.removeNode(descendent);
         }
