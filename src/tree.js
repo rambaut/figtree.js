@@ -568,11 +568,12 @@ export class Tree {
         if(node===this.root){
             return;
         }
-
-        for(const descendents of this.postorder(node)){
-            this.removeNode(node)
+    console.group("removing clade")
+        for(const descendent of this.postorder(node)){
+            this.removeNode(descendent)
         }
         this.nodesUpdated=true;
+        this.treeUpdateCallback();
         return this;
     }
 

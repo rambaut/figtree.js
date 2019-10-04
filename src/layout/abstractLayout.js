@@ -398,6 +398,18 @@ export class AbstractLayout extends layoutInterface {
         return 0;
     }
 
+    /**
+     * A class function that subscribes a to be called when the tree updates.
+     * @param func - function to be called when the tree updates
+     */
+    subscribeCallback(func){
+        const currentCallback = this.updateCallback;
+        this.updateCallback = () =>{
+            currentCallback();
+            func();
+        }
+    }
+
 
 }
 
@@ -418,7 +430,16 @@ export function makeVerticesFromNodes(nodes){
             this._nodeMap.set(n, vertex);
         }
     });
-};
+
+    //remove vertices not in nodes
+    for(const n of this._nodeMap.keys()){
+        if(!nodes.includes(n)){
+            this._vertices=this._vertices.filter(v=>v!==this._nodeMap.get(n))
+            this._nodeMap.delete(n);
+        }
+    }
+
+}
 
 
 export function setVertexClasses(v){
@@ -474,6 +495,14 @@ export function makeEdgesFromNodes(nodes){
                     this._edgeMap.set(edge.v1, edge);
                 }
         })
+
+    //remove edges not in nodes
+    for(const v1 of this._edgeMap.keys()){
+        if(!nodes.includes(v1.node)){
+            this._edges=this._edges.filter(e=>e!==this._edgeMap.get(v1))
+            this._edgeMap.delete(v1);
+        }
+    }
 }
 
 export function setupEdge(e){

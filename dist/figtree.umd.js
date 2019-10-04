@@ -8307,14 +8307,15 @@
 	        return;
 	      }
 
+	      console.group("removing clade");
 	      var _iteratorNormalCompletion5 = true;
 	      var _didIteratorError5 = false;
 	      var _iteratorError5 = undefined;
 
 	      try {
 	        for (var _iterator5 = this.postorder(node)[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-	          var descendents = _step5.value;
-	          this.removeNode(node);
+	          var descendent = _step5.value;
+	          this.removeNode(descendent);
 	        }
 	      } catch (err) {
 	        _didIteratorError5 = true;
@@ -8332,6 +8333,7 @@
 	      }
 
 	      this.nodesUpdated = true;
+	      this.treeUpdateCallback();
 	      return this;
 	    }
 	    /**
@@ -9855,6 +9857,16 @@
 	    value: function extendLayout() {
 	      throw new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class");
 	    }
+	    /**
+	     * A method that subscribes the function to be called when the layout updates.
+	     * @param func - function to be called when the layout updates
+	     */
+
+	  }, {
+	    key: "subscribeCallback",
+	    value: function subscribeCallback(func) {
+	      throw new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class");
+	    }
 	  }, {
 	    key: "horizontalRange",
 	    get: function get() {
@@ -10342,6 +10354,21 @@
 	      vertex.x = this._horizontalScale(vertex.node.height + this.settings.offset);
 	      return 0;
 	    }
+	    /**
+	     * A class function that subscribes a to be called when the tree updates.
+	     * @param func - function to be called when the tree updates
+	     */
+
+	  }, {
+	    key: "subscribeCallback",
+	    value: function subscribeCallback(func) {
+	      var currentCallback = this.updateCallback;
+
+	      this.updateCallback = function () {
+	        currentCallback();
+	        func();
+	      };
+	    }
 	  }, {
 	    key: "horizontalRange",
 	    get: function get() {
@@ -10530,7 +10557,42 @@
 
 	      _this11._nodeMap.set(n, vertex);
 	    }
-	  });
+	  }); //remove vertices not in nodes
+
+	  var _iteratorNormalCompletion = true;
+	  var _didIteratorError = false;
+	  var _iteratorError = undefined;
+
+	  try {
+	    var _loop = function _loop() {
+	      var n = _step.value;
+
+	      if (!nodes.includes(n)) {
+	        _this11._vertices = _this11._vertices.filter(function (v) {
+	          return v !== _this11._nodeMap.get(n);
+	        });
+
+	        _this11._nodeMap["delete"](n);
+	      }
+	    };
+
+	    for (var _iterator = this._nodeMap.keys()[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	      _loop();
+	    }
+	  } catch (err) {
+	    _didIteratorError = true;
+	    _iteratorError = err;
+	  } finally {
+	    try {
+	      if (!_iteratorNormalCompletion && _iterator["return"] != null) {
+	        _iterator["return"]();
+	      }
+	    } finally {
+	      if (_didIteratorError) {
+	        throw _iteratorError;
+	      }
+	    }
+	  }
 	}
 	function setVertexClasses(v) {
 	  var _this12 = this;
@@ -10583,7 +10645,42 @@
 
 	      _this13._edgeMap.set(edge.v1, edge);
 	    }
-	  });
+	  }); //remove edges not in nodes
+
+	  var _iteratorNormalCompletion2 = true;
+	  var _didIteratorError2 = false;
+	  var _iteratorError2 = undefined;
+
+	  try {
+	    var _loop2 = function _loop2() {
+	      var v1 = _step2.value;
+
+	      if (!nodes.includes(v1.node)) {
+	        _this13._edges = _this13._edges.filter(function (e) {
+	          return e !== _this13._edgeMap.get(v1);
+	        });
+
+	        _this13._edgeMap["delete"](v1);
+	      }
+	    };
+
+	    for (var _iterator2 = this._edgeMap.keys()[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+	      _loop2();
+	    }
+	  } catch (err) {
+	    _didIteratorError2 = true;
+	    _iteratorError2 = err;
+	  } finally {
+	    try {
+	      if (!_iteratorNormalCompletion2 && _iterator2["return"] != null) {
+	        _iterator2["return"]();
+	      }
+	    } finally {
+	      if (_didIteratorError2) {
+	        throw _iteratorError2;
+	      }
+	    }
+	  }
 	}
 	function setupEdge(e) {
 	  setEdgeTermini.call(this, e);
@@ -11304,10 +11401,9 @@
 	      };
 	      addAxis.call(this, this.margins); // Called whenever the layout changes...
 
-	      this.layout.updateCallback = function () {
-	        _this.update();
-	      };
-
+	      this.layout.subscribeCallback(function () {
+	        return _this.update();
+	      });
 	      this.drawn = true;
 	      this.update();
 	      return this;

@@ -62,7 +62,7 @@ export class FigTree {
 
         this.settings = {...FigTree.DEFAULT_SETTINGS(), ...settings,...{styles:styles}};
 
-        this.callbacks= {nodes:[],branches:[],cartoons:[]}
+        this.callbacks= {nodes:[],branches:[],cartoons:[]};
         this._annotations =[];
 
         this.svg=svg;
@@ -119,9 +119,7 @@ export class FigTree {
 
 
         // Called whenever the layout changes...
-        this.layout.updateCallback = () => {
-            this.update();
-        }
+        this.layout.subscribeCallback(()=>this.update());
         this.drawn=true;
         this.update();
         return this;
