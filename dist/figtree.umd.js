@@ -7551,7 +7551,7 @@
 	    this._nodeList.forEach(function (node) {
 	      if (node.label && node.label.startsWith("#")) {
 	        // an id string has been specified in the newick label.
-	        node.id = node.label.substring(1);
+	        node._id = node.label.substring(1);
 	      }
 
 	      if (node.annotations) {
@@ -8216,7 +8216,7 @@
 	                  id = _ref3[1];
 
 	              splitNode = _this5.splitBranch(splitNode, time);
-	              splitNode.id = id;
+	              splitNode._id = id;
 	            });
 	          }
 	        } else {
@@ -8225,6 +8225,7 @@
 	        }
 	      });
 
+	      this.nodesUpdated = true;
 	      this.treeUpdateCallback();
 	    }
 	    /**
@@ -9275,7 +9276,7 @@
 	  this._nodeList.forEach(function (node) {
 	    if (node.label && node.label.startsWith("#")) {
 	      // an id string has been specified in the newick label.
-	      node.id = node.label.substring(1);
+	      node._id = node.label.substring(1);
 	    }
 
 	    if (node.annotations) {
@@ -9305,7 +9306,6 @@
 	        parent: undefined,
 	        children: null,
 	        label: undefined,
-	        level: undefined,
 	        id: "node-".concat(uuid_1.v4())
 	      };
 	    }
@@ -9327,7 +9327,6 @@
 	    this._children = data.children;
 	    this._tree = data.tree;
 	    this._label = data.label;
-	    this._level = data.level;
 	  }
 
 	  createClass(Node, [{
@@ -9363,7 +9362,15 @@
 	  }, {
 	    key: "level",
 	    get: function get() {
-	      return this._level;
+	      var level = 0;
+	      var node = this;
+
+	      while (node.parent) {
+	        node = node.parent;
+	        level += 1;
+	      }
+
+	      return level;
 	    },
 	    set: function set(value) {
 	      this._level = value;
@@ -9374,6 +9381,7 @@
 	      return this._name;
 	    },
 	    set: function set(value) {
+	      this._tree.nodesUpdated = true;
 	      this._name = value;
 	    }
 	  }, {
@@ -9477,6 +9485,7 @@
 	      return this._id;
 	    },
 	    set: function set(value) {
+	      this._tree.nodesUpdated = true;
 	      this._id = value;
 	    }
 	  }]);
