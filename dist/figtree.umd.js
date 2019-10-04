@@ -8308,7 +8308,6 @@
 	        return;
 	      }
 
-	      console.group("removing clade");
 	      var _iteratorNormalCompletion5 = true;
 	      var _didIteratorError5 = false;
 	      var _iteratorError5 = undefined;
