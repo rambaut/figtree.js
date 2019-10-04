@@ -6642,7 +6642,7 @@ class Tree {
         this._nodeList.forEach( (node) => {
             if (node.label && node.label.startsWith("#")) {
                 // an id string has been specified in the newick label.
-                node.id = node.label.substring(1);
+                node._id = node.label.substring(1);
             }
             if(node.annotations){
             this.addAnnotations(node.annotations);
@@ -7075,7 +7075,7 @@ class Tree {
                         let splitNode = node;
                         splits[node.id].forEach(([time, id]) => {
                             splitNode = this.splitBranch(splitNode, time);
-                            splitNode.id = id;
+                            splitNode._id = id;
                         });
                     }
                 } else {
@@ -7083,6 +7083,7 @@ class Tree {
                     this.splitBranch(node, 0.5);
                 }
             });
+        this.nodesUpdated=true;
         this.treeUpdateCallback();
 
     }
@@ -7780,7 +7781,7 @@ function setUpArraysAndMaps() {
     this._nodeList.forEach((node) => {
         if (node.label && node.label.startsWith("#")) {
             // an id string has been specified in the newick label.
-            node.id = node.label.substring(1);
+            node._id = node.label.substring(1);
         }
         if (node.annotations) {
             this.addAnnotations(node.annotations);
@@ -7803,7 +7804,6 @@ class Node{
             parent:undefined,
             children:null,
             label:undefined,
-            level:undefined,
             id:`node-${uuid_1.v4()}`
         }
 
@@ -7821,16 +7821,22 @@ class Node{
         this._children = data.children;
         this._tree = data.tree;
         this._label = data.label;
-        this._level = data.level;
 
     }
     get level() {
-        return this._level;
+        let level=0;
+        let node=this;
+        while(node.parent){
+            node=node.parent;
+            level+=1;
+        }
+        return level;
     }
     get name() {
         return this._name;
     }
     set name(value){
+        this._tree.nodesUpdated=true;
         this._name = value;
     }
 
@@ -7909,6 +7915,7 @@ class Node{
         return this._id;
     }
     set id(value){
+        this._tree.nodesUpdated=true;
         this._id = value;
     }
 
