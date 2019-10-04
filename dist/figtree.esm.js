@@ -7137,10 +7137,11 @@ class Tree {
             child._length += node.length;
             child.parent = node.parent;// This also updates parent's children array;
             });
-        }else{
-            console.log("removing parent");
-            this.removeNode(node.parent); // if it's a tip then remove it's parent which is now degree two;
         }
+        // else if(node.parent._children.length===1){
+        //     console.log("removing parent")
+        //     this.removeNode(node.parent); // if it's a tip then remove it's parent which is now degree two;
+        // }
         this.nodesUpdated = true;
         return this;
     }

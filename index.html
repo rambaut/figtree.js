@@ -428,7 +428,9 @@
     figTree.draw();
 
     layout.internalNodeLabels="probability";
-    tree.removeClade(tree.tipMap.get("virus4").parent);
+    const cladeToRemove = tree.tipMap.get("virus4").parent;
+    const leftpareent = cladeToRemove.parent;
+    // tree.removeClade(cladeToRemove).removeNode(leftpareent)
 
     layout.cartoon(layout.nodeMap.get(tree.tipMap.get("virus1").parent));
 
