@@ -7158,11 +7158,12 @@ class Tree {
         if(node===this.root){
             return;
         }
-
-        for(const descendents of this.postorder(node)){
-            this.removeNode(node);
+    console.group("removing clade");
+        for(const descendent of this.postorder(node)){
+            this.removeNode(descendent);
         }
         this.nodesUpdated=true;
+        this.treeUpdateCallback();
         return this;
     }
 
@@ -8302,6 +8303,14 @@ class layoutInterface {
     extendLayout(...middlewares){
         throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
     }
+    /**
+     * A method that subscribes the function to be called when the layout updates.
+     * @param func - function to be called when the layout updates
+     */
+    subscribeCallback(func){
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+
+    }
 
 
 }
@@ -8701,6 +8710,18 @@ class AbstractLayout extends layoutInterface {
         return 0;
     }
 
+    /**
+     * A class function that subscribes a to be called when the tree updates.
+     * @param func - function to be called when the tree updates
+     */
+    subscribeCallback(func){
+        const currentCallback = this.updateCallback;
+        this.updateCallback = () =>{
+            currentCallback();
+            func();
+        };
+    }
+
 
 }
 
@@ -8721,7 +8742,17 @@ function makeVerticesFromNodes(nodes){
             this._nodeMap.set(n, vertex);
         }
     });
+
+    //remove vertices not in nodes
+    for(const n of this._nodeMap.keys()){
+        if(!nodes.includes(n)){
+            this._vertices=this._vertices.filter(v=>v!==this._nodeMap.get(n));
+            this._nodeMap.delete(n);
+        }
+    }
+
 }
+
 
 function setVertexClasses(v){
     v.classes = [
@@ -8776,6 +8807,14 @@ function makeEdgesFromNodes(nodes){
                     this._edgeMap.set(edge.v1, edge);
                 }
         });
+
+    //remove edges not in nodes
+    for(const v1 of this._edgeMap.keys()){
+        if(!nodes.includes(v1.node)){
+            this._edges=this._edges.filter(e=>e!==this._edgeMap.get(v1));
+            this._edgeMap.delete(v1);
+        }
+    }
 }
 
 function setupEdge(e){
@@ -9341,9 +9380,7 @@ class FigTree {
 
 
         // Called whenever the layout changes...
-        this.layout.updateCallback = () => {
-            this.update();
-        };
+        this.layout.subscribeCallback(()=>this.update());
         this.drawn=true;
         this.update();
         return this;

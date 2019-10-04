@@ -393,6 +393,20 @@
         '((((((virus1:0.1,virus2:0.12)0.95:0.08,(virus3:0.011,virus4:0.0087)1.0:0.15)0.65:0.03,virus5:0.21)1.0:0.2,(virus6:0.45,virus7:0.4)0.51:0.02)1.0:0.1,virus8:0.4)1.0:0.1,(virus9:0.04,virus10:0.03)1.0:0.6);';
 
     const tree = Tree.parseNewick(newickString, "probability");
+    tree.annotateTips({
+        "virus1": { host: "camel" },
+        "virus2": { host: "camel" },
+        "virus3": { host: "human" },
+        "virus4": { host: "human" },
+        "virus5": { host: "bat" },
+        "virus6": { host: "bat" },
+        "virus7": { host: "bat" },
+        "virus8": { host: "bat" },
+        "virus9": { host: "whale" },
+        "virus10": { host: "whale" }
+    });
+
+    tree.annotateNodesFromTips("host");
     tree.orderByNodeDensity();
     const treeSVG = document.getElementById('phylogram_3');
     const layout = new ExplodedLayout(tree,{groupGap:9,direction:"down",offset:1});
@@ -410,23 +424,12 @@
             reverseAxis:true
         });
 
-    tree.annotateTips({
-        "virus1": { host: "camel" },
-        "virus2": { host: "camel" },
-        "virus3": { host: "human" },
-        "virus4": { host: "human" },
-        "virus5": { host: "bat" },
-        "virus6": { host: "bat" },
-        "virus7": { host: "bat" },
-        "virus8": { host: "bat" },
-        "virus9": { host: "whale" },
-        "virus10": { host: "whale" }
-    });
 
-    tree.annotateNodesFromTips("host");
     figTree.draw();
 
     layout.internalNodeLabels="probability";
+    tree.removeClade(tree.tipMap.get("virus4").parent);
+
     layout.cartoon(layout.nodeMap.get(tree.tipMap.get("virus1").parent));
 
     // figTree.addLabels('.external-node', FigTree.nodeInfo);

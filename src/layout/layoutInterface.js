@@ -366,6 +366,14 @@ export class layoutInterface {
     extendLayout(...middlewares){
         throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
     }
+    /**
+     * A method that subscribes the function to be called when the layout updates.
+     * @param func - function to be called when the layout updates
+     */
+    subscribeCallback(func){
+        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
+
+    }
 
 
 }
