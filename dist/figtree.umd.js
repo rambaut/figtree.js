@@ -7469,6 +7469,36 @@
 	  return new Step(context, 0);
 	}
 
+	function extent$1(values, valueof) {
+	  let min;
+	  let max;
+	  if (valueof === undefined) {
+	    for (const value of values) {
+	      if (value != null) {
+	        if (min === undefined) {
+	          if (value >= value) min = max = value;
+	        } else {
+	          if (min > value) min = value;
+	          if (max < value) max = value;
+	        }
+	      }
+	    }
+	  } else {
+	    let index = -1;
+	    for (let value of values) {
+	      if ((value = valueof(value, ++index, values)) != null) {
+	        if (min === undefined) {
+	          if (value >= value) min = max = value;
+	        } else {
+	          if (min > value) min = value;
+	          if (max < value) max = value;
+	        }
+	      }
+	    }
+	  }
+	  return [min, max];
+	}
+
 	function maxIndex(values, valueof) {
 	  let max;
 	  let maxIndex = -1;
@@ -9728,22 +9758,12 @@
 	     */
 
 	  }, {
-	    key: "updateHorizontalScale",
+	    key: "setInitialY",
 
-	    /**
-	     * Sets the horizontal scale for the layout. This maps the tree to the layout range which is [0,1]
-	     * @return {null|*}
-	     */
-	    value: function updateHorizontalScale() {
-	      throw new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class");
-	    }
 	    /**
 	     * sets the initial Y value for the first node returned from the getTreeNodes().
 	     * @return {number}
 	     */
-
-	  }, {
-	    key: "setInitialY",
 	    value: function setInitialY() {
 	      throw new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class");
 	    }
@@ -9849,7 +9869,7 @@
 	      throw new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class");
 	    }
 	  }, {
-	    key: "horizontalRange",
+	    key: "horizontalDomain",
 	    get: function get() {
 	      throw new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class");
 	    }
@@ -9858,7 +9878,7 @@
 	     */
 
 	  }, {
-	    key: "verticalRange",
+	    key: "verticalDomain",
 	    get: function get() {
 	      throw new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class");
 	    }
@@ -9984,20 +10004,6 @@
 	    get: function get() {
 	      throw new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class");
 	    }
-	    /**
-	     * A uitility function that updates the layout if needed, then calls returns the horizontal scale.
-	     * @return {*}
-	     */
-
-	  }, {
-	    key: "horizontalScale",
-	    get: function get() {
-	      if (!this.layoutKnown) {
-	        this.layout();
-	      }
-
-	      return this._horizontalScale;
-	    }
 	  }]);
 
 	  return layoutInterface;
@@ -10042,10 +10048,7 @@
 	     */
 	    value: function DEFAULT_SETTINGS() {
 	      return {
-	        lengthFormat: format(".2f"),
-	        horizontalScale: null,
-	        // a scale that converts height to 0,1  domain. default is 0 = highest tip
-	        offset: 0
+	        lengthFormat: format(".2f")
 	      };
 	    }
 	    /**
@@ -10065,11 +10068,7 @@
 
 	    _this = possibleConstructorReturn(this, getPrototypeOf(AbstractLayout).call(this));
 	    _this.tree = tree;
-	    _this.settings = objectSpread({}, AbstractLayout.DEFAULT_SETTINGS(), settings); // default ranges - these should be set in layout()
-
-	    _this._horizontalRange = [0.0, 1.0];
-	    _this._verticalRange = [0, _this.tree.externalNodes.length - 1];
-	    _this._horizontalTicks = [0, 0.5, 1];
+	    _this.settings = objectSpread({}, AbstractLayout.DEFAULT_SETTINGS(), settings);
 	    _this._edges = [];
 	    _this._edgeMap = new Map();
 	    _this._vertices = [];
@@ -10098,8 +10097,7 @@
 	    value: function layout() {
 	      var _this2 = this;
 
-	      this._horizontalScale = this.updateHorizontalScale();
-
+	      // this._horizontalScale = this.updateHorizontalScale();
 	      var treeNodes = this._getTreeNodes();
 
 	      this[makeVerticesFromNodes](treeNodes);
@@ -10124,7 +10122,7 @@
 
 	      this._edges.forEach(function (e) {
 	        _this2[setupEdge](e);
-	      }); // update verticalRange so that we count tips that are in cartoons but not those that are ignored
+	      }); // update verticalDomain so that we count tips that are in cartoons but not those that are ignored
 
 
 	      this._verticalRange = [0, currentY];
@@ -10292,12 +10290,6 @@
 	      return text;
 	    }
 	  }, {
-	    key: "updateHorizontalScale",
-	    value: function updateHorizontalScale() {
-	      var newScale = this.settings.horizontalScale ? this.settings.horizontalScale : linear$2().domain([this.tree.rootNode.height + this.settings.offset, 0]).range(this._horizontalRange);
-	      return newScale;
-	    }
-	  }, {
 	    key: "updateSettings",
 	    value: function updateSettings(newSettings) {
 	      this.settings = objectSpread({}, this.settings, newSettings);
@@ -10345,7 +10337,7 @@
 	  }, {
 	    key: "setXPosition",
 	    value: function setXPosition(vertex, currentX) {
-	      vertex.x = this._horizontalScale(vertex.node.height + this.settings.offset);
+	      vertex.x = vertex.node.height;
 	      return 0;
 	    }
 	    /**
@@ -10576,23 +10568,29 @@
 	      });
 	    }
 	  }, {
-	    key: "horizontalRange",
-	    get: function get() {
-	      return this._horizontalRange;
-	    }
-	  }, {
-	    key: "verticalRange",
+	    key: "horizontalDomain",
 	    get: function get() {
 	      if (!this.layoutKnown) {
 	        this.layout();
 	      }
 
-	      return this._verticalRange;
+	      var xPositions = [].concat(toConsumableArray(this._vertices.map(function (d) {
+	        return d.x;
+	      })), [min(this._vertices.map(function (d) {
+	        return d.x;
+	      }))]);
+	      return [max(xPositions), min(xPositions)];
 	    }
 	  }, {
-	    key: "horizontalAxisTicks",
+	    key: "verticalDomain",
 	    get: function get() {
-	      return this._horizontalTicks;
+	      if (!this.layoutKnown) {
+	        this.layout();
+	      }
+
+	      return extent$1(this._vertices, function (d) {
+	        return d.y;
+	      });
 	    }
 	  }, {
 	    key: "internalNodeLabelAnnotationName",
@@ -10729,15 +10727,6 @@
 	      }
 
 	      return this._edgeMap;
-	    }
-	  }, {
-	    key: "horizontalScale",
-	    get: function get() {
-	      if (!this.layoutKnown) {
-	        this.layout();
-	      }
-
-	      return this._horizontalScale;
 	    }
 	  }]);
 
@@ -11289,7 +11278,8 @@
 	        curveRadius: 0,
 	        origin: 0,
 	        reverseAxis: false,
-	        branchScale: 1
+	        branchScale: 1,
+	        offset: 0
 	      };
 	    }
 	  }, {
@@ -11405,8 +11395,8 @@
 
 	      this.svgSelection.append("g").attr("class", "nodes-layer"); // create the scales
 
-	      var xScale = linear$2().domain(this.layout.horizontalRange).range([this.margins.left, width - this.margins.right]);
-	      var yScale = linear$2().domain(this.layout.verticalRange).range([this.margins.top + 20, height - this.margins.bottom - 20]);
+	      var xScale = linear$2().domain([this.layout.horizontalDomain[0] + this.settings.offset, this.layout.horizontalDomain[1]]).range([this.margins.left, width - this.margins.right]);
+	      var yScale = linear$2().domain(this.layout.verticalDomain).range([this.margins.top + 20, height - this.margins.bottom - 20]);
 	      this.scales = {
 	        x: xScale,
 	        y: yScale,
@@ -11448,8 +11438,8 @@
 	      } // update the scales' domains
 
 
-	      this.scales.x.domain(this.layout.horizontalRange).range([this.margins.left, width - this.margins.right]);
-	      this.scales.y.domain(this.layout.verticalRange).range([this.margins.top + 20, height - this.margins.bottom - 20]);
+	      this.scales.x.domain([this.layout.horizontalDomain[0] + this.settings.offset, this.layout.horizontalDomain[1]]).range([this.margins.left, width - this.margins.right]);
+	      this.scales.y.domain(this.layout.verticalDomain).range([this.margins.top + 20, height - this.margins.bottom - 20]);
 	      this.scales.width = width;
 	      this.scales.height = height;
 	      updateAxis.call(this);
@@ -11569,8 +11559,8 @@
 	        var selected = _this4.svgSelection.selectAll("".concat(selection ? selection : ".branch"));
 
 	        selected.on("click", function (edge) {
-	          var x1 = self.scales.x(edge.v1.x);
-	          var x2 = self.scales.x(edge.v0.x);
+	          var x1 = self.scales.x(edge.v1.x + this.settings.offset);
+	          var x2 = self.scales.x(edge.v0.x + this.settings.offset);
 	          var mx = mouse(this)[0];
 	          var proportion = Math.max(0.0, Math.min(1.0, (mx - x2) / (x1 - x2)));
 	          action(edge, proportion);
@@ -11782,7 +11772,7 @@
 	  }).attr("class", function (v) {
 	    return ["node"].concat(toConsumableArray(v.classes)).join(" ");
 	  }).attr("transform", function (v) {
-	    return "translate(".concat(_this8.scales.x(v.x), ", ").concat(_this8.scales.y(v.y), ")");
+	    return "translate(".concat(_this8.scales.x(v.x + _this8.settings.offset), ", ").concat(_this8.scales.y(v.y), ")");
 	  }); // add the specific node shapes or 'baubles'
 
 	  this.settings.baubles.forEach(function (bauble) {
@@ -11803,7 +11793,7 @@
 	  nodes.transition().duration(this.settings.transitionDuration).ease(this.settings.transitionEase).attr("class", function (v) {
 	    return ["node"].concat(toConsumableArray(v.classes)).join(" ");
 	  }).attr("transform", function (v) {
-	    return "translate(".concat(_this8.scales.x(v.x), ", ").concat(_this8.scales.y(v.y), ")");
+	    return "translate(".concat(_this8.scales.x(v.x + _this8.settings.offset), ", ").concat(_this8.scales.y(v.y), ")");
 	  }); // update all the baubles
 
 	  this.settings.baubles.forEach(function (bauble) {
@@ -11865,14 +11855,14 @@
 
 	  this.settings.baubles.forEach(function (bauble) {
 	    var d = bauble.createShapes(newNodes.filter(bauble.vertexFilter)).attr("class", "node-background").attr("transform", function (v) {
-	      return "translate(".concat(_this9.scales.x(v.x), ", ").concat(_this9.scales.y(v.y), ")");
+	      return "translate(".concat(_this9.scales.x(v.x + _this9.settings.offset), ", ").concat(_this9.scales.y(v.y), ")");
 	    });
 	    bauble.updateShapes(d, _this9.settings.backgroundBorder);
 	  }); // update all the existing elements
 
 	  this.settings.baubles.forEach(function (bauble) {
 	    var d = nodes.filter(bauble.vertexFilter).transition().duration(_this9.settings.transitionDuration).ease(_this9.settings.transitionEase).attr("transform", function (v) {
-	      return "translate(".concat(_this9.scales.x(v.x), ", ").concat(_this9.scales.y(v.y), ")");
+	      return "translate(".concat(_this9.scales.x(v.x + _this9.settings.offset), ", ").concat(_this9.scales.y(v.y), ")");
 	    });
 	    bauble.updateShapes(d, _this9.settings.backgroundBorder);
 	  }); // EXIT
@@ -11908,13 +11898,13 @@
 	  }).attr("class", function (e) {
 	    return ["branch"].concat(toConsumableArray(e.classes)).join(" ");
 	  }).attr("transform", function (e) {
-	    return "translate(".concat(_this10.scales.x(e.v0.x), ", ").concat(_this10.scales.y(e.v1.y), ")");
+	    return "translate(".concat(_this10.scales.x(e.v0.x + _this10.settings.offset), ", ").concat(_this10.scales.y(e.v1.y), ")");
 	  });
 	  newBranches.append("path").attr("class", "branch-path").attr("d", function (e, i) {
 	    return branchPath(e, i);
 	  });
 	  newBranches.append("text").attr("class", "branch-label length").attr("dx", function (e) {
-	    return (_this10.scales.x(e.v1.x) - _this10.scales.x(e.v0.x)) / 2;
+	    return (_this10.scales.x(e.v1.x + _this10.settings.offset) - _this10.scales.x(e.v0.x + _this10.settings.offset)) / 2;
 	  }).attr("dy", function (e) {
 	    return e.labelBelow ? +6 : -6;
 	  }).attr("alignment-baseline", function (e) {
@@ -11926,11 +11916,11 @@
 	  branches.transition().duration(this.settings.transitionDuration).ease(this.settings.transitionEase).attr("class", function (e) {
 	    return ["branch"].concat(toConsumableArray(e.classes)).join(" ");
 	  }).attr("transform", function (e) {
-	    return "translate(".concat(_this10.scales.x(e.v0.x), ", ").concat(_this10.scales.y(e.v1.y), ")");
+	    return "translate(".concat(_this10.scales.x(e.v0.x + _this10.settings.offset), ", ").concat(_this10.scales.y(e.v1.y), ")");
 	  }).select("path").attr("d", function (e, i) {
 	    return branchPath(e, i);
 	  }).select("text .branch-label .length").attr("class", "branch-label length").attr("dx", function (e) {
-	    return (_this10.scales.x(e.v1.x) - _this10.scales.x(e.v0.x)) / 2;
+	    return (_this10.scales.x(e.v1.x + _this10.settings.offset) - _this10.scales.x(e.v0.x + _this10.settings.offset)) / 2;
 	  }).attr("dy", function (e) {
 	    return e.labelBelow ? +6 : -6;
 	  }).attr("alignment-baseline", function (e) {
@@ -11984,7 +11974,7 @@
 	  }).attr("class", function (c) {
 	    return ["cartoon"].concat(toConsumableArray(c.classes)).join(" ");
 	  }).attr("transform", function (c) {
-	    return "translate(".concat(_this11.scales.x(c.vertices[0].x), ", ").concat(_this11.scales.y(c.vertices[0].y), ")");
+	    return "translate(".concat(_this11.scales.x(c.vertices[0].x + _this11.settings.offset), ", ").concat(_this11.scales.y(c.vertices[0].y + _this11.settings.offset), ")");
 	  });
 	  newCartoons.append("path").attr("class", "cartoon-path").attr("d", function (e, i) {
 	    return pointToPoint.call(_this11, e.vertices);
@@ -11993,7 +11983,7 @@
 	  cartoons.transition().duration(this.settings.transitionDuration).ease(this.settings.transitionEase).attr("class", function (c) {
 	    return ["cartoon"].concat(toConsumableArray(c.classes)).join(" ");
 	  }).attr("transform", function (c) {
-	    return "translate(".concat(_this11.scales.x(c.vertices[0].x), ", ").concat(_this11.scales.y(c.vertices[0].y), ")");
+	    return "translate(".concat(_this11.scales.x(c.vertices[0].x + _this11.settings.offset), ", ").concat(_this11.scales.y(c.vertices[0].y), ")");
 	  }).select("path").attr("d", function (c) {
 	    return pointToPoint.call(_this11, c.vertices);
 	  }); // EXIT
@@ -12035,7 +12025,7 @@
 	  //x scale nodeHeight [root,0] => pixels
 	  // node Height [root,0] => [ orgin+root,orign] => pixels
 	  var reverse = this.settings.reverseAxis ? -1 : 1;
-	  var domain = [this.settings.origin + reverse * (this.settings.offset + this.layout.horizontalScale.domain()[0]), this.settings.origin];
+	  var domain = [this.settings.origin + reverse * this.settings.branchScale * this.layout.horizontalDomain[0], this.settings.origin];
 	  var xAxis = axisBottom(linear$2().domain(domain).range(this.scales.x.range())).ticks(this.settings.ticks).tickFormat(this.settings.tickFormat);
 	  var xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
 	  var axesLayer = this.svgSelection.select(".axes-layer");
@@ -12045,7 +12035,7 @@
 
 	function updateAxis() {
 	  var reverse = this.settings.reverseAxis ? -1 : 1;
-	  var domain = [this.settings.origin + reverse * this.settings.branchScale * this.layout.horizontalScale.domain()[0], this.settings.origin];
+	  var domain = [this.settings.origin + reverse * this.settings.branchScale * this.scales.x.domain()[0], this.settings.origin];
 	  var xAxis = axisBottom(linear$2().domain(domain).range(this.scales.x.range())).ticks(this.settings.ticks).tickFormat(this.settings.tickFormat);
 	  var xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
 	  var axesLayer = this.svgSelection.select(".axes-layer");
@@ -12157,7 +12147,7 @@
 	  try {
 	    for (var _iterator4 = pathPoints[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
 	      var point = _step4.value;
-	      var xdiff = this.scales.x(point.x) - this.scales.x(currentPoint.x);
+	      var xdiff = this.scales.x(point.x + this.settings.offset) - this.scales.x(currentPoint.x + this.settings.offset);
 	      var ydiff = this.scales.y(point.y) - this.scales.y(currentPoint.y);
 	      path.push("".concat(xdiff, " ").concat(ydiff));
 	      currentPoint = point;
@@ -12239,13 +12229,13 @@
 	      x: 0 + dontNeedCurve * _this16.settings.curveRadius,
 	      y: 0
 	    }, {
-	      x: _this16.scales.x(e.v1.x) - _this16.scales.x(e.v0.x),
+	      x: _this16.scales.x(e.v1.x + _this16.settings.offset) - _this16.scales.x(e.v0.x + _this16.settings.offset),
 	      y: 0
 	    }]) : branchLine([{
 	      x: 0,
 	      y: _this16.scales.y(e.v0.y) - _this16.scales.y(e.v1.y)
 	    }, {
-	      x: _this16.scales.x(e.v1.x) - _this16.scales.x(e.v0.x),
+	      x: _this16.scales.x(e.v1.x + _this16.settings.offset) - _this16.scales.x(e.v0.x + _this16.settings.offset),
 	      y: 0
 	    }]);
 	    return output;

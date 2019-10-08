@@ -2,6 +2,7 @@
 import {format,curveStepBefore,max,min,line,mean,scaleLinear,curveLinear} from "d3";
 import {Tree, Type} from "../tree";
 import {layoutInterface} from "./layoutInterface";
+import extent from "d3-array/src/extent";
 
 /** @module layout */
 
@@ -36,9 +37,6 @@ export class  AbstractLayout extends layoutInterface {
     static DEFAULT_SETTINGS() {
         return {
             lengthFormat: format(".2f"),
-            horizontalScale: null, // a scale that converts height to 0,1  domain. default is 0 = highest tip
-            offset:0,
-
         }
     }
 
@@ -52,11 +50,6 @@ export class  AbstractLayout extends layoutInterface {
 
         this.tree = tree;
         this.settings = {...AbstractLayout.DEFAULT_SETTINGS(), ...settings};
-
-        // default ranges - these should be set in layout()
-        this._horizontalRange = [0.0, 1.0];
-        this._verticalRange = [0, this.tree.externalNodes.length - 1];
-        this._horizontalTicks = [0, 0.5, 1];
 
         this._edges = [];
         this._edgeMap = new Map();
@@ -88,7 +81,7 @@ export class  AbstractLayout extends layoutInterface {
     }
 
     layout() {
-        this._horizontalScale = this.updateHorizontalScale();
+        // this._horizontalScale = this.updateHorizontalScale();
 
         const treeNodes = this._getTreeNodes();
         this[makeVerticesFromNodes](treeNodes);
@@ -118,25 +111,25 @@ export class  AbstractLayout extends layoutInterface {
                 this[setupEdge](e);
             });
 
-// update verticalRange so that we count tips that are in cartoons but not those that are ignored
+// update verticalDomain so that we count tips that are in cartoons but not those that are ignored
         this._verticalRange = [0, currentY];
         this.layoutKnown = true;
 
     }
 
-    get horizontalRange() {
-        return this._horizontalRange;
-    }
-
-    get verticalRange() {
+    get horizontalDomain() {
         if (!this.layoutKnown) {
             this.layout();
         }
-        return this._verticalRange;
+        const xPositions = [...this._vertices.map(d=>d.x),min(this._vertices.map(d=>d.x))];
+        return [max(xPositions),min(xPositions)];
     }
 
-    get horizontalAxisTicks() {
-        return this._horizontalTicks;
+    get verticalDomain() {
+        if (!this.layoutKnown) {
+            this.layout();
+        }
+        return extent(this._vertices,d=>d.y);
     }
 
 
@@ -364,17 +357,7 @@ export class  AbstractLayout extends layoutInterface {
         return this._edgeMap;
     }
 
-    get horizontalScale() {
-        if (!this.layoutKnown) {
-            this.layout();
-        }
-        return this._horizontalScale;
-    }
-    updateHorizontalScale() {
-        const newScale = this.settings.horizontalScale ? this.settings.horizontalScale :
-            scaleLinear().domain([this.tree.rootNode.height+this.settings.offset, 0]).range(this._horizontalRange);
-        return newScale;
-    }
+
     updateSettings(newSettings){
         this.settings={...this.settings,...newSettings};
         this.update();
@@ -405,7 +388,7 @@ export class  AbstractLayout extends layoutInterface {
         return 0;
     }
     setXPosition(vertex,currentX){
-        vertex.x = this._horizontalScale(vertex.node.height+this.settings.offset);
+        vertex.x = vertex.node.height;
         return 0;
     }
 
