@@ -290,7 +290,7 @@ export class layoutInterface {
 
     /**
      * Set the y position of a vertex and return the Y position. This function is called on each node in the order returns from the getTreeNodes() method.
-     * The currentY represent the Y position of the previous node at each iteration. These y values will be mapped to a [0,1]
+     * The currentY represent the Y position of the previous node at each iteration. These y values will be converted to pixels by the figtree instance.
      * range.
      * @param vertex
      * @param currentY
@@ -318,15 +318,7 @@ export class layoutInterface {
         throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
     }
 
-    /**
-     * A method which returns the nodes of the tree in the order in which they will be assigned Y and X coordinates. This filters the nodes
-     * so that ignored nodes are not returned.
-     * @return {Array[]}
-     */
-    getTreeNodes() {
-        return [...this._getTreeNodes()].filter(n=>!this._ignoredNodes.includes(n))
 
-    };
     /**
      * A private method which returns the nodes of the tree in the order in which they will be assigned Y and X coordinates.
      * This function is passed to getTreeNodes() methods which filters out the ignoredNodes. This funciton should be overwritten

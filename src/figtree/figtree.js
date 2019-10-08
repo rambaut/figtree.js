@@ -1,5 +1,6 @@
 "use strict";
 import {select,easeLinear,scaleLinear,axisBottom,mouse,event,format,curveStepBefore,line} from "d3";
+import uuid from "uuid";
 
 /** @module figtree */
 // const d3 = require("d3");
@@ -67,6 +68,8 @@ export class FigTree {
 
         this.svg=svg;
         this.drawn = false;
+        this.svgId = `g-${uuid.v4()}`;
+        this.svgSelection=null;
 
         return this;
     }
@@ -86,14 +89,15 @@ export class FigTree {
         }
 
         //remove the tree if it is there already
-        select(this.svg).select("g").remove();
+        select(this.svg).select(`#${this.svgId}`).remove();
 
         // add a group which will contain the new tree
         select(this.svg).append("g")
+            .attr("id",this.svgId)
             .attr("transform",`translate(${this.margins.left},${this.margins.top})`);
 
         //to selecting every time
-        this.svgSelection = select(this.svg).select("g");
+        this.svgSelection = select(this.svg).select(`#${this.svgId}`);
         this.svgSelection.append("g").attr("class","annotation-layer");
         this.svgSelection.append("g").attr("class", "axes-layer");
         this.svgSelection.append("g").attr("class", "cartoon-layer");
@@ -439,7 +443,7 @@ export class FigTree {
  */
 function updateNodes() {
 
-    const nodesLayer = select(this.svg).select(".nodes-layer");
+    const nodesLayer = this.svgSelection.select(".nodes-layer");
 
     // DATA JOIN
     // Join new data with old elements, if any.
@@ -780,7 +784,7 @@ function updateAxis(){
 
 
 function updateNodeStyles(){
-    const nodesLayer = select(this.svg).select(".nodes-layer");
+    const nodesLayer = this.svgSelection.select(".nodes-layer");
 
     // DATA JOIN
     // Join new data with old elements, if any.

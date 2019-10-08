@@ -11,11 +11,22 @@ export const  VertexStyle = {
     MASKED:Symbol("MASKED") // Masked nodes have an x and y coordinate but are then ignored. They don't count towards their parent's x and y
 }
 
+
+export const  makeVerticesFromNodes=Symbol("makeVerticesFromNodes");
+export const setVertexClasses = Symbol("setVertexClasses");
+export const setVertexLabels=Symbol("setVertexLabels");
+export const makeEdgesFromNodes = Symbol("makeEdgesFromNodes");
+export const setupEdge=Symbol("setupEdge");
+export const setEdgeTermini = Symbol("setEdgeTermini");
+export const setEdgeClasses = Symbol("setEdgeClasses");
+export const setEdgeLabels = Symbol("setEdgeLabels");
+export const getMostAncestralCartoons=Symbol("getMostAncestralCartoons");
+
 /**
  * The AbstractLayout class
  *
  */
-export class AbstractLayout extends layoutInterface {
+export class  AbstractLayout extends layoutInterface {
 
     /**
      * The default layout settings
@@ -79,9 +90,9 @@ export class AbstractLayout extends layoutInterface {
     layout() {
         this._horizontalScale = this.updateHorizontalScale();
 
-        const treeNodes = this.getTreeNodes();
-        makeVerticesFromNodes.call(this, treeNodes);
-        makeEdgesFromNodes.call(this, treeNodes);
+        const treeNodes = this._getTreeNodes();
+        this[makeVerticesFromNodes](treeNodes);
+        this[makeEdgesFromNodes](treeNodes);
         // get the nodes
 
         let currentY = this.setInitialY();
@@ -96,15 +107,15 @@ export class AbstractLayout extends layoutInterface {
                 currentX = this.setXPosition(v, currentX);
                 v.degree = (v.node.children ? v.node.children.length + 1 : 1); // the number of edges (including stem)
                 v.id = v.node.id;
-                setVertexClasses.call(this, v);
-                setVertexLabels.call(this, v);
+                this[setVertexClasses](v);
+               this[setVertexLabels](v);
         });
 
 
         //Update edge locations
         this._edges
             .forEach((e) => {
-                setupEdge.call(this, e)
+                this[setupEdge](e);
             });
 
 // update verticalRange so that we count tips that are in cartoons but not those that are ignored
@@ -299,7 +310,7 @@ export class AbstractLayout extends layoutInterface {
         // Handle cartoons
         // here we handle what's active and what isn't.
         const cartoons = [];
-        const ancestralCartoons = getMostAncestralCartoons.call(this,this._cartoonStore);
+        const ancestralCartoons = this[getMostAncestralCartoons](this._cartoonStore);
         ancestralCartoons
             .forEach(c => {
 
@@ -410,82 +421,77 @@ export class AbstractLayout extends layoutInterface {
         }
     }
 
+    /*
+    *
+     */
+    [makeVerticesFromNodes](nodes){
+        nodes.forEach((n, i) => {
 
-}
+            if(!this._nodeMap.has(n)&&!this._ignoredNodes.includes(n)){
+                const vertex = {
+                    node: n,
+                    key: n.id,
+                    visibility:VertexStyle.INCLUDED
+                    // key: Symbol(n.id).toString()
+                };
+                this._vertices.push(vertex);
+                this._nodeMap.set(n, vertex);
+            }
+        });
 
-/*
- * Private methods, called by the class using the <function>.call(this) function.
- */
-export function makeVerticesFromNodes(nodes){
-    nodes.forEach((n, i) => {
-
-        if(!this._nodeMap.has(n)&&!this._ignoredNodes.includes(n)){
-            const vertex = {
-                node: n,
-                key: n.id,
-                visibility:VertexStyle.INCLUDED
-                // key: Symbol(n.id).toString()
-            };
-            this._vertices.push(vertex);
-            this._nodeMap.set(n, vertex);
+        //remove vertices not in nodes
+        for(const n of this._nodeMap.keys()){
+            if(!nodes.includes(n)){
+                this._vertices=this._vertices.filter(v=>v!==this._nodeMap.get(n));
+                this._nodeMap.delete(n);
+            }
         }
-    });
 
-    //remove vertices not in nodes
-    for(const n of this._nodeMap.keys()){
-        if(!nodes.includes(n)){
-            this._vertices=this._vertices.filter(v=>v!==this._nodeMap.get(n))
-            this._nodeMap.delete(n);
-        }
     }
 
-}
-
-
-export function setVertexClasses(v){
-    v.classes = [
-        (!v.node.children ? "external-node" : "internal-node"),
-        (v.node.isSelected ? "selected" : "unselected")];
-
-    if (v.node.annotations) {
+    [setVertexClasses](v){
         v.classes = [
-            ...v.classes,
-            ...Object.entries(v.node.annotations)
-                .filter(([key]) => {
-                    return this.tree.annotations[key] &&
-                        (this.tree.annotations[key].type === Type.DISCRETE ||
-                            this.tree.annotations[key].type === Type.BOOLEAN ||
-                            this.tree.annotations[key].type === Type.INTEGER);
-                })
-                .map(([key, value]) => `${key}-${value}`)];
+            (!v.node.children ? "external-node" : "internal-node"),
+            (v.node.isSelected ? "selected" : "unselected")];
+
+        if (v.node.annotations) {
+            v.classes = [
+                ...v.classes,
+                ...Object.entries(v.node.annotations)
+                    .filter(([key]) => {
+                        return this.tree.annotations[key] &&
+                            (this.tree.annotations[key].type === Type.DISCRETE ||
+                                this.tree.annotations[key].type === Type.BOOLEAN ||
+                                this.tree.annotations[key].type === Type.INTEGER);
+                    })
+                    .map(([key, value]) => `${key}-${value}`)];
+        }
+
+    }
+    [setVertexLabels](v){
+        // either the tip name or the internal node label
+        if (v.node.children) {
+            v.leftLabel = (this.internalNodeLabelAnnotationName?
+                v.node.annotations[this.internalNodeLabelAnnotationName]:
+                "");
+            v.rightLabel = "";
+
+            // should the left node label be above or below the node?
+            v.labelBelow = (!v.node.parent || v.node.parent.children[0] !== v.node);
+        } else {
+            v.leftLabel = "";
+            v.rightLabel = (this.externalNodeLabelAnnotationName?
+                v.node.annotations[this.externalNodeLabelAnnotationName]:
+                v.node.name);
+        }
     }
 
-}
-
-export function setVertexLabels(v){
-    // either the tip name or the internal node label
-    if (v.node.children) {
-        v.leftLabel = (this.internalNodeLabelAnnotationName?
-            v.node.annotations[this.internalNodeLabelAnnotationName]:
-            "");
-        v.rightLabel = "";
-
-        // should the left node label be above or below the node?
-        v.labelBelow = (!v.node.parent || v.node.parent.children[0] !== v.node);
-    } else {
-        v.leftLabel = "";
-        v.rightLabel = (this.externalNodeLabelAnnotationName?
-            v.node.annotations[this.externalNodeLabelAnnotationName]:
-            v.node.name);
-    }
-}
-
-export function makeEdgesFromNodes(nodes){
-    // create the edges (only done if the array is empty)
-    nodes
-        .filter((n) => n.parent) // exclude the root
-        .forEach((n, i) => {
-            if(!this._edgeMap.has(this._nodeMap.get(n))) {
+    [makeEdgesFromNodes](nodes){
+        // create the edges (only done if the array is empty)
+        nodes
+            .filter((n) => n.parent) // exclude the root
+            .forEach((n, i) => {
+                if(!this._edgeMap.has(this._nodeMap.get(n))) {
                     const edge = {
                         v0: this._nodeMap.get(n.parent),
                         v1: this._nodeMap.get(n),
@@ -494,63 +500,62 @@ export function makeEdgesFromNodes(nodes){
                     this._edges.push(edge);
                     this._edgeMap.set(edge.v1, edge);
                 }
-        })
+            })
 
-    //remove edges not in nodes
-    for(const v1 of this._edgeMap.keys()){
-        if(!nodes.includes(v1.node)){
-            this._edges=this._edges.filter(e=>e!==this._edgeMap.get(v1))
-            this._edgeMap.delete(v1);
+        //remove edges not in nodes
+        for(const v1 of this._edgeMap.keys()){
+            if(!nodes.includes(v1.node)){
+                this._edges=this._edges.filter(e=>e!==this._edgeMap.get(v1))
+                this._edgeMap.delete(v1);
+            }
         }
     }
-}
-
-export function setupEdge(e){
-    setEdgeTermini.call(this,e);
-    setEdgeClasses.call(this,e);
-    setEdgeLabels.call(this,e);
-
-}
-
-export function setEdgeTermini(e){
-    e.v1 = this._nodeMap.get(e.v1.node);
-    e.v0 = this._nodeMap.get(e.v1.node.parent);
-    e.length = length;
-}
-
-export function setEdgeClasses(e){
-    e.classes = [];
-
-    if (e.v1.node.annotations) {
-        e.classes = [
-            ...e.classes,
-            ...Object.entries(e.v1.node.annotations)
-                .filter(([key]) => {
-                    return this.tree.annotations[key] &&
-                        (this.tree.annotations[key].type === Type.DISCRETE ||
-                            this.tree.annotations[key].type === Type.BOOLEAN ||
-                            this.tree.annotations[key].type === Type.INTEGER);
-                })
-                .map(([key, value]) => `${key}-${value}`)];
+    [setupEdge](e){
+        this[setEdgeTermini](e);
+        this[setEdgeClasses](e);
+        this[setEdgeLabels](e);
     }
-}
-export function setEdgeLabels(e){
-    e.label = (this.branchLabelAnnotationName ?
-        (this.branchLabelAnnotationName === 'length' ?
-            this.settings.lengthFormat(length) :
-            e.v1.node.annotations[this.branchLabelAnnotationName]) :
-        null );
-    e.labelBelow = e.v1.node.parent.children[0] !== e.v1.node;
-}
+    [setEdgeTermini](e){
+        e.v1 = this._nodeMap.get(e.v1.node);
+        e.v0 = this._nodeMap.get(e.v1.node.parent);
+        e.length = length;
+    }
 
+    [setEdgeClasses](e){
+        e.classes = [];
 
-export function getMostAncestralCartoons(cartoons){
+        if (e.v1.node.annotations) {
+            e.classes = [
+                ...e.classes,
+                ...Object.entries(e.v1.node.annotations)
+                    .filter(([key]) => {
+                        return this.tree.annotations[key] &&
+                            (this.tree.annotations[key].type === Type.DISCRETE ||
+                                this.tree.annotations[key].type === Type.BOOLEAN ||
+                                this.tree.annotations[key].type === Type.INTEGER);
+                    })
+                    .map(([key, value]) => `${key}-${value}`)];
+        }
+    }
+    [setEdgeLabels](e){
+        e.label = (this.branchLabelAnnotationName ?
+            (this.branchLabelAnnotationName === 'length' ?
+                this.settings.lengthFormat(length) :
+                e.v1.node.annotations[this.branchLabelAnnotationName]) :
+            null );
+        e.labelBelow = e.v1.node.parent.children[0] !== e.v1.node;
+    }
+
+    [getMostAncestralCartoons](cartoons){
     const cartoonNodes = cartoons.map(c=>c.node);
     const mostAncestralNode = cartoonNodes.filter(n=>![...Tree.pathToRoot(n)].filter(m=>m!==n).some(n=>cartoonNodes.includes(n)));
 
     return cartoons.filter(c=>mostAncestralNode.includes(c.node));
 
+    }
 }
+
+
 
 /**
  * This is a helper function that updates a vertices y position by a specified amount. The function is meant to open a gap

@@ -548,10 +548,6 @@ function axisBottom(scale) {
   return axis(bottom, scale);
 }
 
-function axisLeft(scale) {
-  return axis(left, scale);
-}
-
 var noop = {value: function() {}};
 
 function dispatch() {
@@ -8227,7 +8223,7 @@ class layoutInterface {
 
     /**
      * Set the y position of a vertex and return the Y position. This function is called on each node in the order returns from the getTreeNodes() method.
-     * The currentY represent the Y position of the previous node at each iteration. These y values will be mapped to a [0,1]
+     * The currentY represent the Y position of the previous node at each iteration. These y values will be converted to pixels by the figtree instance.
      * range.
      * @param vertex
      * @param currentY
@@ -8255,15 +8251,7 @@ class layoutInterface {
         throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
     }
 
-    /**
-     * A method which returns the nodes of the tree in the order in which they will be assigned Y and X coordinates. This filters the nodes
-     * so that ignored nodes are not returned.
-     * @return {Array[]}
-     */
-    getTreeNodes() {
-        return [...this._getTreeNodes()].filter(n=>!this._ignoredNodes.includes(n))
 
-    };
     /**
      * A private method which returns the nodes of the tree in the order in which they will be assigned Y and X coordinates.
      * This function is passed to getTreeNodes() methods which filters out the ignoredNodes. This funciton should be overwritten
@@ -8323,11 +8311,22 @@ const  VertexStyle$1 = {
     MASKED:Symbol("MASKED") // Masked nodes have an x and y coordinate but are then ignored. They don't count towards their parent's x and y
 };
 
+
+const  makeVerticesFromNodes=Symbol("makeVerticesFromNodes");
+const setVertexClasses = Symbol("setVertexClasses");
+const setVertexLabels=Symbol("setVertexLabels");
+const makeEdgesFromNodes = Symbol("makeEdgesFromNodes");
+const setupEdge=Symbol("setupEdge");
+const setEdgeTermini = Symbol("setEdgeTermini");
+const setEdgeClasses = Symbol("setEdgeClasses");
+const setEdgeLabels = Symbol("setEdgeLabels");
+const getMostAncestralCartoons=Symbol("getMostAncestralCartoons");
+
 /**
  * The AbstractLayout class
  *
  */
-class AbstractLayout extends layoutInterface {
+class  AbstractLayout extends layoutInterface {
 
     /**
      * The default layout settings
@@ -8391,9 +8390,9 @@ class AbstractLayout extends layoutInterface {
     layout() {
         this._horizontalScale = this.updateHorizontalScale();
 
-        const treeNodes = this.getTreeNodes();
-        makeVerticesFromNodes.call(this, treeNodes);
-        makeEdgesFromNodes.call(this, treeNodes);
+        const treeNodes = this._getTreeNodes();
+        this[makeVerticesFromNodes](treeNodes);
+        this[makeEdgesFromNodes](treeNodes);
         // get the nodes
 
         let currentY = this.setInitialY();
@@ -8408,15 +8407,15 @@ class AbstractLayout extends layoutInterface {
                 currentX = this.setXPosition(v, currentX);
                 v.degree = (v.node.children ? v.node.children.length + 1 : 1); // the number of edges (including stem)
                 v.id = v.node.id;
-                setVertexClasses.call(this, v);
-                setVertexLabels.call(this, v);
+                this[setVertexClasses](v);
+               this[setVertexLabels](v);
         });
 
 
         //Update edge locations
         this._edges
             .forEach((e) => {
-                setupEdge.call(this, e);
+                this[setupEdge](e);
             });
 
 // update verticalRange so that we count tips that are in cartoons but not those that are ignored
@@ -8611,7 +8610,7 @@ class AbstractLayout extends layoutInterface {
         // Handle cartoons
         // here we handle what's active and what isn't.
         const cartoons = [];
-        const ancestralCartoons = getMostAncestralCartoons.call(this,this._cartoonStore);
+        const ancestralCartoons = this[getMostAncestralCartoons](this._cartoonStore);
         ancestralCartoons
             .forEach(c => {
 
@@ -8722,82 +8721,77 @@ class AbstractLayout extends layoutInterface {
         };
     }
 
+    /*
+    *
+     */
+    [makeVerticesFromNodes](nodes){
+        nodes.forEach((n, i) => {
 
-}
+            if(!this._nodeMap.has(n)&&!this._ignoredNodes.includes(n)){
+                const vertex = {
+                    node: n,
+                    key: n.id,
+                    visibility:VertexStyle$1.INCLUDED
+                    // key: Symbol(n.id).toString()
+                };
+                this._vertices.push(vertex);
+                this._nodeMap.set(n, vertex);
+            }
+        });
 
-/*
- * Private methods, called by the class using the <function>.call(this) function.
- */
-function makeVerticesFromNodes(nodes){
-    nodes.forEach((n, i) => {
-
-        if(!this._nodeMap.has(n)&&!this._ignoredNodes.includes(n)){
-            const vertex = {
-                node: n,
-                key: n.id,
-                visibility:VertexStyle$1.INCLUDED
-                // key: Symbol(n.id).toString()
-            };
-            this._vertices.push(vertex);
-            this._nodeMap.set(n, vertex);
+        //remove vertices not in nodes
+        for(const n of this._nodeMap.keys()){
+            if(!nodes.includes(n)){
+                this._vertices=this._vertices.filter(v=>v!==this._nodeMap.get(n));
+                this._nodeMap.delete(n);
+            }
         }
-    });
 
-    //remove vertices not in nodes
-    for(const n of this._nodeMap.keys()){
-        if(!nodes.includes(n)){
-            this._vertices=this._vertices.filter(v=>v!==this._nodeMap.get(n));
-            this._nodeMap.delete(n);
-        }
     }
 
-}
-
-
-function setVertexClasses(v){
-    v.classes = [
-        (!v.node.children ? "external-node" : "internal-node"),
-        (v.node.isSelected ? "selected" : "unselected")];
-
-    if (v.node.annotations) {
+    [setVertexClasses](v){
         v.classes = [
-            ...v.classes,
-            ...Object.entries(v.node.annotations)
-                .filter(([key]) => {
-                    return this.tree.annotations[key] &&
-                        (this.tree.annotations[key].type === Type.DISCRETE ||
-                            this.tree.annotations[key].type === Type.BOOLEAN ||
-                            this.tree.annotations[key].type === Type.INTEGER);
-                })
-                .map(([key, value]) => `${key}-${value}`)];
+            (!v.node.children ? "external-node" : "internal-node"),
+            (v.node.isSelected ? "selected" : "unselected")];
+
+        if (v.node.annotations) {
+            v.classes = [
+                ...v.classes,
+                ...Object.entries(v.node.annotations)
+                    .filter(([key]) => {
+                        return this.tree.annotations[key] &&
+                            (this.tree.annotations[key].type === Type.DISCRETE ||
+                                this.tree.annotations[key].type === Type.BOOLEAN ||
+                                this.tree.annotations[key].type === Type.INTEGER);
+                    })
+                    .map(([key, value]) => `${key}-${value}`)];
+        }
+
+    }
+    [setVertexLabels](v){
+        // either the tip name or the internal node label
+        if (v.node.children) {
+            v.leftLabel = (this.internalNodeLabelAnnotationName?
+                v.node.annotations[this.internalNodeLabelAnnotationName]:
+                "");
+            v.rightLabel = "";
+
+            // should the left node label be above or below the node?
+            v.labelBelow = (!v.node.parent || v.node.parent.children[0] !== v.node);
+        } else {
+            v.leftLabel = "";
+            v.rightLabel = (this.externalNodeLabelAnnotationName?
+                v.node.annotations[this.externalNodeLabelAnnotationName]:
+                v.node.name);
+        }
     }
 
-}
-
-function setVertexLabels(v){
-    // either the tip name or the internal node label
-    if (v.node.children) {
-        v.leftLabel = (this.internalNodeLabelAnnotationName?
-            v.node.annotations[this.internalNodeLabelAnnotationName]:
-            "");
-        v.rightLabel = "";
-
-        // should the left node label be above or below the node?
-        v.labelBelow = (!v.node.parent || v.node.parent.children[0] !== v.node);
-    } else {
-        v.leftLabel = "";
-        v.rightLabel = (this.externalNodeLabelAnnotationName?
-            v.node.annotations[this.externalNodeLabelAnnotationName]:
-            v.node.name);
-    }
-}
-
-function makeEdgesFromNodes(nodes){
-    // create the edges (only done if the array is empty)
-    nodes
-        .filter((n) => n.parent) // exclude the root
-        .forEach((n, i) => {
-            if(!this._edgeMap.has(this._nodeMap.get(n))) {
+    [makeEdgesFromNodes](nodes){
+        // create the edges (only done if the array is empty)
+        nodes
+            .filter((n) => n.parent) // exclude the root
+            .forEach((n, i) => {
+                if(!this._edgeMap.has(this._nodeMap.get(n))) {
                     const edge = {
                         v0: this._nodeMap.get(n.parent),
                         v1: this._nodeMap.get(n),
@@ -8806,63 +8800,62 @@ function makeEdgesFromNodes(nodes){
                     this._edges.push(edge);
                     this._edgeMap.set(edge.v1, edge);
                 }
-        });
+            });
 
-    //remove edges not in nodes
-    for(const v1 of this._edgeMap.keys()){
-        if(!nodes.includes(v1.node)){
-            this._edges=this._edges.filter(e=>e!==this._edgeMap.get(v1));
-            this._edgeMap.delete(v1);
+        //remove edges not in nodes
+        for(const v1 of this._edgeMap.keys()){
+            if(!nodes.includes(v1.node)){
+                this._edges=this._edges.filter(e=>e!==this._edgeMap.get(v1));
+                this._edgeMap.delete(v1);
+            }
         }
     }
-}
-
-function setupEdge(e){
-    setEdgeTermini.call(this,e);
-    setEdgeClasses.call(this,e);
-    setEdgeLabels.call(this,e);
-
-}
-
-function setEdgeTermini(e){
-    e.v1 = this._nodeMap.get(e.v1.node);
-    e.v0 = this._nodeMap.get(e.v1.node.parent);
-    e.length = length;
-}
-
-function setEdgeClasses(e){
-    e.classes = [];
-
-    if (e.v1.node.annotations) {
-        e.classes = [
-            ...e.classes,
-            ...Object.entries(e.v1.node.annotations)
-                .filter(([key]) => {
-                    return this.tree.annotations[key] &&
-                        (this.tree.annotations[key].type === Type.DISCRETE ||
-                            this.tree.annotations[key].type === Type.BOOLEAN ||
-                            this.tree.annotations[key].type === Type.INTEGER);
-                })
-                .map(([key, value]) => `${key}-${value}`)];
+    [setupEdge](e){
+        this[setEdgeTermini](e);
+        this[setEdgeClasses](e);
+        this[setEdgeLabels](e);
     }
-}
-function setEdgeLabels(e){
-    e.label = (this.branchLabelAnnotationName ?
-        (this.branchLabelAnnotationName === 'length' ?
-            this.settings.lengthFormat(length) :
-            e.v1.node.annotations[this.branchLabelAnnotationName]) :
-        null );
-    e.labelBelow = e.v1.node.parent.children[0] !== e.v1.node;
-}
+    [setEdgeTermini](e){
+        e.v1 = this._nodeMap.get(e.v1.node);
+        e.v0 = this._nodeMap.get(e.v1.node.parent);
+        e.length = length;
+    }
 
+    [setEdgeClasses](e){
+        e.classes = [];
 
-function getMostAncestralCartoons(cartoons){
+        if (e.v1.node.annotations) {
+            e.classes = [
+                ...e.classes,
+                ...Object.entries(e.v1.node.annotations)
+                    .filter(([key]) => {
+                        return this.tree.annotations[key] &&
+                            (this.tree.annotations[key].type === Type.DISCRETE ||
+                                this.tree.annotations[key].type === Type.BOOLEAN ||
+                                this.tree.annotations[key].type === Type.INTEGER);
+                    })
+                    .map(([key, value]) => `${key}-${value}`)];
+        }
+    }
+    [setEdgeLabels](e){
+        e.label = (this.branchLabelAnnotationName ?
+            (this.branchLabelAnnotationName === 'length' ?
+                this.settings.lengthFormat(length) :
+                e.v1.node.annotations[this.branchLabelAnnotationName]) :
+            null );
+        e.labelBelow = e.v1.node.parent.children[0] !== e.v1.node;
+    }
+
+    [getMostAncestralCartoons](cartoons){
     const cartoonNodes = cartoons.map(c=>c.node);
     const mostAncestralNode = cartoonNodes.filter(n=>![...Tree.pathToRoot(n)].filter(m=>m!==n).some(n=>cartoonNodes.includes(n)));
 
     return cartoons.filter(c=>mostAncestralNode.includes(c.node));
 
+    }
 }
+
+
 
 /**
  * This is a helper function that updates a vertices y position by a specified amount. The function is meant to open a gap
@@ -9328,6 +9321,8 @@ class FigTree {
 
         this.svg=svg;
         this.drawn = false;
+        this.svgId = `g-${uuid_1.v4()}`;
+        this.svgSelection=null;
 
         return this;
     }
@@ -9347,14 +9342,15 @@ class FigTree {
         }
 
         //remove the tree if it is there already
-        select(this.svg).select("g").remove();
+        select(this.svg).select(`#${this.svgId}`).remove();
 
         // add a group which will contain the new tree
         select(this.svg).append("g")
+            .attr("id",this.svgId)
             .attr("transform",`translate(${this.margins.left},${this.margins.top})`);
 
         //to selecting every time
-        this.svgSelection = select(this.svg).select("g");
+        this.svgSelection = select(this.svg).select(`#${this.svgId}`);
         this.svgSelection.append("g").attr("class","annotation-layer");
         this.svgSelection.append("g").attr("class", "axes-layer");
         this.svgSelection.append("g").attr("class", "cartoon-layer");
@@ -9700,7 +9696,7 @@ class FigTree {
  */
 function updateNodes() {
 
-    const nodesLayer = select(this.svg).select(".nodes-layer");
+    const nodesLayer = this.svgSelection.select(".nodes-layer");
 
     // DATA JOIN
     // Join new data with old elements, if any.
@@ -10041,7 +10037,7 @@ function updateAxis(){
 
 
 function updateNodeStyles(){
-    const nodesLayer = select(this.svg).select(".nodes-layer");
+    const nodesLayer = this.svgSelection.select(".nodes-layer");
 
     // DATA JOIN
     // Join new data with old elements, if any.
@@ -10165,52 +10161,72 @@ function branchPathGenerator(){
 /**
  * The RootToTipPlot class
  */
-class RootToTipPlot {
+class RootToTipPlot extends AbstractLayout{
 
-    static DEFAULT_SETTINGS() {
-        return {
-            xAxisTickArguments: [5, "d"],
-            xAxisTitle: "Time",
-            yAxisTickArguments: [5, "f"],
-            yAxisTitle: "Divergence",
-            nodeRadius: 6,
-            hoverNodeRadius: 8,
-            backgroundBorder: 1,
-            slopeFormat: ",.2f",
-            r2Format: ",.2f"
-        };
-    }
 
     /**
      * The constructor.
-     * @param svg
      * @param tree
-     * @param margins
      * @param settings
      */
-    constructor(svg, tree, margins, settings = {}) {
-        this.svg = svg;
-        this.tree = tree;
+    constructor(tree, settings = {}) {
+        super(tree,settings);
+    }
 
-        // merge the default settings with the supplied settings
-        this.settings = {...RootToTipPlot.DEFAULT_SETTINGS(), ...settings};
-
-        this.points = tree.externalNodes
-            .map((tip) => {
-                return {
-                    name: tip.name,
-                    node: tip,
-                    x: tip.annotations.date,
-                    y: tree.rootToTipLength(tip)
-                };
-            });
-
-        this.tipNodes = {};
-        tree.externalNodes.forEach((tip) => this.tipNodes[tip.name] = tip );
+    // layout() {
+    //     this._vertices =
+    // }
 
 
-        // call the private methods to create the components of the diagram
-        createElements.call(this, svg, margins);
+    _getTreeNodes() {
+        return this.tree.externalNodes;
+    }
+    setInitialY() {
+        return 0;
+    }
+    setInitialX() {
+        return 0;
+    }
+    setXPosition(vertex,currentX){
+        vertex.x = this._horizontalScale(vertex.node.date);
+        return 0;
+    }
+
+    setYPosition(vertex,currentY){
+        vertex.y = this.tree.rootToTipLength(vertex.node);
+        return vertex.y;
+    }
+    updateHorizontalScale() {
+
+        const newScale = this.settings.horizontalScale ? this.settings.horizontalScale :
+            linear$2().domain([this.tree.rootNode.height+this.settings.offset, 0]).range(this._horizontalRange);
+        return newScale;
+    }
+
+    get edges() {
+        // make line
+        if (!this.layoutKnown) {
+            this.layout();
+        }
+
+        const points = this._vertices.filter(v=>v.visibility===VertexStyle$1.INCLUDED);
+
+        const lineStart = {x:min(points, d => d.x),y:0.0};
+        const lineEnd = {x:max(points, d => d.x),y:max(points, d => d.y)};
+
+
+        const regression = this.leastSquares(points);
+        if (points.length > 1 && regression.slope > 0.0) {
+            lineStart.x = regression.xIntercept;
+            lineEnd.y = max([regression.y(lineEnd.x), lineEnd.y]);
+        }
+
+
+        return {
+            v0: lineStart,
+            v1: lineEnd,
+            key: 'regression'
+        }
     }
 
     /**
@@ -10242,140 +10258,6 @@ class RootToTipPlot {
                 return x * slope + yIntercept
             }
         };
-    }
-
-    /**
-     * Updates the plot when the data has changed
-     */
-    update() {
-
-        this.points.forEach((point) => {
-            point.y = this.tree.rootToTipLength(point.node);
-        });
-
-        let x1 = min(this.points, d => d.x);
-        let x2 = max(this.points, d => d.x);
-        let y1 = 0.0;
-        let y2 = max(this.points, d => d.y);
-
-        // least squares regression
-        const selectedPoints = this.points.filter((point) => !point.node.isSelected);
-
-        const regression = this.leastSquares(selectedPoints);
-        if (selectedPoints.length > 1 && regression.slope > 0.0) {
-            x1 = regression.xIntercept;
-            y2 = max([regression.y(x2), y2]);
-        }
-
-        // update the scales for the plot
-        this.scales.x.domain([x1, x2]).nice();
-        this.scales.y.domain([y1, y2]).nice();
-
-        const xAxis = axisBottom(this.scales.x)
-            .tickArguments(this.settings.xAxisTickArguments);
-        const yAxis = axisLeft(this.scales.y)
-            .tickArguments(this.settings.yAxisTickArguments);
-
-        this.svgSelection.select("#x-axis")
-            .transition()
-            .duration(500)
-            .call(xAxis);
-
-        this.svgSelection.select("#y-axis")
-            .transition()
-            .duration(500)
-            .call(yAxis);
-
-        // update trend line
-        const line = this.svgSelection.select("#regression");
-        if (selectedPoints.length > 1) {
-
-            line
-                .transition()
-                .duration(500)
-                .attr("x1", this.scales.x(x1))
-                .attr("y1", this.scales.y(regression.y(x1)))
-                .attr("x2", this.scales.x(x2))
-                .attr("y2", this.scales.y(regression.y(x2)));
-
-            this.svgSelection.select("#statistics-slope")
-                .text(`Slope: ${format(this.settings.slopeFormat)(regression.slope)}`);
-            this.svgSelection.select("#statistics-r2")
-                .text(`R^2: ${format(this.settings.r2Format)(regression.rSquare) }`);
-
-        } else {
-            line
-                .transition()
-                .duration(500)
-                .attr("x1", this.scales.x(0))
-                .attr("y1", this.scales.y(regression.y(0)))
-                .attr("x2", this.scales.x(0))
-                .attr("y2", this.scales.y(regression.y(0)));
-
-            this.svgSelection.select("#statistics-slope")
-                .text(`Slope: n/a`);
-            this.svgSelection.select("#statistics-r2")
-                .text(`R^2: n/a`);
-
-        }
-
-        if (this.settings.backgroundBorder > 0) {
-            //update node background
-            this.svgSelection.selectAll(".node-background")
-                .transition()
-                .duration(500)
-                .attr("transform", d => {
-                    return `translate(${this.scales.x(d.x)}, ${this.scales.y(d.y)})`;
-                });
-        }
-
-        //update nodes
-        this.svgSelection.selectAll(".node")
-            .transition()
-            .duration(500)
-            .attr("transform", d => {
-                return `translate(${this.scales.x(d.x)}, ${this.scales.y(d.y)})`;
-            });
-    }
-
-    selectTips(treeSVG, tips) {
-        const self = this;
-        tips.forEach(tip => {
-            const node = this.tipNodes[tip];
-            const nodeShape1 = select(self.svg).select(`#${node.id}`).select(`.node-shape`);
-            const nodeShape2 = select(treeSVG).select(`#${node.id}`).select(`.node-shape`);
-            nodeShape1.attr("class", "node-shape selected");
-            nodeShape2.attr("class", "node-shape selected");
-            node.isSelected = true;
-
-        });
-        self.update();
-    }
-
-    /**
-     * Registers some text to appear in a popup box when the mouse hovers over the selection.
-     *
-     * @param selection
-     * @param text
-     */
-    addToolTip(selection, text) {
-        this.svgSelection.selectAll(selection).on("mouseover",
-            function (selectedNode) {
-                let tooltip = document.getElementById("tooltip");
-                if (typeof text === typeof "") {
-                    tooltip.innerHTML = text;
-                } else {
-                    tooltip.innerHTML = text(selectedNode);
-                }
-                tooltip.style.display = "block";
-                tooltip.style.left = event.pageX + 10 + "px";
-                tooltip.style.top = event.pageY + 10 + "px";
-            }
-        );
-        this.svgSelection.selectAll(selection).on("mouseout", function () {
-            let tooltip = document.getElementById("tooltip");
-            tooltip.style.display = "none";
-        });
     }
 
     linkWithTree(treeSVG) {
@@ -10421,171 +10303,6 @@ class RootToTipPlot {
         points.on("mouseout", mouseout);
         points.on("click", clicked);
     }
-
-    /**
-     * A utility function that will return a HTML string about the node and its
-     * annotations. Can be used with the addLabels() method.
-     *
-     * @param node
-     * @returns {string}
-     */
-    static nodeInfo(point) {
-        const node = point.node;
-        let text = `${node.name ? node.name : node.id }`;
-        Object.entries(node.annotations).forEach(([key, value]) => {
-            text += `<p>${key}: ${value}</p>`;
-        });
-        return text;
-    }
-
-}
-
-/*
- * Private methods, called by the class using the <function>.call(this) function.
- */
-
-function createElements(svg, margins) {
-    // get the size of the svg we are drawing on
-    const width = svg.getBoundingClientRect().width;
-    const height = svg.getBoundingClientRect().height;
-
-    select(svg).select("g").remove();
-
-    // add a group which will containt the new tree
-    select(svg).append("g");
-    //.attr("transform", `translate(${margins.left},${margins.top})`);
-
-    //to save on writing later
-    this.svgSelection = select(svg).select("g");
-
-    // least squares regression
-    const regression = this.leastSquares(this.points);
-    const x1 = regression.xIntercept;
-    const y1 = 0.0;
-    const x2 = max(this.points, d => d.x);
-    const y2 = max([regression.y(x2), max(this.points, d => d.y)]);
-
-    this.scales = {
-        x: linear$2()
-            .domain([x1, x2]).nice()
-            .range([margins.left, width - margins.right]),
-        y: linear$2()
-            .domain([y1, y2]).nice()
-            .range([height - margins.bottom, margins.top])
-    };
-
-    const xAxis = axisBottom(this.scales.x)
-        .tickArguments(this.settings.xAxisTickArguments);
-    const yAxis = axisLeft(this.scales.y)
-        .tickArguments(this.settings.yAxisTickArguments);
-
-    const xAxisWidth = width - margins.left - margins.right;
-    const yAxisHeight = height - margins.bottom - margins.top;
-
-    this.svgSelection.append("g")
-        .attr("id", "x-axis")
-        .attr("class", "axis")
-        .attr("transform", `translate(0, ${height - margins.bottom + 5})`)
-        .call(xAxis);
-
-    this.svgSelection.append("g")
-        .attr("id", "x-axis-label")
-        .attr("class", "axis-label")
-        .attr("transform", `translate(${margins.left}, ${height - margins.bottom})`)
-        .append("text")
-        .attr("transform", `translate(${xAxisWidth / 2}, 35)`)
-        .attr("alignment-baseline", "hanging")
-        .style("text-anchor", "middle")
-        .text(this.settings.xAxisTitle);
-
-    this.svgSelection.append("g")
-        .attr("id", "y-axis")
-        .attr("class", "axis")
-        .attr("transform", `translate(${margins.left - 5},0)`)
-        .call(yAxis);
-
-    this.svgSelection.append("g")
-        .attr("id", "y-axis-label")
-        .attr("class", "axis-label")
-        .attr("transform", `translate(${margins.left},${margins.top})`)
-        .append("text")
-        .attr("transform", "rotate(-90)")
-        .attr("y", 0 - margins.left)
-        .attr("x", 0 - (yAxisHeight / 2))
-        .attr("dy", "1em")
-        .style("text-anchor", "middle")
-        .text(this.settings.yAxisTitle);
-
-    this.svgSelection.append("line")
-        .attr("id", "regression")
-        .attr("class", "trend-line")
-        .attr("x1", this.scales.x(x1))
-        .attr("y1", this.scales.y(y1))
-        .attr("x2", this.scales.x(x1))
-        .attr("y2", this.scales.y(y1));
-
-    if (this.settings.backgroundBorder > 0) {
-        this.svgSelection.append("g")
-            .selectAll("circle")
-            .data(this.points)
-            .enter()
-            .append("circle")
-            .attr("class", (d) => ["node-background", (!d.children ? "external-node" : "internal-node")].join(" "))
-            .attr("transform", `translate(${this.scales.x(x1)}, ${this.scales.y(y1)})`)
-            .attr("cx", 0)
-            .attr("cy", 0)
-            .attr("r", this.settings.nodeRadius + this.settings.backgroundBorder);
-    }
-
-    this.svgSelection.append("g")
-        .selectAll("circle")
-        .data(this.points)
-        .enter()
-        .append("g")
-        .attr("id", d => d.node.id )
-        .attr("class", (d) => {
-            let classes = ["node", "external-node", (d.node.isSelected ? "selected" : "unselected")];
-            if (d.node.annotations) {
-                classes = [
-                    ...classes,
-                    ...Object.entries(d.node.annotations)
-                        .filter(([key]) => {
-                            return this.tree.annotations[key].type === Type.DISCRETE ||
-                                this.tree.annotations[key].type === Type.BOOLEAN ||
-                                this.tree.annotations[key].type === Type.INTEGER;
-                        } )
-                        .map(([key, value]) => `${key}-${value}`)];
-            }
-            return classes.join(" ");
-        })
-        .attr("transform", `translate(${this.scales.x(x1)}, ${this.scales.y(y1)})`)
-        // .attr("transform", d => {
-        //     return `translate(${this.scales.x(d.x)}, ${this.scales.y(d.y)})`;
-        // })
-        .append("circle")
-        .attr("class", "node-shape")
-        .attr("cx", 0)
-        .attr("cy", 0)
-        .attr("r", this.settings.nodeRadius);
-
-    this.svgSelection.append("text")
-        .attr("id", "statistics-slope")
-        .attr("transform", `translate(${margins.left + 20},${margins.top})`)
-        .style("text-anchor", "left")
-        .attr("alignment-baseline", "hanging")
-        .attr("dy", "0")
-        .text(`Slope: -`);
-    this.svgSelection.append("text")
-        .attr("id", "statistics-r2")
-        .attr("transform", `translate(${margins.left + 20},${margins.top})`)
-        .style("text-anchor", "left")
-        .attr("alignment-baseline", "hanging")
-        .attr("dy", "1.5em")
-        .text(`R^2: -`);
-
-    this.update();
-
-    this.tree.treeUpdateCallback = () => this.update();
 }
 
 exports.Bauble = Bauble;
