@@ -11263,23 +11263,37 @@
 	    key: "DEFAULT_SETTINGS",
 	    value: function DEFAULT_SETTINGS() {
 	      return {
-	        xAxisTitle: "Height",
+	        xScale: {
+	          title: "Height",
+	          axis: axisBottom,
+	          tickFormat: format(".2f"),
+	          ticks: 5,
+	          scale: linear$2,
+	          origin: null,
+	          reverseAxis: false,
+	          branchScale: 1,
+	          offset: 0
+	        },
+	        yScale: {
+	          title: null,
+	          axis: null,
+	          scale: linear$2,
+	          origin: null,
+	          reverseAxis: false,
+	          branchScale: 1,
+	          offset: 0,
+	          tickFormat: format(".2f"),
+	          ticks: 5
+	        },
 	        // nodeRadius: 6,
 	        hoverBorder: 2,
 	        backgroundBorder: 0,
 	        baubles: [],
 	        transitionDuration: 500,
 	        transitionEase: linear$1,
-	        tickFormat: format(".2f"),
-	        ticks: 5,
 	        branchCurve: stepBefore,
-	        curveRadius: 0,
-	        // origin should not have to be set. It could be gotten from layout positions unless otherwise specified.
-	        origin: 0,
-	        reverseAxis: false,
-	        branchScale: 1,
-	        offset: 0,
-	        yAxis: null
+	        curveRadius: 0 // origin should not have to be set. It could be gotten from layout positions unless otherwise specified.
+
 	      };
 	    }
 	  }, {
@@ -11342,8 +11356,24 @@
 	      }
 	    }
 
+	    var _FigTree$DEFAULT_SETT = FigTree.DEFAULT_SETTINGS(),
+	        xScale = _FigTree$DEFAULT_SETT.xScale,
+	        yScale = _FigTree$DEFAULT_SETT.yScale;
+
+	    if (settings.xScale) {
+	      xScale = objectSpread({}, xScale, settings.xScale);
+	    }
+
+	    if (settings.yScale) {
+	      yScale = objectSpread({}, yScale, settings.yScale);
+	    }
+
 	    this.settings = objectSpread({}, FigTree.DEFAULT_SETTINGS(), settings, {
 	      styles: styles
+	    }, {
+	      xScale: xScale
+	    }, {
+	      yScale: yScale
 	    });
 	    this.callbacks = {
 	      nodes: [],
@@ -11395,8 +11425,8 @@
 
 	      this.svgSelection.append("g").attr("class", "nodes-layer"); // create the scales
 
-	      var xScale = linear$2().domain([this.layout.horizontalDomain[0] + this.settings.offset, this.layout.horizontalDomain[1]]).range([this.margins.left, width - this.margins.right]);
-	      var yScale = linear$2().domain(this.layout.verticalDomain).range([this.margins.top + 20, height - this.margins.bottom - 20]);
+	      var xScale = this.settings.xScale.scale().domain([this.layout.horizontalDomain[0] + this.settings.xScale.offset, this.layout.horizontalDomain[1]]).range([this.margins.left, width - this.margins.right]);
+	      var yScale = this.settings.yScale.scale().domain([this.layout.verticalDomain[0] + this.settings.yScale.offset, this.layout.verticalDomain[1]]).range([this.margins.top + 20, height - this.margins.bottom - 20]);
 	      this.scales = {
 	        x: xScale,
 	        y: yScale,
@@ -11438,8 +11468,8 @@
 	      } // update the scales' domains
 
 
-	      this.scales.x.domain([this.layout.horizontalDomain[0] + this.settings.offset, this.layout.horizontalDomain[1]]).range([this.margins.left, width - this.margins.right]);
-	      this.scales.y.domain(this.layout.verticalDomain).range([this.margins.top + 20, height - this.margins.bottom - 20]);
+	      this.scales.x.domain([this.layout.horizontalDomain[0] + this.settings.xScale.offset, this.layout.horizontalDomain[1]]).range([this.margins.left, width - this.margins.right]);
+	      this.scales.y.domain([this.layout.verticalDomain[0] + this.settings.yScale.offset, this.layout.verticalDomain[1]]).range([this.margins.top + 20, height - this.margins.bottom - 20]);
 	      this.scales.width = width;
 	      this.scales.height = height;
 	      updateAxis.call(this);
@@ -11559,8 +11589,8 @@
 	        var selected = _this4.svgSelection.selectAll("".concat(selection ? selection : ".branch"));
 
 	        selected.on("click", function (edge) {
-	          var x1 = self.scales.x(edge.v1.x + this.settings.offset);
-	          var x2 = self.scales.x(edge.v0.x + this.settings.offset);
+	          var x1 = self.scales.x(edge.v1.x + this.settings.xScale.offset);
+	          var x2 = self.scales.x(edge.v0.x + this.settings.xScale.offset);
 	          var mx = mouse(this)[0];
 	          var proportion = Math.max(0.0, Math.min(1.0, (mx - x2) / (x1 - x2)));
 	          action(edge, proportion);
@@ -11772,7 +11802,7 @@
 	  }).attr("class", function (v) {
 	    return ["node"].concat(toConsumableArray(v.classes)).join(" ");
 	  }).attr("transform", function (v) {
-	    return "translate(".concat(_this8.scales.x(v.x + _this8.settings.offset), ", ").concat(_this8.scales.y(v.y), ")");
+	    return "translate(".concat(_this8.scales.x(v.x + _this8.settings.xScale.offset), ", ").concat(_this8.scales.y(v.y), ")");
 	  }); // add the specific node shapes or 'baubles'
 
 	  this.settings.baubles.forEach(function (bauble) {
@@ -11793,7 +11823,7 @@
 	  nodes.transition().duration(this.settings.transitionDuration).ease(this.settings.transitionEase).attr("class", function (v) {
 	    return ["node"].concat(toConsumableArray(v.classes)).join(" ");
 	  }).attr("transform", function (v) {
-	    return "translate(".concat(_this8.scales.x(v.x + _this8.settings.offset), ", ").concat(_this8.scales.y(v.y), ")");
+	    return "translate(".concat(_this8.scales.x(v.x + _this8.settings.xScale.offset), ", ").concat(_this8.scales.y(v.y), ")");
 	  }); // update all the baubles
 
 	  this.settings.baubles.forEach(function (bauble) {
@@ -11855,14 +11885,14 @@
 
 	  this.settings.baubles.forEach(function (bauble) {
 	    var d = bauble.createShapes(newNodes.filter(bauble.vertexFilter)).attr("class", "node-background").attr("transform", function (v) {
-	      return "translate(".concat(_this9.scales.x(v.x + _this9.settings.offset), ", ").concat(_this9.scales.y(v.y), ")");
+	      return "translate(".concat(_this9.scales.x(v.x + _this9.settings.xScale.offset), ", ").concat(_this9.scales.y(v.y), ")");
 	    });
 	    bauble.updateShapes(d, _this9.settings.backgroundBorder);
 	  }); // update all the existing elements
 
 	  this.settings.baubles.forEach(function (bauble) {
 	    var d = nodes.filter(bauble.vertexFilter).transition().duration(_this9.settings.transitionDuration).ease(_this9.settings.transitionEase).attr("transform", function (v) {
-	      return "translate(".concat(_this9.scales.x(v.x + _this9.settings.offset), ", ").concat(_this9.scales.y(v.y), ")");
+	      return "translate(".concat(_this9.scales.x(v.x + _this9.settings.xScale.offset), ", ").concat(_this9.scales.y(v.y), ")");
 	    });
 	    bauble.updateShapes(d, _this9.settings.backgroundBorder);
 	  }); // EXIT
@@ -11898,13 +11928,13 @@
 	  }).attr("class", function (e) {
 	    return ["branch"].concat(toConsumableArray(e.classes)).join(" ");
 	  }).attr("transform", function (e) {
-	    return "translate(".concat(_this10.scales.x(e.v0.x + _this10.settings.offset), ", ").concat(_this10.scales.y(e.v1.y), ")");
+	    return "translate(".concat(_this10.scales.x(e.v0.x + _this10.settings.xScale.offset), ", ").concat(_this10.scales.y(e.v1.y), ")");
 	  });
 	  newBranches.append("path").attr("class", "branch-path").attr("d", function (e, i) {
 	    return branchPath(e, i);
 	  });
 	  newBranches.append("text").attr("class", "branch-label length").attr("dx", function (e) {
-	    return (_this10.scales.x(e.v1.x + _this10.settings.offset) - _this10.scales.x(e.v0.x + _this10.settings.offset)) / 2;
+	    return (_this10.scales.x(e.v1.x + _this10.settings.xScale.offset) - _this10.scales.x(e.v0.x + _this10.settings.xScale.offset)) / 2;
 	  }).attr("dy", function (e) {
 	    return e.labelBelow ? +6 : -6;
 	  }).attr("alignment-baseline", function (e) {
@@ -11916,11 +11946,11 @@
 	  branches.transition().duration(this.settings.transitionDuration).ease(this.settings.transitionEase).attr("class", function (e) {
 	    return ["branch"].concat(toConsumableArray(e.classes)).join(" ");
 	  }).attr("transform", function (e) {
-	    return "translate(".concat(_this10.scales.x(e.v0.x + _this10.settings.offset), ", ").concat(_this10.scales.y(e.v1.y), ")");
+	    return "translate(".concat(_this10.scales.x(e.v0.x + _this10.settings.xScale.offset), ", ").concat(_this10.scales.y(e.v1.y), ")");
 	  }).select("path").attr("d", function (e, i) {
 	    return branchPath(e, i);
 	  }).select("text .branch-label .length").attr("class", "branch-label length").attr("dx", function (e) {
-	    return (_this10.scales.x(e.v1.x + _this10.settings.offset) - _this10.scales.x(e.v0.x + _this10.settings.offset)) / 2;
+	    return (_this10.scales.x(e.v1.x + _this10.settings.xScale.offset) - _this10.scales.x(e.v0.x + _this10.settings.xScale.offset)) / 2;
 	  }).attr("dy", function (e) {
 	    return e.labelBelow ? +6 : -6;
 	  }).attr("alignment-baseline", function (e) {
@@ -11974,7 +12004,7 @@
 	  }).attr("class", function (c) {
 	    return ["cartoon"].concat(toConsumableArray(c.classes)).join(" ");
 	  }).attr("transform", function (c) {
-	    return "translate(".concat(_this11.scales.x(c.vertices[0].x + _this11.settings.offset), ", ").concat(_this11.scales.y(c.vertices[0].y + _this11.settings.offset), ")");
+	    return "translate(".concat(_this11.scales.x(c.vertices[0].x + _this11.settings.xScale.offset), ", ").concat(_this11.scales.y(c.vertices[0].y + _this11.settings.xScale.offset), ")");
 	  });
 	  newCartoons.append("path").attr("class", "cartoon-path").attr("d", function (e, i) {
 	    return pointToPoint.call(_this11, e.vertices);
@@ -11983,7 +12013,7 @@
 	  cartoons.transition().duration(this.settings.transitionDuration).ease(this.settings.transitionEase).attr("class", function (c) {
 	    return ["cartoon"].concat(toConsumableArray(c.classes)).join(" ");
 	  }).attr("transform", function (c) {
-	    return "translate(".concat(_this11.scales.x(c.vertices[0].x + _this11.settings.offset), ", ").concat(_this11.scales.y(c.vertices[0].y), ")");
+	    return "translate(".concat(_this11.scales.x(c.vertices[0].x + _this11.settings.xScale.offset), ", ").concat(_this11.scales.y(c.vertices[0].y), ")");
 	  }).select("path").attr("d", function (c) {
 	    return pointToPoint.call(_this11, c.vertices);
 	  }); // EXIT
@@ -12024,19 +12054,21 @@
 	function addAxis() {
 	  //x scale nodeHeight [root,0] => pixels
 	  // node Height [root,0] => [ orgin+root,orign] => pixels
-	  var reverse = this.settings.reverseAxis ? -1 : 1;
-	  var domain = [this.settings.origin + reverse * this.settings.branchScale * this.layout.horizontalDomain[0], this.settings.origin];
-	  var xAxis = axisBottom(linear$2().domain(domain).range(this.scales.x.range())).ticks(this.settings.ticks).tickFormat(this.settings.tickFormat);
+	  var xSettings = this.settings.xScale;
+	  var reverse = xSettings.reverseAxis ? -1 : 1;
+	  var domain = xSettings.origin !== null ? [xSettings.origin + reverse * xSettings.branchScale * Math.abs(this.scales.x.domain()[0] - this.scales.x.domain()[1]), xSettings.origin] : this.scales.x.domain();
+	  var xAxis = xSettings.axis(xSettings.scale().domain(domain).range(this.scales.x.range())).ticks(xSettings.ticks).tickFormat(xSettings.tickFormat);
 	  var xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
 	  var axesLayer = this.svgSelection.select(".axes-layer");
 	  axesLayer.append("g").attr("id", "x-axis").attr("class", "axis").attr("transform", "translate(0, ".concat(this.scales.height - this.margins.bottom + 5, ")")).call(xAxis);
-	  axesLayer.append("g").attr("id", "x-axis-label").attr("class", "axis-label").attr("transform", "translate(".concat(this.margins.left, ", ").concat(this.scales.height - this.margins.bottom, ")")).append("text").attr("transform", "translate(".concat(xAxisWidth / 2, ", 35)")).attr("alignment-baseline", "hanging").style("text-anchor", "middle").text(this.settings.xAxisTitle);
+	  axesLayer.append("g").attr("id", "x-axis-label").attr("class", "axis-label").attr("transform", "translate(".concat(this.margins.left, ", ").concat(this.scales.height - this.margins.bottom, ")")).append("text").attr("transform", "translate(".concat(xAxisWidth / 2, ", 35)")).attr("alignment-baseline", "hanging").style("text-anchor", "middle").text(xSettings.title);
 	}
 
 	function updateAxis() {
-	  var reverse = this.settings.reverseAxis ? -1 : 1;
-	  var domain = [this.settings.origin + reverse * this.settings.branchScale * this.scales.x.domain()[0], this.settings.origin];
-	  var xAxis = axisBottom(linear$2().domain(domain).range(this.scales.x.range())).ticks(this.settings.ticks).tickFormat(this.settings.tickFormat);
+	  var xSettings = this.settings.xScale;
+	  var reverse = xSettings.reverseAxis ? -1 : 1;
+	  var domain = xSettings.origin !== null ? [xSettings.origin + reverse * xSettings.branchScale * Math.abs(this.scales.x.domain()[0] - this.scales.x.domain()[1]), xSettings.origin] : this.scales.x.domain();
+	  var xAxis = xSettings.axis(xSettings.scale().domain(domain).range(this.scales.x.range())).ticks(xSettings.ticks).tickFormat(xSettings.tickFormat);
 	  var xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
 	  var axesLayer = this.svgSelection.select(".axes-layer");
 	  axesLayer.select("#x-axis").transition().duration(this.settings.transitionDuration).ease(this.settings.transitionEase).attr("transform", "translate(0, ".concat(this.scales.height - this.margins.bottom + 5, ")")).call(xAxis);
@@ -12147,7 +12179,7 @@
 	  try {
 	    for (var _iterator4 = pathPoints[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
 	      var point = _step4.value;
-	      var xdiff = this.scales.x(point.x + this.settings.offset) - this.scales.x(currentPoint.x + this.settings.offset);
+	      var xdiff = this.scales.x(point.x + this.settings.xScale.offset) - this.scales.x(currentPoint.x + this.settings.xScale.offset);
 	      var ydiff = this.scales.y(point.y) - this.scales.y(currentPoint.y);
 	      path.push("".concat(xdiff, " ").concat(ydiff));
 	      currentPoint = point;
@@ -12229,13 +12261,13 @@
 	      x: 0 + dontNeedCurve * _this16.settings.curveRadius,
 	      y: 0
 	    }, {
-	      x: _this16.scales.x(e.v1.x + _this16.settings.offset) - _this16.scales.x(e.v0.x + _this16.settings.offset),
+	      x: _this16.scales.x(e.v1.x + _this16.settings.xScale.offset) - _this16.scales.x(e.v0.x + _this16.settings.xScale.offset),
 	      y: 0
 	    }]) : branchLine([{
 	      x: 0,
 	      y: _this16.scales.y(e.v0.y) - _this16.scales.y(e.v1.y)
 	    }, {
-	      x: _this16.scales.x(e.v1.x + _this16.settings.offset) - _this16.scales.x(e.v0.x + _this16.settings.offset),
+	      x: _this16.scales.x(e.v1.x + _this16.settings.xScale.offset) - _this16.scales.x(e.v0.x + _this16.settings.xScale.offset),
 	      y: 0
 	    }]);
 	    return output;

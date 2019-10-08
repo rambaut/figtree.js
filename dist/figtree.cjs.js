@@ -9261,23 +9261,38 @@ class FigTree {
 
     static DEFAULT_SETTINGS() {
         return {
-            xAxisTitle: "Height",
+            xScale:{
+                title: "Height",
+                axis:axisBottom,
+                tickFormat:format(".2f"),
+                ticks:5,
+                scale:linear$2,
+                origin:null,
+                reverseAxis:false,
+                branchScale:1,
+                offset:0,
+
+            },
+            yScale:{
+                title: null,
+                axis:null,
+                scale:linear$2,
+                origin:null,
+                reverseAxis:false,
+                branchScale:1,
+                offset:0,
+                tickFormat:format(".2f"),
+                ticks:5,
+            },
             // nodeRadius: 6,
             hoverBorder: 2,
             backgroundBorder: 0,
             baubles: [],
             transitionDuration:500,
             transitionEase:linear$1,
-            tickFormat:format(".2f"),
-            ticks:5,
             branchCurve:stepBefore,
             curveRadius:0,
             // origin should not have to be set. It could be gotten from layout positions unless otherwise specified.
-            origin:0,
-            reverseAxis:false,
-            branchScale:1,
-            offset:0,
-            yAxis:null
         };
     }
     static DEFAULT_STYLES(){
@@ -9308,8 +9323,20 @@ class FigTree {
                 }
             }
         }
+        let {xScale,yScale}=FigTree.DEFAULT_SETTINGS();
+        if(settings.xScale){
+            xScale = {...xScale,...settings.xScale};
+        }
+        if(settings.yScale){
+            yScale = {...yScale,...settings.yScale};
+        }
 
-        this.settings = {...FigTree.DEFAULT_SETTINGS(), ...settings,...{styles:styles}};
+        this.settings = {...FigTree.DEFAULT_SETTINGS(),
+                        ...settings,
+                        ...{styles:styles},
+                        ...{xScale:xScale},
+                        ...{yScale:yScale}
+                        };
 
         this.callbacks= {nodes:[],branches:[],cartoons:[]};
         this._annotations =[];
@@ -9357,12 +9384,12 @@ class FigTree {
 
 
         // create the scales
-        const xScale = linear$2()
-            .domain([this.layout.horizontalDomain[0]+this.settings.offset,this.layout.horizontalDomain[1]])
+        const xScale = this.settings.xScale.scale()
+            .domain([this.layout.horizontalDomain[0]+this.settings.xScale.offset,this.layout.horizontalDomain[1]])
             .range([this.margins.left, width - this.margins.right]);
 
-        const yScale = linear$2()
-            .domain(this.layout.verticalDomain)
+        const yScale = this.settings.yScale.scale()
+            .domain([this.layout.verticalDomain[0]+this.settings.yScale.offset,this.layout.verticalDomain[1]])
             .range([this.margins.top + 20, height -this.margins.bottom - 20]);
 
         this.scales = {x:xScale, y:yScale, width, height};
@@ -9397,8 +9424,12 @@ class FigTree {
         }
 
         // update the scales' domains
-        this.scales.x.domain([this.layout.horizontalDomain[0]+this.settings.offset,this.layout.horizontalDomain[1]]).range([this.margins.left, width - this.margins.right]);
-        this.scales.y.domain(this.layout.verticalDomain).range([this.margins.top + 20, height -this. margins.bottom - 20]);
+        this.scales.x
+            .domain([this.layout.horizontalDomain[0]+this.settings.xScale.offset,this.layout.horizontalDomain[1]])
+            .range([this.margins.left, width - this.margins.right]);
+        this.scales.y
+            .domain([this.layout.verticalDomain[0]+this.settings.yScale.offset,this.layout.verticalDomain[1]])
+            .range([this.margins.top + 20, height -this. margins.bottom - 20]);
         this.scales.width=width;
         this.scales.height=height;
 
@@ -9513,8 +9544,8 @@ class FigTree {
             const self = this;
             const selected = this.svgSelection.selectAll(`${selection ? selection : ".branch"}`);
             selected.on("click", function (edge) {
-                const x1 = self.scales.x(edge.v1.x+this.settings.offset);
-                const x2 = self.scales.x(edge.v0.x+this.settings.offset);
+                const x1 = self.scales.x(edge.v1.x+this.settings.xScale.offset);
+                const x2 = self.scales.x(edge.v0.x+this.settings.xScale.offset);
                 const mx = mouse(this)[0];
                 const proportion = Math.max(0.0, Math.min(1.0, (mx - x2) / (x1 - x2)));
                 action(edge, proportion);
@@ -9703,7 +9734,7 @@ function updateNodes() {
         .attr("id", (v) => v.id)
         .attr("class", (v) => ["node", ...v.classes].join(" "))
         .attr("transform", (v) => {
-            return `translate(${this.scales.x(v.x+this.settings.offset)}, ${this.scales.y(v.y)})`;
+            return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
         });
 
     // add the specific node shapes or 'baubles'
@@ -9737,7 +9768,7 @@ function updateNodes() {
         .ease(this.settings.transitionEase)
         .attr("class", (v) => ["node", ...v.classes].join(" "))
         .attr("transform", (v) => {
-            return `translate(${this.scales.x(v.x+this.settings.offset)}, ${this.scales.y(v.y)})`;
+            return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
         });
 
 
@@ -9809,7 +9840,7 @@ function updateNodeBackgrounds() {
             .createShapes(newNodes.filter(bauble.vertexFilter))
             .attr("class", "node-background")
             .attr("transform", (v) => {
-                return `translate(${this.scales.x(v.x+this.settings.offset)}, ${this.scales.y(v.y)})`;
+                return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
             });
 
         bauble.updateShapes(d, this.settings.backgroundBorder);
@@ -9823,7 +9854,7 @@ function updateNodeBackgrounds() {
             .duration(this.settings.transitionDuration)
             .ease(this.settings.transitionEase)
             .attr("transform", (v) => {
-                return `translate(${this.scales.x(v.x+this.settings.offset)}, ${this.scales.y(v.y)})`;
+                return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
             });
         bauble.updateShapes(d, this.settings.backgroundBorder);
     });
@@ -9861,7 +9892,7 @@ function updateBranches() {
         .attr("id", (e) => e.id)
         .attr("class", (e) => ["branch", ...e.classes].join(" "))
         .attr("transform", (e) => {
-            return `translate(${this.scales.x(e.v0.x+this.settings.offset)}, ${this.scales.y(e.v1.y)})`;
+            return `translate(${this.scales.x(e.v0.x+this.settings.xScale.offset)}, ${this.scales.y(e.v1.y)})`;
         });
 
     newBranches.append("path")
@@ -9870,7 +9901,7 @@ function updateBranches() {
 
     newBranches.append("text")
         .attr("class", "branch-label length")
-        .attr("dx", (e) => ((this.scales.x(e.v1.x+this.settings.offset) - this.scales.x(e.v0.x+this.settings.offset)) / 2))
+        .attr("dx", (e) => ((this.scales.x(e.v1.x+this.settings.xScale.offset) - this.scales.x(e.v0.x+this.settings.xScale.offset)) / 2))
         .attr("dy", (e) => (e.labelBelow ? +6 : -6))
         .attr("alignment-baseline", (e) => (e.labelBelow ? "hanging" : "bottom"))
         .attr("text-anchor", "middle")
@@ -9883,7 +9914,7 @@ function updateBranches() {
         .ease(this.settings.transitionEase)
         .attr("class", (e) => ["branch", ...e.classes].join(" "))
         .attr("transform", (e) => {
-            return `translate(${this.scales.x(e.v0.x+this.settings.offset)}, ${this.scales.y(e.v1.y)})`;
+            return `translate(${this.scales.x(e.v0.x+this.settings.xScale.offset)}, ${this.scales.y(e.v1.y)})`;
         })
 
         .select("path")
@@ -9891,7 +9922,7 @@ function updateBranches() {
 
         .select("text .branch-label .length")
         .attr("class", "branch-label length")
-        .attr("dx", (e) => ((this.scales.x(e.v1.x+this.settings.offset) - this.scales.x(e.v0.x+this.settings.offset)) / 2))
+        .attr("dx", (e) => ((this.scales.x(e.v1.x+this.settings.xScale.offset) - this.scales.x(e.v0.x+this.settings.xScale.offset)) / 2))
         .attr("dy", (e) => (e.labelBelow ? +6 : -6))
         .attr("alignment-baseline", (e) => (e.labelBelow ? "hanging" : "bottom"))
         .attr("text-anchor", "middle")
@@ -9923,7 +9954,7 @@ function updateCartoons(){
         .attr("id", (c) => `cartoon-${c.id}`)
         .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
         .attr("transform", (c) => {
-            return `translate(${this.scales.x(c.vertices[0].x+this.settings.offset)}, ${this.scales.y(c.vertices[0].y+this.settings.offset)})`;
+            return `translate(${this.scales.x(c.vertices[0].x+this.settings.xScale.offset)}, ${this.scales.y(c.vertices[0].y+this.settings.xScale.offset)})`;
         });
 
 
@@ -9940,7 +9971,7 @@ function updateCartoons(){
         .ease(this.settings.transitionEase)
         .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
         .attr("transform", (c) => {
-            return `translate(${this.scales.x(c.vertices[0].x+this.settings.offset)}, ${this.scales.y(c.vertices[0].y)})`
+            return `translate(${this.scales.x(c.vertices[0].x+this.settings.xScale.offset)}, ${this.scales.y(c.vertices[0].y)})`
         })
         .select("path")
         .attr("d", (c) => pointToPoint.call(this,c.vertices));
@@ -9968,10 +9999,15 @@ function addAxis() {
     // node Height [root,0] => [ orgin+root,orign] => pixels
 
 
-    const reverse = this.settings.reverseAxis? -1:1;
-    const domain = [this.settings.origin+reverse*this.settings.branchScale*(this.layout.horizontalDomain[0]),this.settings.origin];
-    const xAxis = axisBottom( linear$2().domain(domain).range(this.scales.x.range()))
-        .ticks(this.settings.ticks).tickFormat(this.settings.tickFormat);
+    const xSettings = this.settings.xScale;
+    const reverse = xSettings.reverseAxis? -1:1;
+
+    const domain = xSettings.origin!==null?
+        [xSettings.origin+reverse*xSettings.branchScale*(Math.abs(this.scales.x.domain()[0]-this.scales.x.domain()[1])),xSettings.origin]:
+        this.scales.x.domain();
+
+    const xAxis = xSettings.axis( xSettings.scale().domain(domain).range(this.scales.x.range()))
+        .ticks(xSettings.ticks).tickFormat(xSettings.tickFormat);
 
     const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
 
@@ -9993,15 +10029,19 @@ function addAxis() {
         .attr("transform", `translate(${xAxisWidth / 2}, 35)`)
         .attr("alignment-baseline", "hanging")
         .style("text-anchor", "middle")
-        .text(this.settings.xAxisTitle);
+        .text(xSettings.title);
 }
 
 function updateAxis(){
-    const reverse = this.settings.reverseAxis? -1:1;
+    const xSettings = this.settings.xScale;
+    const reverse = xSettings.reverseAxis? -1:1;
 
-    const domain = [this.settings.origin+reverse*this.settings.branchScale*(this.scales.x.domain()[0]),this.settings.origin];
-    const xAxis = axisBottom(linear$2().domain(domain).range(this.scales.x.range()))
-        .ticks(this.settings.ticks).tickFormat(this.settings.tickFormat);
+    const domain = xSettings.origin!==null?
+        [xSettings.origin+reverse*xSettings.branchScale*(Math.abs(this.scales.x.domain()[0]-this.scales.x.domain()[1])),xSettings.origin]:
+        this.scales.x.domain();
+
+    const xAxis = xSettings.axis( xSettings.scale().domain(domain).range(this.scales.x.range()))
+        .ticks(xSettings.ticks).tickFormat(xSettings.tickFormat);
 
     const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
 
@@ -10102,7 +10142,7 @@ function pointToPoint(points){
     const pathPoints =points.reverse();
     let currentPoint =origin;
     for(const point of pathPoints){
-        const xdiff = this.scales.x(point.x+this.settings.offset)-this.scales.x(currentPoint.x+this.settings.offset);
+        const xdiff = this.scales.x(point.x+this.settings.xScale.offset)-this.scales.x(currentPoint.x+this.settings.xScale.offset);
         const ydiff = this.scales.y(point.y)- this.scales.y(currentPoint.y);
         path.push(`${xdiff} ${ydiff}`);
         currentPoint = point;
@@ -10140,11 +10180,11 @@ function branchPathGenerator(){
                 [{x: 0, y: this.scales.y(e.v0.y) - this.scales.y(e.v1.y)},
                     { x:0, y:dontNeedCurve*factor * this.settings.curveRadius},
                     {x:0 + dontNeedCurve*this.settings.curveRadius, y:0},
-                    {x: this.scales.x(e.v1.x+this.settings.offset) - this.scales.x(e.v0.x+this.settings.offset), y: 0}
+                    {x: this.scales.x(e.v1.x+this.settings.xScale.offset) - this.scales.x(e.v0.x+this.settings.xScale.offset), y: 0}
                 ]):
             branchLine(
                 [{x: 0, y: this.scales.y(e.v0.y) - this.scales.y(e.v1.y)},
-                    {x: this.scales.x(e.v1.x+this.settings.offset) - this.scales.x(e.v0.x+this.settings.offset), y: 0}
+                    {x: this.scales.x(e.v1.x+this.settings.xScale.offset) - this.scales.x(e.v0.x+this.settings.xScale.offset), y: 0}
                 ]);
         return(output)
 
