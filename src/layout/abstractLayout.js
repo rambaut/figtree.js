@@ -111,8 +111,7 @@ export class  AbstractLayout extends layoutInterface {
                 this[setupEdge](e);
             });
 
-// update verticalDomain so that we count tips that are in cartoons but not those that are ignored
-        this._verticalRange = [0, currentY];
+
         this.layoutKnown = true;
 
     }

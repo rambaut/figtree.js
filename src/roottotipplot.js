@@ -4,7 +4,15 @@
 
 import {Tree, Type} from "./tree.js";
 import {min,max,axisBottom,axisLeft,format,select,event,scaleLinear,line,mean} from "d3";
-import {AbstractLayout, VertexStyle} from "./layout/abstractLayout";
+import {
+    AbstractLayout,
+    makeEdgesFromNodes,
+    VertexStyle,
+    setVertexClasses,
+    setVertexLabels,
+    makeVerticesFromNodes
+} from "./layout/abstractLayout";
+import extent from "d3-array/src/extent";
 
 /**
  * The RootToTipPlot class
@@ -21,9 +29,40 @@ export class RootToTipPlot extends AbstractLayout{
         super(tree,settings)
     }
 
-    // layout() {
-    //     this._vertices =
-    // }
+    layout() {
+        const treeNodes = this._getTreeNodes();
+
+        this[makeVerticesFromNodes](treeNodes);
+
+        // update the node locations (vertices)
+        treeNodes.forEach((n) => {
+            const v = this._nodeMap.get(n);
+
+            this.setYPosition(v, null);
+            this.setXPosition(v, null);
+            v.id = v.node.id;
+            this[setVertexClasses](v);
+            this[setVertexLabels](v);
+        });
+
+        const regression  = this.leastSquares(this._vertices.filter(v=>v.visibility===VertexStyle.INCLUDED));
+
+        let x1 = min(this._vertices, d => d.x);
+        let x2 = max(this._vertices, d => d.x);
+        let y1 = 0.0;
+        let y2 = max(this._vertices, d => d.y);
+        if (this._vertices.filter(v=>v.visibility===VertexStyle.INCLUDED).length > 1 && regression.slope > 0.0) {
+            x1 = regression.xIntercept;
+            y2 = max([regression.y(x2), y2]);
+        }
+        const startPoint = {key:"startPoint",visibility:VertexStyle.HIDDEN,x:x1,y:y1};
+        const endPoint = {key:"EndPoint",visibility:VertexStyle.HIDDEN,x:x2,y:y2};
+        this._vertices.push(startPoint);
+        this._vertices.push(endPoint);
+        this._edges=[{v0:startPoint,v1:endPoint,key:"line",classes:[]}];
+        this.layoutKnown = true;
+
+    }
 
 
     _getTreeNodes() {
@@ -36,7 +75,7 @@ export class RootToTipPlot extends AbstractLayout{
         return 0;
     }
     setXPosition(vertex,currentX){
-        vertex.x = this._horizontalScale(vertex.node.date);
+        vertex.x = vertex.node.annotations.date;
         return 0;
     }
 
@@ -44,37 +83,21 @@ export class RootToTipPlot extends AbstractLayout{
         vertex.y = this.tree.rootToTipLength(vertex.node);
         return vertex.y;
     }
-    updateHorizontalScale() {
 
-        const newScale = this.settings.horizontalScale ? this.settings.horizontalScale :
-            scaleLinear().domain([this.tree.rootNode.height+this.settings.offset, 0]).range(this._horizontalRange);
-        return newScale;
-    }
-
-    get edges() {
-        // make line
+    get horizontalDomain() {
         if (!this.layoutKnown) {
             this.layout();
         }
+        const xPositions = [...this._vertices.map(d=>d.x),min(this._vertices.map(d=>d.x))];
+        return [min(xPositions),max(xPositions)];
+    }
 
-        const points = this._vertices.filter(v=>v.visibility===VertexStyle.INCLUDED);
-
-        const lineStart = {x:min(points, d => d.x),y:0.0};
-        const lineEnd = {x:max(points, d => d.x),y:max(points, d => d.y)};
-
-
-        const regression = this.leastSquares(points);
-        if (points.length > 1 && regression.slope > 0.0) {
-            lineStart.x = regression.xIntercept;
-            lineEnd.y = max([regression.y(lineEnd.x), lineEnd.y]);
+    get verticalDomain() {
+        if (!this.layoutKnown) {
+            this.layout();
         }
-
-
-        return {
-            v0: lineStart,
-            v1: lineEnd,
-            key: 'regression'
-        }
+        const yPositions = [...this._vertices.map(d=>d.y),min(this._vertices.map(d=>d.y))];
+        return [max(yPositions),min(yPositions)];
     }
 
     /**

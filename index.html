@@ -249,9 +249,9 @@
                 new CircleBauble(),
             ],
 
-    origin:d3.min(tree.nodeList,n=>n.annotations.date),
+    origin:d3.max(tree.nodeList,n=>n.annotations.date),
         reverseAxis: true,
-            ticks:2,
+            ticks:5,
             tickFormat:d3.format("")});
     figTree.draw();
 
@@ -265,10 +265,15 @@
         { hoverBorder: 2, backgroundBorder: 2,
             baubles: [
                 new CircleBauble(),
-            ]
+            ],
+            origin:rttpLayout.horizontalDomain[1],
+            reverseAxis:true
         });
     rootToTipPlot.draw();
-    rrtp.linkWithTree(treeSVG);
+
+    console.log(rttpLayout.horizontalDomain)
+    console.log(rootToTipPlot.settings.origin)
+    // rrtp.linkWithTree(treeSVG);
 
 </script>
 
@@ -325,12 +330,17 @@
         { hoverBorder: 2, backgroundBorder: 2,
             baubles: [
                 new CircleBauble(),
-            ]
+            ],
+            branchCurve:d3.curveLinear,
+            origin:rttpLayout.horizontalDomain[1],
+            reverseAxis:true,
+            tickFormat: d3.format("")
         });
+
     rootToTipPlot.draw();
 
 
-    rrtp.linkWithTree(treeSVG);
+    // rrtp.linkWithTree(treeSVG);
 
 </script>
 
