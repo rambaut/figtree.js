@@ -1,6 +1,7 @@
 "use strict";
 import {select,easeLinear,scaleLinear,axisBottom,mouse,event,format,curveStepBefore,line} from "d3";
 import uuid from "uuid";
+import {CircleBauble} from "./bauble";
 
 /** @module figtree */
 // const d3 = require("d3");
@@ -39,21 +40,28 @@ export class FigTree {
                 tickFormat:format(".2f"),
                 ticks:5,
             },
-            // nodeRadius: 6,
-            hoverBorder: 2,
-            backgroundBorder: 0,
-            baubles: [],
-            transitionDuration:500,
-            transitionEase:easeLinear,
-            branchCurve:curveStepBefore,
-            curveRadius:0,
+            vertices:{
+                hoverBorder: 2,
+                backgroundBorder: 0,
+                baubles: [ new CircleBauble()],
+            },
+            edges:{
+                branchCurve:curveStepBefore,
+                curveRadius:0
+            },
+            transition:{
+                transitionDuration:500,
+                transitionEase:easeLinear
+            }
+
+
             // origin should not have to be set. It could be gotten from layout positions unless otherwise specified.
         };
     }
     static DEFAULT_STYLES(){
-        return {"nodes":{},
-            "nodeBackgrounds":{},
-            "branches":{"fill":d=>"none","stroke-width":d=>"2","stroke":d=>"black"},
+        return {"vertices":{},
+            "vertexBackgrounds":{},
+            "edges":{"fill":d=>"none","stroke-width":d=>"2","stroke":d=>"black"},
         "cartoons":{"fill":d=>"none","stroke-width":d=>"2","stroke":d=>"black"}}
     }
 
@@ -68,6 +76,15 @@ export class FigTree {
         this.layout = layout;
         this.margins = margins;
 
+
+        this.settings = {...FigTree.DEFAULT_SETTINGS()};
+        for(const key of Object.keys(this.settings)) {
+            if (settings[key]) {
+                this.settings[key] = {
+                    ...this.settings[key], ...settings[key]
+                }
+            }
+        }
         // merge the default settings with the supplied settings
         const styles = FigTree.DEFAULT_STYLES();
         //update style maps
@@ -78,20 +95,12 @@ export class FigTree {
                 }
             }
         }
-        let {xScale,yScale}=FigTree.DEFAULT_SETTINGS();
-        if(settings.xScale){
-            xScale = {...xScale,...settings.xScale}
-        }
-        if(settings.yScale){
-            yScale = {...yScale,...settings.yScale}
-        }
 
-        this.settings = {...FigTree.DEFAULT_SETTINGS(),
-                        ...settings,
-                        ...{styles:styles},
-                        ...{xScale:xScale},
-                        ...{yScale:yScale}
-                        };
+
+        this.settings.styles=styles;
+
+
+
 
         this.callbacks= {nodes:[],branches:[],cartoons:[]};
         this._annotations =[];
@@ -132,7 +141,7 @@ export class FigTree {
         this.svgSelection.append("g").attr("class", "cartoon-layer");
 
         this.svgSelection.append("g").attr("class", "branches-layer");
-        if (this.settings.backgroundBorder > 0) {
+        if (this.settings.vertices.backgroundBorder > 0) {
             this.svgSelection.append("g").attr("class", "nodes-background-layer");
         }
         this.svgSelection.append("g").attr("class", "nodes-layer");
@@ -204,7 +213,7 @@ export class FigTree {
             updateYAxis.call(this)
         }
 
-        if (this.settings.backgroundBorder > 0) {
+        if (this.settings.vertices.backgroundBorder > 0) {
             updateNodeBackgrounds.call(this);
         }
 
@@ -267,7 +276,7 @@ export class FigTree {
             const selected = this.svgSelection.selectAll(selection);
             selected.on("mouseover", function (d, i) {
                 const node = select(this).select(".node-shape");
-                self.settings.baubles.forEach((bauble) => {
+                self.settings.vertices.baubles.forEach((bauble) => {
                     // if (bauble.vertexFilter(node)) {
                     bauble.updateShapes(node, self.settings.hoverBorder);
                     // }
@@ -278,7 +287,7 @@ export class FigTree {
             selected.on("mouseout", function (d, i) {
                 const node = select(this).select(".node-shape");
 
-                self.settings.baubles.forEach((bauble) => {
+                self.settings.vertices.baubles.forEach((bauble) => {
                     // if (bauble.vertexFilter(node)) {
                     bauble.updateShapes(node, 0);
                     // }
@@ -461,13 +470,15 @@ export class FigTree {
 
     }
 
-    updateSettings(newSettings){
-        //update style maps
-        if(newSettings.styles) {
-            newSettings.styles = {...this.settings.styles, ...newSettings.styles}
+    updateSettings(settings){
+        // totally rewrites old settings
+        for(const key of Object.keys(this.settings)) {
+            if (settings[key]) {
+                this.settings[key] = {
+                    ...this.settings[key], ...settings[key]
+                }
+            }
         }
-
-        this.settings={...this.settings,...newSettings};
         this.update();
     }
 
@@ -504,7 +515,7 @@ function updateNodes() {
         });
 
     // add the specific node shapes or 'baubles'
-    this.settings.baubles.forEach((bauble) => {
+    this.settings.vertices.baubles.forEach((bauble) => {
         const d = bauble
             .createShapes(newNodes.filter(bauble.vertexFilter))
             .attr("class", "node-shape");
@@ -530,8 +541,8 @@ function updateNodes() {
     // update the existing elements
     nodes
         .transition()
-        .duration(this.settings.transitionDuration)
-        .ease(this.settings.transitionEase)
+        .duration(this.settings.transition.transitionDuration)
+        .ease(this.settings.transition.transitionEase)
         .attr("class", (v) => ["node", ...v.classes].join(" "))
         .attr("transform", (v) => {
             return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
@@ -540,20 +551,20 @@ function updateNodes() {
 
 
     // update all the baubles
-    this.settings.baubles.forEach((bauble) => {
+    this.settings.vertices.baubles.forEach((bauble) => {
         const d = nodes.select(".node-shape")
             .filter(bauble.vertexFilter)
             .transition()
-            .duration(this.settings.transitionDuration)
-            .ease(this.settings.transitionEase)
+            .duration(this.settings.transition.transitionDuration)
+            .ease(this.settings.transition.transitionEase)
         ;
         bauble.updateShapes(d)
     });
 
     nodes.select("text .node-label .name")
         .transition()
-        .duration(this.settings.transitionDuration)
-        .ease(this.settings.transitionEase)
+        .duration(this.settings.transition.transitionDuration)
+        .ease(this.settings.transition.transitionEase)
         .attr("class", "node-label name")
         .attr("text-anchor", "start")
         .attr("alignment-baseline", "middle")
@@ -563,8 +574,8 @@ function updateNodes() {
 
     nodes.select("text .node-label .support")
         .transition()
-        .duration(this.settings.transitionDuration)
-        .ease(this.settings.transitionEase)
+        .duration(this.settings.transition.transitionDuration)
+        .ease(this.settings.transition.transitionEase)
         .attr("alignment-baseline", d => (d.labelBelow ? "bottom": "hanging" ))
         .attr("class", "node-label support")
         .attr("text-anchor", "end")
@@ -601,7 +612,7 @@ function updateNodeBackgrounds() {
     const newNodes = nodes.enter();
 
     // add the specific node shapes or 'baubles'
-    this.settings.baubles.forEach((bauble) => {
+    this.settings.vertices.baubles.forEach((bauble) => {
         const d = bauble
             .createShapes(newNodes.filter(bauble.vertexFilter))
             .attr("class", "node-background")
@@ -613,12 +624,12 @@ function updateNodeBackgrounds() {
     });
 
     // update all the existing elements
-    this.settings.baubles.forEach((bauble) => {
+    this.settings.vertices.baubles.forEach((bauble) => {
         const d = nodes
             .filter(bauble.vertexFilter)
             .transition()
-            .duration(this.settings.transitionDuration)
-            .ease(this.settings.transitionEase)
+            .duration(this.settings.transition.transitionDuration)
+            .ease(this.settings.transition.transitionEase)
             .attr("transform", (v) => {
                 return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
             });
@@ -676,8 +687,8 @@ function updateBranches() {
     // update the existing elements
     branches
         .transition()
-        .duration(this.settings.transitionDuration)
-        .ease(this.settings.transitionEase)
+        .duration(this.settings.transition.transitionDuration)
+        .ease(this.settings.transition.transitionEase)
         .attr("class", (e) => ["branch", ...e.classes].join(" "))
         .attr("transform", (e) => {
             return `translate(${this.scales.x(e.v0.x+this.settings.xScale.offset)}, ${this.scales.y(e.v1.y)})`;
@@ -733,8 +744,8 @@ function updateCartoons(){
     // update the existing elements
     cartoons
         .transition()
-        .duration(this.settings.transitionDuration)
-        .ease(this.settings.transitionEase)
+        .duration(this.settings.transition.transitionDuration)
+        .ease(this.settings.transition.transitionEase)
         .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
         .attr("transform", (c) => {
             return `translate(${this.scales.x(c.vertices[0].x+this.settings.xScale.offset)}, ${this.scales.y(c.vertices[0].y)})`
@@ -834,16 +845,16 @@ function updateXAxis(){
     axesLayer
         .select("#x-axis")
         .transition()
-        .duration(this.settings.transitionDuration)
-        .ease(this.settings.transitionEase)
+        .duration(this.settings.transition.transitionDuration)
+        .ease(this.settings.transition.transitionEase)
         .call(xAxis);
 
     axesLayer
         .select("#x-axis-label")
         .select("text")
         .transition()
-        .duration(this.settings.transitionDuration)
-        .ease(this.settings.transitionEase)
+        .duration(this.settings.transition.transitionDuration)
+        .ease(this.settings.transition.transitionEase)
         .text(xSettings.title);
 }
 function updateYAxis(){
@@ -859,16 +870,16 @@ function updateYAxis(){
     axesLayer
         .select("#y-axis")
         .transition()
-        .duration(this.settings.transitionDuration)
-        .ease(this.settings.transitionEase)
+        .duration(this.settings.transition.transitionDuration)
+        .ease(this.settings.transition.transitionEase)
         .call(yAxis);
 
     axesLayer
         .select("#y-axis-label")
         .select("text")
         .transition()
-        .duration(this.settings.transitionDuration)
-        .ease(this.settings.transitionEase)
+        .duration(this.settings.transition.transitionDuration)
+        .ease(this.settings.transition.transitionEase)
         .text(ySettings.title);
 }
 
@@ -880,12 +891,12 @@ function updateNodeStyles(){
     // DATA JOIN
     // Join new data with old elements, if any.
     const nodes = nodesLayer.selectAll(".node .node-shape");
-    const nodeStyles = this.settings.styles.nodes;
-    for(const key of Object.keys(nodeStyles)){
+    const vertexStyles = this.settings.styles.vertices;
+    for(const key of Object.keys(vertexStyles)){
         nodes
             // .transition()
-            // .duration(this.settings.transitionDuration)
-            .attr(key,d=>nodeStyles[key].call(this,d.node))
+            // .duration(this.settings.transition.transitionDuration)
+            .attr(key,v=>vertexStyles[key].call(this,v))
     }
 
 
@@ -898,12 +909,12 @@ function updateNodeBackgroundStyles(){
     // Join new data with old elements, if any.
     const nodes = nodesBackgroundLayer.selectAll(".node-background")
 
-    const nodeBackgroundsStyles = this.settings.styles.nodeBackgrounds;
-    for(const key of Object.keys(nodeBackgroundsStyles)){
+    const vertexBackgroundsStyles = this.settings.styles.vertexBackgrounds;
+    for(const key of Object.keys(vertexBackgroundsStyles)){
         nodes
             // .transition()
-            // .duration(this.settings.transitionDuration)
-            .attr(key,d=>nodeBackgroundsStyles[key].call(this,d.node))
+            // .duration(this.settings.transition.transitionDuration)
+            .attr(key,v=>vertexBackgroundsStyles[key].call(this,v))
     }
 
 }
@@ -915,12 +926,12 @@ function updateBranchStyles(){
     // Join new data with old elements, if any.
     const branches = branchesLayer.selectAll("g .branch .branch-path")
 
-    const branchStyles = this.settings.styles["branches"];
+    const branchStyles = this.settings.styles["edges"];
     for(const key of Object.keys(branchStyles)){
         branches
             // .transition()
-            // .duration(this.settings.transitionDuration)
-            .attr(key,d=>branchStyles[key].call(this,d.v1.node))
+            // .duration(this.settings.transition.transitionDuration)
+            .attr(key,e=>branchStyles[key].call(this,e))
     }
 }
 
@@ -934,8 +945,8 @@ function updateCartoonStyles(){
     for(const key of Object.keys(CartoonStyles)){
         cartoons
         // .transition()
-        // .duration(this.settings.transitionDuration)
-            .attr(key,c=>CartoonStyles[key].call(this,c.vertices[0].node))
+        // .duration(this.settings.transition.transitionDuration)
+            .attr(key,c=>CartoonStyles[key].call(this,c))
         // attributes are set by the "root" node
     }
 }
@@ -956,7 +967,7 @@ function pointToPoint(points){
 
 function updateAnnoations(){
     for( const annotation of this._annotations){
-        annotation.call(this);
+        annotation(this)();
     }
 }
 /**
@@ -976,14 +987,14 @@ function branchPathGenerator(){
         const branchLine = line()
             .x((v) => v.x)
             .y((v) => v.y)
-            .curve(this.settings.branchCurve);
+            .curve(this.settings.edges.branchCurve);
         const factor = e.v0.y-e.v1.y>0? 1:-1;
         const dontNeedCurve = e.v0.y-e.v1.y===0?0:1;
-        const output = this.settings.curveRadius>0?
+        const output = this.settings.edges.curveRadius>0?
             branchLine(
                 [{x: 0, y: this.scales.y(e.v0.y) - this.scales.y(e.v1.y)},
-                    { x:0, y:dontNeedCurve*factor * this.settings.curveRadius},
-                    {x:0 + dontNeedCurve*this.settings.curveRadius, y:0},
+                    { x:0, y:dontNeedCurve*factor * this.settings.edges.curveRadius},
+                    {x:0 + dontNeedCurve*this.settings.edges.curveRadius, y:0},
                     {x: this.scales.x(e.v1.x+this.settings.xScale.offset) - this.scales.x(e.v0.x+this.settings.xScale.offset), y: 0}
                 ]):
             branchLine(

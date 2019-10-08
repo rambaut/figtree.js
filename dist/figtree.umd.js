@@ -11285,24 +11285,29 @@
 	          tickFormat: format(".2f"),
 	          ticks: 5
 	        },
-	        // nodeRadius: 6,
-	        hoverBorder: 2,
-	        backgroundBorder: 0,
-	        baubles: [],
-	        transitionDuration: 500,
-	        transitionEase: linear$1,
-	        branchCurve: stepBefore,
-	        curveRadius: 0 // origin should not have to be set. It could be gotten from layout positions unless otherwise specified.
+	        vertices: {
+	          hoverBorder: 2,
+	          backgroundBorder: 0,
+	          baubles: [new CircleBauble()]
+	        },
+	        edges: {
+	          branchCurve: stepBefore,
+	          curveRadius: 0
+	        },
+	        transition: {
+	          transitionDuration: 500,
+	          transitionEase: linear$1 // origin should not have to be set. It could be gotten from layout positions unless otherwise specified.
 
+	        }
 	      };
 	    }
 	  }, {
 	    key: "DEFAULT_STYLES",
 	    value: function DEFAULT_STYLES() {
 	      return {
-	        "nodes": {},
-	        "nodeBackgrounds": {},
-	        "branches": {
+	        "vertices": {},
+	        "vertexBackgrounds": {},
+	        "edges": {
 	          "fill": function fill(d) {
 	            return "none";
 	          },
@@ -11342,13 +11347,23 @@
 	    classCallCheck(this, FigTree);
 
 	    this.layout = layout;
-	    this.margins = margins; // merge the default settings with the supplied settings
+	    this.margins = margins;
+	    this.settings = objectSpread({}, FigTree.DEFAULT_SETTINGS());
+
+	    for (var _i = 0, _Object$keys = Object.keys(this.settings); _i < _Object$keys.length; _i++) {
+	      var _key = _Object$keys[_i];
+
+	      if (settings[_key]) {
+	        this.settings[_key] = objectSpread({}, this.settings[_key], settings[_key]);
+	      }
+	    } // merge the default settings with the supplied settings
+
 
 	    var styles = FigTree.DEFAULT_STYLES(); //update style maps
 
 	    if (settings.styles) {
-	      for (var _i = 0, _Object$keys = Object.keys(styles); _i < _Object$keys.length; _i++) {
-	        var key = _Object$keys[_i];
+	      for (var _i2 = 0, _Object$keys2 = Object.keys(styles); _i2 < _Object$keys2.length; _i2++) {
+	        var key = _Object$keys2[_i2];
 
 	        if (settings.styles[key]) {
 	          styles[key] = objectSpread({}, styles[key], settings.styles[key]);
@@ -11356,25 +11371,7 @@
 	      }
 	    }
 
-	    var _FigTree$DEFAULT_SETT = FigTree.DEFAULT_SETTINGS(),
-	        xScale = _FigTree$DEFAULT_SETT.xScale,
-	        yScale = _FigTree$DEFAULT_SETT.yScale;
-
-	    if (settings.xScale) {
-	      xScale = objectSpread({}, xScale, settings.xScale);
-	    }
-
-	    if (settings.yScale) {
-	      yScale = objectSpread({}, yScale, settings.yScale);
-	    }
-
-	    this.settings = objectSpread({}, FigTree.DEFAULT_SETTINGS(), settings, {
-	      styles: styles
-	    }, {
-	      xScale: xScale
-	    }, {
-	      yScale: yScale
-	    });
+	    this.settings.styles = styles;
 	    this.callbacks = {
 	      nodes: [],
 	      branches: [],
@@ -11419,7 +11416,7 @@
 	      this.svgSelection.append("g").attr("class", "cartoon-layer");
 	      this.svgSelection.append("g").attr("class", "branches-layer");
 
-	      if (this.settings.backgroundBorder > 0) {
+	      if (this.settings.vertices.backgroundBorder > 0) {
 	        this.svgSelection.append("g").attr("class", "nodes-background-layer");
 	      }
 
@@ -11492,7 +11489,7 @@
 	        updateYAxis.call(this);
 	      }
 
-	      if (this.settings.backgroundBorder > 0) {
+	      if (this.settings.vertices.backgroundBorder > 0) {
 	        updateNodeBackgrounds.call(this);
 	      }
 
@@ -11561,7 +11558,7 @@
 
 	        selected.on("mouseover", function (d, i) {
 	          var node = select(this).select(".node-shape");
-	          self.settings.baubles.forEach(function (bauble) {
+	          self.settings.vertices.baubles.forEach(function (bauble) {
 	            // if (bauble.vertexFilter(node)) {
 	            bauble.updateShapes(node, self.settings.hoverBorder); // }
 	          });
@@ -11569,7 +11566,7 @@
 	        });
 	        selected.on("mouseout", function (d, i) {
 	          var node = select(this).select(".node-shape");
-	          self.settings.baubles.forEach(function (bauble) {
+	          self.settings.vertices.baubles.forEach(function (bauble) {
 	            // if (bauble.vertexFilter(node)) {
 	            bauble.updateShapes(node, 0); // }
 	          });
@@ -11767,13 +11764,16 @@
 	    }
 	  }, {
 	    key: "updateSettings",
-	    value: function updateSettings(newSettings) {
-	      //update style maps
-	      if (newSettings.styles) {
-	        newSettings.styles = objectSpread({}, this.settings.styles, newSettings.styles);
+	    value: function updateSettings(settings) {
+	      // totally rewrites old settings
+	      for (var _i3 = 0, _Object$keys3 = Object.keys(this.settings); _i3 < _Object$keys3.length; _i3++) {
+	        var key = _Object$keys3[_i3];
+
+	        if (settings[key]) {
+	          this.settings[key] = objectSpread({}, this.settings[key], settings[key]);
+	        }
 	      }
 
-	      this.settings = objectSpread({}, this.settings, newSettings);
 	      this.update();
 	    }
 	  }, {
@@ -11820,7 +11820,7 @@
 	    return "translate(".concat(_this8.scales.x(v.x + _this8.settings.xScale.offset), ", ").concat(_this8.scales.y(v.y), ")");
 	  }); // add the specific node shapes or 'baubles'
 
-	  this.settings.baubles.forEach(function (bauble) {
+	  this.settings.vertices.baubles.forEach(function (bauble) {
 	    var d = bauble.createShapes(newNodes.filter(bauble.vertexFilter)).attr("class", "node-shape");
 	    bauble.updateShapes(d);
 	  });
@@ -11835,20 +11835,20 @@
 	    return d.leftLabel;
 	  }); // update the existing elements
 
-	  nodes.transition().duration(this.settings.transitionDuration).ease(this.settings.transitionEase).attr("class", function (v) {
+	  nodes.transition().duration(this.settings.transition.transitionDuration).ease(this.settings.transition.transitionEase).attr("class", function (v) {
 	    return ["node"].concat(toConsumableArray(v.classes)).join(" ");
 	  }).attr("transform", function (v) {
 	    return "translate(".concat(_this8.scales.x(v.x + _this8.settings.xScale.offset), ", ").concat(_this8.scales.y(v.y), ")");
 	  }); // update all the baubles
 
-	  this.settings.baubles.forEach(function (bauble) {
-	    var d = nodes.select(".node-shape").filter(bauble.vertexFilter).transition().duration(_this8.settings.transitionDuration).ease(_this8.settings.transitionEase);
+	  this.settings.vertices.baubles.forEach(function (bauble) {
+	    var d = nodes.select(".node-shape").filter(bauble.vertexFilter).transition().duration(_this8.settings.transition.transitionDuration).ease(_this8.settings.transition.transitionEase);
 	    bauble.updateShapes(d);
 	  });
-	  nodes.select("text .node-label .name").transition().duration(this.settings.transitionDuration).ease(this.settings.transitionEase).attr("class", "node-label name").attr("text-anchor", "start").attr("alignment-baseline", "middle").attr("dx", "12").attr("dy", "0").text(function (d) {
+	  nodes.select("text .node-label .name").transition().duration(this.settings.transition.transitionDuration).ease(this.settings.transition.transitionEase).attr("class", "node-label name").attr("text-anchor", "start").attr("alignment-baseline", "middle").attr("dx", "12").attr("dy", "0").text(function (d) {
 	    return d.rightLabel;
 	  });
-	  nodes.select("text .node-label .support").transition().duration(this.settings.transitionDuration).ease(this.settings.transitionEase).attr("alignment-baseline", function (d) {
+	  nodes.select("text .node-label .support").transition().duration(this.settings.transition.transitionDuration).ease(this.settings.transition.transitionEase).attr("alignment-baseline", function (d) {
 	    return d.labelBelow ? "bottom" : "hanging";
 	  }).attr("class", "node-label support").attr("text-anchor", "end").attr("dx", "-6").attr("dy", function (d) {
 	    return d.labelBelow ? -8 : +8;
@@ -11898,15 +11898,15 @@
 
 	  var newNodes = nodes.enter(); // add the specific node shapes or 'baubles'
 
-	  this.settings.baubles.forEach(function (bauble) {
+	  this.settings.vertices.baubles.forEach(function (bauble) {
 	    var d = bauble.createShapes(newNodes.filter(bauble.vertexFilter)).attr("class", "node-background").attr("transform", function (v) {
 	      return "translate(".concat(_this9.scales.x(v.x + _this9.settings.xScale.offset), ", ").concat(_this9.scales.y(v.y), ")");
 	    });
 	    bauble.updateShapes(d, _this9.settings.backgroundBorder);
 	  }); // update all the existing elements
 
-	  this.settings.baubles.forEach(function (bauble) {
-	    var d = nodes.filter(bauble.vertexFilter).transition().duration(_this9.settings.transitionDuration).ease(_this9.settings.transitionEase).attr("transform", function (v) {
+	  this.settings.vertices.baubles.forEach(function (bauble) {
+	    var d = nodes.filter(bauble.vertexFilter).transition().duration(_this9.settings.transition.transitionDuration).ease(_this9.settings.transition.transitionEase).attr("transform", function (v) {
 	      return "translate(".concat(_this9.scales.x(v.x + _this9.settings.xScale.offset), ", ").concat(_this9.scales.y(v.y), ")");
 	    });
 	    bauble.updateShapes(d, _this9.settings.backgroundBorder);
@@ -11958,7 +11958,7 @@
 	    return e.label;
 	  }); // update the existing elements
 
-	  branches.transition().duration(this.settings.transitionDuration).ease(this.settings.transitionEase).attr("class", function (e) {
+	  branches.transition().duration(this.settings.transition.transitionDuration).ease(this.settings.transition.transitionEase).attr("class", function (e) {
 	    return ["branch"].concat(toConsumableArray(e.classes)).join(" ");
 	  }).attr("transform", function (e) {
 	    return "translate(".concat(_this10.scales.x(e.v0.x + _this10.settings.xScale.offset), ", ").concat(_this10.scales.y(e.v1.y), ")");
@@ -12025,7 +12025,7 @@
 	    return pointToPoint.call(_this11, e.vertices);
 	  }); // update the existing elements
 
-	  cartoons.transition().duration(this.settings.transitionDuration).ease(this.settings.transitionEase).attr("class", function (c) {
+	  cartoons.transition().duration(this.settings.transition.transitionDuration).ease(this.settings.transition.transitionEase).attr("class", function (c) {
 	    return ["cartoon"].concat(toConsumableArray(c.classes)).join(" ");
 	  }).attr("transform", function (c) {
 	    return "translate(".concat(_this11.scales.x(c.vertices[0].x + _this11.settings.xScale.offset), ", ").concat(_this11.scales.y(c.vertices[0].y), ")");
@@ -12095,8 +12095,8 @@
 	  var domain = xSettings.origin !== null ? [xSettings.origin + reverse * xSettings.branchScale * Math.abs(this.scales.x.domain()[0] - this.scales.x.domain()[1]), xSettings.origin] : this.scales.x.domain();
 	  var xAxis = xSettings.axis(xSettings.scale().domain(domain).range(this.scales.x.range())).ticks(xSettings.ticks).tickFormat(xSettings.tickFormat);
 	  var axesLayer = this.svgSelection.select(".axes-layer");
-	  axesLayer.select("#x-axis").transition().duration(this.settings.transitionDuration).ease(this.settings.transitionEase).call(xAxis);
-	  axesLayer.select("#x-axis-label").select("text").transition().duration(this.settings.transitionDuration).ease(this.settings.transitionEase).text(xSettings.title);
+	  axesLayer.select("#x-axis").transition().duration(this.settings.transition.transitionDuration).ease(this.settings.transition.transitionEase).call(xAxis);
+	  axesLayer.select("#x-axis-label").select("text").transition().duration(this.settings.transition.transitionDuration).ease(this.settings.transition.transitionEase).text(xSettings.title);
 	}
 
 	function updateYAxis() {
@@ -12105,8 +12105,8 @@
 	  var domain = ySettings.origin !== null ? [ySettings.origin + reverse * ySettings.branchScale * Math.abs(this.scales.y.domain()[0] - this.scales.y.domain()[1]), ySettings.origin] : this.scales.y.domain();
 	  var yAxis = ySettings.axis(ySettings.scale().domain(domain).range(this.scales.y.range())).ticks(ySettings.ticks).tickFormat(ySettings.tickFormat);
 	  var axesLayer = this.svgSelection.select(".axes-layer");
-	  axesLayer.select("#y-axis").transition().duration(this.settings.transitionDuration).ease(this.settings.transitionEase).call(yAxis);
-	  axesLayer.select("#y-axis-label").select("text").transition().duration(this.settings.transitionDuration).ease(this.settings.transitionEase).text(ySettings.title);
+	  axesLayer.select("#y-axis").transition().duration(this.settings.transition.transitionDuration).ease(this.settings.transition.transitionEase).call(yAxis);
+	  axesLayer.select("#y-axis-label").select("text").transition().duration(this.settings.transition.transitionDuration).ease(this.settings.transition.transitionEase).text(ySettings.title);
 	}
 
 	function updateNodeStyles() {
@@ -12116,18 +12116,18 @@
 	  // Join new data with old elements, if any.
 
 	  var nodes = nodesLayer.selectAll(".node .node-shape");
-	  var nodeStyles = this.settings.styles.nodes;
+	  var vertexStyles = this.settings.styles.vertices;
 
 	  var _loop = function _loop() {
-	    var key = _Object$keys2[_i2];
+	    var key = _Object$keys4[_i4];
 	    nodes // .transition()
-	    // .duration(this.settings.transitionDuration)
-	    .attr(key, function (d) {
-	      return nodeStyles[key].call(_this12, d.node);
+	    // .duration(this.settings.transition.transitionDuration)
+	    .attr(key, function (v) {
+	      return vertexStyles[key].call(_this12, v);
 	    });
 	  };
 
-	  for (var _i2 = 0, _Object$keys2 = Object.keys(nodeStyles); _i2 < _Object$keys2.length; _i2++) {
+	  for (var _i4 = 0, _Object$keys4 = Object.keys(vertexStyles); _i4 < _Object$keys4.length; _i4++) {
 	    _loop();
 	  }
 	}
@@ -12139,18 +12139,18 @@
 	  // Join new data with old elements, if any.
 
 	  var nodes = nodesBackgroundLayer.selectAll(".node-background");
-	  var nodeBackgroundsStyles = this.settings.styles.nodeBackgrounds;
+	  var vertexBackgroundsStyles = this.settings.styles.vertexBackgrounds;
 
 	  var _loop2 = function _loop2() {
-	    var key = _Object$keys3[_i3];
+	    var key = _Object$keys5[_i5];
 	    nodes // .transition()
-	    // .duration(this.settings.transitionDuration)
-	    .attr(key, function (d) {
-	      return nodeBackgroundsStyles[key].call(_this13, d.node);
+	    // .duration(this.settings.transition.transitionDuration)
+	    .attr(key, function (v) {
+	      return vertexBackgroundsStyles[key].call(_this13, v);
 	    });
 	  };
 
-	  for (var _i3 = 0, _Object$keys3 = Object.keys(nodeBackgroundsStyles); _i3 < _Object$keys3.length; _i3++) {
+	  for (var _i5 = 0, _Object$keys5 = Object.keys(vertexBackgroundsStyles); _i5 < _Object$keys5.length; _i5++) {
 	    _loop2();
 	  }
 	}
@@ -12162,18 +12162,18 @@
 	  // Join new data with old elements, if any.
 
 	  var branches = branchesLayer.selectAll("g .branch .branch-path");
-	  var branchStyles = this.settings.styles["branches"];
+	  var branchStyles = this.settings.styles["edges"];
 
 	  var _loop3 = function _loop3() {
-	    var key = _Object$keys4[_i4];
+	    var key = _Object$keys6[_i6];
 	    branches // .transition()
-	    // .duration(this.settings.transitionDuration)
-	    .attr(key, function (d) {
-	      return branchStyles[key].call(_this14, d.v1.node);
+	    // .duration(this.settings.transition.transitionDuration)
+	    .attr(key, function (e) {
+	      return branchStyles[key].call(_this14, e);
 	    });
 	  };
 
-	  for (var _i4 = 0, _Object$keys4 = Object.keys(branchStyles); _i4 < _Object$keys4.length; _i4++) {
+	  for (var _i6 = 0, _Object$keys6 = Object.keys(branchStyles); _i6 < _Object$keys6.length; _i6++) {
 	    _loop3();
 	  }
 	}
@@ -12188,15 +12188,15 @@
 	  var CartoonStyles = this.settings.styles.cartoons;
 
 	  var _loop4 = function _loop4() {
-	    var key = _Object$keys5[_i5];
+	    var key = _Object$keys7[_i7];
 	    cartoons // .transition()
-	    // .duration(this.settings.transitionDuration)
+	    // .duration(this.settings.transition.transitionDuration)
 	    .attr(key, function (c) {
-	      return CartoonStyles[key].call(_this15, c.vertices[0].node);
+	      return CartoonStyles[key].call(_this15, c);
 	    }); // attributes are set by the "root" node
 	  };
 
-	  for (var _i5 = 0, _Object$keys5 = Object.keys(CartoonStyles); _i5 < _Object$keys5.length; _i5++) {
+	  for (var _i7 = 0, _Object$keys7 = Object.keys(CartoonStyles); _i7 < _Object$keys7.length; _i7++) {
 	    _loop4();
 	  }
 	}
@@ -12244,7 +12244,7 @@
 	  try {
 	    for (var _iterator5 = this._annotations[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
 	      var annotation = _step5.value;
-	      annotation.call(this);
+	      annotation(this)();
 	    }
 	  } catch (err) {
 	    _didIteratorError5 = true;
@@ -12282,17 +12282,17 @@
 	      return v.x;
 	    }).y(function (v) {
 	      return v.y;
-	    }).curve(_this16.settings.branchCurve);
+	    }).curve(_this16.settings.edges.branchCurve);
 	    var factor = e.v0.y - e.v1.y > 0 ? 1 : -1;
 	    var dontNeedCurve = e.v0.y - e.v1.y === 0 ? 0 : 1;
-	    var output = _this16.settings.curveRadius > 0 ? branchLine([{
+	    var output = _this16.settings.edges.curveRadius > 0 ? branchLine([{
 	      x: 0,
 	      y: _this16.scales.y(e.v0.y) - _this16.scales.y(e.v1.y)
 	    }, {
 	      x: 0,
-	      y: dontNeedCurve * factor * _this16.settings.curveRadius
+	      y: dontNeedCurve * factor * _this16.settings.edges.curveRadius
 	    }, {
-	      x: 0 + dontNeedCurve * _this16.settings.curveRadius,
+	      x: 0 + dontNeedCurve * _this16.settings.edges.curveRadius,
 	      y: 0
 	    }, {
 	      x: _this16.scales.x(e.v1.x + _this16.settings.xScale.offset) - _this16.scales.x(e.v0.x + _this16.settings.xScale.offset),
