@@ -27,10 +27,12 @@ export class FigTree {
             ticks:5,
             branchCurve:curveStepBefore,
             curveRadius:0,
+            // origin should not have to be set. It could be gotten from layout positions unless otherwise specified.
             origin:0,
             reverseAxis:false,
             branchScale:1,
-            offset:0
+            offset:0,
+            yAxis:null
         };
     }
     static DEFAULT_STYLES(){

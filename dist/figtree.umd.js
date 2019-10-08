@@ -10122,10 +10122,8 @@
 
 	      this._edges.forEach(function (e) {
 	        _this2[setupEdge](e);
-	      }); // update verticalDomain so that we count tips that are in cartoons but not those that are ignored
+	      });
 
-
-	      this._verticalRange = [0, currentY];
 	      this.layoutKnown = true;
 	    }
 	  }, {
@@ -11276,10 +11274,12 @@
 	        ticks: 5,
 	        branchCurve: stepBefore,
 	        curveRadius: 0,
+	        // origin should not have to be set. It could be gotten from layout positions unless otherwise specified.
 	        origin: 0,
 	        reverseAxis: false,
 	        branchScale: 1,
-	        offset: 0
+	        offset: 0,
+	        yAxis: null
 	      };
 	    }
 	  }, {
@@ -12264,12 +12264,77 @@
 	    classCallCheck(this, RootToTipPlot);
 
 	    return possibleConstructorReturn(this, getPrototypeOf(RootToTipPlot).call(this, tree, settings));
-	  } // layout() {
-	  //     this._vertices =
-	  // }
-
+	  }
 
 	  createClass(RootToTipPlot, [{
+	    key: "layout",
+	    value: function layout() {
+	      var _this = this;
+
+	      var treeNodes = this._getTreeNodes();
+
+	      this[makeVerticesFromNodes](treeNodes); // update the node locations (vertices)
+
+	      treeNodes.forEach(function (n) {
+	        var v = _this._nodeMap.get(n);
+
+	        _this.setYPosition(v, null);
+
+	        _this.setXPosition(v, null);
+
+	        v.id = v.node.id;
+
+	        _this[setVertexClasses](v);
+
+	        _this[setVertexLabels](v);
+	      });
+	      var regression = this.leastSquares(this._vertices.filter(function (v) {
+	        return v.visibility === VertexStyle$1.INCLUDED;
+	      }));
+	      var x1 = min(this._vertices, function (d) {
+	        return d.x;
+	      });
+	      var x2 = max(this._vertices, function (d) {
+	        return d.x;
+	      });
+	      var y1 = 0.0;
+	      var y2 = max(this._vertices, function (d) {
+	        return d.y;
+	      });
+
+	      if (this._vertices.filter(function (v) {
+	        return v.visibility === VertexStyle$1.INCLUDED;
+	      }).length > 1 && regression.slope > 0.0) {
+	        x1 = regression.xIntercept;
+	        y2 = max([regression.y(x2), y2]);
+	      }
+
+	      var startPoint = {
+	        key: "startPoint",
+	        visibility: VertexStyle$1.HIDDEN,
+	        x: x1,
+	        y: y1
+	      };
+	      var endPoint = {
+	        key: "EndPoint",
+	        visibility: VertexStyle$1.HIDDEN,
+	        x: x2,
+	        y: y2
+	      };
+
+	      this._vertices.push(startPoint);
+
+	      this._vertices.push(endPoint);
+
+	      this._edges = [{
+	        v0: startPoint,
+	        v1: endPoint,
+	        key: "line",
+	        classes: []
+	      }];
+	      this.layoutKnown = true;
+	    }
+	  }, {
 	    key: "_getTreeNodes",
 	    value: function _getTreeNodes() {
 	      return this.tree.externalNodes;
@@ -12287,7 +12352,7 @@
 	  }, {
 	    key: "setXPosition",
 	    value: function setXPosition(vertex, currentX) {
-	      vertex.x = this._horizontalScale(vertex.node.date);
+	      vertex.x = vertex.node.annotations.date;
 	      return 0;
 	    }
 	  }, {
@@ -12295,12 +12360,6 @@
 	    value: function setYPosition(vertex, currentY) {
 	      vertex.y = this.tree.rootToTipLength(vertex.node);
 	      return vertex.y;
-	    }
-	  }, {
-	    key: "updateHorizontalScale",
-	    value: function updateHorizontalScale() {
-	      var newScale = this.settings.horizontalScale ? this.settings.horizontalScale : linear$2().domain([this.tree.rootNode.height + this.settings.offset, 0]).range(this._horizontalRange);
-	      return newScale;
 	    }
 	  }, {
 	    key: "leastSquares",
@@ -12394,43 +12453,32 @@
 	      points.on("click", clicked);
 	    }
 	  }, {
-	    key: "edges",
+	    key: "horizontalDomain",
 	    get: function get() {
-	      // make line
 	      if (!this.layoutKnown) {
 	        this.layout();
 	      }
 
-	      var points = this._vertices.filter(function (v) {
-	        return v.visibility === VertexStyle$1.INCLUDED;
-	      });
-
-	      var lineStart = {
-	        x: min(points, function (d) {
-	          return d.x;
-	        }),
-	        y: 0.0
-	      };
-	      var lineEnd = {
-	        x: max(points, function (d) {
-	          return d.x;
-	        }),
-	        y: max(points, function (d) {
-	          return d.y;
-	        })
-	      };
-	      var regression = this.leastSquares(points);
-
-	      if (points.length > 1 && regression.slope > 0.0) {
-	        lineStart.x = regression.xIntercept;
-	        lineEnd.y = max([regression.y(lineEnd.x), lineEnd.y]);
+	      var xPositions = [].concat(toConsumableArray(this._vertices.map(function (d) {
+	        return d.x;
+	      })), [min(this._vertices.map(function (d) {
+	        return d.x;
+	      }))]);
+	      return [min(xPositions), max(xPositions)];
+	    }
+	  }, {
+	    key: "verticalDomain",
+	    get: function get() {
+	      if (!this.layoutKnown) {
+	        this.layout();
 	      }
 
-	      return {
-	        v0: lineStart,
-	        v1: lineEnd,
-	        key: 'regression'
-	      };
+	      var yPositions = [].concat(toConsumableArray(this._vertices.map(function (d) {
+	        return d.y;
+	      })), [min(this._vertices.map(function (d) {
+	        return d.y;
+	      }))]);
+	      return [max(yPositions), min(yPositions)];
 	    }
 	  }]);
 
