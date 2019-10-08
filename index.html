@@ -248,11 +248,7 @@
             baubles: [
                 new CircleBauble(),
             ],
-
-    origin:d3.max(tree.nodeList,n=>n.annotations.date),
-        reverseAxis: true,
-            ticks:5,
-            tickFormat:d3.format("")});
+        });
     figTree.draw();
 
     figTree.hilightBranches();
@@ -261,13 +257,17 @@
     figTree.onClickNode(layout.rotate());
 
     const rttpLayout = new RootToTipPlot(tree);
-    const rootToTipPlot = new FigTree(document.getElementById('rrt-2-svg'), rttpLayout, { top: 10, bottom: 60, left: 10, right: 150},
+    const rootToTipPlot = new FigTree(document.getElementById('rrt-2-svg'), rttpLayout, { top: 10, bottom: 60, left: 60, right: 100},
         { hoverBorder: 2, backgroundBorder: 2,
             baubles: [
                 new CircleBauble(),
             ],
-            origin:rttpLayout.horizontalDomain[1],
-            reverseAxis:true
+
+            yScale:{
+            axis:d3.axisLeft,
+            title:"divergence"
+            },
+            xScale:{tickFormat: d3.format("")}
         });
     rootToTipPlot.draw();
 

@@ -9389,8 +9389,13 @@ class FigTree {
             .range([this.margins.top + 20, height -this.margins.bottom - 20]);
 
         this.scales = {x:xScale, y:yScale, width, height};
-        addAxis.call(this, this.margins);
 
+        if(this.settings.xScale.axis){
+            addXAxis.call(this, this.margins);
+        }
+        if(this.settings.yScale.axis){
+            addYAxis.call(this);
+        }
 
         // Called whenever the layout changes...
         this.layout.subscribeCallback(()=>this.update());
@@ -9429,10 +9434,16 @@ class FigTree {
         this.scales.width=width;
         this.scales.height=height;
 
-        updateAxis.call(this);
         updateAnnoations.call(this);
         updateCartoons.call(this);
         updateBranches.call(this);
+
+        if(this.settings.xScale.axis){
+            updateXAxis.call(this);
+        }
+        if(this.settings.yScale.axis){
+            updateYAxis.call(this);
+        }
 
         if (this.settings.backgroundBorder > 0) {
             updateNodeBackgrounds.call(this);
@@ -9988,32 +9999,22 @@ function updateCartoons(){
 /**
  * Add axis
  */
-function addAxis() {
-
-
-    //x scale nodeHeight [root,0] => pixels
-    // node Height [root,0] => [ orgin+root,orign] => pixels
-
-
+function addXAxis() {
     const xSettings = this.settings.xScale;
     const reverse = xSettings.reverseAxis? -1:1;
-
     const domain = xSettings.origin!==null?
         [xSettings.origin+reverse*xSettings.branchScale*(Math.abs(this.scales.x.domain()[0]-this.scales.x.domain()[1])),xSettings.origin]:
         this.scales.x.domain();
-
     const xAxis = xSettings.axis( xSettings.scale().domain(domain).range(this.scales.x.range()))
         .ticks(xSettings.ticks).tickFormat(xSettings.tickFormat);
-
     const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
-
     const axesLayer = this.svgSelection.select(".axes-layer");
 
     axesLayer
         .append("g")
         .attr("id", "x-axis")
         .attr("class", "axis")
-        .attr("transform", `translate(0, ${this.scales.height - this.margins.bottom + 5})`)
+        .attr("transform", `translate(0, ${this.scales.height - this.margins.bottom })`)
         .call(xAxis);
 
     axesLayer
@@ -10028,7 +10029,38 @@ function addAxis() {
         .text(xSettings.title);
 }
 
-function updateAxis(){
+function addYAxis() {
+    const ySettings = this.settings.yScale;
+    const reverse = ySettings.reverseAxis? -1:1;
+    const domain = ySettings.origin!==null?
+        [ySettings.origin+reverse*ySettings.branchScale*(Math.abs(this.scales.y.domain()[0]-this.scales.y.domain()[1])),ySettings.origin]:
+        this.scales.y.domain();
+    const yAxis = ySettings.axis( ySettings.scale().domain(domain).range(this.scales.y.range()))
+        .ticks(ySettings.ticks).tickFormat(ySettings.tickFormat);
+    const yAxisHeight = this.scales.height - this.margins.top - this.margins.bottom;
+    const axesLayer = this.svgSelection.select(".axes-layer");
+
+    axesLayer
+        .append("g")
+        .attr("id", "y-axis")
+        .attr("class", "axis")
+        .attr("transform", `translate(${this.margins.left}, 0)`)
+        .call(yAxis);
+
+    axesLayer
+        .append("g")
+        .attr("id", "y-axis-label")
+        .attr("class", "axis-label")
+        .attr("transform", `translate(0,${this.margins.top})`)
+        .attr("transform", `translate(0,${yAxisHeight / 2})`)
+        .append("text")
+        .attr("transform", "rotate(-90)")
+        // .attr("alignment-baseline", "hanging")
+        .style("text-anchor", "middle")
+        .text(ySettings.title);
+}
+
+function updateXAxis(){
     const xSettings = this.settings.xScale;
     const reverse = xSettings.reverseAxis? -1:1;
 
@@ -10038,9 +10070,6 @@ function updateAxis(){
 
     const xAxis = xSettings.axis( xSettings.scale().domain(domain).range(this.scales.x.range()))
         .ticks(xSettings.ticks).tickFormat(xSettings.tickFormat);
-
-    const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
-
     const axesLayer = this.svgSelection.select(".axes-layer");
 
     axesLayer
@@ -10048,21 +10077,41 @@ function updateAxis(){
         .transition()
         .duration(this.settings.transitionDuration)
         .ease(this.settings.transitionEase)
-        .attr("transform", `translate(0, ${this.scales.height - this.margins.bottom + 5})`)
         .call(xAxis);
 
     axesLayer
-        .select("#axis-label")
+        .select("#x-axis-label")
+        .select("text")
         .transition()
         .duration(this.settings.transitionDuration)
         .ease(this.settings.transitionEase)
-        .attr("transform", `translate(${this.margins.left}, ${this.scales.height - this.margins.bottom})`)
-        .attr("transform", `translate(${xAxisWidth / 2}, 35)`)
-        .attr("alignment-baseline", "hanging")
-        .style("text-anchor", "middle")
-        .text(this.settings.xAxisTitle);
+        .text(xSettings.title);
 }
+function updateYAxis(){
+    const ySettings = this.settings.yScale;
+    const reverse = ySettings.reverseAxis? -1:1;
+    const domain = ySettings.origin!==null?
+        [ySettings.origin+reverse*ySettings.branchScale*(Math.abs(this.scales.y.domain()[0]-this.scales.y.domain()[1])),ySettings.origin]:
+        this.scales.y.domain();
+    const yAxis = ySettings.axis( ySettings.scale().domain(domain).range(this.scales.y.range()))
+        .ticks(ySettings.ticks).tickFormat(ySettings.tickFormat);
+    const axesLayer = this.svgSelection.select(".axes-layer");
 
+    axesLayer
+        .select("#y-axis")
+        .transition()
+        .duration(this.settings.transitionDuration)
+        .ease(this.settings.transitionEase)
+        .call(yAxis);
+
+    axesLayer
+        .select("#y-axis-label")
+        .select("text")
+        .transition()
+        .duration(this.settings.transitionDuration)
+        .ease(this.settings.transitionEase)
+        .text(ySettings.title);
+}
 
 
 
