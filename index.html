@@ -137,10 +137,11 @@
 
     const figTree = new FigTree(treeSVG, layout,
         { top: 10, bottom: 60, left: 10, right: 150},
-        { hoverBorder: 2, backgroundBorder: 2,
+        {vertices:{ hoverBorder: 2, backgroundBorder: 2,
             baubles: [
                 new CircleBauble(),
             ]
+        }
         });
     figTree.draw();
     figTree.hilightInternalNodes();
@@ -244,11 +245,11 @@
     const treeSVG = document.getElementById('tree-2-svg');
     const layout = new RectangularLayout(tree);
     const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150},
-        { hoverBorder: 2, backgroundBorder: 2,
+        {vertices: { hoverBorder: 2, backgroundBorder: 2,
             baubles: [
                 new CircleBauble(),
             ],
-        });
+        }});
     figTree.draw();
 
     figTree.hilightBranches();
@@ -258,11 +259,12 @@
 
     const rttpLayout = new RootToTipPlot(tree);
     const rootToTipPlot = new FigTree(document.getElementById('rrt-2-svg'), rttpLayout, { top: 10, bottom: 60, left: 60, right: 100},
-        { hoverBorder: 2, backgroundBorder: 2,
-            baubles: [
-                new CircleBauble(),
-            ],
-
+        {vertices: {
+                hoverBorder: 2, backgroundBorder: 2,
+                baubles: [
+                    new CircleBauble(),
+                ],
+            },
             yScale:{
             axis:d3.axisLeft,
             title:"divergence"
@@ -327,7 +329,7 @@
 
     const rttpLayout = new RootToTipPlot(tree);
     const rootToTipPlot = new FigTree(document.getElementById('rrt-3-svg'), rttpLayout, { top: 10, bottom: 60, left: 10, right: 150},
-        { hoverBorder: 2, backgroundBorder: 2,
+         { hoverBorder: 2, backgroundBorder: 2,
             baubles: [
                 new CircleBauble(),
             ],
