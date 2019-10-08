@@ -38,13 +38,13 @@ export class layoutInterface {
     /**
      * A getter to return the horizontal range spanned by the vertices in the graph
      */
-    get horizontalRange() {
+    get horizontalDomain() {
         throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
     }
     /**
      * A getter to return the vertical range spanned by the vertices in the graph
      */
-    get verticalRange() {
+    get verticalDomain() {
         throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
     }
 
@@ -260,25 +260,6 @@ export class layoutInterface {
         throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
     }
 
-    /**
-     * A uitility function that updates the layout if needed, then calls returns the horizontal scale.
-     * @return {*}
-     */
-    get horizontalScale() {
-        if (!this.layoutKnown) {
-            this.layout();
-        }
-        return this._horizontalScale;
-    }
-
-
-    /**
-     * Sets the horizontal scale for the layout. This maps the tree to the layout range which is [0,1]
-     * @return {null|*}
-     */
-    updateHorizontalScale() {
-        throw  new Error("Don't call this method from the parent layoutInterface class. It must be implemented in the child class")
-    }
 
     /**
      * sets the initial Y value for the first node returned from the getTreeNodes().

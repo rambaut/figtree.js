@@ -237,7 +237,6 @@
 <script type="module">
     import { Tree, RectangularLayout,RootToTipPlot,CircleBauble,FigTree} from "./dist/figtree.esm.js"
 
-
     const timeTreeString =
         '((((virusA_1975:20.0,virusB_1965:10.0):10.0,virusC_1985:40.0):15.0,(virusD_1970:35.0,virusE_1955:20.0):5.0):25.0,(virusF_2000:55.0,virusG_1960:15.0):40.0);';
 
@@ -248,8 +247,12 @@
         { hoverBorder: 2, backgroundBorder: 2,
             baubles: [
                 new CircleBauble(),
-            ]
-        });
+            ],
+
+    origin:d3.min(tree.nodeList,n=>n.annotations.date),
+        reverseAxis: true,
+            ticks:2,
+            tickFormat:d3.format("")});
     figTree.draw();
 
     figTree.hilightBranches();
@@ -419,7 +422,7 @@
     tree.annotateNodesFromTips("host");
     tree.orderByNodeDensity();
     const treeSVG = document.getElementById('phylogram_3');
-    const layout = new ExplodedLayout(tree,{groupGap:9,direction:"down",offset:1});
+    const layout = new ExplodedLayout(tree,{groupGap:9,direction:"down"});
 
     const figTree = new FigTree(treeSVG, layout,
         { top: 10, bottom: 60, left: 10, right: 150},
@@ -430,8 +433,9 @@
             ],
             // branchScale:10,
             origin:1,
-            branchScale:2,
-            reverseAxis:true
+            offset:0.2,
+            branchScale:10,
+            reverseAxis:false
         });
 
 
@@ -449,7 +453,11 @@
 
     figTree.hilightBranches();
     figTree.hilightInternalNodes();
-    figTree.onClickNode((v)=>layout.cartoon(v));
+    figTree.onClickNode((v)=>{
+        console.log(v)
+        console.log(v.x+figTree.settings.offset)
+        layout.cartoon(v)
+    });
 
     // tree.annotateNodesFromTips("host");
 
