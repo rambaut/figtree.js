@@ -257,8 +257,14 @@
     figTree.hilightInternalNodes();
     figTree.onClickNode(layout.rotate());
 
-    const rrtp = new RootToTipPlot(document.getElementById('rrt-2-svg'), tree, { top: 10, bottom: 60, left: 60, right: 100});
-
+    const rttpLayout = new RootToTipPlot(tree);
+    const rootToTipPlot = new FigTree(document.getElementById('rrt-2-svg'), rttpLayout, { top: 10, bottom: 60, left: 10, right: 150},
+        { hoverBorder: 2, backgroundBorder: 2,
+            baubles: [
+                new CircleBauble(),
+            ]
+        });
+    rootToTipPlot.draw();
     rrtp.linkWithTree(treeSVG);
 
 </script>
@@ -309,13 +315,17 @@
     figTree.draw();
     tree.order(tree.rootNode, false);
 
-    const rrtp = new RootToTipPlot(document.getElementById('rrt-3-svg'), tree, { top: 10, bottom: 60, left: 60, right: 100},
-        { // the settings
-            xAxisTitle: "Time",
-            yAxisTitle: "Divergence (subst./site)",
-            nodeRadius: 2,
-            hoverNodeRadius: 3
+
+
+    const rttpLayout = new RootToTipPlot(tree);
+    const rootToTipPlot = new FigTree(document.getElementById('rrt-3-svg'), rttpLayout, { top: 10, bottom: 60, left: 10, right: 150},
+        { hoverBorder: 2, backgroundBorder: 2,
+            baubles: [
+                new CircleBauble(),
+            ]
         });
+    rootToTipPlot.draw();
+
 
     rrtp.linkWithTree(treeSVG);
 
