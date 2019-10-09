@@ -102,8 +102,6 @@ export class  AbstractLayout extends layoutInterface {
             .forEach((e) => {
                 this[setupEdge](e);
             });
-
-
         this.layoutKnown = true;
 
     }

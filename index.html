@@ -163,10 +163,10 @@
     };
 
     document.getElementById('rectangular_button').onclick = function() {
-        figTree.updateSettings({branchCurve:d3.curveStepBefore});
+        figTree.updateSettings({edges:{branchCurve:d3.curveStepBefore}});
     };
     document.getElementById('triangular_button').onclick = function() {
-        figTree.updateSettings({branchCurve:d3.curveNatural});
+        figTree.updateSettings({edges:{branchCurve:d3.curveNatural}});
     };
 
 </script>
@@ -269,7 +269,10 @@
             axis:d3.axisLeft,
             title:"divergence"
             },
-            xScale:{tickFormat: d3.format("")}
+            xScale:{tickFormat: d3.format("")},
+            edges:{
+                branchCurve:d3.curveLinear
+            }
         });
     rootToTipPlot.draw();
 
@@ -333,16 +336,20 @@
 
 
     const rttpLayout = new RootToTipPlot(tree);
-    const rootToTipPlot = new FigTree(document.getElementById('rrt-3-svg'), rttpLayout, { top: 10, bottom: 60, left: 10, right: 150},
-         { hoverBorder: 2, backgroundBorder: 2,
-            baubles: [
-                new CircleBauble(),
-            ],
-            branchCurve:d3.curveLinear,
-            origin:rttpLayout.horizontalDomain[1],
-            reverseAxis:true,
-            tickFormat: d3.format("")
-        });
+    const rootToTipPlot = new FigTree(document.getElementById('rrt-3-svg'), rttpLayout, { top: 10, bottom: 60, left: 60, right: 150},
+         {xScale:{
+                 title:"Time",
+                 tickFormat: d3.format(""),
+                },
+         yScale:{
+             title:"divergence",
+             axis:d3.axisLeft,
+            },
+         edges:{
+             branchCurve:d3.curveLinear
+            }
+         }
+         );
 
     rootToTipPlot.draw();
 

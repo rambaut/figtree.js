@@ -26,7 +26,8 @@ export class RootToTipPlot extends AbstractLayout{
      * @param settings
      */
     constructor(tree, settings = {}) {
-        super(tree,settings)
+        super(tree,{externalNodeLabelAnnotationName:null,...settings})
+
     }
 
     layout() {
@@ -40,9 +41,7 @@ export class RootToTipPlot extends AbstractLayout{
 
             this.setYPosition(v, null);
             this.setXPosition(v, null);
-            v.id = v.node.id;
-            this[setVertexClasses](v);
-            this[setVertexLabels](v);
+
         });
 
         const regression  = this.leastSquares(this._vertices.filter(v=>v.visibility===VertexStyle.INCLUDED));
@@ -98,6 +97,12 @@ export class RootToTipPlot extends AbstractLayout{
         }
         const yPositions = [...this._vertices.map(d=>d.y),min(this._vertices.map(d=>d.y))];
         return [max(yPositions),min(yPositions)];
+    }
+    get edges() {
+        if (!this.layoutKnown) {
+            this.layout();
+        }
+        return this._edges;
     }
 
     /**
