@@ -3,6 +3,7 @@ import {format,curveStepBefore,max,min,line,mean,scaleLinear,curveLinear} from "
 import {Tree, Type} from "../tree";
 import {layoutInterface} from "./layoutInterface";
 import extent from "d3-array/src/extent";
+import {mergeDeep} from "../utilities";
 
 /** @module layout */
 
@@ -37,6 +38,9 @@ export class  AbstractLayout extends layoutInterface {
     static DEFAULT_SETTINGS() {
         return {
             lengthFormat: format(".2f"),
+            branchLabelAnnotationName:null,
+            internalNodeLabelAnnotationName:null,
+            externalNodeLabelAnnotationName:"name",
         }
     }
 
@@ -58,11 +62,6 @@ export class  AbstractLayout extends layoutInterface {
         this._nodeMap = new Map();
 
         this._cartoonStore = [];
-
-        this._branchLabelAnnotationName = null;
-        this._internalNodeLabelAnnotationName = null;
-        this._externalNodeLabelAnnotationName = null;
-
         this._ignoredNodes=[];
 
         this.layoutKnown = false;
@@ -72,7 +71,6 @@ export class  AbstractLayout extends layoutInterface {
                                     this.layoutKnown = false;
                                      this.update();
         });
-
 
         // create an empty callback function
         this.updateCallback = () => {
@@ -95,15 +93,9 @@ export class  AbstractLayout extends layoutInterface {
         // update the node locations (vertices)
         treeNodes.forEach((n) => {
             const v = this._nodeMap.get(n);
-
                 currentY = this.setYPosition(v, currentY);
                 currentX = this.setXPosition(v, currentX);
-                v.degree = (v.node.children ? v.node.children.length + 1 : 1); // the number of edges (including stem)
-                v.id = v.node.id;
-                this[setVertexClasses](v);
-               this[setVertexLabels](v);
         });
-
 
         //Update edge locations
         this._edges
@@ -130,37 +122,7 @@ export class  AbstractLayout extends layoutInterface {
         }
         return extent(this._vertices,d=>d.y);
     }
-
-
-    set internalNodeLabelAnnotationName(annotationName) {
-        this._internalNodeLabelAnnotationName = annotationName;
-        this.update();
-    }
-    get internalNodeLabelAnnotationName() {
-        return this._internalNodeLabelAnnotationName;
-    }
-
-
-
-    set externalNodeLabelAnnotationName(annotationName) {
-        this._externalNodeLabelAnnotationName = annotationName;
-        this.update();
-    }
-
-    get externalNodeLabelAnnotationName() {
-        return this._externalNodeLabelAnnotationName;
-    }
-
-
-    set branchLabelAnnotationName(annotationName) {
-        this._branchLabelAnnotationName = annotationName;
-        this.update();
-    }
-    get branchLabelAnnotationName() {
-        return this._branchLabelAnnotationName;
-    }
-
-
+    
 
     update() {
         this.updateCallback();
@@ -357,8 +319,8 @@ export class  AbstractLayout extends layoutInterface {
     }
 
 
-    updateSettings(newSettings){
-        this.settings={...this.settings,...newSettings};
+    updateSettings(settings){
+        this.settings = mergeDeep(this.settings,settings);
         this.update();
     }
 
@@ -413,9 +375,12 @@ export class  AbstractLayout extends layoutInterface {
                 const vertex = {
                     node: n,
                     key: n.id,
-                    visibility:VertexStyle.INCLUDED
-                    // key: Symbol(n.id).toString()
+                    visibility:VertexStyle.INCLUDED,
+                    degree : (n.children ? n.children.length + 1 : 1) ,// the number of edges (including stem)
+                    id :n.id
                 };
+                this[setVertexClasses](vertex);
+                this[setVertexLabels](vertex);
                 this._vertices.push(vertex);
                 this._nodeMap.set(n, vertex);
             }
@@ -453,8 +418,8 @@ export class  AbstractLayout extends layoutInterface {
     [setVertexLabels](v){
         // either the tip name or the internal node label
         if (v.node.children) {
-            v.leftLabel = (this.internalNodeLabelAnnotationName?
-                v.node.annotations[this.internalNodeLabelAnnotationName]:
+            v.leftLabel = (this.settings.internalNodeLabelAnnotationName?
+                v.node.annotations[this.settings.internalNodeLabelAnnotationName]:
                 "");
             v.rightLabel = "";
 
@@ -462,9 +427,9 @@ export class  AbstractLayout extends layoutInterface {
             v.labelBelow = (!v.node.parent || v.node.parent.children[0] !== v.node);
         } else {
             v.leftLabel = "";
-            v.rightLabel = (this.externalNodeLabelAnnotationName?
-                v.node.annotations[this.externalNodeLabelAnnotationName]:
-                v.node.name);
+            v.rightLabel = (this.settings.externalNodeLabelAnnotationName?
+                v.node.annotations[this.settings.externalNodeLabelAnnotationName]:
+               "");
         }
     }
 
@@ -520,10 +485,10 @@ export class  AbstractLayout extends layoutInterface {
         }
     }
     [setEdgeLabels](e){
-        e.label = (this.branchLabelAnnotationName ?
-            (this.branchLabelAnnotationName === 'length' ?
+        e.label = (this.settings.branchLabelAnnotationName ?
+            (this.settings.branchLabelAnnotationName === 'length' ?
                 this.settings.lengthFormat(length) :
-                e.v1.node.annotations[this.branchLabelAnnotationName]) :
+                e.v1.node.annotations[this.settings.branchLabelAnnotationName]) :
             null );
         e.labelBelow = e.v1.node.parent.children[0] !== e.v1.node;
     }

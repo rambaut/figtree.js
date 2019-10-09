@@ -7580,9 +7580,19 @@
 	        node._id = node.label.substring(1);
 	      }
 
-	      if (node.annotations) {
-	        _this.addAnnotations(node.annotations);
+	      var newAnnotations = {};
+
+	      if (node.label) {
+	        newAnnotations.label = node.label;
 	      }
+
+	      if (node.name) {
+	        newAnnotations.name = node.name;
+	      }
+
+	      node.annotations = node.annotations ? objectSpread({}, newAnnotations, node.annotations) : newAnnotations;
+
+	      _this.addAnnotations(node.annotations);
 	    });
 
 	    this._nodeMap = new Map(this.nodeList.map(function (node) {
@@ -10009,6 +10019,26 @@
 	  return layoutInterface;
 	}();
 
+	//https://stackoverflow.com/questions/27936772/how-to-deep-merge-instead-of-shallow-merge
+	function isObject(item) {
+	  return item && _typeof_1(item) === 'object' && !Array.isArray(item);
+	}
+	function mergeDeep(target, source) {
+	  var output = Object.assign({}, target);
+
+	  if (isObject(target) && isObject(source)) {
+	    Object.keys(source).forEach(function (key) {
+	      if (isObject(source[key])) {
+	        if (!(key in target)) Object.assign(output, defineProperty({}, key, source[key]));else output[key] = mergeDeep(target[key], source[key]);
+	      } else {
+	        Object.assign(output, defineProperty({}, key, source[key]));
+	      }
+	    });
+	  }
+
+	  return output;
+	}
+
 	/** @module layout */
 
 	var VertexStyle$1 = {
@@ -10048,7 +10078,10 @@
 	     */
 	    value: function DEFAULT_SETTINGS() {
 	      return {
-	        lengthFormat: format(".2f")
+	        lengthFormat: format(".2f"),
+	        branchLabelAnnotationName: null,
+	        internalNodeLabelAnnotationName: null,
+	        externalNodeLabelAnnotationName: "name"
 	      };
 	    }
 	    /**
@@ -10074,9 +10107,6 @@
 	    _this._vertices = [];
 	    _this._nodeMap = new Map();
 	    _this._cartoonStore = [];
-	    _this._branchLabelAnnotationName = null;
-	    _this._internalNodeLabelAnnotationName = null;
-	    _this._externalNodeLabelAnnotationName = null;
 	    _this._ignoredNodes = [];
 	    _this.layoutKnown = false; // called whenever the tree changes...
 
@@ -10111,13 +10141,6 @@
 
 	        currentY = _this2.setYPosition(v, currentY);
 	        currentX = _this2.setXPosition(v, currentX);
-	        v.degree = v.node.children ? v.node.children.length + 1 : 1; // the number of edges (including stem)
-
-	        v.id = v.node.id;
-
-	        _this2[setVertexClasses](v);
-
-	        _this2[setVertexLabels](v);
 	      }); //Update edge locations
 
 	      this._edges.forEach(function (e) {
@@ -10289,8 +10312,8 @@
 	    }
 	  }, {
 	    key: "updateSettings",
-	    value: function updateSettings(newSettings) {
-	      this.settings = objectSpread({}, this.settings, newSettings);
+	    value: function updateSettings(settings) {
+	      this.settings = mergeDeep(this.settings, settings);
 	      this.update();
 	    } // inspired by redux naive implementation https://redux.js.org/advanced/middleware
 
@@ -10367,9 +10390,15 @@
 	          var vertex = {
 	            node: n,
 	            key: n.id,
-	            visibility: VertexStyle$1.INCLUDED // key: Symbol(n.id).toString()
-
+	            visibility: VertexStyle$1.INCLUDED,
+	            degree: n.children ? n.children.length + 1 : 1,
+	            // the number of edges (including stem)
+	            id: n.id
 	          };
+
+	          _this10[setVertexClasses](vertex);
+
+	          _this10[setVertexLabels](vertex);
 
 	          _this10._vertices.push(vertex);
 
@@ -10439,13 +10468,13 @@
 	    value: function value(v) {
 	      // either the tip name or the internal node label
 	      if (v.node.children) {
-	        v.leftLabel = this.internalNodeLabelAnnotationName ? v.node.annotations[this.internalNodeLabelAnnotationName] : "";
+	        v.leftLabel = this.settings.internalNodeLabelAnnotationName ? v.node.annotations[this.settings.internalNodeLabelAnnotationName] : "";
 	        v.rightLabel = ""; // should the left node label be above or below the node?
 
 	        v.labelBelow = !v.node.parent || v.node.parent.children[0] !== v.node;
 	      } else {
 	        v.leftLabel = "";
-	        v.rightLabel = this.externalNodeLabelAnnotationName ? v.node.annotations[this.externalNodeLabelAnnotationName] : v.node.name;
+	        v.rightLabel = this.settings.externalNodeLabelAnnotationName ? v.node.annotations[this.settings.externalNodeLabelAnnotationName] : "";
 	      }
 	    }
 	  }, {
@@ -10545,7 +10574,7 @@
 	  }, {
 	    key: setEdgeLabels,
 	    value: function value(e) {
-	      e.label = this.branchLabelAnnotationName ? this.branchLabelAnnotationName === 'length' ? this.settings.lengthFormat(length) : e.v1.node.annotations[this.branchLabelAnnotationName] : null;
+	      e.label = this.settings.branchLabelAnnotationName ? this.settings.branchLabelAnnotationName === 'length' ? this.settings.lengthFormat(length) : e.v1.node.annotations[this.settings.branchLabelAnnotationName] : null;
 	      e.labelBelow = e.v1.node.parent.children[0] !== e.v1.node;
 	    }
 	  }, {
@@ -10589,33 +10618,6 @@
 	      return extent$1(this._vertices, function (d) {
 	        return d.y;
 	      });
-	    }
-	  }, {
-	    key: "internalNodeLabelAnnotationName",
-	    set: function set(annotationName) {
-	      this._internalNodeLabelAnnotationName = annotationName;
-	      this.update();
-	    },
-	    get: function get() {
-	      return this._internalNodeLabelAnnotationName;
-	    }
-	  }, {
-	    key: "externalNodeLabelAnnotationName",
-	    set: function set(annotationName) {
-	      this._externalNodeLabelAnnotationName = annotationName;
-	      this.update();
-	    },
-	    get: function get() {
-	      return this._externalNodeLabelAnnotationName;
-	    }
-	  }, {
-	    key: "branchLabelAnnotationName",
-	    set: function set(annotationName) {
-	      this._branchLabelAnnotationName = annotationName;
-	      this.update();
-	    },
-	    get: function get() {
-	      return this._branchLabelAnnotationName;
 	    }
 	  }, {
 	    key: "edges",
@@ -11288,46 +11290,41 @@
 	        vertices: {
 	          hoverBorder: 2,
 	          backgroundBorder: 0,
-	          baubles: [new CircleBauble()]
+	          baubles: [new CircleBauble()],
+	          cssStyles: {},
+	          backgroundCssStyles: {}
 	        },
 	        edges: {
 	          branchCurve: stepBefore,
-	          curveRadius: 0
+	          curveRadius: 0,
+	          cssStyles: {
+	            "fill": function fill(d) {
+	              return "none";
+	            },
+	            "stroke-width": function strokeWidth(d) {
+	              return "2";
+	            },
+	            "stroke": function stroke(d) {
+	              return "black";
+	            }
+	          }
+	        },
+	        cartoons: {
+	          cssStyles: {
+	            "fill": function fill(d) {
+	              return "none";
+	            },
+	            "stroke-width": function strokeWidth(d) {
+	              return "2";
+	            },
+	            "stroke": function stroke(d) {
+	              return "black";
+	            }
+	          }
 	        },
 	        transition: {
 	          transitionDuration: 500,
-	          transitionEase: linear$1 // origin should not have to be set. It could be gotten from layout positions unless otherwise specified.
-
-	        }
-	      };
-	    }
-	  }, {
-	    key: "DEFAULT_STYLES",
-	    value: function DEFAULT_STYLES() {
-	      return {
-	        "vertices": {},
-	        "vertexBackgrounds": {},
-	        "edges": {
-	          "fill": function fill(d) {
-	            return "none";
-	          },
-	          "stroke-width": function strokeWidth(d) {
-	            return "2";
-	          },
-	          "stroke": function stroke(d) {
-	            return "black";
-	          }
-	        },
-	        "cartoons": {
-	          "fill": function fill(d) {
-	            return "none";
-	          },
-	          "stroke-width": function strokeWidth(d) {
-	            return "2";
-	          },
-	          "stroke": function stroke(d) {
-	            return "black";
-	          }
+	          transitionEase: linear$1
 	        }
 	      };
 	    }
@@ -11348,30 +11345,7 @@
 
 	    this.layout = layout;
 	    this.margins = margins;
-	    this.settings = objectSpread({}, FigTree.DEFAULT_SETTINGS());
-
-	    for (var _i = 0, _Object$keys = Object.keys(this.settings); _i < _Object$keys.length; _i++) {
-	      var _key = _Object$keys[_i];
-
-	      if (settings[_key]) {
-	        this.settings[_key] = objectSpread({}, this.settings[_key], settings[_key]);
-	      }
-	    } // merge the default settings with the supplied settings
-
-
-	    var styles = FigTree.DEFAULT_STYLES(); //update style maps
-
-	    if (settings.styles) {
-	      for (var _i2 = 0, _Object$keys2 = Object.keys(styles); _i2 < _Object$keys2.length; _i2++) {
-	        var key = _Object$keys2[_i2];
-
-	        if (settings.styles[key]) {
-	          styles[key] = objectSpread({}, styles[key], settings.styles[key]);
-	        }
-	      }
-	    }
-
-	    this.settings.styles = styles;
+	    this.settings = mergeDeep(FigTree.DEFAULT_SETTINGS(), settings);
 	    this.callbacks = {
 	      nodes: [],
 	      branches: [],
@@ -11765,15 +11739,7 @@
 	  }, {
 	    key: "updateSettings",
 	    value: function updateSettings(settings) {
-	      // totally rewrites old settings
-	      for (var _i3 = 0, _Object$keys3 = Object.keys(this.settings); _i3 < _Object$keys3.length; _i3++) {
-	        var key = _Object$keys3[_i3];
-
-	        if (settings[key]) {
-	          this.settings[key] = objectSpread({}, this.settings[key], settings[key]);
-	        }
-	      }
-
+	      this.settings = mergeDeep(this.settings, settings);
 	      this.update();
 	    }
 	  }, {
@@ -12116,10 +12082,10 @@
 	  // Join new data with old elements, if any.
 
 	  var nodes = nodesLayer.selectAll(".node .node-shape");
-	  var vertexStyles = this.settings.styles.vertices;
+	  var vertexStyles = this.settings.vertices.cssStyles;
 
 	  var _loop = function _loop() {
-	    var key = _Object$keys4[_i4];
+	    var key = _Object$keys[_i];
 	    nodes // .transition()
 	    // .duration(this.settings.transition.transitionDuration)
 	    .attr(key, function (v) {
@@ -12127,7 +12093,7 @@
 	    });
 	  };
 
-	  for (var _i4 = 0, _Object$keys4 = Object.keys(vertexStyles); _i4 < _Object$keys4.length; _i4++) {
+	  for (var _i = 0, _Object$keys = Object.keys(vertexStyles); _i < _Object$keys.length; _i++) {
 	    _loop();
 	  }
 	}
@@ -12139,10 +12105,10 @@
 	  // Join new data with old elements, if any.
 
 	  var nodes = nodesBackgroundLayer.selectAll(".node-background");
-	  var vertexBackgroundsStyles = this.settings.styles.vertexBackgrounds;
+	  var vertexBackgroundsStyles = this.settings.vertices.backgroundCssStyles;
 
 	  var _loop2 = function _loop2() {
-	    var key = _Object$keys5[_i5];
+	    var key = _Object$keys2[_i2];
 	    nodes // .transition()
 	    // .duration(this.settings.transition.transitionDuration)
 	    .attr(key, function (v) {
@@ -12150,7 +12116,7 @@
 	    });
 	  };
 
-	  for (var _i5 = 0, _Object$keys5 = Object.keys(vertexBackgroundsStyles); _i5 < _Object$keys5.length; _i5++) {
+	  for (var _i2 = 0, _Object$keys2 = Object.keys(vertexBackgroundsStyles); _i2 < _Object$keys2.length; _i2++) {
 	    _loop2();
 	  }
 	}
@@ -12162,10 +12128,10 @@
 	  // Join new data with old elements, if any.
 
 	  var branches = branchesLayer.selectAll("g .branch .branch-path");
-	  var branchStyles = this.settings.styles["edges"];
+	  var branchStyles = this.settings.edges.cssStyles;
 
 	  var _loop3 = function _loop3() {
-	    var key = _Object$keys6[_i6];
+	    var key = _Object$keys3[_i3];
 	    branches // .transition()
 	    // .duration(this.settings.transition.transitionDuration)
 	    .attr(key, function (e) {
@@ -12173,7 +12139,7 @@
 	    });
 	  };
 
-	  for (var _i6 = 0, _Object$keys6 = Object.keys(branchStyles); _i6 < _Object$keys6.length; _i6++) {
+	  for (var _i3 = 0, _Object$keys3 = Object.keys(branchStyles); _i3 < _Object$keys3.length; _i3++) {
 	    _loop3();
 	  }
 	}
@@ -12185,10 +12151,10 @@
 	  // Join new data with old elements, if any.
 
 	  var cartoons = cartoonLayer.selectAll(".cartoon path");
-	  var CartoonStyles = this.settings.styles.cartoons;
+	  var CartoonStyles = this.settings.cartoons.cssStyles;
 
 	  var _loop4 = function _loop4() {
-	    var key = _Object$keys7[_i7];
+	    var key = _Object$keys4[_i4];
 	    cartoons // .transition()
 	    // .duration(this.settings.transition.transitionDuration)
 	    .attr(key, function (c) {
@@ -12196,7 +12162,7 @@
 	    }); // attributes are set by the "root" node
 	  };
 
-	  for (var _i7 = 0, _Object$keys7 = Object.keys(CartoonStyles); _i7 < _Object$keys7.length; _i7++) {
+	  for (var _i4 = 0, _Object$keys4 = Object.keys(CartoonStyles); _i4 < _Object$keys4.length; _i4++) {
 	    _loop4();
 	  }
 	}
@@ -12244,7 +12210,7 @@
 	  try {
 	    for (var _iterator5 = this._annotations[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
 	      var annotation = _step5.value;
-	      annotation(this)();
+	      annotation();
 	    }
 	  } catch (err) {
 	    _didIteratorError5 = true;

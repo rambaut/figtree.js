@@ -6670,9 +6670,15 @@ class Tree {
                 // an id string has been specified in the newick label.
                 node._id = node.label.substring(1);
             }
-            if(node.annotations){
-            this.addAnnotations(node.annotations);
+            const newAnnotations ={};
+            if(node.label){
+                newAnnotations.label=node.label;
             }
+            if(node.name){
+                newAnnotations.name=node.name;
+            }
+            node.annotations = node.annotations?{...newAnnotations,...node.annotations,}:newAnnotations;
+            this.addAnnotations(node.annotations);
         });
         this._nodeMap = new Map(this.nodeList.map( (node) => [node.id, node] ));
         this._tipMap = new Map(this.externalNodes.map( (tip) => [tip.name, tip] ));
@@ -8310,6 +8316,29 @@ class layoutInterface {
 
 }
 
+//https://stackoverflow.com/questions/27936772/how-to-deep-merge-instead-of-shallow-merge
+
+function isObject(item) {
+    return (item && typeof item === 'object' && !Array.isArray(item));
+}
+
+function mergeDeep(target, source) {
+    let output = Object.assign({}, target);
+    if (isObject(target) && isObject(source)) {
+        Object.keys(source).forEach(key => {
+            if (isObject(source[key])) {
+                if (!(key in target))
+                    Object.assign(output, { [key]: source[key] });
+                else
+                    output[key] = mergeDeep(target[key], source[key]);
+            } else {
+                Object.assign(output, { [key]: source[key] });
+            }
+        });
+    }
+    return output;
+}
+
 /** @module layout */
 
 const  VertexStyle$1 = {
@@ -8343,6 +8372,9 @@ class  AbstractLayout extends layoutInterface {
     static DEFAULT_SETTINGS() {
         return {
             lengthFormat: format(".2f"),
+            branchLabelAnnotationName:null,
+            internalNodeLabelAnnotationName:null,
+            externalNodeLabelAnnotationName:"name",
         }
     }
 
@@ -8364,11 +8396,6 @@ class  AbstractLayout extends layoutInterface {
         this._nodeMap = new Map();
 
         this._cartoonStore = [];
-
-        this._branchLabelAnnotationName = null;
-        this._internalNodeLabelAnnotationName = null;
-        this._externalNodeLabelAnnotationName = null;
-
         this._ignoredNodes=[];
 
         this.layoutKnown = false;
@@ -8378,7 +8405,6 @@ class  AbstractLayout extends layoutInterface {
                                     this.layoutKnown = false;
                                      this.update();
         });
-
 
         // create an empty callback function
         this.updateCallback = () => {
@@ -8401,15 +8427,9 @@ class  AbstractLayout extends layoutInterface {
         // update the node locations (vertices)
         treeNodes.forEach((n) => {
             const v = this._nodeMap.get(n);
-
                 currentY = this.setYPosition(v, currentY);
                 currentX = this.setXPosition(v, currentX);
-                v.degree = (v.node.children ? v.node.children.length + 1 : 1); // the number of edges (including stem)
-                v.id = v.node.id;
-                this[setVertexClasses](v);
-               this[setVertexLabels](v);
         });
-
 
         //Update edge locations
         this._edges
@@ -8436,37 +8456,7 @@ class  AbstractLayout extends layoutInterface {
         }
         return extent$1(this._vertices,d=>d.y);
     }
-
-
-    set internalNodeLabelAnnotationName(annotationName) {
-        this._internalNodeLabelAnnotationName = annotationName;
-        this.update();
-    }
-    get internalNodeLabelAnnotationName() {
-        return this._internalNodeLabelAnnotationName;
-    }
-
-
-
-    set externalNodeLabelAnnotationName(annotationName) {
-        this._externalNodeLabelAnnotationName = annotationName;
-        this.update();
-    }
-
-    get externalNodeLabelAnnotationName() {
-        return this._externalNodeLabelAnnotationName;
-    }
-
-
-    set branchLabelAnnotationName(annotationName) {
-        this._branchLabelAnnotationName = annotationName;
-        this.update();
-    }
-    get branchLabelAnnotationName() {
-        return this._branchLabelAnnotationName;
-    }
-
-
+    
 
     update() {
         this.updateCallback();
@@ -8663,8 +8653,8 @@ class  AbstractLayout extends layoutInterface {
     }
 
 
-    updateSettings(newSettings){
-        this.settings={...this.settings,...newSettings};
+    updateSettings(settings){
+        this.settings = mergeDeep(this.settings,settings);
         this.update();
     }
 
@@ -8719,9 +8709,12 @@ class  AbstractLayout extends layoutInterface {
                 const vertex = {
                     node: n,
                     key: n.id,
-                    visibility:VertexStyle$1.INCLUDED
-                    // key: Symbol(n.id).toString()
+                    visibility:VertexStyle$1.INCLUDED,
+                    degree : (n.children ? n.children.length + 1 : 1) ,// the number of edges (including stem)
+                    id :n.id
                 };
+                this[setVertexClasses](vertex);
+                this[setVertexLabels](vertex);
                 this._vertices.push(vertex);
                 this._nodeMap.set(n, vertex);
             }
@@ -8759,8 +8752,8 @@ class  AbstractLayout extends layoutInterface {
     [setVertexLabels](v){
         // either the tip name or the internal node label
         if (v.node.children) {
-            v.leftLabel = (this.internalNodeLabelAnnotationName?
-                v.node.annotations[this.internalNodeLabelAnnotationName]:
+            v.leftLabel = (this.settings.internalNodeLabelAnnotationName?
+                v.node.annotations[this.settings.internalNodeLabelAnnotationName]:
                 "");
             v.rightLabel = "";
 
@@ -8768,9 +8761,9 @@ class  AbstractLayout extends layoutInterface {
             v.labelBelow = (!v.node.parent || v.node.parent.children[0] !== v.node);
         } else {
             v.leftLabel = "";
-            v.rightLabel = (this.externalNodeLabelAnnotationName?
-                v.node.annotations[this.externalNodeLabelAnnotationName]:
-                v.node.name);
+            v.rightLabel = (this.settings.externalNodeLabelAnnotationName?
+                v.node.annotations[this.settings.externalNodeLabelAnnotationName]:
+               "");
         }
     }
 
@@ -8826,10 +8819,10 @@ class  AbstractLayout extends layoutInterface {
         }
     }
     [setEdgeLabels](e){
-        e.label = (this.branchLabelAnnotationName ?
-            (this.branchLabelAnnotationName === 'length' ?
+        e.label = (this.settings.branchLabelAnnotationName ?
+            (this.settings.branchLabelAnnotationName === 'length' ?
                 this.settings.lengthFormat(length) :
-                e.v1.node.annotations[this.branchLabelAnnotationName]) :
+                e.v1.node.annotations[this.settings.branchLabelAnnotationName]) :
             null );
         e.labelBelow = e.v1.node.parent.children[0] !== e.v1.node;
     }
@@ -9257,52 +9250,48 @@ class FigTree {
 
     static DEFAULT_SETTINGS() {
         return {
-            xScale:{
+            xScale: {
                 title: "Height",
-                axis:axisBottom,
-                tickFormat:format(".2f"),
-                ticks:5,
-                scale:linear$2,
-                origin:null,
-                reverseAxis:false,
-                branchScale:1,
-                offset:0,
-
+                axis: axisBottom,
+                tickFormat: format(".2f"),
+                ticks: 5,
+                scale: linear$2,
+                origin: null,
+                reverseAxis: false,
+                branchScale: 1,
+                offset: 0,
             },
-            yScale:{
+            yScale: {
                 title: null,
-                axis:null,
-                scale:linear$2,
-                origin:null,
-                reverseAxis:false,
-                branchScale:1,
-                offset:0,
-                tickFormat:format(".2f"),
-                ticks:5,
+                axis: null,
+                scale: linear$2,
+                origin: null,
+                reverseAxis: false,
+                branchScale: 1,
+                offset: 0,
+                tickFormat: format(".2f"),
+                ticks: 5,
             },
-            vertices:{
+            vertices: {
                 hoverBorder: 2,
                 backgroundBorder: 0,
-                baubles: [ new CircleBauble()],
+                baubles: [new CircleBauble()],
+                cssStyles:{},
+                backgroundCssStyles:{}
             },
-            edges:{
-                branchCurve:stepBefore,
-                curveRadius:0
+            edges: {
+                branchCurve: stepBefore,
+                curveRadius: 0,
+                cssStyles: {"fill": d => "none", "stroke-width": d => "2", "stroke": d => "black"},
             },
-            transition:{
-                transitionDuration:500,
-                transitionEase:linear$1
+            cartoons:{
+                cssStyles:{"fill": d => "none", "stroke-width": d => "2", "stroke": d => "black"}
+            },
+            transition: {
+                transitionDuration: 500,
+                transitionEase: linear$1
             }
-
-
-            // origin should not have to be set. It could be gotten from layout positions unless otherwise specified.
-        };
-    }
-    static DEFAULT_STYLES(){
-        return {"vertices":{},
-            "vertexBackgrounds":{},
-            "edges":{"fill":d=>"none","stroke-width":d=>"2","stroke":d=>"black"},
-        "cartoons":{"fill":d=>"none","stroke-width":d=>"2","stroke":d=>"black"}}
+        }
     }
 
     /**
@@ -9317,27 +9306,7 @@ class FigTree {
         this.margins = margins;
 
 
-        this.settings = {...FigTree.DEFAULT_SETTINGS()};
-        for(const key of Object.keys(this.settings)) {
-            if (settings[key]) {
-                this.settings[key] = {
-                    ...this.settings[key], ...settings[key]
-                };
-            }
-        }
-        // merge the default settings with the supplied settings
-        const styles = FigTree.DEFAULT_STYLES();
-        //update style maps
-        if(settings.styles) {
-            for (const key of Object.keys(styles)) {
-                if (settings.styles[key]) {
-                    styles[key] = {...styles[key], ...settings.styles[key]};
-                }
-            }
-        }
-
-
-        this.settings.styles=styles;
+        this.settings = mergeDeep(FigTree.DEFAULT_SETTINGS(),settings);
 
 
 
@@ -9711,14 +9680,7 @@ class FigTree {
     }
 
     updateSettings(settings){
-        // totally rewrites old settings
-        for(const key of Object.keys(this.settings)) {
-            if (settings[key]) {
-                this.settings[key] = {
-                    ...this.settings[key], ...settings[key]
-                };
-            }
-        }
+       this.settings = mergeDeep(this.settings,settings);
         this.update();
     }
 
@@ -10131,7 +10093,7 @@ function updateNodeStyles(){
     // DATA JOIN
     // Join new data with old elements, if any.
     const nodes = nodesLayer.selectAll(".node .node-shape");
-    const vertexStyles = this.settings.styles.vertices;
+    const vertexStyles = this.settings.vertices.cssStyles;
     for(const key of Object.keys(vertexStyles)){
         nodes
             // .transition()
@@ -10149,7 +10111,7 @@ function updateNodeBackgroundStyles(){
     // Join new data with old elements, if any.
     const nodes = nodesBackgroundLayer.selectAll(".node-background");
 
-    const vertexBackgroundsStyles = this.settings.styles.vertexBackgrounds;
+    const vertexBackgroundsStyles = this.settings.vertices.backgroundCssStyles;
     for(const key of Object.keys(vertexBackgroundsStyles)){
         nodes
             // .transition()
@@ -10166,7 +10128,7 @@ function updateBranchStyles(){
     // Join new data with old elements, if any.
     const branches = branchesLayer.selectAll("g .branch .branch-path");
 
-    const branchStyles = this.settings.styles["edges"];
+    const branchStyles = this.settings.edges.cssStyles;
     for(const key of Object.keys(branchStyles)){
         branches
             // .transition()
@@ -10181,7 +10143,7 @@ function updateCartoonStyles(){
     // DATA JOIN
     // Join new data with old elements, if any.
     const cartoons = cartoonLayer.selectAll(".cartoon path");
-    const CartoonStyles = this.settings.styles.cartoons;
+    const CartoonStyles = this.settings.cartoons.cssStyles;
     for(const key of Object.keys(CartoonStyles)){
         cartoons
         // .transition()
@@ -10207,7 +10169,7 @@ function pointToPoint(points){
 
 function updateAnnoations(){
     for( const annotation of this._annotations){
-        annotation(this)();
+        annotation();
     }
 }
 /**

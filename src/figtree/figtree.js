@@ -2,6 +2,7 @@
 import {select,easeLinear,scaleLinear,axisBottom,mouse,event,format,curveStepBefore,line} from "d3";
 import uuid from "uuid";
 import {CircleBauble} from "./bauble";
+import {mergeDeep} from "../utilities";
 
 /** @module figtree */
 // const d3 = require("d3");
@@ -17,52 +18,48 @@ export class FigTree {
 
     static DEFAULT_SETTINGS() {
         return {
-            xScale:{
+            xScale: {
                 title: "Height",
-                axis:axisBottom,
-                tickFormat:format(".2f"),
-                ticks:5,
-                scale:scaleLinear,
-                origin:null,
-                reverseAxis:false,
-                branchScale:1,
-                offset:0,
-
+                axis: axisBottom,
+                tickFormat: format(".2f"),
+                ticks: 5,
+                scale: scaleLinear,
+                origin: null,
+                reverseAxis: false,
+                branchScale: 1,
+                offset: 0,
             },
-            yScale:{
+            yScale: {
                 title: null,
-                axis:null,
-                scale:scaleLinear,
-                origin:null,
-                reverseAxis:false,
-                branchScale:1,
-                offset:0,
-                tickFormat:format(".2f"),
-                ticks:5,
+                axis: null,
+                scale: scaleLinear,
+                origin: null,
+                reverseAxis: false,
+                branchScale: 1,
+                offset: 0,
+                tickFormat: format(".2f"),
+                ticks: 5,
             },
-            vertices:{
+            vertices: {
                 hoverBorder: 2,
                 backgroundBorder: 0,
-                baubles: [ new CircleBauble()],
+                baubles: [new CircleBauble()],
+                cssStyles:{},
+                backgroundCssStyles:{}
             },
-            edges:{
-                branchCurve:curveStepBefore,
-                curveRadius:0
+            edges: {
+                branchCurve: curveStepBefore,
+                curveRadius: 0,
+                cssStyles: {"fill": d => "none", "stroke-width": d => "2", "stroke": d => "black"},
             },
-            transition:{
-                transitionDuration:500,
-                transitionEase:easeLinear
+            cartoons:{
+                cssStyles:{"fill": d => "none", "stroke-width": d => "2", "stroke": d => "black"}
+            },
+            transition: {
+                transitionDuration: 500,
+                transitionEase: easeLinear
             }
-
-
-            // origin should not have to be set. It could be gotten from layout positions unless otherwise specified.
-        };
-    }
-    static DEFAULT_STYLES(){
-        return {"vertices":{},
-            "vertexBackgrounds":{},
-            "edges":{"fill":d=>"none","stroke-width":d=>"2","stroke":d=>"black"},
-        "cartoons":{"fill":d=>"none","stroke-width":d=>"2","stroke":d=>"black"}}
+        }
     }
 
     /**
@@ -77,27 +74,7 @@ export class FigTree {
         this.margins = margins;
 
 
-        this.settings = {...FigTree.DEFAULT_SETTINGS()};
-        for(const key of Object.keys(this.settings)) {
-            if (settings[key]) {
-                this.settings[key] = {
-                    ...this.settings[key], ...settings[key]
-                }
-            }
-        }
-        // merge the default settings with the supplied settings
-        const styles = FigTree.DEFAULT_STYLES();
-        //update style maps
-        if(settings.styles) {
-            for (const key of Object.keys(styles)) {
-                if (settings.styles[key]) {
-                    styles[key] = {...styles[key], ...settings.styles[key]}
-                }
-            }
-        }
-
-
-        this.settings.styles=styles;
+        this.settings = mergeDeep(FigTree.DEFAULT_SETTINGS(),settings);
 
 
 
@@ -471,14 +448,7 @@ export class FigTree {
     }
 
     updateSettings(settings){
-        // totally rewrites old settings
-        for(const key of Object.keys(this.settings)) {
-            if (settings[key]) {
-                this.settings[key] = {
-                    ...this.settings[key], ...settings[key]
-                }
-            }
-        }
+       this.settings = mergeDeep(this.settings,settings);
         this.update();
     }
 
@@ -891,7 +861,7 @@ function updateNodeStyles(){
     // DATA JOIN
     // Join new data with old elements, if any.
     const nodes = nodesLayer.selectAll(".node .node-shape");
-    const vertexStyles = this.settings.styles.vertices;
+    const vertexStyles = this.settings.vertices.cssStyles;
     for(const key of Object.keys(vertexStyles)){
         nodes
             // .transition()
@@ -909,7 +879,7 @@ function updateNodeBackgroundStyles(){
     // Join new data with old elements, if any.
     const nodes = nodesBackgroundLayer.selectAll(".node-background")
 
-    const vertexBackgroundsStyles = this.settings.styles.vertexBackgrounds;
+    const vertexBackgroundsStyles = this.settings.vertices.backgroundCssStyles;
     for(const key of Object.keys(vertexBackgroundsStyles)){
         nodes
             // .transition()
@@ -926,7 +896,7 @@ function updateBranchStyles(){
     // Join new data with old elements, if any.
     const branches = branchesLayer.selectAll("g .branch .branch-path")
 
-    const branchStyles = this.settings.styles["edges"];
+    const branchStyles = this.settings.edges.cssStyles;
     for(const key of Object.keys(branchStyles)){
         branches
             // .transition()
@@ -941,7 +911,7 @@ function updateCartoonStyles(){
     // DATA JOIN
     // Join new data with old elements, if any.
     const cartoons = cartoonLayer.selectAll(".cartoon path");
-    const CartoonStyles = this.settings.styles.cartoons;
+    const CartoonStyles = this.settings.cartoons.cssStyles;
     for(const key of Object.keys(CartoonStyles)){
         cartoons
         // .transition()
@@ -959,7 +929,7 @@ function pointToPoint(points){
     for(const point of pathPoints){
         const xdiff = this.scales.x(point.x+this.settings.xScale.offset)-this.scales.x(currentPoint.x+this.settings.xScale.offset);
         const ydiff = this.scales.y(point.y)- this.scales.y(currentPoint.y);
-        path.push(`${xdiff} ${ydiff}`)
+        path.push(`${xdiff} ${ydiff}`);
         currentPoint = point;
     }
     return `M 0 0 l ${path.join(" l ")} z`;
@@ -967,7 +937,7 @@ function pointToPoint(points){
 
 function updateAnnoations(){
     for( const annotation of this._annotations){
-        annotation(this)();
+        annotation();
     }
 }
 /**
