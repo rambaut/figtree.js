@@ -271,7 +271,7 @@ export class  AbstractLayout extends layoutInterface {
             const cartoonVertex = this._nodeMap.get(c.node);
             const cartoonVertexDecedents = cartoonNodeDecedents.map(n => this._nodeMap.get(n));
             const newTopVertex = {
-                x: max(cartoonVertexDecedents, d => d.x),
+                x: min(cartoonVertexDecedents, d => d.x),
                 y: max(cartoonVertexDecedents, d => d.y),
                 id: `${cartoonVertex.id}-top`,
                 node: cartoonVertex.node,

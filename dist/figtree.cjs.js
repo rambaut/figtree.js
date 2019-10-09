@@ -8609,7 +8609,7 @@ class  AbstractLayout extends layoutInterface {
             const cartoonVertex = this._nodeMap.get(c.node);
             const cartoonVertexDecedents = cartoonNodeDecedents.map(n => this._nodeMap.get(n));
             const newTopVertex = {
-                x: max(cartoonVertexDecedents, d => d.x),
+                x: min(cartoonVertexDecedents, d => d.x),
                 y: max(cartoonVertexDecedents, d => d.y),
                 id: `${cartoonVertex.id}-top`,
                 node: cartoonVertex.node,
@@ -9309,12 +9309,7 @@ class FigTree {
         this.layout = layout;
         this.margins = margins;
 
-
         this.settings = mergeDeep(FigTree.DEFAULT_SETTINGS(),settings);
-
-
-
-
         this.callbacks= {nodes:[],branches:[],cartoons:[]};
         this._annotations =[];
 
@@ -9415,7 +9410,7 @@ class FigTree {
         this.scales.width=width;
         this.scales.height=height;
 
-        updateAnnoations.call(this);
+        updateAnnotations.call(this);
         updateCartoons.call(this);
         updateBranches.call(this);
 
@@ -9990,7 +9985,7 @@ function addXAxis() {
         .append("g")
         .attr("id", "x-axis")
         .attr("class", "axis")
-        .attr("transform", `translate(0, ${this.scales.height - this.margins.bottom })`)
+        .attr("transform", `translate(0, ${this.scales.height - this.margins.bottom +this.settings.xScale.gap})`)
         .call(xAxis);
 
     axesLayer
@@ -10020,7 +10015,7 @@ function addYAxis() {
         .append("g")
         .attr("id", "y-axis")
         .attr("class", "axis")
-        .attr("transform", `translate(${this.margins.left}, 0)`)
+        .attr("transform", `translate(${this.margins.left-this.settings.yScale.gap}, 0)`)
         .call(yAxis);
 
     axesLayer
@@ -10171,7 +10166,7 @@ function pointToPoint(points){
     return `M 0 0 l ${path.join(" l ")} z`;
 }
 
-function updateAnnoations(){
+function updateAnnotations(){
     for( const annotation of this._annotations){
         annotation();
     }

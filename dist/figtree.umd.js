@@ -10665,7 +10665,7 @@
 	          return _this14._nodeMap.get(n);
 	        });
 	        var newTopVertex = {
-	          x: max(cartoonVertexDecedents, function (d) {
+	          x: min(cartoonVertexDecedents, function (d) {
 	            return d.x;
 	          }),
 	          y: max(cartoonVertexDecedents, function (d) {
@@ -11453,7 +11453,7 @@
 	      this.scales.y.domain([this.layout.verticalDomain[0] + this.settings.yScale.offset, this.layout.verticalDomain[1]]).range([this.margins.top, height - this.margins.bottom]);
 	      this.scales.width = width;
 	      this.scales.height = height;
-	      updateAnnoations.call(this);
+	      updateAnnotations.call(this);
 	      updateCartoons.call(this);
 	      updateBranches.call(this);
 
@@ -12041,7 +12041,7 @@
 	  var xAxis = xSettings.axis(xSettings.scale().domain(domain).range(this.scales.x.range())).ticks(xSettings.ticks).tickFormat(xSettings.tickFormat);
 	  var xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
 	  var axesLayer = this.svgSelection.select(".axes-layer");
-	  axesLayer.append("g").attr("id", "x-axis").attr("class", "axis").attr("transform", "translate(0, ".concat(this.scales.height - this.margins.bottom, ")")).call(xAxis);
+	  axesLayer.append("g").attr("id", "x-axis").attr("class", "axis").attr("transform", "translate(0, ".concat(this.scales.height - this.margins.bottom + this.settings.xScale.gap, ")")).call(xAxis);
 	  axesLayer.append("g").attr("id", "x-axis-label").attr("class", "axis-label").attr("transform", "translate(".concat(this.margins.left, ", ").concat(this.scales.height - this.margins.bottom, ")")).append("text").attr("transform", "translate(".concat(xAxisWidth / 2, ", 35)")).attr("alignment-baseline", "hanging").style("text-anchor", "middle").text(xSettings.title);
 	}
 
@@ -12052,7 +12052,7 @@
 	  var yAxis = ySettings.axis(ySettings.scale().domain(domain).range(this.scales.y.range())).ticks(ySettings.ticks).tickFormat(ySettings.tickFormat);
 	  var yAxisHeight = this.scales.height - this.margins.top - this.margins.bottom;
 	  var axesLayer = this.svgSelection.select(".axes-layer");
-	  axesLayer.append("g").attr("id", "y-axis").attr("class", "axis").attr("transform", "translate(".concat(this.margins.left, ", 0)")).call(yAxis);
+	  axesLayer.append("g").attr("id", "y-axis").attr("class", "axis").attr("transform", "translate(".concat(this.margins.left - this.settings.yScale.gap, ", 0)")).call(yAxis);
 	  axesLayer.append("g").attr("id", "y-axis-label").attr("class", "axis-label").attr("transform", "translate(0,".concat(this.margins.top, ")")).attr("transform", "translate(0,".concat(yAxisHeight / 2, ")")).append("text").attr("transform", "rotate(-90)") // .attr("alignment-baseline", "hanging")
 	  .style("text-anchor", "middle").text(ySettings.title);
 	}
@@ -12204,7 +12204,7 @@
 	  return "M 0 0 l ".concat(path.join(" l "), " z");
 	}
 
-	function updateAnnoations() {
+	function updateAnnotations() {
 	  var _iteratorNormalCompletion5 = true;
 	  var _didIteratorError5 = false;
 	  var _iteratorError5 = undefined;
