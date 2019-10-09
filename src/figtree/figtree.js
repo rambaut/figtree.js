@@ -3,6 +3,7 @@ import {select,easeLinear,scaleLinear,axisBottom,mouse,event,format,curveStepBef
 import uuid from "uuid";
 import {CircleBauble} from "./bauble";
 import {mergeDeep} from "../utilities";
+import rough from 'roughjs/dist/rough.umd';
 
 /** @module figtree */
 // const d3 = require("d3");
@@ -83,6 +84,13 @@ export class FigTree {
         this.drawn = false;
         this.svgId = `g-${uuid.v4()}`;
         this.svgSelection=null;
+        // roughjs set up
+
+        this.roughSvg = rough.svg(this.svg);
+
+
+
+
         return this;
     }
     draw(){
