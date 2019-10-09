@@ -21,6 +21,7 @@ export class FigTree {
             xScale: {
                 title: "Height",
                 axis: axisBottom,
+                gap:10,
                 tickFormat: format(".2f"),
                 ticks: 5,
                 scale: scaleLinear,
@@ -37,6 +38,7 @@ export class FigTree {
                 reverseAxis: false,
                 branchScale: 1,
                 offset: 0,
+                gap:10,
                 tickFormat: format(".2f"),
                 ticks: 5,
             },
@@ -131,7 +133,7 @@ export class FigTree {
 
         const yScale = this.settings.yScale.scale()
             .domain([this.layout.verticalDomain[0]+this.settings.yScale.offset,this.layout.verticalDomain[1]])
-            .range([this.margins.top + 20, height -this.margins.bottom - 20]);
+            .range([this.margins.top, height -this.margins.bottom]);
 
         this.scales = {x:xScale, y:yScale, width, height};
 
@@ -175,7 +177,7 @@ export class FigTree {
             .range([this.margins.left, width - this.margins.right]);
         this.scales.y
             .domain([this.layout.verticalDomain[0]+this.settings.yScale.offset,this.layout.verticalDomain[1]])
-            .range([this.margins.top + 20, height -this. margins.bottom - 20]);
+            .range([this.margins.top, height -this. margins.bottom]);
         this.scales.width=width;
         this.scales.height=height;
 

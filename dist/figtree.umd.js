@@ -11268,6 +11268,7 @@
 	        xScale: {
 	          title: "Height",
 	          axis: axisBottom,
+	          gap: 10,
 	          tickFormat: format(".2f"),
 	          ticks: 5,
 	          scale: linear$2,
@@ -11284,6 +11285,7 @@
 	          reverseAxis: false,
 	          branchScale: 1,
 	          offset: 0,
+	          gap: 10,
 	          tickFormat: format(".2f"),
 	          ticks: 5
 	        },
@@ -11397,7 +11399,7 @@
 	      this.svgSelection.append("g").attr("class", "nodes-layer"); // create the scales
 
 	      var xScale = this.settings.xScale.scale().domain([this.layout.horizontalDomain[0] + this.settings.xScale.offset, this.layout.horizontalDomain[1]]).range([this.margins.left, width - this.margins.right]);
-	      var yScale = this.settings.yScale.scale().domain([this.layout.verticalDomain[0] + this.settings.yScale.offset, this.layout.verticalDomain[1]]).range([this.margins.top + 20, height - this.margins.bottom - 20]);
+	      var yScale = this.settings.yScale.scale().domain([this.layout.verticalDomain[0] + this.settings.yScale.offset, this.layout.verticalDomain[1]]).range([this.margins.top, height - this.margins.bottom]);
 	      this.scales = {
 	        x: xScale,
 	        y: yScale,
@@ -11448,7 +11450,7 @@
 
 
 	      this.scales.x.domain([this.layout.horizontalDomain[0] + this.settings.xScale.offset, this.layout.horizontalDomain[1]]).range([this.margins.left, width - this.margins.right]);
-	      this.scales.y.domain([this.layout.verticalDomain[0] + this.settings.yScale.offset, this.layout.verticalDomain[1]]).range([this.margins.top + 20, height - this.margins.bottom - 20]);
+	      this.scales.y.domain([this.layout.verticalDomain[0] + this.settings.yScale.offset, this.layout.verticalDomain[1]]).range([this.margins.top, height - this.margins.bottom]);
 	      this.scales.width = width;
 	      this.scales.height = height;
 	      updateAnnoations.call(this);
@@ -12295,7 +12297,9 @@
 
 	    classCallCheck(this, RootToTipPlot);
 
-	    return possibleConstructorReturn(this, getPrototypeOf(RootToTipPlot).call(this, tree, settings));
+	    return possibleConstructorReturn(this, getPrototypeOf(RootToTipPlot).call(this, tree, objectSpread({
+	      externalNodeLabelAnnotationName: null
+	    }, settings)));
 	  }
 
 	  createClass(RootToTipPlot, [{
@@ -12313,12 +12317,6 @@
 	        _this.setYPosition(v, null);
 
 	        _this.setXPosition(v, null);
-
-	        v.id = v.node.id;
-
-	        _this[setVertexClasses](v);
-
-	        _this[setVertexLabels](v);
 	      });
 	      var regression = this.leastSquares(this._vertices.filter(function (v) {
 	        return v.visibility === VertexStyle$1.INCLUDED;
@@ -12511,6 +12509,15 @@
 	        return d.y;
 	      }))]);
 	      return [max(yPositions), min(yPositions)];
+	    }
+	  }, {
+	    key: "edges",
+	    get: function get() {
+	      if (!this.layoutKnown) {
+	        this.layout();
+	      }
+
+	      return this._edges;
 	    }
 	  }]);
 

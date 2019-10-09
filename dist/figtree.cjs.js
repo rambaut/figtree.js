@@ -8440,8 +8440,6 @@ class  AbstractLayout extends layoutInterface {
             .forEach((e) => {
                 this[setupEdge](e);
             });
-
-
         this.layoutKnown = true;
 
     }
@@ -9257,6 +9255,7 @@ class FigTree {
             xScale: {
                 title: "Height",
                 axis: axisBottom,
+                gap:10,
                 tickFormat: format(".2f"),
                 ticks: 5,
                 scale: linear$2,
@@ -9273,6 +9272,7 @@ class FigTree {
                 reverseAxis: false,
                 branchScale: 1,
                 offset: 0,
+                gap:10,
                 tickFormat: format(".2f"),
                 ticks: 5,
             },
@@ -9367,7 +9367,7 @@ class FigTree {
 
         const yScale = this.settings.yScale.scale()
             .domain([this.layout.verticalDomain[0]+this.settings.yScale.offset,this.layout.verticalDomain[1]])
-            .range([this.margins.top + 20, height -this.margins.bottom - 20]);
+            .range([this.margins.top, height -this.margins.bottom]);
 
         this.scales = {x:xScale, y:yScale, width, height};
 
@@ -9411,7 +9411,7 @@ class FigTree {
             .range([this.margins.left, width - this.margins.right]);
         this.scales.y
             .domain([this.layout.verticalDomain[0]+this.settings.yScale.offset,this.layout.verticalDomain[1]])
-            .range([this.margins.top + 20, height -this. margins.bottom - 20]);
+            .range([this.margins.top, height -this. margins.bottom]);
         this.scales.width=width;
         this.scales.height=height;
 
@@ -10225,7 +10225,8 @@ class RootToTipPlot extends AbstractLayout{
      * @param settings
      */
     constructor(tree, settings = {}) {
-        super(tree,settings);
+        super(tree,{externalNodeLabelAnnotationName:null,...settings});
+
     }
 
     layout() {
@@ -10239,9 +10240,7 @@ class RootToTipPlot extends AbstractLayout{
 
             this.setYPosition(v, null);
             this.setXPosition(v, null);
-            v.id = v.node.id;
-            this[setVertexClasses](v);
-            this[setVertexLabels](v);
+
         });
 
         const regression  = this.leastSquares(this._vertices.filter(v=>v.visibility===VertexStyle$1.INCLUDED));
@@ -10297,6 +10296,12 @@ class RootToTipPlot extends AbstractLayout{
         }
         const yPositions = [...this._vertices.map(d=>d.y),min(this._vertices.map(d=>d.y))];
         return [max(yPositions),min(yPositions)];
+    }
+    get edges() {
+        if (!this.layoutKnown) {
+            this.layout();
+        }
+        return this._edges;
     }
 
     /**
