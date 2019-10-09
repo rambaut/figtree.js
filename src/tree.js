@@ -54,9 +54,15 @@ export class Tree {
                 // an id string has been specified in the newick label.
                 node._id = node.label.substring(1);
             }
-            if(node.annotations){
-            this.addAnnotations(node.annotations);
+            const newAnnotations ={};
+            if(node.label){
+                newAnnotations.label=node.label;
             }
+            if(node.name){
+                newAnnotations.name=node.name
+            }
+            node.annotations = node.annotations?{...newAnnotations,...node.annotations,}:newAnnotations;
+            this.addAnnotations(node.annotations);
         });
         this._nodeMap = new Map(this.nodeList.map( (node) => [node.id, node] ));
         this._tipMap = new Map(this.externalNodes.map( (tip) => [tip.name, tip] ));
