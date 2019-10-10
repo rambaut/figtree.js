@@ -9247,7 +9247,6 @@ class RoughCircleBauble extends Bauble {
     static DEFAULT_SETTINGS() {
         return {
             radius: 6,
-            roughOptions:{}
         };
     }
 
@@ -9263,9 +9262,9 @@ class RoughCircleBauble extends Bauble {
      * @param selection
      * @return {Bundle|MagicString|*|void}
      */
-    createShapes(selection,border=0) {
+    createShapes(selection) {
         const addedNode =  selection
-            .append(()=> roughFactory.circle(0, 0, this.settings.radius+border, this.settings.roughOptions));
+            .append(()=> roughFactory$1.circle(0, 0, this.settings.radius, this.settings));
         addedNode.selectAll("path")
             .each(function(d,i){
                 if(i===0){
@@ -9298,11 +9297,28 @@ class RoughCircleBauble extends Bauble {
  * Private methods, called by the class using the <function>.call(this) function.
  */
 
-const roughFactory = rough_umd.svg(document.createElement("svg"));
+const roughFactory$1 = rough_umd.svg(document.createElement("svg"));
 
 /** @module figtree */
 // const d3 = require("d3");
 
+const p= {
+    addXAxis: Symbol("addXAxis"),
+    addYAxis: Symbol("addYAxis"),
+    updateXAxis:Symbol("updateXAxis"),
+    updateYAxis:Symbol("updateYAxis"),
+    updateAnnotations:Symbol("updateAnnotations"),
+    updateCartoons:Symbol("updateCartoons"),
+    updateBranches:Symbol("updateBranches"),
+    updateNodeBackgrounds:Symbol("updateNodeBackgrounds"),
+    updateNodes:Symbol("updateNodes"),
+    updateBranchStyles:Symbol("updateBranchStyles"),
+    updateNodeStyles:Symbol("updateNodeStyles"),
+    updateNodeBackgroundStyles:Symbol("updateNodeBackgroundStyles"),
+    updateCartoonStyles:Symbol("updateCartoonStyles"),
+    branchPathGenerator:Symbol("branchPathGenerator"),
+    pointToPoint:Symbol("pointToPoint")
+};
 /**
  * The FigTree class
  *
@@ -9380,9 +9396,6 @@ class FigTree {
         this.svgId = `g-${uuid_1.v4()}`;
         this.svgSelection=null;
 
-
-
-
         return this;
     }
     draw(){
@@ -9433,10 +9446,10 @@ class FigTree {
         this.scales = {x:xScale, y:yScale, width, height};
 
         if(this.settings.xScale.axis){
-            addXAxis.call(this, this.margins);
+           this[p.addXAxis]();
         }
         if(this.settings.yScale.axis){
-            addYAxis.call(this);
+            this[p.addYAxis]();
         }
 
         // Called whenever the layout changes...
@@ -9476,22 +9489,22 @@ class FigTree {
         this.scales.width=width;
         this.scales.height=height;
 
-        updateAnnotations.call(this);
-        updateCartoons.call(this);
-        updateBranches.call(this);
+        this[p.updateAnnotations]();
+        this[p.updateCartoons]();
+        this[p.updateBranches]();
 
         if(this.settings.xScale.axis){
-            updateXAxis.call(this);
+            this[p.updateXAxis]();
         }
         if(this.settings.yScale.axis){
-            updateYAxis.call(this);
+            this[p.updateYAxis]();
         }
 
         if (this.settings.vertices.backgroundBorder !==null) {
-            updateNodeBackgrounds.call(this);
+            this[p.updateNodeBackgrounds]();
         }
 
-        updateNodes.call(this);
+        this[p.updateNodes]();
 
         return this;
 
@@ -9750,532 +9763,530 @@ class FigTree {
     }
 
     updateStyles(){
-        updateBranchStyles.call(this);
-        updateNodeStyles.call(this);
-        updateNodeBackgroundStyles.call(this);
+        this[p.updateBranchStyles]();
+        this[p.updateNodeStyles]();
+        this[p.updateNodeBackgroundStyles]();
     }
-}
-
-/*
- * Private methods, called by the class using the <function>.call(this) function.
+ /*
+ * Protected methods, called by the class using.
  */
+    /**
+     * Adds or updates nodes
+     */
+    [p.updateNodes]() {
 
-/**
- * Adds or updates nodes
- */
-function updateNodes() {
+        const nodesLayer = this.svgSelection.select(".nodes-layer");
 
-    const nodesLayer = this.svgSelection.select(".nodes-layer");
+        // DATA JOIN
+        // Join new data with old elements, if any.
+        const nodes = nodesLayer.selectAll(".node")
+            .data(this.layout.vertices, (v) => `n_${v.key}`);
 
-    // DATA JOIN
-    // Join new data with old elements, if any.
-    const nodes = nodesLayer.selectAll(".node")
-        .data(this.layout.vertices, (v) => `n_${v.key}`);
+        // ENTER
+        // Create new elements as needed.
+        const newNodes = nodes.enter().append("g")
+            .attr("id", (v) => v.id)
+            .attr("class", (v) => ["node", ...v.classes].join(" "))
+            .attr("transform", (v) => {
+                return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
+            });
 
-    // ENTER
-    // Create new elements as needed.
-    const newNodes = nodes.enter().append("g")
-        .attr("id", (v) => v.id)
-        .attr("class", (v) => ["node", ...v.classes].join(" "))
-        .attr("transform", (v) => {
-            return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
+        // add the specific node shapes or 'baubles'
+        this.settings.vertices.baubles.forEach((bauble) => {
+            const d = bauble
+                .createShapes(newNodes.filter(bauble.vertexFilter))
+                .attr("class", "node-shape");
+            bauble.updateShapes(d);
         });
 
-    // add the specific node shapes or 'baubles'
-    this.settings.vertices.baubles.forEach((bauble) => {
-        const d = bauble
-            .createShapes(newNodes.filter(bauble.vertexFilter))
-            .attr("class", "node-shape");
-        bauble.updateShapes(d);
-    });
+        newNodes.append("text")
+            .attr("class", "node-label name")
+            .attr("text-anchor", "start")
+            .attr("alignment-baseline", "middle")
+            .attr("dx", "12")
+            .attr("dy", "0")
+            .text((d) => d.rightLabel);
 
-    newNodes.append("text")
-        .attr("class", "node-label name")
-        .attr("text-anchor", "start")
-        .attr("alignment-baseline", "middle")
-        .attr("dx", "12")
-        .attr("dy", "0")
-        .text((d) => d.rightLabel);
+        newNodes.append("text")
+            .attr("class", "node-label support")
+            .attr("text-anchor", "end")
+            .attr("dx", "-6")
+            .attr("dy", d => (d.labelBelow ? -8 : +8))
+            .attr("alignment-baseline", d => (d.labelBelow ? "bottom": "hanging" ))
+            .text((d) => d.leftLabel);
 
-    newNodes.append("text")
-        .attr("class", "node-label support")
-        .attr("text-anchor", "end")
-        .attr("dx", "-6")
-        .attr("dy", d => (d.labelBelow ? -8 : +8))
-        .attr("alignment-baseline", d => (d.labelBelow ? "bottom": "hanging" ))
-        .text((d) => d.leftLabel);
-
-    // update the existing elements
-    nodes
-        .transition()
-        .duration(this.settings.transition.transitionDuration)
-        .ease(this.settings.transition.transitionEase)
-        .attr("class", (v) => ["node", ...v.classes].join(" "))
-        .attr("transform", (v) => {
-            return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
-        });
-
-
-
-    // update all the baubles
-    this.settings.vertices.baubles.forEach((bauble) => {
-        const d = nodes.select(".node-shape")
-            .filter(bauble.vertexFilter)
+        // update the existing elements
+        nodes
             .transition()
             .duration(this.settings.transition.transitionDuration)
             .ease(this.settings.transition.transitionEase)
-        ;
-        bauble.updateShapes(d);
-    });
-
-    nodes.select("text .node-label .name")
-        .transition()
-        .duration(this.settings.transition.transitionDuration)
-        .ease(this.settings.transition.transitionEase)
-        .attr("class", "node-label name")
-        .attr("text-anchor", "start")
-        .attr("alignment-baseline", "middle")
-        .attr("dx", "12")
-        .attr("dy", "0")
-        .text((d) => d.rightLabel);
-
-    nodes.select("text .node-label .support")
-        .transition()
-        .duration(this.settings.transition.transitionDuration)
-        .ease(this.settings.transition.transitionEase)
-        .attr("alignment-baseline", d => (d.labelBelow ? "bottom": "hanging" ))
-        .attr("class", "node-label support")
-        .attr("text-anchor", "end")
-        .attr("dx", "-6")
-        .attr("dy", d => (d.labelBelow ? -8 : +8))
-        .text((d) => d.leftLabel);
-
-    // EXIT
-    // Remove old elements as needed.
-    nodes.exit().remove();
-
-    updateNodeStyles.call(this);
+            .attr("class", (v) => ["node", ...v.classes].join(" "))
+            .attr("transform", (v) => {
+                return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
+            });
 
 
-    // add callbacks
-    for(const callback of this.callbacks.nodes){
-        callback();
-    }
+
+        // update all the baubles
+        this.settings.vertices.baubles.forEach((bauble) => {
+            const d = nodes.select(".node-shape")
+                .filter(bauble.vertexFilter)
+                .transition()
+                .duration(this.settings.transition.transitionDuration)
+                .ease(this.settings.transition.transitionEase)
+            ;
+            bauble.updateShapes(d);
+        });
+
+        nodes.select("text .node-label .name")
+            .transition()
+            .duration(this.settings.transition.transitionDuration)
+            .ease(this.settings.transition.transitionEase)
+            .attr("class", "node-label name")
+            .attr("text-anchor", "start")
+            .attr("alignment-baseline", "middle")
+            .attr("dx", "12")
+            .attr("dy", "0")
+            .text((d) => d.rightLabel);
+
+        nodes.select("text .node-label .support")
+            .transition()
+            .duration(this.settings.transition.transitionDuration)
+            .ease(this.settings.transition.transitionEase)
+            .attr("alignment-baseline", d => (d.labelBelow ? "bottom": "hanging" ))
+            .attr("class", "node-label support")
+            .attr("text-anchor", "end")
+            .attr("dx", "-6")
+            .attr("dy", d => (d.labelBelow ? -8 : +8))
+            .text((d) => d.leftLabel);
+
+        // EXIT
+        // Remove old elements as needed.
+        nodes.exit().remove();
+
+        this[p.updateNodeStyles]();
 
 
-}
-
-function updateNodeBackgrounds() {
-
-    const nodesBackgroundLayer = this.svgSelection.select(".nodes-background-layer");
-
-    // DATA JOIN
-    // Join new data with old elements, if any.
-    const nodes = nodesBackgroundLayer.selectAll(".node-background")
-        .data(this.layout.vertices, (v) => `nb_${v.key}`);
-
-    // ENTER
-    // Create new elements as needed.
-    const newNodes = nodes.enter();
-
-    // add the specific node shapes or 'baubles'
-    this.settings.vertices.baubles.forEach((bauble) => {
-        let b= bauble;
-        if(bauble instanceof RoughCircleBauble){
-            b= new CircleBauble(bauble.settings);
+        // add callbacks
+        for(const callback of this.callbacks.nodes){
+            callback();
         }
-        const d = b.createShapes(newNodes.filter(b.vertexFilter))
-            .attr("class", "node-background")
-            .attr("transform", (v) => {
-                return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
+    }
+
+    [p.updateNodeBackgrounds]() {
+
+        const nodesBackgroundLayer = this.svgSelection.select(".nodes-background-layer");
+
+        // DATA JOIN
+        // Join new data with old elements, if any.
+        const nodes = nodesBackgroundLayer.selectAll(".node-background")
+            .data(this.layout.vertices, (v) => `nb_${v.key}`);
+
+        // ENTER
+        // Create new elements as needed.
+        const newNodes = nodes.enter();
+
+        // add the specific node shapes or 'baubles'
+        this.settings.vertices.baubles.forEach((bauble) => {
+            const d = bauble.createShapes(newNodes.filter(bauble.vertexFilter))
+                .attr("class", "node-background")
+                .attr("transform", (v) => {
+                    return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
+                });
+
+            bauble.updateShapes(d, this.settings.vertices.backgroundBorder);
+        });
+
+        // update all the existing elements
+        this.settings.vertices.baubles.forEach((bauble) => {
+            const d = nodes
+                .filter(bauble.vertexFilter)
+                .transition()
+                .duration(this.settings.transition.transitionDuration)
+                .ease(this.settings.transition.transitionEase)
+                .attr("transform", (v) => {
+                    return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
+                });
+            bauble.updateShapes(d, this.settings.backgroundBorder);
+        });
+
+        // EXIT
+        // Remove old elements as needed.
+        nodes.exit().remove();
+
+        this[p.updateNodeBackgroundStyles]();
+
+    }
+
+    /**
+     * Adds or updates branch lines
+     */
+    [p.updateBranches]() {
+
+        const branchesLayer = this.svgSelection.select(".branches-layer");
+
+        // a function to create a line path
+        // const branchPath = d3.line()
+        //     .x((v) => v.x)
+        //     .y((v) => v.y)
+        //     .curve(this.layout.branchCurve);
+        const branchPath = this[p.branchPathGenerator]();
+        // DATA JOIN
+        // Join new data with old elements, if any.
+        const branches = branchesLayer.selectAll("g .branch")
+            .data(this.layout.edges, (e) => `b_${e.key}`);
+
+        // ENTER
+        // Create new elements as needed.
+        const newBranches = branches.enter().append("g")
+            .attr("id", (e) => e.id)
+            .attr("class", (e) => ["branch", ...e.classes].join(" "))
+            .attr("transform", (e) => {
+                return `translate(${this.scales.x(e.v0.x+this.settings.xScale.offset)}, ${this.scales.y(e.v1.y)})`;
             });
 
-        b.updateShapes(d, this.settings.vertices.backgroundBorder);
-    });
+        // Make branches a thing like bauble
+        if(this.settings.edges.roughOptions){
+            newBranches.append("g")
+                .attr("class","branch-path")
+                .append((e,i)=>roughFactory.path(`${branchPath(e,i)}`,this.settings.edges.roughOptions));
+        }else{
+            newBranches.append("path")
+                .attr("class", "branch-path")
+                .attr("d", (e,i) => branchPath(e,i));
+        }
 
-    // update all the existing elements
-    this.settings.vertices.baubles.forEach((bauble) => {
-        const d = nodes
-            .filter(bauble.vertexFilter)
+
+        newBranches.append("text")
+            .attr("class", "branch-label length")
+            .attr("dx", (e) => ((this.scales.x(e.v1.x+this.settings.xScale.offset) - this.scales.x(e.v0.x+this.settings.xScale.offset)) / 2))
+            .attr("dy", (e) => (e.labelBelow ? +6 : -6))
+            .attr("alignment-baseline", (e) => (e.labelBelow ? "hanging" : "bottom"))
+            .attr("text-anchor", "middle")
+            .text((e) => e.label);
+
+        // update the existing elements
+        branches
             .transition()
             .duration(this.settings.transition.transitionDuration)
             .ease(this.settings.transition.transitionEase)
-            .attr("transform", (v) => {
-                return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
-            });
-        bauble.updateShapes(d, this.settings.backgroundBorder);
-    });
+            .attr("class", (e) => ["branch", ...e.classes].join(" "))
+            .attr("transform", (e) => {
+                return `translate(${this.scales.x(e.v0.x+this.settings.xScale.offset)}, ${this.scales.y(e.v1.y)})`;
+            })
+            .select("path")
+            .attr("d", (e,i) => branchPath(e,i))
 
-    // EXIT
-    // Remove old elements as needed.
-    nodes.exit().remove();
+            .select("text .branch-label .length")
+            .attr("class", "branch-label length")
+            .attr("dx", (e) => ((this.scales.x(e.v1.x+this.settings.xScale.offset) - this.scales.x(e.v0.x+this.settings.xScale.offset)) / 2))
+            .attr("dy", (e) => (e.labelBelow ? +6 : -6))
+            .attr("alignment-baseline", (e) => (e.labelBelow ? "hanging" : "bottom"))
+            .attr("text-anchor", "middle")
+            .text((e) => e.label);
 
-    updateNodeBackgroundStyles.call(this);
-
-}
-
-/**
- * Adds or updates branch lines
- */
-function updateBranches() {
-
-    const branchesLayer = this.svgSelection.select(".branches-layer");
-
-    // a function to create a line path
-    // const branchPath = d3.line()
-    //     .x((v) => v.x)
-    //     .y((v) => v.y)
-    //     .curve(this.layout.branchCurve);
-    const branchPath = branchPathGenerator.call(this);
-
-    // DATA JOIN
-    // Join new data with old elements, if any.
-    const branches = branchesLayer.selectAll("g .branch")
-        .data(this.layout.edges, (e) => `b_${e.key}`);
-
-    // ENTER
-    // Create new elements as needed.
-    const newBranches = branches.enter().append("g")
-        .attr("id", (e) => e.id)
-        .attr("class", (e) => ["branch", ...e.classes].join(" "))
-        .attr("transform", (e) => {
-            return `translate(${this.scales.x(e.v0.x+this.settings.xScale.offset)}, ${this.scales.y(e.v1.y)})`;
-        });
-
-    // Make branches a thing like bauble
-    newBranches.append("path")
-        .attr("class", "branch-path")
-        .attr("d", (e,i) => branchPath(e,i));
-
-    newBranches.append("text")
-        .attr("class", "branch-label length")
-        .attr("dx", (e) => ((this.scales.x(e.v1.x+this.settings.xScale.offset) - this.scales.x(e.v0.x+this.settings.xScale.offset)) / 2))
-        .attr("dy", (e) => (e.labelBelow ? +6 : -6))
-        .attr("alignment-baseline", (e) => (e.labelBelow ? "hanging" : "bottom"))
-        .attr("text-anchor", "middle")
-        .text((e) => e.label);
-
-    // update the existing elements
-    branches
-        .transition()
-        .duration(this.settings.transition.transitionDuration)
-        .ease(this.settings.transition.transitionEase)
-        .attr("class", (e) => ["branch", ...e.classes].join(" "))
-        .attr("transform", (e) => {
-            return `translate(${this.scales.x(e.v0.x+this.settings.xScale.offset)}, ${this.scales.y(e.v1.y)})`;
-        })
-
-        .select("path")
-        .attr("d", (e,i) => branchPath(e,i))
-
-        .select("text .branch-label .length")
-        .attr("class", "branch-label length")
-        .attr("dx", (e) => ((this.scales.x(e.v1.x+this.settings.xScale.offset) - this.scales.x(e.v0.x+this.settings.xScale.offset)) / 2))
-        .attr("dy", (e) => (e.labelBelow ? +6 : -6))
-        .attr("alignment-baseline", (e) => (e.labelBelow ? "hanging" : "bottom"))
-        .attr("text-anchor", "middle")
-        .text((e) => e.label);
-
-    // EXIT
-    // Remove old elements as needed.
-    branches
-        .exit().remove();
-    updateBranchStyles.call(this);
-
-    // add callbacks
-    for(const callback of this.callbacks.branches){
-        callback();
-    }
-}
-
-function updateCartoons(){
-    const cartoonLayer = this.svgSelection.select(".cartoon-layer");
-
-    // DATA JOIN
-    // Join new data with old elements, if any.
-    const cartoons = cartoonLayer.selectAll("g .cartoon")
-        .data(this.layout.cartoons, (c) => `c_${c.id}`);
-
-    // ENTER
-    // Create new elements as needed.
-    const newCartoons = cartoons.enter().append("g")
-        .attr("id", (c) => `cartoon-${c.id}`)
-        .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
-        .attr("transform", (c) => {
-            return `translate(${this.scales.x(c.vertices[0].x+this.settings.xScale.offset)}, ${this.scales.y(c.vertices[0].y+this.settings.xScale.offset)})`;
-        });
-
-
-    newCartoons.append("path")
-        .attr("class", "cartoon-path")
-        .attr("d", (e,i) => pointToPoint.call(this,e.vertices));
-
-
-
-    // update the existing elements
-    cartoons
-        .transition()
-        .duration(this.settings.transition.transitionDuration)
-        .ease(this.settings.transition.transitionEase)
-        .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
-        .attr("transform", (c) => {
-            return `translate(${this.scales.x(c.vertices[0].x+this.settings.xScale.offset)}, ${this.scales.y(c.vertices[0].y)})`
-        })
-        .select("path")
-        .attr("d", (c) => pointToPoint.call(this,c.vertices));
-
-
-    // EXIT
-    // Remove old elements as needed.
-    cartoons.exit().remove();
-
-    updateCartoonStyles.call(this);
-
-    // add callbacks
-    for(const callback of this.callbacks.cartoons){
-        callback();
-    }
-}
-
-/**
- * Add axis
- */
-function addXAxis() {
-    const xSettings = this.settings.xScale;
-    const reverse = xSettings.reverseAxis? -1:1;
-    const domain = xSettings.origin!==null?
-        [xSettings.origin+reverse*xSettings.branchScale*(Math.abs(this.scales.x.domain()[0]-this.scales.x.domain()[1])),xSettings.origin]:
-        this.scales.x.domain();
-    const xAxis = xSettings.axis( xSettings.scale().domain(domain).range(this.scales.x.range()))
-        .ticks(xSettings.ticks).tickFormat(xSettings.tickFormat);
-    const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
-    const axesLayer = this.svgSelection.select(".axes-layer");
-
-    axesLayer
-        .append("g")
-        .attr("id", "x-axis")
-        .attr("class", "axis")
-        .attr("transform", `translate(0, ${this.scales.height - this.margins.bottom +this.settings.xScale.gap})`)
-        .call(xAxis);
-
-    axesLayer
-        .append("g")
-        .attr("id", "x-axis-label")
-        .attr("class", "axis-label")
-        .attr("transform", `translate(${this.margins.left}, ${this.scales.height - this.margins.bottom})`)
-        .append("text")
-        .attr("transform", `translate(${xAxisWidth / 2}, 35)`)
-        .attr("alignment-baseline", "hanging")
-        .style("text-anchor", "middle")
-        .text(xSettings.title);
-}
-
-function addYAxis() {
-    const ySettings = this.settings.yScale;
-    const reverse = ySettings.reverseAxis? -1:1;
-    const domain = ySettings.origin!==null?
-        [ySettings.origin+reverse*ySettings.branchScale*(Math.abs(this.scales.y.domain()[0]-this.scales.y.domain()[1])),ySettings.origin]:
-        this.scales.y.domain();
-    const yAxis = ySettings.axis( ySettings.scale().domain(domain).range(this.scales.y.range()))
-        .ticks(ySettings.ticks).tickFormat(ySettings.tickFormat);
-    const yAxisHeight = this.scales.height - this.margins.top - this.margins.bottom;
-    const axesLayer = this.svgSelection.select(".axes-layer");
-
-    axesLayer
-        .append("g")
-        .attr("id", "y-axis")
-        .attr("class", "axis")
-        .attr("transform", `translate(${this.margins.left-this.settings.yScale.gap}, 0)`)
-        .call(yAxis);
-
-    axesLayer
-        .append("g")
-        .attr("id", "y-axis-label")
-        .attr("class", "axis-label")
-        .attr("transform", `translate(0,${this.margins.top})`)
-        .attr("transform", `translate(0,${yAxisHeight / 2})`)
-        .append("text")
-        .attr("transform", "rotate(-90)")
-        // .attr("alignment-baseline", "hanging")
-        .style("text-anchor", "middle")
-        .text(ySettings.title);
-}
-
-function updateXAxis(){
-    const xSettings = this.settings.xScale;
-    const reverse = xSettings.reverseAxis? -1:1;
-
-    const domain = xSettings.origin!==null?
-        [xSettings.origin+reverse*xSettings.branchScale*(Math.abs(this.scales.x.domain()[0]-this.scales.x.domain()[1])),xSettings.origin]:
-        this.scales.x.domain();
-
-    const xAxis = xSettings.axis( xSettings.scale().domain(domain).range(this.scales.x.range()))
-        .ticks(xSettings.ticks).tickFormat(xSettings.tickFormat);
-    const axesLayer = this.svgSelection.select(".axes-layer");
-
-    axesLayer
-        .select("#x-axis")
-        .transition()
-        .duration(this.settings.transition.transitionDuration)
-        .ease(this.settings.transition.transitionEase)
-        .call(xAxis);
-
-    axesLayer
-        .select("#x-axis-label")
-        .select("text")
-        .transition()
-        .duration(this.settings.transition.transitionDuration)
-        .ease(this.settings.transition.transitionEase)
-        .text(xSettings.title);
-}
-function updateYAxis(){
-    const ySettings = this.settings.yScale;
-    const reverse = ySettings.reverseAxis? -1:1;
-    const domain = ySettings.origin!==null?
-        [ySettings.origin+reverse*ySettings.branchScale*(Math.abs(this.scales.y.domain()[0]-this.scales.y.domain()[1])),ySettings.origin]:
-        this.scales.y.domain();
-    const yAxis = ySettings.axis( ySettings.scale().domain(domain).range(this.scales.y.range()))
-        .ticks(ySettings.ticks).tickFormat(ySettings.tickFormat);
-    const axesLayer = this.svgSelection.select(".axes-layer");
-
-    axesLayer
-        .select("#y-axis")
-        .transition()
-        .duration(this.settings.transition.transitionDuration)
-        .ease(this.settings.transition.transitionEase)
-        .call(yAxis);
-
-    axesLayer
-        .select("#y-axis-label")
-        .select("text")
-        .transition()
-        .duration(this.settings.transition.transitionDuration)
-        .ease(this.settings.transition.transitionEase)
-        .text(ySettings.title);
-}
-
-
-
-function updateNodeStyles(){
-    const nodesLayer = this.svgSelection.select(".nodes-layer");
-
-    // DATA JOIN
-    // Join new data with old elements, if any.
-    const nodes = nodesLayer.selectAll(".node .node-shape");
-    const vertexStyles = this.settings.vertices.cssStyles;
-    for(const key of Object.keys(vertexStyles)){
-        nodes
-            // .transition()
-            // .duration(this.settings.transition.transitionDuration)
-            .attr(key,v=>vertexStyles[key].call(this,v));
-    }
-
-
-}
-
-function updateNodeBackgroundStyles(){
-    const nodesBackgroundLayer = this.svgSelection.select(".nodes-background-layer");
-
-    // DATA JOIN
-    // Join new data with old elements, if any.
-    const nodes = nodesBackgroundLayer.selectAll(".node-background");
-
-    const vertexBackgroundsStyles = this.settings.vertices.backgroundCssStyles;
-    for(const key of Object.keys(vertexBackgroundsStyles)){
-        nodes
-            // .transition()
-            // .duration(this.settings.transition.transitionDuration)
-            .attr(key,v=>vertexBackgroundsStyles[key].call(this,v));
-    }
-
-}
-
-function updateBranchStyles(){
-    const branchesLayer = this.svgSelection.select(".branches-layer");
-
-    // DATA JOIN
-    // Join new data with old elements, if any.
-    const branches = branchesLayer.selectAll("g .branch .branch-path");
-
-    const branchStyles = this.settings.edges.cssStyles;
-    for(const key of Object.keys(branchStyles)){
+        // EXIT
+        // Remove old elements as needed.
         branches
+            .exit().remove();
+        this[p.updateBranchStyles]();
+
+        // add callbacks
+        for(const callback of this.callbacks.branches){
+            callback();
+        }
+    }
+
+    [p.updateCartoons](){
+        const cartoonLayer = this.svgSelection.select(".cartoon-layer");
+
+        // DATA JOIN
+        // Join new data with old elements, if any.
+        const cartoons = cartoonLayer.selectAll("g .cartoon")
+            .data(this.layout.cartoons, (c) => `c_${c.id}`);
+
+        // ENTER
+        // Create new elements as needed.
+        const newCartoons = cartoons.enter().append("g")
+            .attr("id", (c) => `cartoon-${c.id}`)
+            .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
+            .attr("transform", (c) => {
+                return `translate(${this.scales.x(c.vertices[0].x+this.settings.xScale.offset)}, ${this.scales.y(c.vertices[0].y+this.settings.xScale.offset)})`;
+            });
+
+
+        newCartoons.append("path")
+            .attr("class", "cartoon-path")
+            .attr("d", (e,i) => this[p.pointToPoint](e.vertices));
+
+
+
+        // update the existing elements
+        cartoons
+            .transition()
+            .duration(this.settings.transition.transitionDuration)
+            .ease(this.settings.transition.transitionEase)
+            .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
+            .attr("transform", (c) => {
+                return `translate(${this.scales.x(c.vertices[0].x+this.settings.xScale.offset)}, ${this.scales.y(c.vertices[0].y)})`
+            })
+            .select("path")
+            .attr("d", (c) => this[p.pointToPoint](c.vertices));
+
+
+        // EXIT
+        // Remove old elements as needed.
+        cartoons.exit().remove();
+
+        this[p.updateCartoonStyles]();
+
+        // add callbacks
+        for(const callback of this.callbacks.cartoons){
+            callback();
+        }
+    }
+    /**
+     * Add axis
+     */
+    [p.addXAxis]() {
+        const xSettings = this.settings.xScale;
+        const reverse = xSettings.reverseAxis? -1:1;
+        const domain = xSettings.origin!==null?
+            [xSettings.origin+reverse*xSettings.branchScale*(Math.abs(this.scales.x.domain()[0]-this.scales.x.domain()[1])),xSettings.origin]:
+            this.scales.x.domain();
+        const xAxis = xSettings.axis( xSettings.scale().domain(domain).range(this.scales.x.range()))
+            .ticks(xSettings.ticks).tickFormat(xSettings.tickFormat);
+        const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
+        const axesLayer = this.svgSelection.select(".axes-layer");
+
+        axesLayer
+            .append("g")
+            .attr("id", "x-axis")
+            .attr("class", "axis")
+            .attr("transform", `translate(0, ${this.scales.height - this.margins.bottom +this.settings.xScale.gap})`)
+            .call(xAxis);
+
+        axesLayer
+            .append("g")
+            .attr("id", "x-axis-label")
+            .attr("class", "axis-label")
+            .attr("transform", `translate(${this.margins.left}, ${this.scales.height - this.margins.bottom})`)
+            .append("text")
+            .attr("transform", `translate(${xAxisWidth / 2}, 35)`)
+            .attr("alignment-baseline", "hanging")
+            .style("text-anchor", "middle")
+            .text(xSettings.title);
+    }
+
+    [p.addYAxis]() {
+        const ySettings = this.settings.yScale;
+        const reverse = ySettings.reverseAxis? -1:1;
+        const domain = ySettings.origin!==null?
+            [ySettings.origin+reverse*ySettings.branchScale*(Math.abs(this.scales.y.domain()[0]-this.scales.y.domain()[1])),ySettings.origin]:
+            this.scales.y.domain();
+        const yAxis = ySettings.axis( ySettings.scale().domain(domain).range(this.scales.y.range()))
+            .ticks(ySettings.ticks).tickFormat(ySettings.tickFormat);
+        const yAxisHeight = this.scales.height - this.margins.top - this.margins.bottom;
+        const axesLayer = this.svgSelection.select(".axes-layer");
+
+        axesLayer
+            .append("g")
+            .attr("id", "y-axis")
+            .attr("class", "axis")
+            .attr("transform", `translate(${this.margins.left-this.settings.yScale.gap}, 0)`)
+            .call(yAxis);
+
+        axesLayer
+            .append("g")
+            .attr("id", "y-axis-label")
+            .attr("class", "axis-label")
+            .attr("transform", `translate(0,${this.margins.top})`)
+            .attr("transform", `translate(0,${yAxisHeight / 2})`)
+            .append("text")
+            .attr("transform", "rotate(-90)")
+            // .attr("alignment-baseline", "hanging")
+            .style("text-anchor", "middle")
+            .text(ySettings.title);
+    }
+
+    [p.updateXAxis](){
+        const xSettings = this.settings.xScale;
+        const reverse = xSettings.reverseAxis? -1:1;
+
+        const domain = xSettings.origin!==null?
+            [xSettings.origin+reverse*xSettings.branchScale*(Math.abs(this.scales.x.domain()[0]-this.scales.x.domain()[1])),xSettings.origin]:
+            this.scales.x.domain();
+
+        const xAxis = xSettings.axis( xSettings.scale().domain(domain).range(this.scales.x.range()))
+            .ticks(xSettings.ticks).tickFormat(xSettings.tickFormat);
+        const axesLayer = this.svgSelection.select(".axes-layer");
+
+        axesLayer
+            .select("#x-axis")
+            .transition()
+            .duration(this.settings.transition.transitionDuration)
+            .ease(this.settings.transition.transitionEase)
+            .call(xAxis);
+
+        axesLayer
+            .select("#x-axis-label")
+            .select("text")
+            .transition()
+            .duration(this.settings.transition.transitionDuration)
+            .ease(this.settings.transition.transitionEase)
+            .text(xSettings.title);
+    }
+    [p.updateYAxis](){
+        const ySettings = this.settings.yScale;
+        const reverse = ySettings.reverseAxis? -1:1;
+        const domain = ySettings.origin!==null?
+            [ySettings.origin+reverse*ySettings.branchScale*(Math.abs(this.scales.y.domain()[0]-this.scales.y.domain()[1])),ySettings.origin]:
+            this.scales.y.domain();
+        const yAxis = ySettings.axis( ySettings.scale().domain(domain).range(this.scales.y.range()))
+            .ticks(ySettings.ticks).tickFormat(ySettings.tickFormat);
+        const axesLayer = this.svgSelection.select(".axes-layer");
+
+        axesLayer
+            .select("#y-axis")
+            .transition()
+            .duration(this.settings.transition.transitionDuration)
+            .ease(this.settings.transition.transitionEase)
+            .call(yAxis);
+
+        axesLayer
+            .select("#y-axis-label")
+            .select("text")
+            .transition()
+            .duration(this.settings.transition.transitionDuration)
+            .ease(this.settings.transition.transitionEase)
+            .text(ySettings.title);
+    }
+
+
+
+    [p.updateNodeStyles](){
+        const nodesLayer = this.svgSelection.select(".nodes-layer");
+
+        // DATA JOIN
+        // Join new data with old elements, if any.
+        const nodes = nodesLayer.selectAll(".node .node-shape");
+        const vertexStyles = this.settings.vertices.cssStyles;
+        for(const key of Object.keys(vertexStyles)){
+            nodes
             // .transition()
             // .duration(this.settings.transition.transitionDuration)
-            .attr(key,e=>branchStyles[key].call(this,e));
+                .attr(key,v=>vertexStyles[key].call(this,v));
+        }
+
+
     }
-}
 
-function updateCartoonStyles(){
-    const cartoonLayer = this.svgSelection.select(".cartoon-layer");
+    [p.updateNodeBackgroundStyles](){
+        const nodesBackgroundLayer = this.svgSelection.select(".nodes-background-layer");
 
-    // DATA JOIN
-    // Join new data with old elements, if any.
-    const cartoons = cartoonLayer.selectAll(".cartoon path");
-    const CartoonStyles = this.settings.cartoons.cssStyles;
-    for(const key of Object.keys(CartoonStyles)){
-        cartoons
-        // .transition()
-        // .duration(this.settings.transition.transitionDuration)
-            .attr(key,c=>CartoonStyles[key].call(this,c));
-        // attributes are set by the "root" node
+        // DATA JOIN
+        // Join new data with old elements, if any.
+        const nodes = nodesBackgroundLayer.selectAll(".node-background");
+
+        const vertexBackgroundsStyles = this.settings.vertices.backgroundCssStyles;
+        for(const key of Object.keys(vertexBackgroundsStyles)){
+            nodes
+            // .transition()
+            // .duration(this.settings.transition.transitionDuration)
+                .attr(key,v=>vertexBackgroundsStyles[key].call(this,v));
+        }
+
     }
-}
 
-function pointToPoint(points){
-    let path = [];
-    const origin = points[0];
-    const pathPoints =points.reverse();
-    let currentPoint =origin;
-    for(const point of pathPoints){
-        const xdiff = this.scales.x(point.x+this.settings.xScale.offset)-this.scales.x(currentPoint.x+this.settings.xScale.offset);
-        const ydiff = this.scales.y(point.y)- this.scales.y(currentPoint.y);
-        path.push(`${xdiff} ${ydiff}`);
-        currentPoint = point;
+    [p.updateBranchStyles](){
+        const branchesLayer = this.svgSelection.select(".branches-layer");
+
+        // DATA JOIN
+        // Join new data with old elements, if any.
+        const branches = branchesLayer.selectAll("g .branch .branch-path");
+
+        const branchStyles = this.settings.edges.cssStyles;
+        for(const key of Object.keys(branchStyles)){
+            branches
+            // .transition()
+            // .duration(this.settings.transition.transitionDuration)
+                .attr(key,e=>branchStyles[key].call(this,e));
+        }
     }
-    return `M 0 0 l ${path.join(" l ")} z`;
-}
 
-function updateAnnotations(){
-    for( const annotation of this._annotations){
-        annotation();
+    [p.updateCartoonStyles](){
+        const cartoonLayer = this.svgSelection.select(".cartoon-layer");
+
+        // DATA JOIN
+        // Join new data with old elements, if any.
+        const cartoons = cartoonLayer.selectAll(".cartoon path");
+        const CartoonStyles = this.settings.cartoons.cssStyles;
+        for(const key of Object.keys(CartoonStyles)){
+            cartoons
+            // .transition()
+            // .duration(this.settings.transition.transitionDuration)
+                .attr(key,c=>CartoonStyles[key].call(this,c));
+            // attributes are set by the "root" node
+        }
     }
-}
-/**
- * Generates a line() function that takes an edge and it's index and returns a line for d3 path element. It is called
- * by the figtree class as
- * const branchPath = this.layout.branchPathGenerator(this.scales)
- * newBranches.append("path")
- .attr("class", "branch-path")
- .attr("d", (e,i) => branchPath(e,i));
- * @param scales
- * @param branchCurve
- * @return {function(*, *)}
- */
 
-function branchPathGenerator(){
-    const branchPath =(e,i)=>{
-        const branchLine = line()
-            .x((v) => v.x)
-            .y((v) => v.y)
-            .curve(this.settings.edges.branchCurve);
-        const factor = e.v0.y-e.v1.y>0? 1:-1;
-        const dontNeedCurve = e.v0.y-e.v1.y===0?0:1;
-        const output = this.settings.edges.curveRadius>0?
-            branchLine(
-                [{x: 0, y: this.scales.y(e.v0.y) - this.scales.y(e.v1.y)},
-                    { x:0, y:dontNeedCurve*factor * this.settings.edges.curveRadius},
-                    {x:0 + dontNeedCurve*this.settings.edges.curveRadius, y:0},
-                    {x: this.scales.x(e.v1.x+this.settings.xScale.offset) - this.scales.x(e.v0.x+this.settings.xScale.offset), y: 0}
-                ]):
-            branchLine(
-                [{x: 0, y: this.scales.y(e.v0.y) - this.scales.y(e.v1.y)},
-                    {x: this.scales.x(e.v1.x+this.settings.xScale.offset) - this.scales.x(e.v0.x+this.settings.xScale.offset), y: 0}
-                ]);
-        return(output)
+    [p.pointToPoint](points){
+        let path = [];
+        const origin = points[0];
+        const pathPoints =points.reverse();
+        let currentPoint =origin;
+        for(const point of pathPoints){
+            const xdiff = this.scales.x(point.x+this.settings.xScale.offset)-this.scales.x(currentPoint.x+this.settings.xScale.offset);
+            const ydiff = this.scales.y(point.y)- this.scales.y(currentPoint.y);
+            path.push(`${xdiff} ${ydiff}`);
+            currentPoint = point;
+        }
+        return `M 0 0 l ${path.join(" l ")} z`;
+    }
 
-    };
-    return branchPath;
+    [p.updateAnnotations](){
+        for( const annotation of this._annotations){
+            annotation();
+        }
+    }
+    /**
+     * Generates a line() function that takes an edge and it's index and returns a line for d3 path element. It is called
+     * by the figtree class as
+     * const branchPath = this.layout.branchPathGenerator(this.scales)
+     * newBranches.append("path")
+     .attr("class", "branch-path")
+     .attr("d", (e,i) => branchPath(e,i));
+     * @param scales
+     * @param branchCurve
+     * @return {function(*, *)}
+     */
+
+    [p.branchPathGenerator](){
+        const branchPath =(e,i)=>{
+            const branchLine = line()
+                .x((v) => v.x)
+                .y((v) => v.y)
+                .curve(this.settings.edges.branchCurve);
+            const factor = e.v0.y-e.v1.y>0? 1:-1;
+            const dontNeedCurve = e.v0.y-e.v1.y===0?0:1;
+            const output = this.settings.edges.curveRadius>0?
+                branchLine(
+                    [{x: 0, y: this.scales.y(e.v0.y) - this.scales.y(e.v1.y)},
+                        { x:0, y:dontNeedCurve*factor * this.settings.edges.curveRadius},
+                        {x:0 + dontNeedCurve*this.settings.edges.curveRadius, y:0},
+                        {x: this.scales.x(e.v1.x+this.settings.xScale.offset) - this.scales.x(e.v0.x+this.settings.xScale.offset), y: 0}
+                    ]):
+                branchLine(
+                    [{x: 0, y: this.scales.y(e.v0.y) - this.scales.y(e.v1.y)},
+                        {x: this.scales.x(e.v1.x+this.settings.xScale.offset) - this.scales.x(e.v0.x+this.settings.xScale.offset), y: 0}
+                    ]);
+            return(output)
+
+        };
+        return branchPath;
+    }
+
+
 }
 
 /**
@@ -10445,5 +10456,196 @@ class RootToTipPlot extends AbstractLayout{
     }
 }
 
-export { Bauble, CircleBauble, ExplodedLayout, FigTree, RectangularBauble, RectangularLayout, RootToTipPlot, RoughCircleBauble, TransmissionLayout, Tree, Type };
+const roughFactory$2 = rough_umd.svg(document.createElement("svg"));
+class RoughFigTree extends FigTree{
+    static DEFAULT_SETTINGS() {
+        return {
+            xScale:{axis:null},
+            yScale:{axis:null},
+            vertices:{baubles: [new RoughCircleBauble()],
+                backgroundBorder:-5},
+            edges: {
+                roughOptions:{roughness:10}
+            },
+            cartoons:{
+                roughOptions: {roughness:10}
+            }
+
+        }
+    }
+    constructor(svg, layout, margins, settings = {}){
+        settings = mergeDeep(RoughFigTree.DEFAULT_SETTINGS(),settings);
+        super(svg, layout, margins, settings);
+    }
+
+
+    [p.updateNodeBackgrounds]() {
+
+        const nodesBackgroundLayer = this.svgSelection.select(".nodes-background-layer");
+
+        // DATA JOIN
+        // Join new data with old elements, if any.
+        const nodes = nodesBackgroundLayer.selectAll(".node-background")
+            .data(this.layout.vertices, (v) => `nb_${v.key}`);
+
+        // ENTER
+        // Create new elements as needed.
+        const newNodes = nodes.enter();
+
+        // add the specific node shapes or 'baubles'
+        this.settings.vertices.baubles.forEach((bauble) => {
+            let backBauble= bauble;
+            if(bauble instanceof RoughCircleBauble){
+                backBauble= new CircleBauble(bauble.settings);
+            }
+            const d = backBauble.createShapes(newNodes.filter(backBauble.vertexFilter))
+                .attr("class", "node-background")
+                .attr("transform", (v) => {
+                    return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
+                });
+
+            backBauble.updateShapes(d, this.settings.vertices.backgroundBorder);
+        });
+
+        // update all the existing elements
+        this.settings.vertices.baubles.forEach((bauble) => {
+            const d = nodes
+                .filter(bauble.vertexFilter)
+                .transition()
+                .duration(this.settings.transition.transitionDuration)
+                .ease(this.settings.transition.transitionEase)
+                .attr("transform", (v) => {
+                    return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
+                });
+            bauble.updateShapes(d, this.settings.backgroundBorder);
+        });
+
+        // EXIT
+        // Remove old elements as needed.
+        nodes.exit().remove();
+
+        this[p.updateNodeBackgroundStyles]();
+
+    }
+
+    [p.updateBranches]() {
+
+        const branchesLayer = this.svgSelection.select(".branches-layer");
+
+        // a function to create a line path
+
+        const branchPath = this[p.branchPathGenerator]();
+        // DATA JOIN
+        // Join new data with old elements, if any.
+        const branches = branchesLayer.selectAll("g .branch")
+            .data(this.layout.edges, (e) => `b_${e.key}`);
+
+        // ENTER
+        // Create new elements as needed.
+        const newBranches = branches.enter().append("g")
+            .attr("id", (e) => e.id)
+            .attr("class", (e) => ["branch", ...e.classes].join(" "))
+            .attr("transform", (e) => {
+                return `translate(${this.scales.x(e.v0.x+this.settings.xScale.offset)}, ${this.scales.y(e.v1.y)})`;
+            });
+
+        // Make branches a thing like bauble
+        newBranches.append("g")
+            .attr("class","branch-path")
+            .append((e,i)=>roughFactory$2.path(`${branchPath(e,i)}`,this.settings.edges.roughOptions));
+
+
+        newBranches.append("text")
+            .attr("class", "branch-label length")
+            .attr("dx", (e) => ((this.scales.x(e.v1.x+this.settings.xScale.offset) - this.scales.x(e.v0.x+this.settings.xScale.offset)) / 2))
+            .attr("dy", (e) => (e.labelBelow ? +6 : -6))
+            .attr("alignment-baseline", (e) => (e.labelBelow ? "hanging" : "bottom"))
+            .attr("text-anchor", "middle")
+            .text((e) => e.label);
+
+        // update the existing elements
+        branches
+            .transition()
+            .duration(this.settings.transition.transitionDuration)
+            .ease(this.settings.transition.transitionEase)
+            .attr("class", (e) => ["branch", ...e.classes].join(" "))
+            .attr("transform", (e) => {
+                return `translate(${this.scales.x(e.v0.x+this.settings.xScale.offset)}, ${this.scales.y(e.v1.y)})`;
+            })
+            .select("path")
+            .attr("d", (e,i) => branchPath(e,i))
+
+            .select("text .branch-label .length")
+            .attr("class", "branch-label length")
+            .attr("dx", (e) => ((this.scales.x(e.v1.x+this.settings.xScale.offset) - this.scales.x(e.v0.x+this.settings.xScale.offset)) / 2))
+            .attr("dy", (e) => (e.labelBelow ? +6 : -6))
+            .attr("alignment-baseline", (e) => (e.labelBelow ? "hanging" : "bottom"))
+            .attr("text-anchor", "middle")
+            .text((e) => e.label);
+
+        // EXIT
+        // Remove old elements as needed.
+        branches
+            .exit().remove();
+        this[p.updateBranchStyles]();
+
+        // add callbacks
+        for(const callback of this.callbacks.branches){
+            callback();
+        }
+    }
+
+    [p.updateCartoons](){
+        const cartoonLayer = this.svgSelection.select(".cartoon-layer");
+
+        // DATA JOIN
+        // Join new data with old elements, if any.
+        const cartoons = cartoonLayer.selectAll("g .cartoon")
+            .data(this.layout.cartoons, (c) => `c_${c.id}`);
+
+        // ENTER
+        // Create new elements as needed.
+        const newCartoons = cartoons.enter().append("g")
+            .attr("id", (c) => `cartoon-${c.id}`)
+            .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
+            .attr("transform", (c) => {
+                return `translate(${this.scales.x(c.vertices[0].x+this.settings.xScale.offset)}, ${this.scales.y(c.vertices[0].y+this.settings.xScale.offset)})`;
+            });
+
+
+        newCartoons
+            .append("g")
+            .attr("class", "cartoon-path")
+            .append((e,i)=>roughFactory$2.path(`${this[p.pointToPoint](e.vertices)}`,this.settings.cartoon.roughOptions));
+
+        // update the existing elements
+        cartoons
+            .transition()
+            .duration(this.settings.transition.transitionDuration)
+            .ease(this.settings.transition.transitionEase)
+            .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
+            .attr("transform", (c) => {
+                return `translate(${this.scales.x(c.vertices[0].x+this.settings.xScale.offset)}, ${this.scales.y(c.vertices[0].y)})`
+            })
+            .select("path");
+            // .attr("d", (c) => this[p.pointToPoint](c.vertices));
+
+
+        // EXIT
+        // Remove old elements as needed.
+        cartoons.exit().remove();
+
+        this[p.updateCartoonStyles]();
+
+        // add callbacks
+        for(const callback of this.callbacks.cartoons){
+            callback();
+        }
+    }
+
+
+
+}
+
+export { Bauble, CircleBauble, ExplodedLayout, FigTree, RectangularBauble, RectangularLayout, RootToTipPlot, RoughCircleBauble, RoughFigTree, TransmissionLayout, Tree, Type };
 //# sourceMappingURL=figtree.esm.js.map

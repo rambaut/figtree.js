@@ -116,6 +116,8 @@
 <div>
     <figure>
         <svg id="phylogram_1a"  width="600" height="500"></svg>
+        <svg id="phylogram_1b"  width="600" height="500"></svg>
+
     </figure>
     <button id="sort_up_button">Sort ascending</button>
     <button id="sort_down_button">Sort descending</button>
@@ -124,7 +126,7 @@
 </div>
 
 <script type="module">
-    import { Tree, RectangularLayout,CircleBauble,RoughCircleBauble,FigTree} from "./dist/figtree.esm.js"
+    import { Tree, RectangularLayout,CircleBauble,RoughCircleBauble,FigTree,RoughFigTree} from "./dist/figtree.esm.js"
 
 
     const newickString =
@@ -137,14 +139,11 @@
 
     const figTree = new FigTree(treeSVG, layout,
         { top: 10, bottom: 60, left: 10, right: 150},
-        {vertices:{ hoverBorder: 2, backgroundBorder: -10,
+        {vertices:{ hoverBorder: 2, backgroundBorder: 2,
             baubles: [
-                new RoughCircleBauble({radius:30,roughOptions:{fill:"blue"}}),
+                new CircleBauble(),
             ],
-                backgroundCssStyles:{"fill":()=>"white"}
-
-            },
-
+            }
         });
     figTree.draw();
     figTree.hilightInternalNodes();
@@ -171,6 +170,13 @@
     document.getElementById('triangular_button').onclick = function() {
         figTree.updateSettings({edges:{branchCurve:d3.curveNatural}});
     };
+
+    const sketch = new RoughFigTree(document.getElementById('phylogram_1b'), layout,
+        { top: 10, bottom: 60, left: 10, right: 150},
+        {vertices:{ hoverBorder: 2, backgroundBorder: -2, baubles:[new RoughCircleBauble({radius:10,fill:"blue",fillStyle:"cross-hatch",roughness:1,vertexFilter:(v)=>v.degree===1})]},
+            edges:{roughOptions:{roughness:1}}
+        });
+    sketch.draw();
 
 </script>
 
