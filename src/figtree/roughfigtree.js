@@ -8,8 +8,6 @@ const roughFactory = rough.svg(document.createElement("svg"));
 export class RoughFigTree extends FigTree{
     static DEFAULT_SETTINGS() {
         return {
-            xScale:{axis:null},
-            yScale:{axis:null},
             vertices:{baubles: [new RoughCircleBauble()],
                 backgroundBorder:-5},
             edges: {

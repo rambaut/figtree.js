@@ -2,7 +2,7 @@
 
 /** @module roottotipplot */
 
-import {Tree, Type} from "./tree.js";
+import {Tree, Type} from "../tree.js";
 import {min,max,axisBottom,axisLeft,format,select,event,scaleLinear,line,mean} from "d3";
 import {
     AbstractLayout,
@@ -11,7 +11,7 @@ import {
     setVertexClasses,
     setVertexLabels,
     makeVerticesFromNodes
-} from "./layout/abstractLayout";
+} from "./abstractLayout";
 import extent from "d3-array/src/extent";
 
 /**
