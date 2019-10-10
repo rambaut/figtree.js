@@ -1,7 +1,7 @@
 "use strict";
 import {select,easeLinear,scaleLinear,axisBottom,mouse,event,format,curveStepBefore,line} from "d3";
 import uuid from "uuid";
-import {CircleBauble} from "./bauble";
+import {CircleBauble, RoughCircleBauble} from "./bauble";
 import {mergeDeep} from "../utilities";
 import rough from 'roughjs/dist/rough.umd';
 
@@ -45,7 +45,7 @@ export class FigTree {
             },
             vertices: {
                 hoverBorder: 2,
-                backgroundBorder: 0,
+                backgroundBorder: null,
                 baubles: [new CircleBauble()],
                 cssStyles:{},
                 backgroundCssStyles:{}
@@ -84,9 +84,6 @@ export class FigTree {
         this.drawn = false;
         this.svgId = `g-${uuid.v4()}`;
         this.svgSelection=null;
-        // roughjs set up
-
-        this.roughSvg = rough.svg(this.svg);
 
 
 
@@ -123,7 +120,7 @@ export class FigTree {
         this.svgSelection.append("g").attr("class", "cartoon-layer");
 
         this.svgSelection.append("g").attr("class", "branches-layer");
-        if (this.settings.vertices.backgroundBorder > 0) {
+        if (this.settings.vertices.backgroundBorder !==null) {
             this.svgSelection.append("g").attr("class", "nodes-background-layer");
         }
         this.svgSelection.append("g").attr("class", "nodes-layer");
@@ -195,7 +192,7 @@ export class FigTree {
             updateYAxis.call(this)
         }
 
-        if (this.settings.vertices.backgroundBorder > 0) {
+        if (this.settings.vertices.backgroundBorder !==null) {
             updateNodeBackgrounds.call(this);
         }
 
@@ -588,14 +585,17 @@ function updateNodeBackgrounds() {
 
     // add the specific node shapes or 'baubles'
     this.settings.vertices.baubles.forEach((bauble) => {
-        const d = bauble
-            .createShapes(newNodes.filter(bauble.vertexFilter))
+        let b= bauble;
+        if(bauble instanceof RoughCircleBauble){
+            b= new CircleBauble(bauble.settings)
+        }
+        const d = b.createShapes(newNodes.filter(b.vertexFilter))
             .attr("class", "node-background")
             .attr("transform", (v) => {
                 return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
             });
 
-        bauble.updateShapes(d, this.settings.backgroundBorder);
+        b.updateShapes(d, this.settings.vertices.backgroundBorder);
     });
 
     // update all the existing elements
@@ -647,6 +647,7 @@ function updateBranches() {
             return `translate(${this.scales.x(e.v0.x+this.settings.xScale.offset)}, ${this.scales.y(e.v1.y)})`;
         });
 
+    // Make branches a thing like bauble
     newBranches.append("path")
         .attr("class", "branch-path")
         .attr("d", (e,i) => branchPath(e,i));

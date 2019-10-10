@@ -1,6 +1,9 @@
 "use strict";
 
 /** @module bauble */
+import rough from 'roughjs/dist/rough.umd';
+import {mergeDeep} from "../utilities";
+import {merge} from "d3-array";
 
 
 /**
@@ -26,7 +29,7 @@ export class Bauble {
      * @param settings
      */
     constructor(settings = {}) {
-        this.settings = {...Bauble.DEFAULT_SETTINGS(), ...settings};
+        this.settings = mergeDeep(Bauble.DEFAULT_SETTINGS(),settings);
     }
 
     /**
@@ -79,7 +82,7 @@ export class CircleBauble extends Bauble {
      * The constructor.
      */
     constructor(settings = {}) {
-        super({...CircleBauble.DEFAULT_SETTINGS(), ...settings});
+        super(mergeDeep(CircleBauble.DEFAULT_SETTINGS(),settings));
     }
 
     /**
@@ -126,7 +129,7 @@ export class RectangularBauble extends Bauble {
      * The constructor.
      */
     constructor(settings = {}) {
-        super({...RectangularBauble.DEFAULT_SETTINGS(), ...settings});
+        super(mergeDeep(RectangularBauble.DEFAULT_SETTINGS(),settings));
     }
 
     /**
@@ -159,7 +162,69 @@ export class RectangularBauble extends Bauble {
 }
 
 
+/**
+ * The CircleBauble class. Each vertex is assigned a circle in the svg.
+ */
+export class RoughCircleBauble extends Bauble {
+
+    /**
+     * The default settings for the circleBauble
+     * The default is 6;
+     * @return {{radius: number}}
+     * @constructor
+     */
+    static DEFAULT_SETTINGS() {
+        return {
+            radius: 6,
+            roughOptions:{}
+        };
+    }
+
+    /**
+     * The constructor.
+     */
+    constructor(settings = {}) {
+        super(mergeDeep(RoughCircleBauble.DEFAULT_SETTINGS(),settings));
+    }
+
+    /**
+     * A function to append the circles to the svg.
+     * @param selection
+     * @return {Bundle|MagicString|*|void}
+     */
+    createShapes(selection,border=0) {
+        const addedNode =  selection
+            .append(()=> roughFactory.circle(0, 0, this.settings.radius+border, this.settings.roughOptions));
+        addedNode.selectAll("path")
+            .each(function(d,i){
+                if(i===0){
+                    d3.select(this)
+                        .attr("class","roughjs rough-fill")
+                }else{
+                    d3.select(this)
+                        .attr("class","roughjs rough-stroke")
+                }
+
+            });
+
+        return addedNode;
+    };
+
+    /**
+     * A function that assigns cy,cx,and r attributes to a selection. (cx and cy are set to 0 each r is the settings radius
+     * plus the border.
+     * @param selection
+     * @param border
+     * @return {*|null|undefined}
+     */
+    updateShapes(selection, border = 0) {
+        return selection
+    };
+}
+
+
 /*
  * Private methods, called by the class using the <function>.call(this) function.
  */
 
+const roughFactory = rough.svg(document.createElement("svg"));
