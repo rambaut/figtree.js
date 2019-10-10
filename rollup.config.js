@@ -1,6 +1,7 @@
 import resolve from 'rollup-plugin-node-resolve';
 import commonjs from 'rollup-plugin-commonjs';
 import babel from 'rollup-plugin-babel';
+import { terser } from "rollup-plugin-terser";
 
 import pkg from './package.json';
 
@@ -25,7 +26,8 @@ export default [
 				runtimeHelpers: true,
 				exclude: 'node_modules/**',
 			}),
-			commonjs({include: ['src/*','node_modules/**']}) // so Rollup can convert `d3` to an ES module
+			commonjs({include: ['src/*','node_modules/**']}), // so Rollup can convert `d3` to an ES module,
+			terser()
 		]
 	},
 
@@ -53,7 +55,8 @@ export default [
 				main: true,
 				browser: true
 			}), // so Rollup can find `d3`
-			commonjs({include: ['src/*','node_modules/**']}) // so Rollup can convert `d3` to an ES module
+			commonjs({include: ['src/*','node_modules/**']}), // so Rollup can convert `d3` to an ES module
+			terser()
 		]
 	}
 ];
