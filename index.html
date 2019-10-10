@@ -124,7 +124,7 @@
 </div>
 
 <script type="module">
-    import { Tree, RectangularLayout,CircleBauble,FigTree} from "./dist/figtree.esm.js"
+    import { Tree, RectangularLayout,CircleBauble,RoughCircleBauble,FigTree} from "./dist/figtree.esm.js"
 
 
     const newickString =
@@ -137,11 +137,14 @@
 
     const figTree = new FigTree(treeSVG, layout,
         { top: 10, bottom: 60, left: 10, right: 150},
-        {vertices:{ hoverBorder: 2, backgroundBorder: 2,
+        {vertices:{ hoverBorder: 2, backgroundBorder: -10,
             baubles: [
-                new CircleBauble(),
-            ]
-        }
+                new RoughCircleBauble({radius:30,roughOptions:{fill:"blue"}}),
+            ],
+                backgroundCssStyles:{"fill":()=>"white"}
+
+            },
+
         });
     figTree.draw();
     figTree.hilightInternalNodes();
