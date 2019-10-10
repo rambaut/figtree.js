@@ -176,7 +176,6 @@ export class RoughCircleBauble extends Bauble {
     static DEFAULT_SETTINGS() {
         return {
             radius: 6,
-            roughOptions:{}
         };
     }
 
@@ -192,9 +191,9 @@ export class RoughCircleBauble extends Bauble {
      * @param selection
      * @return {Bundle|MagicString|*|void}
      */
-    createShapes(selection,border=0) {
+    createShapes(selection) {
         const addedNode =  selection
-            .append(()=> roughFactory.circle(0, 0, this.settings.radius+border, this.settings.roughOptions));
+            .append(()=> roughFactory.circle(0, 0, this.settings.radius, this.settings));
         addedNode.selectAll("path")
             .each(function(d,i){
                 if(i===0){
