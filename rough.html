@@ -66,7 +66,7 @@
     <!--<button id="triangular_button">Draw triangular</button>-->
 </div>
 <script type="module">
-    import { Tree, RectangularLayout,CircleBauble,RoughCircleBauble,FigTree,RoughFigTree} from "./dist/figtree.esm.js"
+    import { Tree, RectangularLayout,CircleBauble,RoughCircleBauble,FigTree,RoughBranchBauble,BranchBauble,RoughFigTree} from "./dist/figtree.esm.js"
 
 
     const newickString =
@@ -80,8 +80,9 @@
 
     const sketch = new RoughFigTree(treeSVG, layout,
         { top: 10, bottom: 60, left: 10, right: 150},
-        {vertices:{ hoverBorder: 2, backgroundBorder: -2, baubles:[new RoughCircleBauble({radius:10,roughness:2,vertexFilter:(v)=>v.degree===1})]},
-            edges:{roughOptions:{roughness:0.5},branchCurve:d3.curveNatural}
+        {vertices:{ hoverBorder: 2,
+                baubles:[new RoughCircleBauble({radius:10,roughness:2,vertexFilter:(v)=>v.degree===1})]},
+            edges:{baubles:[new RoughBranchBauble({curveRadius:7,curve:d3.curveBasis})]}
         });
     sketch.draw();
 
