@@ -18,6 +18,7 @@ export class Bauble {
     static DEFAULT_SETTINGS() {
         return {
             vertexFilter: () => true,
+            attrs:{},
         };
     }
 
@@ -40,16 +41,8 @@ export class Bauble {
     }
 
     /**
-     * A function that appends a svg object  to the selection and returns the modified selection. This adds the bauble to
-     * the svg.
-     * @param selection
-     */
-    createShapes(selection) {
-        throw new Error("don't call the base class methods")
-    }
-
-    /**
-     * A function that assigns the attributes to the svg objects appended by createShapes.
+     * A function that appends the bauble to the selection, joins the data, assigns the attributes to the svg objects
+     * updates and remove unnneed objects.
      * @param selection
      * @param border
      */
@@ -83,15 +76,6 @@ export class CircleBauble extends Bauble {
         super(mergeDeep(CircleBauble.DEFAULT_SETTINGS(),settings));
     }
 
-    /**
-     * A function to append the circles to the svg.
-     * @param selection
-     * @return {Bundle|MagicString|*|void}
-     */
-    createShapes(selection) {
-        return selection
-            .append("circle");
-    };
 
     /**
      * A function that assigns cy,cx,and r attributes to a selection. (cx and cy are set to 0 each r is the settings radius
@@ -101,10 +85,40 @@ export class CircleBauble extends Bauble {
      * @return {*|null|undefined}
      */
     updateShapes(selection, border = 0) {
+
         return selection
-            .attr("cx", 0)
-            .attr("cy", 0)
-            .attr("r", this.settings.radius + border);
+            .selectAll("circle")
+            .data(d=>[d])
+            .join(
+                enter=>enter
+                    .append("circle")
+                    .attr("cx", 0)
+                    .attr("cy", 0)
+                    .attr("r", this.settings.radius + border)
+                    .attrs((vertex)=> {
+                        const attributes = this.settings.attrs;
+                        const newStyles= Object.keys(attributes).reduce((acc,curr)=>{
+                            // const vertex = d3.select(n[i].parentNode).datum(); // the vertex data is assigned to the group
+                            return {...acc,[curr]:attributes[curr](vertex)}
+                        },{});
+                        return newStyles
+                    }),
+                update => update
+                    .call(update => update.transition()
+                        .attr("cx", 0)
+                        .attr("cy", 0)
+                        .attr("r", this.settings.radius + border)
+                        .attrs((vertex)=> {
+                            const attributes = this.settings.attrs;
+                            const newStyles= Object.keys(attributes).reduce((acc,curr)=>{
+                                // const vertex = d3.select(n[i].parentNode).datum(); // the vertex data is assigned to the group
+                                return {...acc,[curr]:attributes[curr](vertex)}
+                            },{});
+                            return newStyles
+                        }),
+                    )
+            )
+
     };
 }
 
@@ -131,16 +145,6 @@ export class RectangularBauble extends Bauble {
     }
 
     /**
-     * A function that adds a rect to a selection
-     * @param selection
-     * @return {Bundle|MagicString|*|void}
-     */
-    createShapes(selection) {
-        return selection
-            .append("rect");
-    };
-
-    /**
      * A function that assigns width,height,x,y,rx, and ry attributes to a rect selection.
      * @param selection
      * @param border
@@ -150,12 +154,43 @@ export class RectangularBauble extends Bauble {
         const w = this.settings.width + border;
         const h = this.settings.height + border;
         return selection
-            .attr("x", - w / 2)
-                .attr("width", w)
-                .attr("y", - h / 2)
-                .attr("height", h)
-                .attr("rx", this.settings.radius)
-                .attr("ry", this.settings.radius);
+            .data(d=>[d])
+            .join(
+                enter=>enter
+                        .append("rect")
+                            .attr("x", - w / 2)
+                            .attr("width", w)
+                            .attr("y", - h / 2)
+                            .attr("height", h)
+                            .attr("rx", this.settings.radius)
+                            .attr("ry", this.settings.radius)
+                            .attrs((vertex)=> {
+                                const attributes = this.settings.attrs;
+                                const newStyles= Object.keys(attributes).reduce((acc,curr)=>{
+                                    // const vertex = d3.select(n[i].parentNode).datum(); // the vertex data is assigned to the group
+                                    return {...acc,[curr]:attributes[curr](vertex)}
+                                },{});
+                                return newStyles
+                            }),
+                update => update
+                    .call(update => update.transition()
+                            .attr("x", - w / 2)
+                            .attr("width", w)
+                            .attr("y", - h / 2)
+                            .attr("height", h)
+                            .attr("rx", this.settings.radius)
+                            .attr("ry", this.settings.radius)
+                            .attrs((vertex)=> {
+                                const attributes = this.settings.attrs;
+                                const newStyles= Object.keys(attributes).reduce((acc,curr)=>{
+                                    // const vertex = d3.select(n[i].parentNode).datum(); // the vertex data is assigned to the group
+                                    return {...acc,[curr]:attributes[curr](vertex)}
+                                },{});
+                                return newStyles
+                            })
+                    )
+            )
+
     };
 }
 
@@ -175,7 +210,7 @@ export class RoughCircleBauble extends Bauble {
         return {
             radius: 6,
             fill:"black",
-            cssStyles:{roughFill:{stroke:()=>"red",fill:()=>"none"},
+            attrs:{roughFill:{stroke:()=>"red",fill:()=>"none"},
                 roughStroke:{"stroke-width":()=>0.5,stroke:()=>"black",fill:()=>"none"}}
 
         };
@@ -204,9 +239,9 @@ export class RoughCircleBauble extends Bauble {
                 enter => enter
                     .append("path")
                     .attr("d", (d, i) =>  newPaths[i])
-                    .attr("class", d => d)
+                    .attr("class", d => `${d} node-shape rough`)
                     .attrs((d,i,n)=> {
-                        const attributes = this.settings.cssStyles[d];
+                        const attributes = this.settings.attrs[d];
                         const newStyles= Object.keys(attributes).reduce((acc,curr)=>{
                             const vertex = d3.select(n[i].parentNode).datum(); // the vertex data is assigned to the group
                             return {...acc,[curr]:attributes[curr](vertex)}
@@ -217,7 +252,7 @@ export class RoughCircleBauble extends Bauble {
                     .call(update => update.transition()
                         .attr("d", (d, i) => newPaths[i])
                         .attrs((d,i,n)=> {
-                            const attributes = this.settings.cssStyles[d];
+                            const attributes = this.settings.attrs[d];
                             const newStyles= Object.keys(attributes).reduce((acc,curr)=>{
                                 const vertex = d3.select(n[i].parentNode).datum(); // the vertex data is assigned to the group
                                 return {...acc,[curr]:attributes[curr](vertex)}

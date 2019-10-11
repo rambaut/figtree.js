@@ -580,7 +580,7 @@ export class FigTree {
 
     [p.updateNodeBackgrounds]() {
 
-        const nodesBackgroundLayer = this.svgSelection.select(".nodes-background-layer");
+        const nodesBackgroundLayer = this.svgSelection.select("nodes-background-layer");
 
         // DATA JOIN
         // Join new data with old elements, if any.
@@ -887,7 +887,7 @@ export class FigTree {
     }
 
     [p.updateNodeBackgroundStyles](){
-        const nodesBackgroundLayer = this.svgSelection.select(".nodes-background-layer");
+        const nodesBackgroundLayer = this.svgSelection.select("nodes-background-layer");
 
         // DATA JOIN
         // Join new data with old elements, if any.

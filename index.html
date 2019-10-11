@@ -24,35 +24,36 @@
             stroke-width: 4px;
         }
 
-        #phylogram_1a .external-node .node-shape {
+         .external-node .node-shape:not(.rough) {
             fill: #22b680;
             stroke: rgb(255, 255, 255);
             stroke-width: 1;
         }
 
-        #phylogram_1a .external-node .node-shape.hovered {
+        .external-node .node-shape.hovered {
             stroke: rgb(0,0,0);
             /*stroke-width: 1;*/
         }
-        #phylogram_1a .external-node .node-shape.unselected {
+        .external-node .node-shape.unselected {
             fill: #22b680;
             /*stroke: rgb(255, 255, 255);*/
         }
-        #phylogram_1a .external-node .node-shape.selected {
+       .external-node .node-shape.selected {
             fill: #edb23b;
             /*stroke: rgb(0,0,0);*/
         }
 
-        #phylogram_1a .internal-node .node-shape {
+        .internal-node .node-shape {
             fill: #29c5ef;
             /*stroke: rgb(255, 255, 255);*/
             /*stroke-width: 1;*/
         }
-        #phylogram_1a .internal-node .node-shape.hovered {
+        .internal-node .node-shape.hovered {
             stroke: rgb(0,0,0);
         }
 
-        #phylogram_1a #root .node-shape {
+
+        #root .node-shape {
             fill: #e31e58;
             /*stroke: rgb(255, 255, 255);*/
             /*stroke-width: 1;*/
