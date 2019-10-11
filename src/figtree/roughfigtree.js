@@ -2,14 +2,16 @@ import {CircleBauble, RoughCircleBauble} from "./bauble";
 import {mergeDeep} from "../utilities";
 import {p,FigTree} from "./figtree";
 import rough from 'roughjs/dist/rough.umd';
-
+import {select} from "d3"
 
 const roughFactory = rough.svg(document.createElement("svg"));
 export class RoughFigTree extends FigTree{
     static DEFAULT_SETTINGS() {
         return {
-            vertices:{baubles: [new RoughCircleBauble()],
-                backgroundBorder:-5},
+            vertices: {
+                baubles: [new RoughCircleBauble()],
+                backgroundBorder: -5
+            },
             edges: {
                 roughOptions:{roughness:10}
             },
@@ -55,15 +57,19 @@ export class RoughFigTree extends FigTree{
 
         // update all the existing elements
         this.settings.vertices.baubles.forEach((bauble) => {
+            let backBauble= bauble;
+            if(bauble instanceof RoughCircleBauble){
+                backBauble= new CircleBauble(bauble.settings)
+            }
             const d = nodes
-                .filter(bauble.vertexFilter)
+                .filter(backBauble.vertexFilter)
                 .transition()
                 .duration(this.settings.transition.transitionDuration)
                 .ease(this.settings.transition.transitionEase)
                 .attr("transform", (v) => {
                     return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
                 });
-            bauble.updateShapes(d, this.settings.backgroundBorder)
+            backBauble.updateShapes(d, this.settings.backgroundBorder)
         });
 
         // EXIT
@@ -72,6 +78,91 @@ export class RoughFigTree extends FigTree{
 
         this[p.updateNodeBackgroundStyles]();
 
+    }
+    [p.updateNodes](){
+        const nodesLayer = this.svgSelection.select(".nodes-layer");
+
+        // DATA JOIN
+        // Join new data with old elements, if any.
+        const self = this;
+        const nodes = nodesLayer.selectAll(".node")
+            .data(this.layout.vertices, (v) => `n_${v.key}`)
+            .join(
+                enter=>enter
+                    .append("g")
+                        .attr("id", (v) => v.id)
+                        .attr("class", (v) => ["node", ...v.classes].join(" "))
+                        .attr("transform", (v) => {
+                            return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
+                        })
+                    .each(function(v) {
+                        for(const bauble of  self.settings.vertices.baubles){
+                            if (bauble.vertexFilter(v)) {
+                                bauble
+                                    .updateShapes(select(this))
+                                    .classed("node-shape", true)
+                                    .classed("rough", true);
+                            }
+                        }
+                    })
+                    .append("text")
+                        .attr("class", "node-label name")
+                        .attr("text-anchor", "start")
+                        .attr("alignment-baseline", "middle")
+                        .attr("dx", "12")
+                        .attr("dy", "0")
+                        .text((d) => d.rightLabel)
+                    .append("text")
+                        .attr("class", "node-label support")
+                        .attr("text-anchor", "end")
+                        .attr("dx", "-6")
+                        .attr("dy", d => (d.labelBelow ? -8 : +8))
+                        .attr("alignment-baseline", d => (d.labelBelow ? "bottom": "hanging" ))
+                        .text((d) => d.leftLabel),
+                update=>update
+                    .transition()
+                    .duration(this.settings.transition.transitionDuration)
+                    .ease(this.settings.transition.transitionEase)
+                    .attr("class", (v) => ["node", ...v.classes].join(" "))
+                    .attr("transform", (v) => {
+                        return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
+                    })
+                    .each(function(v) {
+                        for(const bauble of  self.settings.vertices.baubles){
+                            if (bauble.vertexFilter(v)) {
+                                bauble
+                                    .updateShapes(select(this))
+                                    .classed("node-shape", true)
+                                    .classed("rough", true);
+                            }
+                        }
+                    })
+                    .select("text .node-label .name")
+                        .transition()
+                        .duration(this.settings.transition.transitionDuration)
+                        .ease(this.settings.transition.transitionEase)
+                        .attr("class", "node-label name")
+                        .attr("text-anchor", "start")
+                        .attr("alignment-baseline", "middle")
+                        .attr("dx", "12")
+                        .attr("dy", "0")
+                        .text((d) => d.rightLabel)
+                    .select("text .node-label .support")
+                        .transition()
+                        .duration(this.settings.transition.transitionDuration)
+                        .ease(this.settings.transition.transitionEase)
+                        .attr("alignment-baseline", d => (d.labelBelow ? "bottom": "hanging" ))
+                        .attr("class", "node-label support")
+                        .attr("text-anchor", "end")
+                        .attr("dx", "-6")
+                        .attr("dy", d => (d.labelBelow ? -8 : +8))
+                        .text((d) => d.leftLabel)
+
+    );
+        // add callbacks
+        for(const callback of this.callbacks.nodes){
+            callback();
+        }
     }
 
     [p.updateBranches]() {

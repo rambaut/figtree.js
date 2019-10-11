@@ -3,8 +3,6 @@
 /** @module bauble */
 import rough from 'roughjs/dist/rough.umd';
 import {mergeDeep} from "../utilities";
-import {merge} from "d3-array";
-
 
 /**
  * The Bauble class
@@ -19,7 +17,7 @@ export class Bauble {
      */
     static DEFAULT_SETTINGS() {
         return {
-            vertexFilter: () => true
+            vertexFilter: () => true,
         };
     }
 
@@ -176,6 +174,10 @@ export class RoughCircleBauble extends Bauble {
     static DEFAULT_SETTINGS() {
         return {
             radius: 6,
+            fill:"black",
+            cssStyles:{roughFill:{stroke:()=>"red",fill:()=>"none"},
+                roughStroke:{"stroke-width":()=>0.5,stroke:()=>"black",fill:()=>"none"}}
+
         };
     }
 
@@ -183,7 +185,7 @@ export class RoughCircleBauble extends Bauble {
      * The constructor.
      */
     constructor(settings = {}) {
-        super(mergeDeep(RoughCircleBauble.DEFAULT_SETTINGS(),settings));
+        super(mergeDeep(RoughCircleBauble.DEFAULT_SETTINGS(), settings));
     }
 
     /**
@@ -191,36 +193,41 @@ export class RoughCircleBauble extends Bauble {
      * @param selection
      * @return {Bundle|MagicString|*|void}
      */
-    createShapes(selection) {
-        const addedNode =  selection
-            .append(()=> roughFactory.circle(0, 0, this.settings.radius, this.settings));
-        addedNode.selectAll("path")
-            .each(function(d,i){
-                if(i===0){
-                    d3.select(this)
-                        .attr("class","roughjs rough-fill")
-                }else{
-                    d3.select(this)
-                        .attr("class","roughjs rough-stroke")
-                }
-
-            });
-
-        return addedNode;
-    };
-
-    /**
-     * A function that assigns cy,cx,and r attributes to a selection. (cx and cy are set to 0 each r is the settings radius
-     * plus the border.
-     * @param selection
-     * @param border
-     * @return {*|null|undefined}
-     */
     updateShapes(selection, border = 0) {
-        return selection
+
+
+        const newPaths = [...roughFactory.circle(0, 0, this.settings.radius + border, this.settings).childNodes].map(d => d.getAttribute("d"));
+        const pathNames = newPaths.length===2?["roughFill", "roughStroke"]:["roughStroke"];
+        return selection.selectAll("path")
+            .data(pathNames, d => d)
+            .join(
+                enter => enter
+                    .append("path")
+                    .attr("d", (d, i) =>  newPaths[i])
+                    .attr("class", d => d)
+                    .attrs((d,i,n)=> {
+                        const attributes = this.settings.cssStyles[d];
+                        const newStyles= Object.keys(attributes).reduce((acc,curr)=>{
+                            const vertex = d3.select(n[i].parentNode).datum(); // the vertex data is assigned to the group
+                            return {...acc,[curr]:attributes[curr](vertex)}
+                        },{});
+                        return newStyles
+                    }),
+                update => update
+                    .call(update => update.transition()
+                        .attr("d", (d, i) => newPaths[i])
+                        .attrs((d,i,n)=> {
+                            const attributes = this.settings.cssStyles[d];
+                            const newStyles= Object.keys(attributes).reduce((acc,curr)=>{
+                                const vertex = d3.select(n[i].parentNode).datum(); // the vertex data is assigned to the group
+                                return {...acc,[curr]:attributes[curr](vertex)}
+                            },{});
+                            return newStyles
+                        }),
+                    )
+            )
     };
 }
-
 
 /*
  * Private methods, called by the class using the <function>.call(this) function.

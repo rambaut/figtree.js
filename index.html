@@ -24,35 +24,35 @@
             stroke-width: 4px;
         }
 
-        .external-node .node-shape {
+        #phylogram_1a .external-node .node-shape {
             fill: #22b680;
             stroke: rgb(255, 255, 255);
             stroke-width: 1;
         }
 
-        .external-node .node-shape.hovered {
+        #phylogram_1a .external-node .node-shape.hovered {
             stroke: rgb(0,0,0);
             /*stroke-width: 1;*/
         }
-        .external-node .node-shape.unselected {
+        #phylogram_1a .external-node .node-shape.unselected {
             fill: #22b680;
             /*stroke: rgb(255, 255, 255);*/
         }
-        .external-node .node-shape.selected {
+        #phylogram_1a .external-node .node-shape.selected {
             fill: #edb23b;
             /*stroke: rgb(0,0,0);*/
         }
 
-        .internal-node .node-shape {
+        #phylogram_1a .internal-node .node-shape {
             fill: #29c5ef;
             /*stroke: rgb(255, 255, 255);*/
             /*stroke-width: 1;*/
         }
-        .internal-node .node-shape.hovered {
+        #phylogram_1a .internal-node .node-shape.hovered {
             stroke: rgb(0,0,0);
         }
 
-        #root .node-shape {
+        #phylogram_1a #root .node-shape {
             fill: #e31e58;
             /*stroke: rgb(255, 255, 255);*/
             /*stroke-width: 1;*/
@@ -173,7 +173,7 @@
 
     const sketch = new RoughFigTree(document.getElementById('phylogram_1b'), layout,
         { top: 10, bottom: 60, left: 10, right: 150},
-        {vertices:{ hoverBorder: 2, backgroundBorder: -2, baubles:[new RoughCircleBauble({radius:10,fill:"blue",fillStyle:"cross-hatch",roughness:2,vertexFilter:(v)=>v.degree===1})]},
+        {vertices:{ hoverBorder: 2, backgroundBorder: -2, baubles:[new RoughCircleBauble({radius:10,roughness:2,vertexFilter:(v)=>v.degree===1})]},
             edges:{roughOptions:{roughness:0.5},branchCurve:d3.curveNatural}
         });
     sketch.draw();
