@@ -33,6 +33,7 @@ export class RectangularBauble extends Bauble {
         const w = this.settings.width + border;
         const h = this.settings.height + border;
         return selection
+            .selectAll("rect")
             .data(d => [d])
             .join(
                 enter => enter
