@@ -1,8 +1,10 @@
-import {CircleBauble, RoughCircleBauble} from "./bauble";
 import {mergeDeep} from "../utilities";
 import {p,FigTree} from "./figtree";
 import rough from 'roughjs/dist/rough.umd';
 import {select} from "d3"
+import {CircleBauble} from "../baubles/circlebauble";
+import {BranchBauble} from "../baubles/branchbauble";
+import {RoughCircleBauble} from "../baubles/roughcirclebauble";
 
 const roughFactory = rough.svg(document.createElement("svg"));
 export class RoughFigTree extends FigTree{
@@ -10,11 +12,11 @@ export class RoughFigTree extends FigTree{
         return {
             vertices: {
                 baubles: [new RoughCircleBauble()],
-                backgroundBaubles:[new CircleBauble({attrs:{fill:()=>"white"},vertexFilter:v=>v.degree===1})],
-                backgroundBorder: -5
+                backgroundBaubles:[new CircleBauble({styles:{fill:()=>"white"},vertexFilter:v=>v.degree===1})],
             },
             edges: {
-                roughOptions:{roughness:10}
+                roughOptions:{roughness:10},
+                baubles:[new BranchBauble()]
             },
             cartoons:{
                 roughOptions: {roughness:10}
@@ -158,63 +160,62 @@ export class RoughFigTree extends FigTree{
     [p.updateBranches]() {
 
         const branchesLayer = this.svgSelection.select(".branches-layer");
+        //set up scales for branches
 
-        // a function to create a line path
-
-        const branchPath = this[p.branchPathGenerator]();
+        this.settings.edges.baubles.forEach(b=>b.setup({x:this.scales.x,y:this.scales.y,
+            xOffset:this.settings.xScale.offset,yOffset:this.settings.yScale.offset}));
         // DATA JOIN
         // Join new data with old elements, if any.
-        const branches = branchesLayer.selectAll("g .branch")
-            .data(this.layout.edges, (e) => `b_${e.key}`);
-
-        // ENTER
-        // Create new elements as needed.
-        const newBranches = branches.enter().append("g")
-            .attr("id", (e) => e.id)
-            .attr("class", (e) => ["branch", ...e.classes].join(" "))
-            .attr("transform", (e) => {
-                return `translate(${this.scales.x(e.v0.x+this.settings.xScale.offset)}, ${this.scales.y(e.v1.y)})`;
-            });
-
-        // Make branches a thing like bauble
-        newBranches.append("g")
-            .attr("class","branch-path")
-            .append((e,i)=>roughFactory.path(`${branchPath(e,i)}`,this.settings.edges.roughOptions));
-
-
-        newBranches.append("text")
-            .attr("class", "branch-label length")
-            .attr("dx", (e) => ((this.scales.x(e.v1.x+this.settings.xScale.offset) - this.scales.x(e.v0.x+this.settings.xScale.offset)) / 2))
-            .attr("dy", (e) => (e.labelBelow ? +6 : -6))
-            .attr("alignment-baseline", (e) => (e.labelBelow ? "hanging" : "bottom"))
-            .attr("text-anchor", "middle")
-            .text((e) => e.label);
-
-        // update the existing elements
-        branches
-            .transition()
-            .duration(this.settings.transition.transitionDuration)
-            .ease(this.settings.transition.transitionEase)
-            .attr("class", (e) => ["branch", ...e.classes].join(" "))
-            .attr("transform", (e) => {
-                return `translate(${this.scales.x(e.v0.x+this.settings.xScale.offset)}, ${this.scales.y(e.v1.y)})`;
-            })
-            .select("path")
-            .attr("d", (e,i) => branchPath(e,i))
-
-            .select("text .branch-label .length")
-            .attr("class", "branch-label length")
-            .attr("dx", (e) => ((this.scales.x(e.v1.x+this.settings.xScale.offset) - this.scales.x(e.v0.x+this.settings.xScale.offset)) / 2))
-            .attr("dy", (e) => (e.labelBelow ? +6 : -6))
-            .attr("alignment-baseline", (e) => (e.labelBelow ? "hanging" : "bottom"))
-            .attr("text-anchor", "middle")
-            .text((e) => e.label);
-
-        // EXIT
-        // Remove old elements as needed.
-        branches
-            .exit().remove();
-        this[p.updateBranchStyles]();
+        const self = this;
+        branchesLayer.selectAll(".branch")
+            .data(this.layout.edges, (e) => `b_${e.key}`)
+            .join(
+                enter=>enter
+                    .append("g")
+                    .attr("id", (e) => e.id)
+                    .attr("class", (e) => ["branch", ...e.classes].join(" "))
+                    .attr("transform", (e) => {
+                        return `translate(${this.scales.x(e.v0.x+this.settings.xScale.offset)}, ${this.scales.y(e.v1.y)})`;
+                    })
+                    .each(function(e) {
+                        for(const bauble of  self.settings.edges.baubles){
+                            if (bauble.edgeFilter(e)) {
+                                bauble
+                                    .updateShapes(select(this))
+                            }
+                        }
+                    })
+                    .append("text")
+                        .attr("class", "branch-label")
+                        .attr("dx", (e) => ((this.scales.x(e.v1.x+this.settings.xScale.offset) - this.scales.x(e.v0.x+this.settings.xScale.offset)) / 2))
+                        .attr("dy", (e) => (e.labelBelow ? +6 : -6))
+                        .attr("alignment-baseline", (e) => (e.labelBelow ? "hanging" : "bottom"))
+                        .attr("text-anchor", "middle")
+                        .text((e) => e.label),
+                update=>update
+                    .transition()
+                    .duration(this.settings.transition.transitionDuration)
+                    .ease(this.settings.transition.transitionEase)
+                    .attr("class", (e) => ["branch", ...e.classes].join(" "))
+                    .attr("transform", (e) => {
+                        return `translate(${this.scales.x(e.v0.x+this.settings.xScale.offset)}, ${this.scales.y(e.v1.y)})`;
+                    })
+                    .each(function(e) {
+                        for(const bauble of  self.settings.edges.baubles){
+                            if (bauble.edgeFilter(e)) {
+                                bauble
+                                    .updateShapes(select(this))
+                            }
+                        }
+                    })
+                    .select("text .branch-label .length")
+                        .attr("class", "branch-label length")
+                        .attr("dx", (e) => ((this.scales.x(e.v1.x+this.settings.xScale.offset) - this.scales.x(e.v0.x+this.settings.xScale.offset)) / 2))
+                        .attr("dy", (e) => (e.labelBelow ? +6 : -6))
+                        .attr("alignment-baseline", (e) => (e.labelBelow ? "hanging" : "bottom"))
+                        .attr("text-anchor", "middle")
+                        .text((e) => e.label)
+            );
 
         // add callbacks
         for(const callback of this.callbacks.branches){

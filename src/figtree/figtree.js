@@ -1,9 +1,10 @@
 "use strict";
 import {select,easeLinear,scaleLinear,axisBottom,mouse,event,format,curveStepBefore,line} from "d3";
 import uuid from "uuid";
-import {CircleBauble, RoughCircleBauble} from "./bauble";
 import {mergeDeep} from "../utilities";
 import 'd3-selection-multi';
+import {CircleBauble} from "../baubles/circlebauble";
+import {RoughCircleBauble} from "../baubles/roughcirclebauble";
 /** @module figtree */
 // const d3 = require("d3");
 
@@ -67,7 +68,7 @@ export class FigTree {
                 backgroundCssStyles:{}
             },
             edges: {
-                branchCurve: curveStepBefore,
+                curve: curveStepBefore,
                 curveRadius: 0,
                 cssStyles: {"fill": d => "none", "stroke-width": d => "2", "stroke": d => "black"},
             },
@@ -634,7 +635,7 @@ export class FigTree {
         // const branchPath = d3.line()
         //     .x((v) => v.x)
         //     .y((v) => v.y)
-        //     .curve(this.layout.branchCurve);
+        //     .curve(this.layout.curve);
         const branchPath = this[p.branchPathGenerator]();
         // DATA JOIN
         // Join new data with old elements, if any.
@@ -954,6 +955,7 @@ export class FigTree {
             annotation();
         }
     }
+
     /**
      * Generates a line() function that takes an edge and it's index and returns a line for d3 path element. It is called
      * by the figtree class as
@@ -971,7 +973,7 @@ export class FigTree {
             const branchLine = line()
                 .x((v) => v.x)
                 .y((v) => v.y)
-                .curve(this.settings.edges.branchCurve);
+                .curve(this.settings.edges.curve);
             const factor = e.v0.y-e.v1.y>0? 1:-1;
             const dontNeedCurve = e.v0.y-e.v1.y===0?0:1;
             const output = this.settings.edges.curveRadius>0?

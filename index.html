@@ -166,16 +166,16 @@
     };
 
     document.getElementById('rectangular_button').onclick = function() {
-        figTree.updateSettings({edges:{branchCurve:d3.curveStepBefore}});
+        figTree.updateSettings({edges:{curve:d3.curveStepBefore}});
     };
     document.getElementById('triangular_button').onclick = function() {
-        figTree.updateSettings({edges:{branchCurve:d3.curveNatural}});
+        figTree.updateSettings({edges:{curve:d3.curveNatural}});
     };
 
     const sketch = new RoughFigTree(document.getElementById('phylogram_1b'), layout,
         { top: 10, bottom: 60, left: 10, right: 150},
         {vertices:{ hoverBorder: 2, backgroundBorder: -2, baubles:[new RoughCircleBauble({radius:10,roughness:2,vertexFilter:(v)=>v.degree===1})]},
-            edges:{roughOptions:{roughness:0.5},branchCurve:d3.curveNatural}
+            edges:{roughOptions:{roughness:0.5},curve:d3.curveNatural}
         });
     sketch.draw();
 
@@ -281,7 +281,7 @@
             },
             xScale:{tickFormat: d3.format("")},
             edges:{
-                branchCurve:d3.curveLinear
+                curve:d3.curveLinear
             }
         });
     rootToTipPlot.draw();
@@ -356,7 +356,7 @@
              axis:d3.axisLeft,
             },
          edges:{
-             branchCurve:d3.curveLinear
+             curve:d3.curveLinear
             }
          }
          );
