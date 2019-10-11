@@ -3,7 +3,7 @@ import {select,easeLinear,scaleLinear,axisBottom,mouse,event,format,curveStepBef
 import uuid from "uuid";
 import {CircleBauble, RoughCircleBauble} from "./bauble";
 import {mergeDeep} from "../utilities";
-
+import 'd3-selection-multi';
 /** @module figtree */
 // const d3 = require("d3");
 
