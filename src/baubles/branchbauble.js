@@ -25,7 +25,7 @@ export class BranchBauble extends Bauble {
 
     setup(scales = {}) {
         scales = mergeDeep({x: null, y: null, xOffset: 0, yOffset: 0}, scales);
-        this.branchPath = branchPathGenerator.call(this, scales)
+        this.branchPath = branchPathGenerator({scales:scales,curve:this.settings.curve,curveRadius:this.settings.curveRadius})
     }
 
     updateShapes(selection) {
@@ -85,19 +85,19 @@ export class BranchBauble extends Bauble {
  * @return {function(*, *)}
  */
 
-export function branchPathGenerator(scales) {
+export function branchPathGenerator({scales,curveRadius,curve}) {
     const branchPath = (e, i) => {
         const branchLine = line()
             .x((v) => v.x)
             .y((v) => v.y)
-            .curve(this.settings.curve);
+            .curve(curve);
         const factor = e.v0.y - e.v1.y > 0 ? 1 : -1;
         const dontNeedCurve = e.v0.y - e.v1.y === 0 ? 0 : 1;
-        const output = this.settings.curveRadius > 0 ?
+        const output = curveRadius > 0 ?
             branchLine(
                 [{x: 0, y: scales.y(e.v0.y) - scales.y(e.v1.y)},
-                    {x: 0, y: dontNeedCurve * factor * this.settings.curveRadius},
-                    {x: 0 + dontNeedCurve * this.settings.curveRadius, y: 0},
+                    {x: 0, y: dontNeedCurve * factor * curveRadius},
+                    {x: 0 + dontNeedCurve * curveRadius, y: 0},
                     {x: scales.x(e.v1.x + scales.xOffset) - scales.x(e.v0.x + scales.xOffset), y: 0}
                 ]) :
             branchLine(

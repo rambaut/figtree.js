@@ -7,9 +7,9 @@ export class CartoonBauble extends Bauble {
         return {
             curve: curveStepBefore,
             attrs: {"fill": d => "none", "stroke-width": d => "2", "stroke": d => "black"},
+            vertexFilter:null,
+            cartoonFilter:()=>true
         }
-
-
     }
 
     constructor(settings) {
@@ -18,9 +18,11 @@ export class CartoonBauble extends Bauble {
 
     setup(scales = {}) {
         scales = mergeDeep({x: null, y: null, xOffset: 0, yOffset: 0}, scales);
-        this.branchPath = branchPathGenerator.call(this, scales)
+        this.pathGenerator = pointToPointGen({scales:scales});
     }
-
+    get cartoonFilter(){
+        return this.settings.cartoonFilter;
+    }
     updateShapes(selection) {
 
         return selection.selectAll("path")
@@ -28,37 +30,37 @@ export class CartoonBauble extends Bauble {
             .join(
                 enter => enter
                     .append("path")
-                    .attr("d", edge => this.branchPath(edge))
-                    .attr("class", "branch-path")
-                    .attrs((edge) => {
+                    .attr("d", c => this.pathGenerator(c.points))
+                    .attr("class", "cartoon-path")
+                    .attrs((c) => {
                         const attributes = this.settings.attrs;
                         return Object.keys(attributes).reduce((acc, curr) => {
                             // const vertex = d3.select(n[i].parentNode).datum(); // the vertex data is assigned to the group
-                            return {...acc, [curr]: attributes[curr](edge)}
+                            return {...acc, [curr]: attributes[curr](c)}
                         }, {})
                     })
-                    .styles((edge) => {
+                    .styles((c) => {
                         const styles = this.settings.styles;
                         return Object.keys(styles).reduce((acc, curr) => {
                             // const vertex = d3.select(n[i].parentNode).datum(); // the vertex data is assigned to the group
-                            return {...acc, [curr]: styles[curr](edge)}
+                            return {...acc, [curr]: styles[curr](c)}
                         }, {})
                     }),
                 update => update
                     .call(update => update.transition()
-                        .attr("d", edge => this.branchPath(edge))
-                        .attrs((edge) => {
+                        .attr("d", this.pathGenerator(c.points))
+                        .attrs((c) => {
                             const attributes = this.settings.attrs;
                             return Object.keys(attributes).reduce((acc, curr) => {
                                 // const vertex = d3.select(n[i].parentNode).datum(); // the vertex data is assigned to the group
-                                return {...acc, [curr]: attributes[curr](edge)}
+                                return {...acc, [curr]: attributes[curr](c)}
                             }, {})
                         })
-                        .styles((edge) => {
+                        .styles((c) => {
                             const styles = this.settings.styles;
                             return Object.keys(styles).reduce((acc, curr) => {
                                 // const vertex = d3.select(n[i].parentNode).datum(); // the vertex data is assigned to the group
-                                return {...acc, [curr]: styles[curr](edge)}
+                                return {...acc, [curr]: styles[curr](c)}
                             }, {})
                         }),
                     )
@@ -66,39 +68,19 @@ export class CartoonBauble extends Bauble {
     };
 }
 
-/**
- * Generates a line() function that takes an edge and it's index and returns a line for d3 path element. It is called
- * by the figtree class as
- * const branchPath = this.layout.branchPathGenerator(this.scales)
- * newBranches.append("path")
- .attr("class", "branch-path")
- .attr("d", (e,i) => branchPath(e,i));
- * @param scales
- * @param branchCurve
- * @return {function(*, *)}
- */
-
-export function branchPathGenerator(scales) {
-    const branchPath = (e, i) => {
-        const branchLine = line()
-            .x((v) => v.x)
-            .y((v) => v.y)
-            .curve(this.settings.curve);
-        const factor = e.v0.y - e.v1.y > 0 ? 1 : -1;
-        const dontNeedCurve = e.v0.y - e.v1.y === 0 ? 0 : 1;
-        const output = this.settings.curveRadius > 0 ?
-            branchLine(
-                [{x: 0, y: scales.y(e.v0.y) - scales.y(e.v1.y)},
-                    {x: 0, y: dontNeedCurve * factor * this.settings.curveRadius},
-                    {x: 0 + dontNeedCurve * this.settings.curveRadius, y: 0},
-                    {x: scales.x(e.v1.x + scales.xOffset) - scales.x(e.v0.x + scales.xOffset), y: 0}
-                ]) :
-            branchLine(
-                [{x: 0, y: scales.y(e.v0.y) - scales.y(e.v1.y)},
-                    {x: scales.x(e.v1.x + scales.xOffset) - scales.x(e.v0.x + scales.xOffset), y: 0}
-                ]);
-        return (output)
-
-    };
-    return branchPath;
-}
+ export function pointToPointGen({scales}) {
+     const pointToPoint = (points) => {
+         let path = [];
+         const origin = points[0];
+         const pathPoints = points.reverse();
+         let currentPoint = origin;
+         for (const point of pathPoints) {
+             const xdiff = scales.x(point.x + scales.xOffset) - scales.x(currentPoint.x + scales.xOffset);
+             const ydiff = scales.y(point.y) - scales.y(currentPoint.y);
+             path.push(`${xdiff} ${ydiff}`);
+             currentPoint = point;
+         }
+         return `M 0 0 l ${path.join(" l ")} z`;
+     }
+     return pointToPoint;
+ }

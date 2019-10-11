@@ -1,12 +1,12 @@
 import {mergeDeep} from "../utilities";
 import {p,FigTree} from "./figtree";
 import rough from 'roughjs/dist/rough.umd';
-import {select} from "d3"
+import {select} from "d3";
 import {CircleBauble} from "../baubles/circlebauble";
 import {BranchBauble} from "../baubles/branchbauble";
 import {RoughCircleBauble} from "../baubles/roughcirclebauble";
+import {CartoonBauble} from "../baubles/cartoonbauble";
 
-const roughFactory = rough.svg(document.createElement("svg"));
 export class RoughFigTree extends FigTree{
     static DEFAULT_SETTINGS() {
         return {
@@ -19,9 +19,9 @@ export class RoughFigTree extends FigTree{
                 baubles:[new BranchBauble()]
             },
             cartoons:{
-                roughOptions: {roughness:10}
+                roughOptions: {roughness:10},
+                baubles:[new CartoonBauble()]
             }
-
         }
     }
     constructor(svg, layout, margins, settings = {}){
@@ -226,51 +226,45 @@ export class RoughFigTree extends FigTree{
     [p.updateCartoons](){
         const cartoonLayer = this.svgSelection.select(".cartoon-layer");
 
-        // DATA JOIN
-        // Join new data with old elements, if any.
-        const cartoons = cartoonLayer.selectAll("g .cartoon")
-            .data(this.layout.cartoons, (c) => `c_${c.id}`);
-
-        // ENTER
-        // Create new elements as needed.
-        const newCartoons = cartoons.enter().append("g")
-            .attr("id", (c) => `cartoon-${c.id}`)
-            .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
-            .attr("transform", (c) => {
-                return `translate(${this.scales.x(c.vertices[0].x+this.settings.xScale.offset)}, ${this.scales.y(c.vertices[0].y+this.settings.xScale.offset)})`;
-            })
-
-
-        newCartoons
-            .append("g")
-            .attr("class", "cartoon-path")
-            .append((e,i)=>roughFactory.path(`${this[p.pointToPoint](e.vertices)}`,this.settings.cartoon.roughOptions));
-
-        // update the existing elements
-        cartoons
-            .transition()
-            .duration(this.settings.transition.transitionDuration)
-            .ease(this.settings.transition.transitionEase)
-            .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
-            .attr("transform", (c) => {
-                return `translate(${this.scales.x(c.vertices[0].x+this.settings.xScale.offset)}, ${this.scales.y(c.vertices[0].y)})`
-            })
-            .select("path")
-            // .attr("d", (c) => this[p.pointToPoint](c.vertices));
-
-
-        // EXIT
-        // Remove old elements as needed.
-        cartoons.exit().remove();
-
-        this[p.updateCartoonStyles]();
-
+         cartoonLayer.selectAll("g .cartoon")
+            .data(this.layout.cartoons, (c) => `c_${c.id}`)
+            .join(
+                enter=>enter
+                    .append("g")
+                    .attr("id", (c) => `cartoon-${c.id}`)
+                    .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
+                    .attr("transform", (c) => {
+                        return `translate(${this.scales.x(c.vertices[0].x+this.settings.xScale.offset)}, ${this.scales.y(c.vertices[0].y+this.settings.xScale.offset)})`;
+                    })
+                    .each(function(c) {
+                        for(const bauble of  self.settings.cartoons.baubles){
+                            if (bauble.edgeFilter(c)) {
+                                bauble
+                                    .updateShapes(select(this))
+                            }
+                        }
+                    }),
+                    update=>update
+                        .transition()
+                        .duration(this.settings.transition.transitionDuration)
+                        .ease(this.settings.transition.transitionEase)
+                        .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
+                        .attr("transform", (c) => {
+                            return `translate(${this.scales.x(c.vertices[0].x+this.settings.xScale.offset)}, ${this.scales.y(c.vertices[0].y+this.settings.xScale.offset)})`;
+                        })
+                        .each(function(c) {
+                            for(const bauble of  self.settings.cartoons.baubles){
+                                if (bauble.edgeFilter(c)) {
+                                    bauble
+                                        .updateShapes(select(this))
+                                }
+                            }
+                        })
+            );
         // add callbacks
         for(const callback of this.callbacks.cartoons){
             callback();
         }
     }
-
-
 
 }
