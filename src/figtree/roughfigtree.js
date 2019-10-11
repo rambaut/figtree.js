@@ -10,6 +10,7 @@ export class RoughFigTree extends FigTree{
         return {
             vertices: {
                 baubles: [new RoughCircleBauble()],
+                backgroundBaubles:[new CircleBauble({attrs:{fill:()=>"white"},vertexFilter:v=>v.degree===1})],
                 backgroundBorder: -5
             },
             edges: {
@@ -33,59 +34,52 @@ export class RoughFigTree extends FigTree{
 
         // DATA JOIN
         // Join new data with old elements, if any.
-        const nodes = nodesBackgroundLayer.selectAll(".node-background")
-            .data(this.layout.vertices, (v) => `nb_${v.key}`);
-
-        // ENTER
-        // Create new elements as needed.
-        const newNodes = nodes.enter();
-
-        // add the specific node shapes or 'baubles'
-        this.settings.vertices.baubles.forEach((bauble) => {
-            let backBauble= bauble;
-            if(bauble instanceof RoughCircleBauble){
-                backBauble= new CircleBauble(bauble.settings)
-            }
-            const d = backBauble.createShapes(newNodes.filter(backBauble.vertexFilter))
-                .attr("class", "node-background")
-                .attr("transform", (v) => {
-                    return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
-                });
-
-            backBauble.updateShapes(d, this.settings.vertices.backgroundBorder);
-        });
-
-        // update all the existing elements
-        this.settings.vertices.baubles.forEach((bauble) => {
-            let backBauble= bauble;
-            if(bauble instanceof RoughCircleBauble){
-                backBauble= new CircleBauble(bauble.settings)
-            }
-            const d = nodes
-                .filter(backBauble.vertexFilter)
-                .transition()
-                .duration(this.settings.transition.transitionDuration)
-                .ease(this.settings.transition.transitionEase)
-                .attr("transform", (v) => {
-                    return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
-                });
-            backBauble.updateShapes(d, this.settings.backgroundBorder)
-        });
-
-        // EXIT
-        // Remove old elements as needed.
-        nodes.exit().remove();
-
-        this[p.updateNodeBackgroundStyles]();
-
+        const self = this;
+        nodesBackgroundLayer.selectAll(".node-background")
+            .data(this.layout.vertices, (v) => `nb_${v.key}`)
+            .join(
+                enter=>enter
+                    .append("g")
+                    .attr("id", (v) => v.id)
+                    .attr("class", (v) => ["node-background", ...v.classes].join(" "))
+                    .attr("transform", (v) => {
+                        return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
+                    })
+                    .each(function(v) {
+                        for(const bauble of  self.settings.vertices.backgroundBaubles){
+                            if (bauble.vertexFilter(v)) {
+                                bauble
+                                    .updateShapes(select(this))
+                            }
+                        }
+                    }),
+                update=>update
+                    .transition()
+                    .duration(this.settings.transition.transitionDuration)
+                    .ease(this.settings.transition.transitionEase)
+                    .attr("class", (v) => ["node-background", ...v.classes].join(" "))
+                    .attr("transform", (v) => {
+                        return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
+                    })
+                    .each(function(v) {
+                        for(const bauble of  self.settings.vertices.backgroundBaubles){
+                            if (bauble.vertexFilter(v)) {
+                                bauble
+                                    .updateShapes(select(this))
+                            }
+                        }
+                    })
+            );
     }
+
+
     [p.updateNodes](){
         const nodesLayer = this.svgSelection.select(".nodes-layer");
 
         // DATA JOIN
         // Join new data with old elements, if any.
         const self = this;
-        const nodes = nodesLayer.selectAll(".node")
+        nodesLayer.selectAll(".node")
             .data(this.layout.vertices, (v) => `n_${v.key}`)
             .join(
                 enter=>enter
@@ -100,8 +94,6 @@ export class RoughFigTree extends FigTree{
                             if (bauble.vertexFilter(v)) {
                                 bauble
                                     .updateShapes(select(this))
-                                    .classed("node-shape", true)
-                                    .classed("rough", true);
                             }
                         }
                     })
@@ -132,8 +124,6 @@ export class RoughFigTree extends FigTree{
                             if (bauble.vertexFilter(v)) {
                                 bauble
                                     .updateShapes(select(this))
-                                    .classed("node-shape", true)
-                                    .classed("rough", true);
                             }
                         }
                     })
