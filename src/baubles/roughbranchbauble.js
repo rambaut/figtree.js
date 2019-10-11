@@ -31,7 +31,7 @@ export class RoughBranchBauble extends Bauble {
 
     setup(scales = {}) {
         scales = mergeDeep({x: null, y: null, xOffset: 0, yOffset: 0}, scales);
-        const basicPathGenerator = branchPathGenerator.call(this, scales);
+        const basicPathGenerator = branchPathGenerator({scales:scales,curve:this.settings.curve,curveRadius:this.settings.curveRadius});
         this.branchPath = (edge)=>{
             const basicPath =basicPathGenerator(edge);
             return [...roughFactory.path(basicPath,this.settings).childNodes].map(d=>d.getAttribute("d"))[0]
