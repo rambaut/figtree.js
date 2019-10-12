@@ -5,6 +5,8 @@ import {mergeDeep} from "../utilities";
 import 'd3-selection-multi';
 import {CircleBauble} from "../baubles/circlebauble";
 import {RoughCircleBauble} from "../baubles/roughcirclebauble";
+import {BranchBauble} from "../baubles/branchbauble";
+import {CartoonBauble} from "../baubles/cartoonbauble";
 /** @module figtree */
 // const d3 = require("d3");
 
@@ -62,18 +64,14 @@ export class FigTree {
             },
             vertices: {
                 hoverBorder: 2,
-                backgroundBorder: null,
+                backgroundBaubles:[new CircleBauble({radius:8})],
                 baubles: [new CircleBauble()],
-                cssStyles:{},
-                backgroundCssStyles:{}
             },
             edges: {
-                curve: curveStepBefore,
-                curveRadius: 0,
-                cssStyles: {"fill": d => "none", "stroke-width": d => "2", "stroke": d => "black"},
+                baubles:[new BranchBauble()]
             },
             cartoons:{
-                cssStyles:{"fill": d => "none", "stroke-width": d => "2", "stroke": d => "black"}
+                baubles:[new CartoonBauble()]
             },
             transition: {
                 transitionDuration: 500,
@@ -206,7 +204,7 @@ export class FigTree {
             this[p.updateYAxis]();
         }
 
-        if (this.settings.vertices.backgroundBorder !==null) {
+        if (this.settings.vertices.backgroundBaubles.length>0) {
             this[p.updateNodeBackgrounds]();
         }
 
@@ -468,111 +466,88 @@ export class FigTree {
         this.update();
     }
 
-    updateStyles(){
-        this[p.updateBranchStyles]();
-        this[p.updateNodeStyles]();
-        this[p.updateNodeBackgroundStyles]();
-    }
  /*
  * Protected methods, called by the class using.
  */
     /**
      * Adds or updates nodes
      */
-    [p.updateNodes]() {
-
+    [p.updateNodes](){
         const nodesLayer = this.svgSelection.select(".nodes-layer");
 
         // DATA JOIN
         // Join new data with old elements, if any.
-        const nodes = nodesLayer.selectAll(".node")
-            .data(this.layout.vertices, (v) => `n_${v.key}`);
+        const self = this;
+        nodesLayer.selectAll(".node")
+            .data(this.layout.vertices, (v) => `n_${v.key}`)
+            .join(
+                enter=>enter
+                    .append("g")
+                        .attr("id", (v) => v.id)
+                        .attr("class", (v) => ["node", ...v.classes].join(" "))
+                        .attr("transform", (v) => {
+                            return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
+                        })
+                        .each(function(v) {
+                            for(const bauble of  self.settings.vertices.baubles){
+                                if (bauble.vertexFilter(v)) {
+                                    bauble
+                                        .updateShapes(select(this))
+                                }
+                            }
+                        })
+                    .append("text")
+                        .attr("class", "node-label name")
+                        .attr("text-anchor", "start")
+                        .attr("alignment-baseline", "middle")
+                        .attr("dx", "12")
+                        .attr("dy", "0")
+                        .text((d) => d.rightLabel)
+                    .append("text")
+                        .attr("class", "node-label support")
+                        .attr("text-anchor", "end")
+                        .attr("dx", "-6")
+                        .attr("dy", d => (d.labelBelow ? -8 : +8))
+                        .attr("alignment-baseline", d => (d.labelBelow ? "bottom": "hanging" ))
+                        .text((d) => d.leftLabel),
+                update=>update
+                    .transition()
+                    .duration(this.settings.transition.transitionDuration)
+                    .ease(this.settings.transition.transitionEase)
+                    .attr("class", (v) => ["node", ...v.classes].join(" "))
+                    .attr("transform", (v) => {
+                        return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
+                    })
+                    .each(function(v) {
+                        for(const bauble of  self.settings.vertices.baubles){
+                            if (bauble.vertexFilter(v)) {
+                                bauble
+                                    .updateShapes(select(this))
+                            }
+                        }
+                    })
+                    .select("text .node-label .name")
+                        .transition()
+                        .duration(this.settings.transition.transitionDuration)
+                        .ease(this.settings.transition.transitionEase)
+                        .attr("class", "node-label name")
+                        .attr("text-anchor", "start")
+                        .attr("alignment-baseline", "middle")
+                        .attr("dx", "12")
+                        .attr("dy", "0")
+                        .text((d) => d.rightLabel)
+                    .select("text .node-label .support")
+                        .transition()
+                        .duration(this.settings.transition.transitionDuration)
+                        .ease(this.settings.transition.transitionEase)
+                        .attr("alignment-baseline", d => (d.labelBelow ? "bottom": "hanging" ))
+                        .attr("class", "node-label support")
+                        .attr("text-anchor", "end")
+                        .attr("dx", "-6")
+                        .attr("dy", d => (d.labelBelow ? -8 : +8))
+                        .text((d) => d.leftLabel)
 
-        // ENTER
-        // Create new elements as needed.
-        const newNodes = nodes.enter().append("g")
-            .attr("id", (v) => v.id)
-            .attr("class", (v) => ["node", ...v.classes].join(" "))
-            .attr("transform", (v) => {
-                return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
-            });
-
-        // add the specific node shapes or 'baubles'
-        this.settings.vertices.baubles.forEach((bauble) => {
-            const d = bauble
-                .createShapes(newNodes.filter(bauble.vertexFilter))
-                .attr("class", "node-shape");
-            bauble.updateShapes(d);
-        });
-
-        newNodes.append("text")
-            .attr("class", "node-label name")
-            .attr("text-anchor", "start")
-            .attr("alignment-baseline", "middle")
-            .attr("dx", "12")
-            .attr("dy", "0")
-            .text((d) => d.rightLabel);
-
-        newNodes.append("text")
-            .attr("class", "node-label support")
-            .attr("text-anchor", "end")
-            .attr("dx", "-6")
-            .attr("dy", d => (d.labelBelow ? -8 : +8))
-            .attr("alignment-baseline", d => (d.labelBelow ? "bottom": "hanging" ))
-            .text((d) => d.leftLabel);
-
-        // update the existing elements
-        nodes
-            .transition()
-            .duration(this.settings.transition.transitionDuration)
-            .ease(this.settings.transition.transitionEase)
-            .attr("class", (v) => ["node", ...v.classes].join(" "))
-            .attr("transform", (v) => {
-                return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
-            });
-
-
-
-        // update all the baubles
-        this.settings.vertices.baubles.forEach((bauble) => {
-            const d = nodes.select(".node-shape")
-                .filter(bauble.vertexFilter)
-                .transition()
-                .duration(this.settings.transition.transitionDuration)
-                .ease(this.settings.transition.transitionEase)
-            ;
-            bauble.updateShapes(d)
-        });
-
-        nodes.select("text .node-label .name")
-            .transition()
-            .duration(this.settings.transition.transitionDuration)
-            .ease(this.settings.transition.transitionEase)
-            .attr("class", "node-label name")
-            .attr("text-anchor", "start")
-            .attr("alignment-baseline", "middle")
-            .attr("dx", "12")
-            .attr("dy", "0")
-            .text((d) => d.rightLabel);
-
-        nodes.select("text .node-label .support")
-            .transition()
-            .duration(this.settings.transition.transitionDuration)
-            .ease(this.settings.transition.transitionEase)
-            .attr("alignment-baseline", d => (d.labelBelow ? "bottom": "hanging" ))
-            .attr("class", "node-label support")
-            .attr("text-anchor", "end")
-            .attr("dx", "-6")
-            .attr("dy", d => (d.labelBelow ? -8 : +8))
-            .text((d) => d.leftLabel);
-
-        // EXIT
-        // Remove old elements as needed.
-        nodes.exit().remove();
-
-        this[p.updateNodeStyles]();
-
-
+            );
         // add callbacks
         for(const callback of this.callbacks.nodes){
             callback();
@@ -581,47 +556,49 @@ export class FigTree {
 
     [p.updateNodeBackgrounds]() {
 
-        const nodesBackgroundLayer = this.svgSelection.select("nodes-background-layer");
+        const nodesBackgroundLayer = this.svgSelection.select(".nodes-background-layer");
 
         // DATA JOIN
         // Join new data with old elements, if any.
-        const nodes = nodesBackgroundLayer.selectAll(".node-background")
-            .data(this.layout.vertices, (v) => `nb_${v.key}`);
-
-        // ENTER
-        // Create new elements as needed.
-        const newNodes = nodes.enter();
-
-        // add the specific node shapes or 'baubles'
-        this.settings.vertices.baubles.forEach((bauble) => {
-            const d = bauble.createShapes(newNodes.filter(bauble.vertexFilter))
-                .attr("class", "node-background")
-                .attr("transform", (v) => {
-                    return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
-                });
-
-            bauble.updateShapes(d, this.settings.vertices.backgroundBorder);
-        });
-
-        // update all the existing elements
-        this.settings.vertices.baubles.forEach((bauble) => {
-            const d = nodes
-                .filter(bauble.vertexFilter)
-                .transition()
-                .duration(this.settings.transition.transitionDuration)
-                .ease(this.settings.transition.transitionEase)
-                .attr("transform", (v) => {
-                    return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
-                });
-            bauble.updateShapes(d, this.settings.backgroundBorder)
-        });
-
-        // EXIT
-        // Remove old elements as needed.
-        nodes.exit().remove();
-
-        this[p.updateNodeBackgroundStyles]();
-
+        const self = this;
+        nodesBackgroundLayer.selectAll(".node-background")
+            .data(this.layout.vertices, (v) => `nb_${v.key}`)
+            .join(
+                enter=>enter
+                    .append("g")
+                        .attr("id", (v) => v.id)
+                        .attr("class", (v) => ["node-background", ...v.classes].join(" "))
+                        .attr("transform", (v) => {
+                            return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
+                        })
+                        .each(function(v) {
+                            for(const bauble of  self.settings.vertices.backgroundBaubles){
+                                if (bauble.vertexFilter(v)) {
+                                    bauble
+                                        .updateShapes(select(this))
+                                }
+                            }
+                        }),
+                update=>update
+                        .transition()
+                        .duration(this.settings.transition.transitionDuration)
+                        .ease(this.settings.transition.transitionEase)
+                        .attr("class", (v) => ["node-background", ...v.classes].join(" "))
+                        .attr("transform", (v) => {
+                            return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
+                        })
+                        .each(function(v) {
+                            for(const bauble of  self.settings.vertices.backgroundBaubles){
+                                if (bauble.vertexFilter(v)) {
+                                    bauble
+                                        .updateShapes(select(this))
+                                }
+                            }
+                        })
+            );
+        for(const callback of this.callbacks.nodes){
+            callback();
+        }
     }
 
     /**
@@ -630,72 +607,62 @@ export class FigTree {
     [p.updateBranches]() {
 
         const branchesLayer = this.svgSelection.select(".branches-layer");
+        //set up scales for branches
 
-        // a function to create a line path
-        // const branchPath = d3.line()
-        //     .x((v) => v.x)
-        //     .y((v) => v.y)
-        //     .curve(this.layout.curve);
-        const branchPath = this[p.branchPathGenerator]();
+        this.settings.edges.baubles.forEach(b=>b.setup({x:this.scales.x,y:this.scales.y,
+            xOffset:this.settings.xScale.offset,yOffset:this.settings.yScale.offset}));
         // DATA JOIN
         // Join new data with old elements, if any.
-        const branches = branchesLayer.selectAll("g .branch")
-            .data(this.layout.edges, (e) => `b_${e.key}`);
-
-        // ENTER
-        // Create new elements as needed.
-        const newBranches = branches.enter().append("g")
-            .attr("id", (e) => e.id)
-            .attr("class", (e) => ["branch", ...e.classes].join(" "))
-            .attr("transform", (e) => {
-                return `translate(${this.scales.x(e.v0.x+this.settings.xScale.offset)}, ${this.scales.y(e.v1.y)})`;
-            });
-
-        // Make branches a thing like bauble
-        if(this.settings.edges.roughOptions){
-            newBranches.append("g")
-                .attr("class","branch-path")
-                .append((e,i)=>roughFactory.path(`${branchPath(e,i)}`,this.settings.edges.roughOptions))
-        }else{
-            newBranches.append("path")
-                .attr("class", "branch-path")
-                .attr("d", (e,i) => branchPath(e,i));
-        }
-
-
-        newBranches.append("text")
-            .attr("class", "branch-label length")
-            .attr("dx", (e) => ((this.scales.x(e.v1.x+this.settings.xScale.offset) - this.scales.x(e.v0.x+this.settings.xScale.offset)) / 2))
-            .attr("dy", (e) => (e.labelBelow ? +6 : -6))
-            .attr("alignment-baseline", (e) => (e.labelBelow ? "hanging" : "bottom"))
-            .attr("text-anchor", "middle")
-            .text((e) => e.label);
-
-        // update the existing elements
-        branches
-            .transition()
-            .duration(this.settings.transition.transitionDuration)
-            .ease(this.settings.transition.transitionEase)
-            .attr("class", (e) => ["branch", ...e.classes].join(" "))
-            .attr("transform", (e) => {
-                return `translate(${this.scales.x(e.v0.x+this.settings.xScale.offset)}, ${this.scales.y(e.v1.y)})`;
-            })
-            .select("path")
-            .attr("d", (e,i) => branchPath(e,i))
-
-            .select("text .branch-label .length")
-            .attr("class", "branch-label length")
-            .attr("dx", (e) => ((this.scales.x(e.v1.x+this.settings.xScale.offset) - this.scales.x(e.v0.x+this.settings.xScale.offset)) / 2))
-            .attr("dy", (e) => (e.labelBelow ? +6 : -6))
-            .attr("alignment-baseline", (e) => (e.labelBelow ? "hanging" : "bottom"))
-            .attr("text-anchor", "middle")
-            .text((e) => e.label);
-
-        // EXIT
-        // Remove old elements as needed.
-        branches
-            .exit().remove();
-        this[p.updateBranchStyles]();
+        const self = this;
+        branchesLayer.selectAll(".branch")
+            .data(this.layout.edges, (e) => `b_${e.key}`)
+            .join(
+                enter=>enter
+                    .append("g")
+                        .attr("id", (e) => e.id)
+                        .attr("class", (e) => ["branch", ...e.classes].join(" "))
+                        .attr("transform", (e) => {
+                            return `translate(${this.scales.x(e.v0.x+this.settings.xScale.offset)}, ${this.scales.y(e.v1.y)})`;
+                        })
+                        .each(function(e) {
+                            for(const bauble of  self.settings.edges.baubles){
+                                if (bauble.edgeFilter(e)) {
+                                    bauble
+                                        .updateShapes(select(this))
+                                }
+                            }
+                        })
+                    .append("text")
+                        .attr("class", "branch-label")
+                        .attr("dx", (e) => ((this.scales.x(e.v1.x+this.settings.xScale.offset) - this.scales.x(e.v0.x+this.settings.xScale.offset)) / 2))
+                        .attr("dy", (e) => (e.labelBelow ? +6 : -6))
+                        .attr("alignment-baseline", (e) => (e.labelBelow ? "hanging" : "bottom"))
+                        .attr("text-anchor", "middle")
+                        .text((e) => e.label),
+                update=>update
+                        .transition()
+                        .duration(this.settings.transition.transitionDuration)
+                        .ease(this.settings.transition.transitionEase)
+                        .attr("class", (e) => ["branch", ...e.classes].join(" "))
+                        .attr("transform", (e) => {
+                            return `translate(${this.scales.x(e.v0.x+this.settings.xScale.offset)}, ${this.scales.y(e.v1.y)})`;
+                        })
+                        .each(function(e) {
+                            for(const bauble of  self.settings.edges.baubles){
+                                if (bauble.edgeFilter(e)) {
+                                    bauble
+                                        .updateShapes(select(this))
+                                }
+                            }
+                        })
+                    .select("text .branch-label .length")
+                        .attr("class", "branch-label length")
+                        .attr("dx", (e) => ((this.scales.x(e.v1.x+this.settings.xScale.offset) - this.scales.x(e.v0.x+this.settings.xScale.offset)) / 2))
+                        .attr("dy", (e) => (e.labelBelow ? +6 : -6))
+                        .attr("alignment-baseline", (e) => (e.labelBelow ? "hanging" : "bottom"))
+                        .attr("text-anchor", "middle")
+                        .text((e) => e.label)
+            );
 
         // add callbacks
         for(const callback of this.callbacks.branches){
@@ -706,51 +673,47 @@ export class FigTree {
     [p.updateCartoons](){
         const cartoonLayer = this.svgSelection.select(".cartoon-layer");
 
-        // DATA JOIN
-        // Join new data with old elements, if any.
-        const cartoons = cartoonLayer.selectAll("g .cartoon")
-            .data(this.layout.cartoons, (c) => `c_${c.id}`);
-
-        // ENTER
-        // Create new elements as needed.
-        const newCartoons = cartoons.enter().append("g")
-            .attr("id", (c) => `cartoon-${c.id}`)
-            .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
-            .attr("transform", (c) => {
-                return `translate(${this.scales.x(c.vertices[0].x+this.settings.xScale.offset)}, ${this.scales.y(c.vertices[0].y+this.settings.xScale.offset)})`;
-            })
-
-
-        newCartoons.append("path")
-            .attr("class", "cartoon-path")
-            .attr("d", (e,i) => this[p.pointToPoint](e.vertices));
-
-
-
-        // update the existing elements
-        cartoons
-            .transition()
-            .duration(this.settings.transition.transitionDuration)
-            .ease(this.settings.transition.transitionEase)
-            .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
-            .attr("transform", (c) => {
-                return `translate(${this.scales.x(c.vertices[0].x+this.settings.xScale.offset)}, ${this.scales.y(c.vertices[0].y)})`
-            })
-            .select("path")
-            .attr("d", (c) => this[p.pointToPoint](c.vertices));
-
-
-        // EXIT
-        // Remove old elements as needed.
-        cartoons.exit().remove();
-
-        this[p.updateCartoonStyles]();
-
+        cartoonLayer.selectAll("g .cartoon")
+            .data(this.layout.cartoons, (c) => `c_${c.id}`)
+            .join(
+                enter=>enter
+                    .append("g")
+                        .attr("id", (c) => `cartoon-${c.id}`)
+                        .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
+                        .attr("transform", (c) => {
+                            return `translate(${this.scales.x(c.vertices[0].x+this.settings.xScale.offset)}, ${this.scales.y(c.vertices[0].y+this.settings.xScale.offset)})`;
+                        })
+                        .each(function(c) {
+                            for(const bauble of  self.settings.cartoons.baubles){
+                                if (bauble.edgeFilter(c)) {
+                                    bauble
+                                        .updateShapes(select(this))
+                                }
+                            }
+                        }),
+                update=>update
+                    .transition()
+                    .duration(this.settings.transition.transitionDuration)
+                    .ease(this.settings.transition.transitionEase)
+                    .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
+                    .attr("transform", (c) => {
+                        return `translate(${this.scales.x(c.vertices[0].x+this.settings.xScale.offset)}, ${this.scales.y(c.vertices[0].y+this.settings.xScale.offset)})`;
+                    })
+                    .each(function(c) {
+                        for(const bauble of  self.settings.cartoons.baubles){
+                            if (bauble.edgeFilter(c)) {
+                                bauble
+                                    .updateShapes(select(this))
+                            }
+                        }
+                    })
+            );
         // add callbacks
         for(const callback of this.callbacks.cartoons){
             callback();
         }
     }
+
     /**
      * Add axis
      */
