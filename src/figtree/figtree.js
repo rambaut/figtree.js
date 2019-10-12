@@ -7,6 +7,7 @@ import {CircleBauble} from "../baubles/circlebauble";
 import {RoughCircleBauble} from "../baubles/roughcirclebauble";
 import {BranchBauble} from "../baubles/branchbauble";
 import {CartoonBauble} from "../baubles/cartoonbauble";
+import {Axis} from "../baubles/axes";
 /** @module figtree */
 // const d3 = require("d3");
 
@@ -39,32 +40,39 @@ export class FigTree {
     static DEFAULT_SETTINGS() {
         return {
             xScale: {
-                title: "Height",
-                axis: axisBottom,
+                axes:[new Axis({ title: {
+                        text:"Height",
+                        rotation:0,
+                        xPadding:0,
+                        yPadding:25,
+                    },
+                    location:"bottom",
+                    tickArguments:[5,".2f"]})],
                 gap:10,
-                tickFormat: format(".2f"),
-                ticks: 5,
                 scale: scaleLinear,
-                origin: null,
-                reverseAxis: false,
-                branchScale: 1,
-                offset: 0,
+                revisions: {
+                    origin: null,
+                    reverseAxis: false,
+                    branchScale: 1,
+                    offset: 0,
+                    hedge: 0
+                }
             },
             yScale: {
-                title: null,
-                axis: null,
-                scale: scaleLinear,
-                origin: null,
-                reverseAxis: false,
-                branchScale: 1,
-                offset: 0,
+                axes:[],
                 gap:10,
-                tickFormat: format(".2f"),
-                ticks: 5,
+                scale: scaleLinear,
+                revisions: {
+                    origin: null,
+                    reverseAxis: false,
+                    branchScale: 1,
+                    offset: 0,
+                    hedge: 0
+                }
             },
             vertices: {
                 hoverBorder: 2,
-                backgroundBaubles:[new CircleBauble({radius:8})],
+                backgroundBaubles:[],
                 baubles: [new CircleBauble()],
             },
             edges: {
@@ -140,19 +148,19 @@ export class FigTree {
 
         // create the scales
         const xScale = this.settings.xScale.scale()
-            .domain([this.layout.horizontalDomain[0]+this.settings.xScale.offset,this.layout.horizontalDomain[1]])
+            .domain([this.layout.horizontalDomain[0]+this.settings.xScale.revisions.offset+this.settings.xScale.revisions.hedge,this.layout.horizontalDomain[1]])
             .range([this.margins.left, width - this.margins.right]);
 
         const yScale = this.settings.yScale.scale()
-            .domain([this.layout.verticalDomain[0]+this.settings.yScale.offset,this.layout.verticalDomain[1]])
+            .domain([this.layout.verticalDomain[0]+this.settings.yScale.revisions.offset,this.layout.verticalDomain[1]])
             .range([this.margins.top, height -this.margins.bottom]);
 
         this.scales = {x:xScale, y:yScale, width, height};
 
-        if(this.settings.xScale.axis){
+        if(this.settings.xScale.axes.length>0){
            this[p.addXAxis]();
         }
-        if(this.settings.yScale.axis){
+        if(this.settings.yScale.axes.length>0){
             this[p.addYAxis]();
         }
 
@@ -185,10 +193,10 @@ export class FigTree {
 
         // update the scales' domains
         this.scales.x
-            .domain([this.layout.horizontalDomain[0]+this.settings.xScale.offset,this.layout.horizontalDomain[1]])
+            .domain([this.layout.horizontalDomain[0]+this.settings.xScale.revisions.offset+this.settings.xScale.revisions.hedge,this.layout.horizontalDomain[1]])
             .range([this.margins.left, width - this.margins.right]);
         this.scales.y
-            .domain([this.layout.verticalDomain[0]+this.settings.yScale.offset,this.layout.verticalDomain[1]])
+            .domain([this.layout.verticalDomain[0]+this.settings.yScale.revisions.offset,this.layout.verticalDomain[1]])
             .range([this.margins.top, height -this. margins.bottom]);
         this.scales.width=width;
         this.scales.height=height;
@@ -197,10 +205,10 @@ export class FigTree {
         this[p.updateCartoons]();
         this[p.updateBranches]();
 
-        if(this.settings.xScale.axis){
+        if(this.settings.xScale.axes.length>0){
             this[p.updateXAxis]();
         }
-        if(this.settings.yScale.axis){
+        if(this.settings.yScale.axes.length>0){
             this[p.updateYAxis]();
         }
 
@@ -310,8 +318,8 @@ export class FigTree {
             const self = this;
             const selected = this.svgSelection.selectAll(`${selection ? selection : ".branch"}`);
             selected.on("click", function (edge) {
-                const x1 = self.scales.x(edge.v1.x+this.settings.xScale.offset);
-                const x2 = self.scales.x(edge.v0.x+this.settings.xScale.offset);
+                const x1 = self.scales.x(edge.v1.x+this.settings.xScale.revisions.offset);
+                const x2 = self.scales.x(edge.v0.x+this.settings.xScale.revisions.offset);
                 const mx = mouse(this)[0];
                 const proportion = Math.max(0.0, Math.min(1.0, (mx - x2) / (x1 - x2)));
                 action(edge, proportion);
@@ -486,7 +494,7 @@ export class FigTree {
                         .attr("id", (v) => v.id)
                         .attr("class", (v) => ["node", ...v.classes].join(" "))
                         .attr("transform", (v) => {
-                            return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
+                            return `translate(${this.scales.x(v.x+this.settings.xScale.revisions.offset)}, ${this.scales.y(v.y)})`;
                         })
                         .each(function(v) {
                             for(const bauble of  self.settings.vertices.baubles){
@@ -516,7 +524,7 @@ export class FigTree {
                     .ease(this.settings.transition.transitionEase)
                     .attr("class", (v) => ["node", ...v.classes].join(" "))
                     .attr("transform", (v) => {
-                        return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
+                        return `translate(${this.scales.x(v.x+this.settings.xScale.revisions.offset)}, ${this.scales.y(v.y)})`;
                     })
                     .each(function(v) {
                         for(const bauble of  self.settings.vertices.baubles){
@@ -569,7 +577,7 @@ export class FigTree {
                         .attr("id", (v) => v.id)
                         .attr("class", (v) => ["node-background", ...v.classes].join(" "))
                         .attr("transform", (v) => {
-                            return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
+                            return `translate(${this.scales.x(v.x+this.settings.xScale.revisions.offset)}, ${this.scales.y(v.y)})`;
                         })
                         .each(function(v) {
                             for(const bauble of  self.settings.vertices.backgroundBaubles){
@@ -585,7 +593,7 @@ export class FigTree {
                         .ease(this.settings.transition.transitionEase)
                         .attr("class", (v) => ["node-background", ...v.classes].join(" "))
                         .attr("transform", (v) => {
-                            return `translate(${this.scales.x(v.x+this.settings.xScale.offset)}, ${this.scales.y(v.y)})`;
+                            return `translate(${this.scales.x(v.x+this.settings.xScale.revisions.offset)}, ${this.scales.y(v.y)})`;
                         })
                         .each(function(v) {
                             for(const bauble of  self.settings.vertices.backgroundBaubles){
@@ -610,7 +618,7 @@ export class FigTree {
         //set up scales for branches
 
         this.settings.edges.baubles.forEach(b=>b.setup({x:this.scales.x,y:this.scales.y,
-            xOffset:this.settings.xScale.offset,yOffset:this.settings.yScale.offset}));
+            xOffset:this.settings.xScale.revisions.offset,yOffset:this.settings.yScale.revisions.offset}));
         // DATA JOIN
         // Join new data with old elements, if any.
         const self = this;
@@ -622,7 +630,7 @@ export class FigTree {
                         .attr("id", (e) => e.id)
                         .attr("class", (e) => ["branch", ...e.classes].join(" "))
                         .attr("transform", (e) => {
-                            return `translate(${this.scales.x(e.v0.x+this.settings.xScale.offset)}, ${this.scales.y(e.v1.y)})`;
+                            return `translate(${this.scales.x(e.v0.x+this.settings.xScale.revisions.offset)}, ${this.scales.y(e.v1.y)})`;
                         })
                         .each(function(e) {
                             for(const bauble of  self.settings.edges.baubles){
@@ -634,7 +642,7 @@ export class FigTree {
                         })
                     .append("text")
                         .attr("class", "branch-label")
-                        .attr("dx", (e) => ((this.scales.x(e.v1.x+this.settings.xScale.offset) - this.scales.x(e.v0.x+this.settings.xScale.offset)) / 2))
+                        .attr("dx", (e) => ((this.scales.x(e.v1.x+this.settings.xScale.revisions.offset) - this.scales.x(e.v0.x+this.settings.xScale.revisions.offset)) / 2))
                         .attr("dy", (e) => (e.labelBelow ? +6 : -6))
                         .attr("alignment-baseline", (e) => (e.labelBelow ? "hanging" : "bottom"))
                         .attr("text-anchor", "middle")
@@ -645,7 +653,7 @@ export class FigTree {
                         .ease(this.settings.transition.transitionEase)
                         .attr("class", (e) => ["branch", ...e.classes].join(" "))
                         .attr("transform", (e) => {
-                            return `translate(${this.scales.x(e.v0.x+this.settings.xScale.offset)}, ${this.scales.y(e.v1.y)})`;
+                            return `translate(${this.scales.x(e.v0.x+this.settings.xScale.revisions.offset)}, ${this.scales.y(e.v1.y)})`;
                         })
                         .each(function(e) {
                             for(const bauble of  self.settings.edges.baubles){
@@ -657,7 +665,7 @@ export class FigTree {
                         })
                     .select("text .branch-label .length")
                         .attr("class", "branch-label length")
-                        .attr("dx", (e) => ((this.scales.x(e.v1.x+this.settings.xScale.offset) - this.scales.x(e.v0.x+this.settings.xScale.offset)) / 2))
+                        .attr("dx", (e) => ((this.scales.x(e.v1.x+this.settings.xScale.revisions.offset) - this.scales.x(e.v0.x+this.settings.xScale.revisions.offset)) / 2))
                         .attr("dy", (e) => (e.labelBelow ? +6 : -6))
                         .attr("alignment-baseline", (e) => (e.labelBelow ? "hanging" : "bottom"))
                         .attr("text-anchor", "middle")
@@ -681,7 +689,7 @@ export class FigTree {
                         .attr("id", (c) => `cartoon-${c.id}`)
                         .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
                         .attr("transform", (c) => {
-                            return `translate(${this.scales.x(c.vertices[0].x+this.settings.xScale.offset)}, ${this.scales.y(c.vertices[0].y+this.settings.xScale.offset)})`;
+                            return `translate(${this.scales.x(c.vertices[0].x+this.settings.xScale.revisions.offset)}, ${this.scales.y(c.vertices[0].y+this.settings.xScale.revisions.offset)})`;
                         })
                         .each(function(c) {
                             for(const bauble of  self.settings.cartoons.baubles){
@@ -697,7 +705,7 @@ export class FigTree {
                     .ease(this.settings.transition.transitionEase)
                     .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
                     .attr("transform", (c) => {
-                        return `translate(${this.scales.x(c.vertices[0].x+this.settings.xScale.offset)}, ${this.scales.y(c.vertices[0].y+this.settings.xScale.offset)})`;
+                        return `translate(${this.scales.x(c.vertices[0].x+this.settings.xScale.revisions.offset)}, ${this.scales.y(c.vertices[0].y+this.settings.xScale.revisions.offset)})`;
                     })
                     .each(function(c) {
                         for(const bauble of  self.settings.cartoons.baubles){
@@ -718,117 +726,80 @@ export class FigTree {
      * Add axis
      */
     [p.addXAxis]() {
-        const xSettings = this.settings.xScale;
-        const reverse = xSettings.reverseAxis? -1:1;
-        const domain = xSettings.origin!==null?
-            [xSettings.origin+reverse*xSettings.branchScale*(Math.abs(this.scales.x.domain()[0]-this.scales.x.domain()[1])),xSettings.origin]:
+        const xRevisions = this.settings.xScale.revisions;
+        const reverse = xRevisions.reverseAxis? -1:1;
+        const domain = xRevisions.origin!==null?
+            [xRevisions.origin+xRevisions.hedge+reverse*xRevisions.branchScale*(Math.abs(this.scales.x.domain()[0]-this.scales.x.domain()[1])),xRevisions.origin]:
             this.scales.x.domain();
-        const xAxis = xSettings.axis( xSettings.scale().domain(domain).range(this.scales.x.range()))
-            .ticks(xSettings.ticks).tickFormat(xSettings.tickFormat);
+        const axisScale =  this.settings.xScale.scale().domain(domain).range(this.scales.x.range());
+
         const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
         const axesLayer = this.svgSelection.select(".axes-layer");
 
-        axesLayer
-            .append("g")
-            .attr("id", "x-axis")
-            .attr("class", "axis")
-            .attr("transform", `translate(0, ${this.scales.height - this.margins.bottom +this.settings.xScale.gap})`)
-            .call(xAxis);
-
-        axesLayer
-            .append("g")
-            .attr("id", "x-axis-label")
-            .attr("class", "axis-label")
-            .attr("transform", `translate(${this.margins.left}, ${this.scales.height - this.margins.bottom})`)
-            .append("text")
-            .attr("transform", `translate(${xAxisWidth / 2}, 35)`)
-            .attr("alignment-baseline", "hanging")
-            .style("text-anchor", "middle")
-            .text(xSettings.title);
+        this.settings.xScale.axes.forEach(axis=>{
+            axis.createAxis({selection:axesLayer,
+                x:0,
+                y:this.scales.height - this.margins.bottom +this.settings.xScale.gap,
+                length:xAxisWidth,
+                scale:axisScale})
+        });
     }
 
     [p.addYAxis]() {
-        const ySettings = this.settings.yScale;
-        const reverse = ySettings.reverseAxis? -1:1;
-        const domain = ySettings.origin!==null?
-            [ySettings.origin+reverse*ySettings.branchScale*(Math.abs(this.scales.y.domain()[0]-this.scales.y.domain()[1])),ySettings.origin]:
+        const yRevisions = this.settings.yScale.revisions;
+        const reverse = yRevisions.reverseAxis? -1:1;
+        const domain = yRevisions.origin!==null?
+            [yRevisions.origin+reverse*yRevisions.branchScale*(Math.abs(this.scales.y.domain()[0]-this.scales.y.domain()[1])),yRevisions.origin]:
             this.scales.y.domain();
-        const yAxis = ySettings.axis( ySettings.scale().domain(domain).range(this.scales.y.range()))
-            .ticks(ySettings.ticks).tickFormat(ySettings.tickFormat);
+        const axisScale =  this.settings.yScale.scale().domain(domain).range(this.scales.y.range());
         const yAxisHeight = this.scales.height - this.margins.top - this.margins.bottom;
         const axesLayer = this.svgSelection.select(".axes-layer");
 
-        axesLayer
-            .append("g")
-            .attr("id", "y-axis")
-            .attr("class", "axis")
-            .attr("transform", `translate(${this.margins.left-this.settings.yScale.gap}, 0)`)
-            .call(yAxis);
-
-        axesLayer
-            .append("g")
-            .attr("id", "y-axis-label")
-            .attr("class", "axis-label")
-            .attr("transform", `translate(0,${this.margins.top})`)
-            .attr("transform", `translate(0,${yAxisHeight / 2})`)
-            .append("text")
-            .attr("transform", "rotate(-90)")
-            // .attr("alignment-baseline", "hanging")
-            .style("text-anchor", "middle")
-            .text(ySettings.title);
+        this.settings.xScale.axes.forEach(axis=>{
+            axis.createAxis({selection:axesLayer,
+                x:0,
+                y:this.scales.height - this.margins.bottom +this.settings.xScale.gap,
+                length:yAxisHeight,
+                scale:axisScale})
+        });
     }
 
     [p.updateXAxis](){
-        const xSettings = this.settings.xScale;
-        const reverse = xSettings.reverseAxis? -1:1;
-
-        const domain = xSettings.origin!==null?
-            [xSettings.origin+reverse*xSettings.branchScale*(Math.abs(this.scales.x.domain()[0]-this.scales.x.domain()[1])),xSettings.origin]:
+        const xRevisions = this.settings.xScale.revisions;
+        const reverse = xRevisions.reverseAxis? -1:1;
+        const domain = xRevisions.origin!==null?
+            [xRevisions.origin+xRevisions.hedge+reverse*xRevisions.branchScale*(Math.abs(this.scales.x.domain()[0]-this.scales.x.domain()[1])),xRevisions.origin]:
             this.scales.x.domain();
+        const axisScale =  this.settings.xScale.scale().domain(domain).range(this.scales.x.range());
 
-        const xAxis = xSettings.axis( xSettings.scale().domain(domain).range(this.scales.x.range()))
-            .ticks(xSettings.ticks).tickFormat(xSettings.tickFormat);
+        const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
         const axesLayer = this.svgSelection.select(".axes-layer");
 
-        axesLayer
-            .select("#x-axis")
-            .transition()
-            .duration(this.settings.transition.transitionDuration)
-            .ease(this.settings.transition.transitionEase)
-            .call(xAxis);
-
-        axesLayer
-            .select("#x-axis-label")
-            .select("text")
-            .transition()
-            .duration(this.settings.transition.transitionDuration)
-            .ease(this.settings.transition.transitionEase)
-            .text(xSettings.title);
+        this.settings.xScale.axes.forEach(axis=>{
+            axis.updateAxis({selection:axesLayer,
+                x:0,
+                y:this.scales.height - this.margins.bottom +this.settings.xScale.gap,
+                length:xAxisWidth,
+                scale:axisScale})
+        });
     }
     [p.updateYAxis](){
-        const ySettings = this.settings.yScale;
-        const reverse = ySettings.reverseAxis? -1:1;
-        const domain = ySettings.origin!==null?
-            [ySettings.origin+reverse*ySettings.branchScale*(Math.abs(this.scales.y.domain()[0]-this.scales.y.domain()[1])),ySettings.origin]:
+        const yRevisions = this.settings.yScale.revisions;
+        const reverse = yRevisions.reverseAxis? -1:1;
+        const domain = yRevisions.origin!==null?
+            [yRevisions.origin+reverse*yRevisions.branchScale*(Math.abs(this.scales.y.domain()[0]-this.scales.y.domain()[1])),yRevisions.origin]:
             this.scales.y.domain();
-        const yAxis = ySettings.axis( ySettings.scale().domain(domain).range(this.scales.y.range()))
-            .ticks(ySettings.ticks).tickFormat(ySettings.tickFormat);
+        const axisScale =  this.settings.yScale.scale().domain(domain).range(this.scales.y.range())
+        const yAxisHeight = this.scales.height - this.margins.top - this.margins.bottom;
         const axesLayer = this.svgSelection.select(".axes-layer");
 
-        axesLayer
-            .select("#y-axis")
-            .transition()
-            .duration(this.settings.transition.transitionDuration)
-            .ease(this.settings.transition.transitionEase)
-            .call(yAxis);
-
-        axesLayer
-            .select("#y-axis-label")
-            .select("text")
-            .transition()
-            .duration(this.settings.transition.transitionDuration)
-            .ease(this.settings.transition.transitionEase)
-            .text(ySettings.title);
+        this.settings.xScale.axes.forEach(axis=>{
+            axis.updateAxis({selection:axesLayer,
+                x:0,
+                y:this.scales.height - this.margins.bottom +this.settings.xScale.gap,
+                length:yAxisHeight,
+                scale:axisScale})
+        });
     }
 
 
@@ -905,7 +876,7 @@ export class FigTree {
         const pathPoints =points.reverse();
         let currentPoint =origin;
         for(const point of pathPoints){
-            const xdiff = this.scales.x(point.x+this.settings.xScale.offset)-this.scales.x(currentPoint.x+this.settings.xScale.offset);
+            const xdiff = this.scales.x(point.x+this.settings.xScale.revisions.offset)-this.scales.x(currentPoint.x+this.settings.xScale.revisions.offset);
             const ydiff = this.scales.y(point.y)- this.scales.y(currentPoint.y);
             path.push(`${xdiff} ${ydiff}`);
             currentPoint = point;
@@ -944,11 +915,11 @@ export class FigTree {
                     [{x: 0, y: this.scales.y(e.v0.y) - this.scales.y(e.v1.y)},
                         { x:0, y:dontNeedCurve*factor * this.settings.edges.curveRadius},
                         {x:0 + dontNeedCurve*this.settings.edges.curveRadius, y:0},
-                        {x: this.scales.x(e.v1.x+this.settings.xScale.offset) - this.scales.x(e.v0.x+this.settings.xScale.offset), y: 0}
+                        {x: this.scales.x(e.v1.x+this.settings.xScale.revisions.offset) - this.scales.x(e.v0.x+this.settings.xScale.revisions.offset), y: 0}
                     ]):
                 branchLine(
                     [{x: 0, y: this.scales.y(e.v0.y) - this.scales.y(e.v1.y)},
-                        {x: this.scales.x(e.v1.x+this.settings.xScale.offset) - this.scales.x(e.v0.x+this.settings.xScale.offset), y: 0}
+                        {x: this.scales.x(e.v1.x+this.settings.xScale.revisions.offset) - this.scales.x(e.v0.x+this.settings.xScale.revisions.offset), y: 0}
                     ]);
             return(output)
 
