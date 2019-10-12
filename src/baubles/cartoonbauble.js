@@ -1,11 +1,11 @@
-import {curveStepBefore, line} from "d3-shape";
+import {curveBasisClosed, line} from "d3-shape";
 import {mergeDeep} from "../utilities";
 import {Bauble} from "./bauble";
 
 export class CartoonBauble extends Bauble {
     static DEFAULT_SETTINGS() {
         return {
-            curve: curveStepBefore,
+            curve: curveBasisClosed,
             attrs: {"fill": d => "none", "stroke-width": d => "2", "stroke": d => "black"},
             vertexFilter:null,
             cartoonFilter:()=>true

@@ -141,12 +141,7 @@
     layout.internalNodeLabels="probability";
 
     const figTree = new FigTree(treeSVG, layout,
-        { top: 10, bottom: 60, left: 10, right: 150},
-        { hoverBorder: 2, backgroundBorder: 5,
-            baubles: [
-                new CircleBauble(),
-            ]
-        });
+        { top: 10, bottom: 60, left: 10, right: 150});
     figTree.draw()
         .hilightInternalNodes()
         .onClickInternalNode(layout.rotate())
