@@ -2,6 +2,7 @@
 
 /** @module bauble */
 import {mergeDeep} from "../utilities";
+import {easeLinear} from "d3"
 
 /**
  * The Bauble class
@@ -18,7 +19,11 @@ export class Bauble {
         return {
             vertexFilter: () => true,
             attrs:{},
-            styles:{}
+            styles:{},
+            transition: {
+                transitionDuration: 500,
+                transitionEase: easeLinear,
+            }
         };
     }
 

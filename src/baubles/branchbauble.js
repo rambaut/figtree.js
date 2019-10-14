@@ -35,7 +35,7 @@ export class BranchBauble extends Bauble {
             .join(
                 enter => enter
                     .append("path")
-                    .attr("d", edge => this.branchPath(edge))
+                    .attr("d", (edge,i) => this.branchPath(edge,i))
                     .attr("class", "branch-path")
                     .attrs((edge) => {
                         const attributes = this.settings.attrs;
@@ -53,7 +53,9 @@ export class BranchBauble extends Bauble {
                     }),
                 update => update
                     .call(update => update.transition()
-                        .attr("d", edge => this.branchPath(edge))
+                        .duration(this.settings.transition.transitionDuration)
+                        .ease(this.settings.transition.transitionEase)
+                        .attr("d", (edge,i) => this.branchPath(edge,i))
                         .attrs((edge) => {
                             const attributes = this.settings.attrs;
                             return Object.keys(attributes).reduce((acc, curr) => {

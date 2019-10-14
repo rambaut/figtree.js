@@ -21,7 +21,8 @@ export class RoughCircleBauble extends Bauble {
                 roughFill: {stroke: () => "red", fill: () => "none"},
                 roughStroke: {"stroke-width": () => 0.5, stroke: () => "black", fill: () => "none"}
             },
-            styles: {roughFill: {}, roughStroke: {}}
+            styles: {roughFill: {}, roughStroke: {}},
+
         };
     }
 
@@ -49,7 +50,7 @@ export class RoughCircleBauble extends Bauble {
                 enter => enter
                     .append("path")
                     .attr("d", (d, i) => newPaths[i])
-                    .attr("class", d => `${d} node-shape rough`)
+                    .attr("class", (d,i) => `${pathNames[i]} node-shape rough`)
                     .attrs((vertex, i) => {
                         const attributes = this.settings.attrs[pathNames[i]];
                         return Object.keys(attributes).reduce((acc, curr) => {

@@ -34,13 +34,13 @@ export class CircleBauble extends Bauble {
      * @return {*|null|undefined}
      */
     updateShapes(selection, border = 0) {
-
         return selection
             .selectAll("circle")
             .data(d => [d])
             .join(
                 enter => enter
                     .append("circle")
+                    .attr("class","node-shape")
                     .attr("cx", 0)
                     .attr("cy", 0)
                     .attr("r", this.settings.radius + border)
@@ -60,9 +60,7 @@ export class CircleBauble extends Bauble {
                     }),
                 update => update
                     .call(update => update.transition()
-                        .attr("cx", 0)
-                        .attr("cy", 0)
-                        .attr("r", this.settings.radius + border)
+                        .attr("r", (v)=>{console.log(this.settings.radius + border);return this.settings.radius + border})
                         .attrs((vertex) => {
                             const attributes = this.settings.attrs;
                             return Object.keys(attributes).reduce((acc, curr) => {
@@ -78,7 +76,6 @@ export class CircleBauble extends Bauble {
                             }, {})
                         })
                     )
-            )
-
+    );
     };
 }
