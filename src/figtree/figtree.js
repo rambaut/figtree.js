@@ -282,8 +282,8 @@ export class FigTree {
             selected.on("click", function (edge) {
                 const x1 = self.scales.x(edge.v1.x+self.settings.xScale.revisions.offset);
                 const x2 = self.scales.x(edge.v0.x+self.settings.xScale.revisions.offset);
-                const mx = mouse(this)[0];
-                const proportion = Math.max(0.0, Math.min(1.0, (mx - x2) / (x1 - x2)));
+                const mx = mouse(document.getElementById(self.svgId))[0];
+                const proportion = Math.abs( (mx - x2) / (x1 - x2));
                 action(edge, proportion);
                 if(update){
                     self.update();
