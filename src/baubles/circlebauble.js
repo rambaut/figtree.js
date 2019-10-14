@@ -60,7 +60,7 @@ export class CircleBauble extends Bauble {
                     }),
                 update => update
                     .call(update => update.transition()
-                        .attr("r", (v)=>{console.log(this.settings.radius + border);return this.settings.radius + border})
+                        .attr("r", (v)=>this.settings.radius + border)
                         .attrs((vertex) => {
                             const attributes = this.settings.attrs;
                             return Object.keys(attributes).reduce((acc, curr) => {

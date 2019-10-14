@@ -187,11 +187,28 @@ export class FigTree {
      * set mouseover highlighting of branches
      */
     hilightBranches() {
+        const self=this;
         const action = {
-            enter:(d,i,n)=>{select(n[i]).classed("hovered", true);},
-            exit:(d,i,n)=>{select(n[i]).classed("hovered", false);}
+            enter:(d,i,n)=>{
+                const branch = select(n[i]);
+                self.settings.edges.baubles.forEach((bauble) => {
+                    if (bauble.edgeFilter(branch)) {
+                        bauble.updateShapes(branch);
+                    }
+                });
+                select(n[i]).classed("hovered", true);
+                },
+            exit:(d,i,n)=>{
+                const branch = select(n[i]);
+                self.settings.edges.baubles.forEach((bauble) => {
+                    if (bauble.edgeFilter(branch)) {
+                        bauble.updateShapes(branch);
+                    }
+                });
+                select(n[i]).classed("hovered", false);
+                }
         };
-        this.onHoverBranch({action:action,selection:".branch .branch-path"})
+        this.onHoverBranch({action:action,update:false});
         return this;
 
     }
@@ -222,9 +239,9 @@ export class FigTree {
             enter: (d, i, n) => {
                 const node = select(n[i]);
                 self.settings.vertices.baubles.forEach((bauble) => {
-                    // if (bauble.vertexFilter(node)) {
+                    if (bauble.vertexFilter(node)) {
                     bauble.updateShapes(node, self.settings.vertices.hoverBorder);
-                    // }
+                    }
                 });
                 node.classed("hovered", true);
             },
@@ -232,14 +249,14 @@ export class FigTree {
                 const node = select(n[i]);
 
                 self.settings.vertices.baubles.forEach((bauble) => {
-                    // if (bauble.vertexFilter(node)) {
+                    if (bauble.vertexFilter(node)) {
                     bauble.updateShapes(node, 0);
-                    // }
+                    }
                 });
                 node.classed("hovered", false);
             }
         };
-        this.onHoverNode(action,selection);
+        this.onHoverNode({action,selection,update:false});
         return this;
 
     }
@@ -253,20 +270,24 @@ export class FigTree {
      * @param action
      * @param selection
      */
-    onClickBranch(action, selection = null) {
+    onClickBranch({action, selection = null,update}) {
+        selection = selection ? selection : ".branch";
+        update = update?update:false;
         this.callbacks.branches.push(()=>{
             // We need to use the "function" keyword here (rather than an arrow) so that "this"
             // points to the actual SVG element (so we can use d3.mouse(this)). We therefore need
             // to store a reference to the object in "self".
             const self = this;
-            const selected = this.svgSelection.selectAll(`${selection ? selection : ".branch"}`);
+            const selected = this.svgSelection.selectAll(`${selection}`);
             selected.on("click", function (edge) {
-                const x1 = self.scales.x(edge.v1.x+this.settings.xScale.revisions.offset);
-                const x2 = self.scales.x(edge.v0.x+this.settings.xScale.revisions.offset);
+                const x1 = self.scales.x(edge.v1.x+self.settings.xScale.revisions.offset);
+                const x2 = self.scales.x(edge.v0.x+self.settings.xScale.revisions.offset);
                 const mx = mouse(this)[0];
                 const proportion = Math.max(0.0, Math.min(1.0, (mx - x2) / (x1 - x2)));
                 action(edge, proportion);
-                self.update();
+                if(update){
+                    self.update();
+                }
             })
         });
         this.update();
@@ -282,8 +303,8 @@ export class FigTree {
      *
      * @param action
      */
-    onClickInternalNode(action) {
-        this.onClickNode(action, ".internal-node");
+    onClickInternalNode(action,update=false) {
+        this.onClickNode({action:action, selection:".internal-node",update:update});
         return this;
     }
 
@@ -293,8 +314,8 @@ export class FigTree {
      *
      * @param action
      */
-    onClickExternalNode(action) {
-        this.onClickNode(action, ".external-node");
+    onClickExternalNode(action,update=false) {
+        this.onClickNode({action:action,selection:".external-node",update:update});
         return this;
     }
 
@@ -307,9 +328,9 @@ export class FigTree {
      * @param action
      * @param selection
      */
-    onClickNode(action, selection = null) {
+    onClickNode({action,selection,update}) {
         selection = selection ? selection : ".node";
-        selection = `${selection} .node-shape`;
+        // selection = `${selection} .node-shape`;
         this.callbacks.nodes.push(()=>{
             this.onClick({action:action,selection:selection,update:true})
         });
@@ -323,11 +344,12 @@ export class FigTree {
      * @param {*} selection defualts to ".node" will select this selection's child ".node-shape"
      */
 
-    onHoverNode(action,selection=null){
+    onHoverNode({action,selection,update}){
         selection = selection ? selection : ".node";
+        update = update?update:false
         // selection = `${selection} .node-shape`;
         this.callbacks.nodes.push(()=>{
-            this.onHover({action:action,selection:selection,update:false})
+            this.onHover({action:action,selection:selection,update:update})
         });
         this.update();
         return this;
@@ -339,10 +361,11 @@ export class FigTree {
      * @param {*} action and object with an enter and exit function which fire when the mouse enters and exits object
      * @param {*} selection defualts to .branch
      */
-    onHoverBranch(action,selection=null){
+    onHoverBranch({action,selection,update}){
+        selection = selection ? selection : ".branch";
+        update = update? update:false;
         this.callbacks.branches.push(()=>{
-            selection = selection ? selection : ".branch";
-            this.onHover({action:action,selection:selection,update:true});
+            this.onHover({action:action,selection:selection,update:update});
         });
         // this update binds the callbacks to the html nodes
         this.update();
@@ -359,15 +382,15 @@ export class FigTree {
         const selected = this.svgSelection.selectAll(`${selection}`);
         selected.on("mouseover", (d,i,n) => {
             action.enter(d,i,n);
-            // if(update){
-            //     self.update();
-            // }
+            if(update){
+                self.update();
+            }
         });
         selected.on("mouseout", (d,i,n) => {
             action.exit(d,i,n);
-            // if(update){
-            //     self.update()
-            // }
+            if(update){
+                self.update()
+            }
         });
         return this;
     }
