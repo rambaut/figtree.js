@@ -191,20 +191,20 @@ export class FigTree {
         const action = {
             enter:(d,i,n)=>{
                 const branch = select(n[i]);
-                self.settings.edges.baubles.forEach((bauble) => {
-                    if (bauble.edgeFilter(branch)) {
-                        bauble.updateShapes(branch);
-                    }
-                });
+                // self.settings.edges.baubles.forEach((bauble) => {
+                //     if (bauble.edgeFilter(branch)) {
+                //         bauble.updateShapes(branch);
+                //     }
+                // });
                 select(n[i]).classed("hovered", true);
                 },
             exit:(d,i,n)=>{
                 const branch = select(n[i]);
-                self.settings.edges.baubles.forEach((bauble) => {
-                    if (bauble.edgeFilter(branch)) {
-                        bauble.updateShapes(branch);
-                    }
-                });
+                // self.settings.edges.baubles.forEach((bauble) => {
+                //     if (bauble.edgeFilter(branch)) {
+                //         bauble.updateShapes(branch);
+                //     }
+                // });
                 select(n[i]).classed("hovered", false);
                 }
         };
@@ -270,7 +270,7 @@ export class FigTree {
      * @param action
      * @param selection
      */
-    onClickBranch({action, selection = null,update}) {
+    onClickBranch({action, selection,update}) {
         selection = selection ? selection : ".branch";
         update = update?update:false;
         this.callbacks.branches.push(()=>{
@@ -520,22 +520,24 @@ export class FigTree {
                         .attr("dy", d => (d.labelBelow ? -8 : +8))
                         .attr("alignment-baseline", d => (d.labelBelow ? "bottom": "hanging" ))
                         .text((d) => d.leftLabel),
-                update=>update
-                    .transition()
+                update => update
+                    .call(update => update.transition()
                     .duration(this.settings.transition.transitionDuration)
                     .ease(this.settings.transition.transitionEase)
                     .attr("class", (v) => ["node", ...v.classes].join(" "))
                     .attr("transform", (v) => {
                         return `translate(${this.scales.x(v.x+this.settings.xScale.revisions.offset)}, ${this.scales.y(v.y)})`;
                     })
-                    .each(function(v) {
-                        for(const bauble of  self.settings.vertices.baubles){
+                    .on("start", function(v) {
+                        for (const bauble of self.settings.vertices.baubles) {
                             if (bauble.vertexFilter(v)) {
                                 bauble
                                     .updateShapes(select(this))
                             }
                         }
                     })
+                    // .each(
+                    // })
                     .select("text .node-label .name")
                         .transition()
                         .duration(this.settings.transition.transitionDuration)
@@ -556,6 +558,7 @@ export class FigTree {
                         .attr("dx", "-6")
                         .attr("dy", d => (d.labelBelow ? -8 : +8))
                         .text((d) => d.leftLabel)
+                    )
 
             );
         // add callbacks
@@ -589,8 +592,8 @@ export class FigTree {
                                 }
                             }
                         }),
-                update=>update
-                        .transition()
+                update => update
+                    .call(update => update.transition()
                         .duration(this.settings.transition.transitionDuration)
                         .ease(this.settings.transition.transitionEase)
                         .attr("class", (v) => ["node-background", ...v.classes].join(" "))
@@ -605,6 +608,7 @@ export class FigTree {
                                 }
                             }
                         })
+                    )
             );
         for(const callback of this.callbacks.nodes){
             callback();
@@ -649,22 +653,23 @@ export class FigTree {
                         .attr("alignment-baseline", (e) => (e.labelBelow ? "hanging" : "bottom"))
                         .attr("text-anchor", "middle")
                         .text((e) => e.label),
-                update=>update
-                        .transition()
+                update => update
+                    .call(update => update.transition()
                         .duration(this.settings.transition.transitionDuration)
                         .ease(this.settings.transition.transitionEase)
                         .attr("class", (e) => ["branch", ...e.classes].join(" "))
                         .attr("transform", (e) => {
                             return `translate(${this.scales.x(e.v0.x+this.settings.xScale.revisions.offset)}, ${this.scales.y(e.v1.y)})`;
                         })
-                        .each(function(e) {
-                            for(const bauble of  self.settings.edges.baubles){
-                                if (bauble.edgeFilter(e)) {
-                                    bauble
-                                        .updateShapes(select(this))
-                                }
+                    .on("start",function(e) {
+                        for(const bauble of  self.settings.edges.baubles){
+                            if (bauble.edgeFilter(e)) {
+                                bauble
+                                    .updateShapes(select(this))
                             }
-                        })
+                        }
+                    })
+                        // .each(
                     .select("text .branch-label .length")
                         .attr("class", "branch-label length")
                         .attr("dx", (e) => ((this.scales.x(e.v1.x+this.settings.xScale.revisions.offset) - this.scales.x(e.v0.x+this.settings.xScale.revisions.offset)) / 2))
@@ -672,6 +677,7 @@ export class FigTree {
                         .attr("alignment-baseline", (e) => (e.labelBelow ? "hanging" : "bottom"))
                         .attr("text-anchor", "middle")
                         .text((e) => e.label)
+                    )
             );
 
         // add callbacks

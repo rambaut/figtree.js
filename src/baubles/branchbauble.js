@@ -52,7 +52,7 @@ export class BranchBauble extends Bauble {
                         }, {})
                     }),
                 update => update
-                    .call(update => update.transition()
+                    .call(update => update.transition("pathUpdating")
                         .duration(this.settings.transition.transitionDuration)
                         .ease(this.settings.transition.transitionEase)
                         .attr("d", (edge,i) => this.branchPath(edge,i))
