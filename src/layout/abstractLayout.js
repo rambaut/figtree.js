@@ -155,6 +155,7 @@ export class  AbstractLayout extends layoutInterface {
         this.layoutKnown=false;
         return (edge, position) => {
             this.tree.reroot(edge.v1.node, position);
+            console.log(this.tree)
             this.update();
         };
     }
