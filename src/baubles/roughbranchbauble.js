@@ -46,6 +46,7 @@ export class RoughBranchBauble extends Bauble {
                 enter => enter
                     .append("path")
                     .attr("d", edge => this.branchPath(edge))
+                    .attr("class", "branch-path")
                     .attrs((edge) => {
                         const attributes = this.settings.attrs;
                         return Object.keys(attributes).reduce((acc, curr) => {

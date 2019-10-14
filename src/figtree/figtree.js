@@ -26,7 +26,8 @@ export const p= {
     updateNodeBackgroundStyles:Symbol("updateNodeBackgroundStyles"),
     updateCartoonStyles:Symbol("updateCartoonStyles"),
     branchPathGenerator:Symbol("branchPathGenerator"),
-    pointToPoint:Symbol("pointToPoint")
+    pointToPoint:Symbol("pointToPoint"),
+    setUpScales:Symbol("setUpScales")
 }
 /**
  * The FigTree class
@@ -112,18 +113,6 @@ export class FigTree {
     }
     draw(){
         
-        // get the size of the svg we are drawing on
-        let width,height;
-        if(Object.keys(this.settings).indexOf("width")>-1){
-            width =this.settings.width;
-        }else{
-            width = this.svg.getBoundingClientRect().width;
-        }
-        if(Object.keys(this.settings).indexOf("height")>-1){
-            height =this.settings.height;
-        }else{
-            height = this.svg.getBoundingClientRect().height;
-        }
 
         //remove the tree if it is there already
         select(this.svg).select(`#${this.svgId}`).remove();
@@ -147,15 +136,7 @@ export class FigTree {
 
 
         // create the scales
-        const xScale = this.settings.xScale.scale()
-            .domain([this.layout.horizontalDomain[0]+this.settings.xScale.revisions.offset+this.settings.xScale.revisions.hedge,this.layout.horizontalDomain[1]])
-            .range([this.margins.left, width - this.margins.right]);
-
-        const yScale = this.settings.yScale.scale()
-            .domain([this.layout.verticalDomain[0]+this.settings.yScale.revisions.offset,this.layout.verticalDomain[1]])
-            .range([this.margins.top, height -this.margins.bottom]);
-
-        this.scales = {x:xScale, y:yScale, width, height};
+        this[p.setUpScales]();
 
         if(this.settings.xScale.axes.length>0){
            this[p.addXAxis]();
@@ -179,27 +160,7 @@ export class FigTree {
         if(!this.drawn){
             return
         }
-        let width,height;
-        if(Object.keys(this.settings).indexOf("width")>-1){
-            width =this.settings.width;
-        }else{
-            width = this.svg.getBoundingClientRect().width;
-        }
-        if(Object.keys(this.settings).indexOf("height")>-1){
-            height =this. settings.height;
-        }else{
-            height = this.svg.getBoundingClientRect().height;
-        }
-
-        // update the scales' domains
-        this.scales.x
-            .domain([this.layout.horizontalDomain[0]+this.settings.xScale.revisions.offset+this.settings.xScale.revisions.hedge,this.layout.horizontalDomain[1]])
-            .range([this.margins.left, width - this.margins.right]);
-        this.scales.y
-            .domain([this.layout.verticalDomain[0]+this.settings.yScale.revisions.offset,this.layout.verticalDomain[1]])
-            .range([this.margins.top, height -this. margins.bottom]);
-        this.scales.width=width;
-        this.scales.height=height;
+        this[p.setUpScales]();
 
         this[p.updateAnnotations]();
         this[p.updateCartoons]();
@@ -226,21 +187,11 @@ export class FigTree {
      * set mouseover highlighting of branches
      */
     hilightBranches() {
-        this.callbacks.branches.push(()=>{
-            // need to use 'function' here so that 'this' refers to the SVG
-            // element being hovered over.
-            const selected = this.svgSelection.selectAll(".branch").select(".branch-path");
-            selected.on("mouseover", function (d, i) {
-                select(this).classed("hovered", true);
-
-            });
-            selected.on("mouseout", function (d, i) {
-                select(this).classed("hovered", false);
-
-            });
-        })
-        this.update();
-
+        const action = {
+            enter:(d,i,n)=>{select(n[i]).classed("hovered", true);},
+            exit:(d,i,n)=>{select(n[i]).classed("hovered", false);}
+        };
+        this.onHoverBranch({action:action,selection:".branch .branch-path"})
         return this;
 
     }
@@ -253,13 +204,11 @@ export class FigTree {
         return this;
 
     }
-
     /**
      * Set mouseover highlighting of internal nodes
      */
     hilightExternalNodes() {
         this.hilightNodes(".external-node");
-
         return this;
 
     }
@@ -268,35 +217,29 @@ export class FigTree {
      * Set mouseover highlighting of nodes
      */
     hilightNodes(selection) {
-        this.callbacks.nodes.push(()=>{
-            // need to use 'function' here so that 'this' refers to the SVG
-            // element being hovered over.
-            const self = this;
-            const selected = this.svgSelection.selectAll(selection);
-            selected.on("mouseover", function (d, i) {
-                const node = select(this).select(".node-shape");
+        const self = this;
+        const action = {
+            enter: (d, i, n) => {
+                const node = select(n[i]);
                 self.settings.vertices.baubles.forEach((bauble) => {
                     // if (bauble.vertexFilter(node)) {
-                    bauble.updateShapes(node, self.settings.hoverBorder);
+                    bauble.updateShapes(node, self.settings.vertices.hoverBorder);
                     // }
                 });
-
                 node.classed("hovered", true);
-            });
-            selected.on("mouseout", function (d, i) {
-                const node = select(this).select(".node-shape");
+            },
+            exit: (d,i,n) =>{
+                const node = select(n[i]);
 
                 self.settings.vertices.baubles.forEach((bauble) => {
                     // if (bauble.vertexFilter(node)) {
                     bauble.updateShapes(node, 0);
                     // }
                 });
-
                 node.classed("hovered", false);
-            });
-        })
-        this.update();
-
+            }
+        };
+        this.onHoverNode(action,selection);
         return this;
 
     }
@@ -327,7 +270,6 @@ export class FigTree {
             })
         });
         this.update();
-
         return this;
 
     }
@@ -342,9 +284,7 @@ export class FigTree {
      */
     onClickInternalNode(action) {
         this.onClickNode(action, ".internal-node");
-
         return this;
-
     }
 
     /**
@@ -355,9 +295,7 @@ export class FigTree {
      */
     onClickExternalNode(action) {
         this.onClickNode(action, ".external-node");
-
         return this;
-
     }
 
     /**
@@ -370,16 +308,12 @@ export class FigTree {
      * @param selection
      */
     onClickNode(action, selection = null) {
-        const self = this;
+        selection = selection ? selection : ".node";
+        selection = `${selection} .node-shape`;
         this.callbacks.nodes.push(()=>{
-            const selected = this.svgSelection.selectAll(`${selection ? selection : ".node"}`).select(".node-shape");
-            selected.on("click", (vertex) => {
-                action(vertex);
-                self.update();
-            })
+            this.onClick({action:action,selection:selection,update:true})
         });
-    this.update();
-
+        this.update();
         return this;
 
     }
@@ -390,19 +324,12 @@ export class FigTree {
      */
 
     onHoverNode(action,selection=null){
+        selection = selection ? selection : ".node";
+        // selection = `${selection} .node-shape`;
         this.callbacks.nodes.push(()=>{
-            const selected = this.svgSelection.selectAll(`${selection ? selection : ".node"}`).select(".node-shape");
-            selected.on("mouseover", (vertex) => {
-                action.enter(vertex);
-                this.update();
-
-            });
-            selected.on("mouseout", (vertex) => {
-                action.exit(vertex);
-                this.update();
-            });
+            this.onHover({action:action,selection:selection,update:false})
         });
-
+        this.update();
         return this;
 
     }
@@ -414,20 +341,47 @@ export class FigTree {
      */
     onHoverBranch(action,selection=null){
         this.callbacks.branches.push(()=>{
-            const self = this;
-            const selected = this.svgSelection.selectAll(`${selection ? selection : ".branch"}`);
-            selected.on("mouseover", function (d, i,n) {
-                action.enter(d,i,n);
-                self.update();
-            });
-            selected.on("mouseout", function (d, i,n) {
-                action.exit(d,i,n);
-                self.update();
-            });
-        })
+            selection = selection ? selection : ".branch";
+            this.onHover({action:action,selection:selection,update:true});
+        });
+        // this update binds the callbacks to the html nodes
         this.update();
         return this;
+    }
 
+    /**
+     * Add a hover callback
+     * @param {*} action  - object which has 2 functions enter and exit each takes 3 arguments d,i,n d is data n[i] is `this`
+     * @param {*} selection  - what to select defaults to
+     */
+    onHover({action,selection,update}){
+        // const self=this;
+        const selected = this.svgSelection.selectAll(`${selection}`);
+        selected.on("mouseover", (d,i,n) => {
+            action.enter(d,i,n);
+            // if(update){
+            //     self.update();
+            // }
+        });
+        selected.on("mouseout", (d,i,n) => {
+            action.exit(d,i,n);
+            // if(update){
+            //     self.update()
+            // }
+        });
+        return this;
+    }
+
+    onClick({action,selection,update}){
+        const self=this;
+        const selected = this.svgSelection.selectAll(`${selection}`);
+        selected.on("click", (d,i,n) => {
+            action(d,i,n);
+            if(update){
+                self.update();
+            }
+        });
+        return this
     }
     /**
      * Registers some text to appear in a popup box when the mouse hovers over the selection.
@@ -477,6 +431,31 @@ export class FigTree {
  /*
  * Protected methods, called by the class using.
  */
+
+    [p.setUpScales](){
+        let width,height;
+        if(Object.keys(this.settings).indexOf("width")>-1){
+            width =this.settings.width;
+        }else{
+            width = this.svg.getBoundingClientRect().width;
+        }
+        if(Object.keys(this.settings).indexOf("height")>-1){
+            height =this.settings.height;
+        }else{
+            height = this.svg.getBoundingClientRect().height;
+        }
+
+        // create the scales
+        const xScale = this.settings.xScale.scale()
+            .domain([this.layout.horizontalDomain[0]+this.settings.xScale.revisions.offset+this.settings.xScale.revisions.hedge,this.layout.horizontalDomain[1]])
+            .range([this.margins.left, width - this.margins.right]);
+
+        const yScale = this.settings.yScale.scale()
+            .domain([this.layout.verticalDomain[0]+this.settings.yScale.revisions.offset,this.layout.verticalDomain[1]])
+            .range([this.margins.top, height -this.margins.bottom]);
+
+        this.scales = {x:xScale, y:yScale, width, height};
+    }
     /**
      * Adds or updates nodes
      */
@@ -826,7 +805,7 @@ export class FigTree {
 
         // DATA JOIN
         // Join new data with old elements, if any.
-        const nodes = nodesBackgroundLayer.selectAll(".node-background")
+        const nodes = nodesBackgroundLayer.selectAll(".node-background");
 
         const vertexBackgroundsStyles = this.settings.vertices.backgroundCssStyles;
         for(const key of Object.keys(vertexBackgroundsStyles)){

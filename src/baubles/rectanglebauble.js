@@ -44,6 +44,7 @@ export class RectangularBauble extends Bauble {
                     .attr("height", h)
                     .attr("rx", this.settings.radius)
                     .attr("ry", this.settings.radius)
+                    .attr("class","node-shape")
                     .attrs((vertex) => {
                         const attributes = this.settings.attrs;
                         return Object.keys(attributes).reduce((acc, curr) => {
