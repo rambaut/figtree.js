@@ -20,7 +20,7 @@
             stroke-linejoin: round;
         }
 
-        .branch .branch-path.hovered {
+        .branch.hovered .branch-path {
             stroke-width: 4px;
         }
 
@@ -48,7 +48,7 @@
             /*stroke: rgb(255, 255, 255);*/
             /*stroke-width: 1;*/
         }
-        .internal-node .node-shape.hovered {
+        .internal-node.hovered .node-shape {
             stroke: rgb(0,0,0);
         }
 
@@ -146,7 +146,8 @@
     figTree.draw()
         .hilightInternalNodes()
         .onClickInternalNode(layout.rotate())
-        .onClickBranch(layout.reroot());
+        .hilightBranches()
+        .onClickBranch({action:layout.reroot()});
 
 
     // figTree.addToolTip('#root', "The root node - represents the most recent<br>common ancestor of the whole tree");

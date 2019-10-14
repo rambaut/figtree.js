@@ -21,7 +21,7 @@ export class Bauble {
             attrs:{},
             styles:{},
             transition: {
-                transitionDuration: 500,
+                transitionDuration: 1000,
                 transitionEase: easeLinear,
             }
         };
