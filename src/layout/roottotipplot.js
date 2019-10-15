@@ -34,7 +34,7 @@ export class RootToTipPlot extends AbstractLayout{
         const treeNodes = this._getTreeNodes();
 
         this[makeVerticesFromNodes](treeNodes);
-
+        // console.log(this._vertices)
         // update the node locations (vertices)
         treeNodes.forEach((n) => {
             const v = this._nodeMap.get(n);
@@ -44,22 +44,26 @@ export class RootToTipPlot extends AbstractLayout{
 
         });
 
-        const regression  = this.leastSquares(this._vertices.filter(v=>v.visibility===VertexStyle.INCLUDED));
+        this.regression  = this.leastSquares(this._vertices.filter(v=>v.visibility===VertexStyle.INCLUDED));
 
         let x1 = min(this._vertices, d => d.x);
         let x2 = max(this._vertices, d => d.x);
         let y1 = 0.0;
         let y2 = max(this._vertices, d => d.y);
-        if (this._vertices.filter(v=>v.visibility===VertexStyle.INCLUDED).length > 1 && regression.slope > 0.0) {
-            x1 = regression.xIntercept;
-            y2 = max([regression.y(x2), y2]);
+        if (this._vertices.filter(v=>v.visibility===VertexStyle.INCLUDED).length > 1 && this.regression.slope > 0.0) {
+            x1 = this.regression.xIntercept;
+            y2 = max([this.regression.y(x2), y2]);
         }
+
         const startPoint = {key:"startPoint",visibility:VertexStyle.HIDDEN,x:x1,y:y1};
-        const endPoint = {key:"EndPoint",visibility:VertexStyle.HIDDEN,x:x2,y:y2};
+        const endPoint = {key:"endPoint",visibility:VertexStyle.HIDDEN,x:x2,y:y2};
         this._vertices.push(startPoint);
+        this._nodeMap.set("startPoint",startPoint)
         this._vertices.push(endPoint);
+        this._nodeMap.set("endPoint",endPoint)
         this._edges=[{v0:startPoint,v1:endPoint,key:"line",classes:[]}];
         this.layoutKnown = true;
+        console.log(this)
 
     }
 
