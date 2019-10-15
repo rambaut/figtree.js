@@ -1,5 +1,8 @@
 "use strict";
 import {axisBottom,axisTop,axisLeft,axisRight} from "d3";
+import {mergeDeep} from "../utilities";
+import uuid from "uuid";
+
 /** @module axes */
 
 /**
@@ -18,7 +21,7 @@ export class Axis {
                     yPadding:0,
                     rotation:0
             },
-            id: "axis",
+            id: `a${uuid.v4()}`,
             location:"bottom",
         };
     }
@@ -27,7 +30,7 @@ export class Axis {
      * The constructor.
      */
     constructor(settings = {}) {
-        this.settings = {...Axis.DEFAULT_SETTINGS(), ...settings};
+        this.settings = mergeDeep(Axis.DEFAULT_SETTINGS(),settings);
         this.d3Axis = getD3Axis(this.settings.location)
     }
 
@@ -83,7 +86,6 @@ export class Axis {
         }else{
             pos.y=length/2
         }
-
         selection
             .select(`g#${this.settings.id}-axis-label`)
                 .transition()
@@ -92,7 +94,7 @@ export class Axis {
             .select("text")
                 .transition()
                 // .duration()
-                .attr("transform", `translate(${pos.x+this.settings.title.xPadding}, ${pos.y+this.settings.title.yPadding})  rotate(${this.settings.title.rotation})`)
+                .attr("transform", `translate(${pos.x+this.settings.title.xPadding}, ${pos.y+this.settings.title.yPadding}) rotate(${this.settings.title.rotation})`)
                 .attr("alignment-baseline", "hanging")
                 .style("text-anchor", "middle")
                 .text(this.settings.title.text);
