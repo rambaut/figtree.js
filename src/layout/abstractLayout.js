@@ -130,7 +130,7 @@ export class  AbstractLayout extends layoutInterface {
     rotate() {
         return (vertex) => {
             this.tree.rotate(vertex.node);
-            this.update();
+            // this.update();
         };
     }
 
@@ -138,7 +138,7 @@ export class  AbstractLayout extends layoutInterface {
     orderIncreasing() {
         return (vertex) => {
             this.tree.rotate(vertex.node);
-            this.update();
+            // this.update();
         };
     }
 
@@ -146,7 +146,7 @@ export class  AbstractLayout extends layoutInterface {
     orderDecreasing() {
         return (vertex) => {
             this.tree.rotate(vertex.node);
-            this.update();
+            // this.update();
         };
     }
 
@@ -155,8 +155,7 @@ export class  AbstractLayout extends layoutInterface {
         this.layoutKnown=false;
         return (edge, position) => {
             this.tree.reroot(edge.v1.node, position);
-            console.log(this.tree)
-            this.update();
+            // this.update();
         };
     }
 

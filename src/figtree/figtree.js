@@ -1,5 +1,5 @@
 "use strict";
-import {select,easeLinear,scaleLinear,axisBottom,mouse,event,format,curveStepBefore,line} from "d3";
+import {select,easeLinear,scaleLinear,axisBottom,mouse,event,format,curveStepBefore,line,sum} from "d3";
 import uuid from "uuid";
 import {mergeDeep} from "../utilities";
 import 'd3-selection-multi';
@@ -41,14 +41,15 @@ export class FigTree {
     static DEFAULT_SETTINGS() {
         return {
             xScale: {
-                axes:[new Axis({ title: {
-                        text:"Height",
-                        rotation:0,
-                        xPadding:0,
-                        yPadding:25,
-                    },
-                    location:"bottom",
-                    tickArguments:[5,".2f"]})],
+                axes:[],
+                // axes:[new Axis({ title: {
+                //         text:"Height",
+                //         rotation:0,
+                //         xPadding:0,
+                //         yPadding:25,
+                //     },
+                //     location:"bottom",
+                //     tickArguments:[5,".2f"]})],
                 gap:10,
                 scale: scaleLinear,
                 revisions: {
@@ -160,6 +161,7 @@ export class FigTree {
         if(!this.drawn){
             return
         }
+
         this[p.setUpScales]();
 
         this[p.updateAnnotations]();
@@ -270,9 +272,10 @@ export class FigTree {
      * @param action
      * @param selection
      */
-    onClickBranch({action, selection,update}) {
+    onClickBranch({action, selection,update,proportionMethod}) {
         selection = selection ? selection : ".branch";
         update = update?update:false;
+        proportionMethod = proportionMethod? proportionMethod: "manhattan";
         this.callbacks.branches.push(()=>{
             // We need to use the "function" keyword here (rather than an arrow) so that "this"
             // points to the actual SVG element (so we can use d3.mouse(this)). We therefore need
@@ -280,10 +283,22 @@ export class FigTree {
             const self = this;
             const selected = this.svgSelection.selectAll(`${selection}`);
             selected.on("click", function (edge) {
+                let proportion;
+
                 const x1 = self.scales.x(edge.v1.x+self.settings.xScale.revisions.offset);
                 const x2 = self.scales.x(edge.v0.x+self.settings.xScale.revisions.offset);
                 const mx = mouse(document.getElementById(self.svgId))[0];
-                const proportion = Math.abs( (mx - x2) / (x1 - x2));
+                if(proportionMethod.toLowerCase()==="manhattan"){
+                    proportion = Math.abs( (mx - x2) / (x1 - x2));
+                }else if(proportionMethod.toLocaleString()==="euclidean"){
+                    const y1 = self.scales.y(edge.v1.y+self.settings.yScale.revisions.offset);
+                    const y2 = self.scales.y(edge.v0.y+self.settings.yScale.revisions.offset);
+                    const my =  mouse(document.getElementById(self.svgId))[1];
+                    proportion=  Math.sqrt(Math.pow((my-y2),2)+Math.pow((mx - x2),2)) / Math.sqrt(Math.pow((y1-y2),2)+Math.pow((x1 - x2),2))
+
+                } else{
+                    throw new Error(`proportion method ${proportionMethod} unknown.`)
+                }
                 action(edge, proportion);
                 if(update){
                     self.update();

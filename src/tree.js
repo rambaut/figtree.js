@@ -280,18 +280,18 @@ export class Tree {
             while (parent.parent) {
 
                 // remove the node that will becoming the parent from the children
-                parent.children = parent.children.filter((child) => child !== node0);
+                parent._children = parent.children.filter((child) => child !== node0);
 
                 if (parent.parent === this.rootNode) {
                     const sibling = this.getSibling(parent);
-                    parent.children.push(sibling);
+                    parent._children.push(sibling);
                     sibling._length = rootLength;
                 } else {
                     // swap the parent and parent's parent's length around
-                    [parent.parent.length, oldLength] = [oldLength, parent.parent.length];
+                    [parent.parent._length, oldLength] = [oldLength, parent.parent.length];
 
                     // add the new child
-                    parent.children.push(parent.parent);
+                    parent._children.push(parent.parent);
                 }
 
                 lineage = [parent, ...lineage];
@@ -310,7 +310,7 @@ export class Tree {
             this.internalNodes
                 .forEach((node) => {
                     node.children.forEach((child) => {
-                        child.parent = node;
+                        child._parent = node;
                     })
                 });
 
@@ -326,8 +326,6 @@ export class Tree {
         }
 
         this.heightsKnown = false;
-
-
         this.treeUpdateCallback();
     };
 
@@ -1099,7 +1097,7 @@ function calculateHeights() {
     const maxRTT = max(this.rootToTipLengths());
     this.nodeList.forEach((node) => node._height =  maxRTT - this.rootToTipLength(node));
     this.heightsKnown = true;
-    this.treeUpdateCallback();
+    // this.treeUpdateCallback();
 }
 
 /**
@@ -1109,7 +1107,7 @@ function calculateLengths(){
 
     this.nodeList.forEach((node)=> node._length =node.parent? node.parent.height- node.height:0);
     this.lengthsKnown=true;
-    this.treeUpdateCallback();
+    // this.treeUpdateCallback();
 
 }
 
@@ -1345,6 +1343,7 @@ class Node{
         if(this._parent.children.filter(c=>c===this).length===0){
             this._parent.children.push(this)
         }
+        this._tree.nodesUpdated = true;
     }
     get id(){
         return this._id;
