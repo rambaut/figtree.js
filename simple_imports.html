@@ -52,7 +52,7 @@
             stroke: rgb(0,0,0);
         }
 
-        #root .node-shape {
+        .root-true .node-shape {
             fill: #e31e58;
             /*stroke: rgb(255, 255, 255);*/
             /*stroke-width: 1;*/
@@ -125,48 +125,55 @@
 </div>
 <!-- <script src ="dist/figtree.js"></script> -->
 <script type="module">
-    import {Tree,RectangularLayout,CircleBauble,FigTree,BranchBauble,EqualAngleLayout}  from "./dist/figtree.esm.js";
+    import {Tree,RectangularLayout,CircleBauble,FigTree,BranchBauble,EqualAngleLayout,Axis}  from "./dist/figtree.esm.js";
 
 
     const newickString =
-        '((A:1,B:1)internal1:1,(C:1,D:1)internal2:1)';
+        '((((((virus1:0.1,virus2:0.12)0.95:0.08,(virus3:0.011,virus4:0.0087)1.0:0.15)0.65:0.03,virus5:0.21)1.0:0.2,(virus6:0.45,virus7:0.4)0.51:0.02)1.0:0.1,virus8:0.4)1.0:0.1,(virus9:0.04,virus10:0.03)1.0:0.6);';
+
 
     const tree = Tree.parseNewick(newickString, "probability");
+    tree.annotateNode(tree.root,{root:true})
     const treeSVG = document.getElementById('phylogram_1a');
     const rootedSVG =document.getElementById('phylogram_1b');
 
     const layout = new RectangularLayout(tree);
-    const equalAngleLayout = new EqualAngleLayout(tree,{fixOrder:true});
+    const equalAngleLayout = new EqualAngleLayout(tree,{startingNode:tree.getExternalNode("virus1")});
 
 
     const transitions={
         transitionDuration: 500};
-    const figTree = new FigTree(treeSVG, equalAngleLayout,
-        { top: 10, bottom: 60, left: 10, right: 150},
-        {
-            transition: transitions,
-            edges: {baubles: [new BranchBauble({curve:d3.curveNatural,transitions: transitions})]},
 
-        });
-    figTree.draw()
-        .hilightInternalNodes()
-        .onClickInternalNode(equalAngleLayout.rotate())
-        .hilightBranches()
-        .onClickBranch({action:equalAngleLayout.reroot()});
 
 
     const rootedFigTree = new FigTree(rootedSVG, layout,
         { top: 10, bottom: 60, left: 10, right: 150},
         {
             transition: transitions,
-            edges: {baubles: [new BranchBauble({curve:d3.curveNatural,transitions: transitions})]},
+            edges: {baubles: [new BranchBauble({curve:d3.curveStepBefore,transitions: transitions})]},
+            xScale:{axes:[new Axis()]},
 
         });
     rootedFigTree.draw()
         .hilightInternalNodes()
-        .onClickInternalNode(layout.rotate())
         .hilightBranches()
-        .onClickBranch({action:layout.reroot()});
+
+    const figTree = new FigTree(treeSVG, equalAngleLayout,
+        { top: 10, bottom: 60, left: 10, right: 150},
+        {
+            transition: transitions,
+            edges: {baubles: [new BranchBauble({curve:d3.curveNatural,transitions: transitions})]},
+
+
+        });
+    figTree.draw()
+        .hilightInternalNodes()
+        .onClickInternalNode(equalAngleLayout.rotate())
+        .hilightBranches()
+        .onClickBranch({action:equalAngleLayout.reroot(),proportionMethod:"euclidean"});
+
+
+
 
     // figTree.addToolTip('#root', "The root node - represents the most recent<br>common ancestor of the whole tree");
     // figTree.addToolTip('.internal-node .node-shape', "This is an internal node - it is the most recent<br>common ancestor of the viruses to the right" );

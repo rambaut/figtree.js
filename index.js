@@ -12,6 +12,7 @@ import {RoughCircleBauble} from "./src/baubles/roughcirclebauble";
 import {BranchBauble} from "./src/baubles/branchbauble";
 import {RoughBranchBauble} from "./src/baubles/roughbranchbauble";
 import {EqualAngleLayout} from "./src/layout/equalanglelayout";
+import {Axis} from "./src/baubles/axes";
 
 export{Tree,Type,RootToTipPlot,RectangularLayout,TransmissionLayout, ExplodedLayout, FigTree,RoughFigTree,
-    Bauble,CircleBauble,RoughCircleBauble,RectangularBauble,BranchBauble,RoughBranchBauble,EqualAngleLayout};
+    Bauble,CircleBauble,RoughCircleBauble,RectangularBauble,BranchBauble,RoughBranchBauble,Axis,EqualAngleLayout};
