@@ -1,15 +1,12 @@
 "use strict";
-import {select,easeLinear,scaleLinear,axisBottom,mouse,event,format,curveStepBefore,line,sum} from "d3";
+import {select,easeLinear,scaleLinear,mouse,event,line} from "d3";
 import uuid from "uuid";
 import {mergeDeep} from "../utilities";
 import 'd3-selection-multi';
 import {CircleBauble} from "../baubles/circlebauble";
-import {RoughCircleBauble} from "../baubles/roughcirclebauble";
 import {BranchBauble} from "../baubles/branchbauble";
 import {CartoonBauble} from "../baubles/cartoonbauble";
-import {Axis} from "../baubles/axes";
 /** @module figtree */
-// const d3 = require("d3");
 
 export const p= {
     addXAxis: Symbol("addXAxis"),
@@ -28,7 +25,7 @@ export const p= {
     branchPathGenerator:Symbol("branchPathGenerator"),
     pointToPoint:Symbol("pointToPoint"),
     setUpScales:Symbol("setUpScales")
-}
+};
 /**
  * The FigTree class
  *
@@ -393,7 +390,7 @@ export class FigTree {
      * @param {*} selection  - what to select defaults to
      */
     onHover({action,selection,update}){
-        // const self=this;
+        const self=this;
         const selected = this.svgSelection.selectAll(`${selection}`);
         selected.on("mouseover", (d,i,n) => {
             action.enter(d,i,n);
@@ -823,74 +820,6 @@ export class FigTree {
                 length:yAxisHeight,
                 scale:axisScale})
         });
-    }
-
-
-
-    [p.updateNodeStyles](){
-        const nodesLayer = this.svgSelection.select(".nodes-layer");
-
-        // DATA JOIN
-        // Join new data with old elements, if any.
-        const nodes = nodesLayer.selectAll(".node .node-shape");
-        const vertexStyles = this.settings.vertices.cssStyles;
-        for(const key of Object.keys(vertexStyles)){
-            nodes
-            // .transition()
-            // .duration(this.settings.transition.transitionDuration)
-                .attr(key,v=>vertexStyles[key].call(this,v))
-        }
-
-
-    }
-
-    [p.updateNodeBackgroundStyles](){
-        const nodesBackgroundLayer = this.svgSelection.select("nodes-background-layer");
-
-        // DATA JOIN
-        // Join new data with old elements, if any.
-        const nodes = nodesBackgroundLayer.selectAll(".node-background");
-
-        const vertexBackgroundsStyles = this.settings.vertices.backgroundCssStyles;
-        for(const key of Object.keys(vertexBackgroundsStyles)){
-            nodes
-            // .transition()
-            // .duration(this.settings.transition.transitionDuration)
-                .attr(key,v=>vertexBackgroundsStyles[key].call(this,v))
-        }
-
-    }
-
-    [p.updateBranchStyles](){
-        const branchesLayer = this.svgSelection.select(".branches-layer");
-
-        // DATA JOIN
-        // Join new data with old elements, if any.
-        const branches = branchesLayer.selectAll("g .branch .branch-path")
-
-        const branchStyles = this.settings.edges.cssStyles;
-        for(const key of Object.keys(branchStyles)){
-            branches
-            // .transition()
-            // .duration(this.settings.transition.transitionDuration)
-                .attr(key,e=>branchStyles[key].call(this,e))
-        }
-    }
-
-    [p.updateCartoonStyles](){
-        const cartoonLayer = this.svgSelection.select(".cartoon-layer");
-
-        // DATA JOIN
-        // Join new data with old elements, if any.
-        const cartoons = cartoonLayer.selectAll(".cartoon path");
-        const CartoonStyles = this.settings.cartoons.cssStyles;
-        for(const key of Object.keys(CartoonStyles)){
-            cartoons
-            // .transition()
-            // .duration(this.settings.transition.transitionDuration)
-                .attr(key,c=>CartoonStyles[key].call(this,c))
-            // attributes are set by the "root" node
-        }
     }
 
     [p.pointToPoint](points){

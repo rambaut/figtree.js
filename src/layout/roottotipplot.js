@@ -2,17 +2,12 @@
 
 /** @module roottotipplot */
 
-import {Tree, Type} from "../tree.js";
-import {min,max,axisBottom,axisLeft,format,select,event,scaleLinear,line,mean} from "d3";
+import {min,max,select} from "d3";
 import {
     AbstractLayout,
-    makeEdgesFromNodes,
     VertexStyle,
-    setVertexClasses,
-    setVertexLabels,
     makeVerticesFromNodes
 } from "./abstractLayout";
-import extent from "d3-array/src/extent";
 
 /**
  * The RootToTipPlot class
@@ -26,7 +21,7 @@ export class RootToTipPlot extends AbstractLayout{
      * @param settings
      */
     constructor(tree, settings = {}) {
-        super(tree,{externalNodeLabelAnnotationName:null,...settings})
+        super(tree,{externalNodeLabelAnnotationName:null,regressionFilter:()=>true,...settings})
 
     }
 
@@ -44,26 +39,33 @@ export class RootToTipPlot extends AbstractLayout{
 
         });
 
-        this.regression  = this.leastSquares(this._vertices.filter(v=>v.visibility===VertexStyle.INCLUDED));
+        const usedVertices = this._vertices.filter(this.settings.regressionFilter);
+        this.regression  = this.leastSquares(usedVertices);
 
+
+        //TODO rerooting doesn't update line?!!
         let x1 = min(this._vertices, d => d.x);
         let x2 = max(this._vertices, d => d.x);
         let y1 = 0.0;
-        let y2 = max(this._vertices, d => d.y);
-        if (this._vertices.filter(v=>v.visibility===VertexStyle.INCLUDED).length > 1 && this.regression.slope > 0.0) {
+        let y2 = max(usedVertices, d => d.y);
+        if (usedVertices.filter(v=>v.visibility===VertexStyle.INCLUDED).length > 1 && this.regression.slope > 0.0) {
             x1 = this.regression.xIntercept;
-            y2 = max([this.regression.y(x2), y2]);
+            y2 =this.regression.y(x2)
+        }else if(usedVertices.filter(v=>v.visibility===VertexStyle.INCLUDED).length > 1 && this.regression.slope < 0.0 ){
+            x2 = this.regression.xIntercept;
+            y1= this.regression.y(x1);
+            y2=0;
         }
 
         const startPoint = {key:"startPoint",visibility:VertexStyle.HIDDEN,x:x1,y:y1};
         const endPoint = {key:"endPoint",visibility:VertexStyle.HIDDEN,x:x2,y:y2};
+
         this._vertices.push(startPoint);
-        this._nodeMap.set("startPoint",startPoint)
+        this._nodeMap.set("startPoint",startPoint);
         this._vertices.push(endPoint);
-        this._nodeMap.set("endPoint",endPoint)
+        this._nodeMap.set("endPoint",endPoint);
         this._edges=[{v0:startPoint,v1:endPoint,key:"line",classes:[]}];
         this.layoutKnown = true;
-        console.log(this)
 
     }
 
