@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <title>FigTree Demo</title>
     <script src="js/d3.js" charset="utf-8"></script>
+    <script src="js/d3-selection-multi.min.js" charset="utf-8"></script>
+
     <!--<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>-->
     <style>
         text {
@@ -96,6 +98,10 @@
             /*display: none;*/
             font-size: 8pt;
         }
+        .original-root .node-shape{
+            fill: #e31e58;
+            opacity: 0.4;
+        }
 
         #tooltip {
             background: #F6EECA;
@@ -129,11 +135,35 @@
     import {Tree,RectangularLayout,CircleBauble,FigTree,BranchBauble,EqualAngleLayout,Axis,RootToTipPlot}  from "./dist/figtree.esm.js";
 
 
+    const rootAnnotation=(figtreeObject)=>()=>{
+        const root =figtreeObject.layout.tree.root;
+        const rootVertex = figtreeObject.layout.nodeMap.get(root);
+
+        const rootBauble =new CircleBauble();
+        const rootGroup = figtreeObject.svgSelection
+            .select(".annotation-layer")
+            .selectAll(".original-root")
+            .data([rootVertex])
+            .join(
+                enter=>enter
+                    .append("g")
+                    .attr("class",'original-root')
+                    .attr("transform", (v) => {
+                        return `translate(${figtreeObject.scales.x(v.x+figtreeObject.xScaleOffset)}, ${figtreeObject.scales.y(v.y)})`;
+                    })
+                    .each(function(v){
+                        rootBauble.updateShapes(d3.select(this))
+                    }));
+
+    };
+
     const timeTreeString =
         '((((virusA_1975.5:20.0,virusB_1966:10.0):10.0,virusC_1986:40.0):15.0,(virusD_1969:35.0,virusE_1955.5:20.0):5.0):25.0,(virusF_2002:55.0,virusG_1965:15.0):40.0);';
 
-    const tree = Tree.parseNewick(timeTreeString, null, "_");
-    tree.annotateNode(tree.root,{root:true})
+    const tree = Tree.parseNewick(timeTreeString, {datePrefix: "_"});
+
+    tree.annotateNode(tree.root,{root:true});
+
     const treeSVG = document.getElementById('phylogram_1a');
     const rootedSVG =document.getElementById('phylogram_1b');
 
@@ -156,8 +186,12 @@
 
         });
     rootedFigTree.draw()
-        .hilightInternalNodes()
-        .hilightBranches();
+        .onHoverNode({
+            action:{
+                enter:(d,i,n)=>{tree.annotateNode(d.node,{hover:!d.node.annotations.hover});tree.treeUpdateCallback();console.log(d)},
+                exit:(d,i,n)=>{tree.annotateNode(d.node,{hover:!d.node.annotations.hover});tree.treeUpdateCallback()}
+            },
+            update:true})        .hilightBranches();
 
     const figTree = new FigTree(treeSVG, equalAngleLayout,
         { top: 10, bottom: 60, left: 10, right: 150},
@@ -167,11 +201,16 @@
 
 
         });
-    figTree.draw()
+    figTree.draw();
+
+    const readyAnnotation = rootAnnotation(figTree);
+
+        figTree
         .hilightInternalNodes()
         .onClickInternalNode(equalAngleLayout.rotate())
         .hilightBranches()
-        .onClickBranch({action:equalAngleLayout.reroot(),proportionMethod:"euclidean"});
+        .onClickBranch({action:equalAngleLayout.reroot(),proportionMethod:"euclidean"})
+            .addAnnotation(readyAnnotation);
 
 
     const rttpLayout = new RootToTipPlot(tree);
@@ -183,7 +222,7 @@
                     new CircleBauble(),
                 ],
             },
-            xScale:{axes:[new Axis({title:{text:"Time",yPadding: 25}})]},
+            xScale:{axes:[new Axis({title:{text:"Time",yPadding: 25,tickArguments:[2,"f"]}})]},
             yScale:{axes:[new Axis({title:{text:"Divergence",xPadding: -40,rotation:-90},location:"left"})]},
             edges:{
                 baubles: [

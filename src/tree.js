@@ -3,8 +3,9 @@
 /** @module tree */
 
 import uuid from "uuid";
-import {max,} from "d3";
+import {max,timeParse} from "d3";
 import {maxIndex,minIndex} from "d3-array";
+import {dateToDecimal} from "./utilities";
 // for unique node ids
 export const Type = {
     DISCRETE : Symbol("DISCRETE"),
@@ -821,7 +822,9 @@ export class Tree {
      * @param datePrefix
      * @returns {Tree} - an instance of the Tree class
      */
-    static parseNewick(newickString, labelName = "label", datePrefix = undefined ) {
+    static parseNewick(newickString, options={}) {
+        options ={...{labelName: "label",datePrefix:undefined,dateFormat:"decimal"},...options}
+
         const tokens = newickString.split(/\s*('[^']+'|"[^"]+"|;|\(|\)|,|:|=|\[&|\]|\{|\})\s*/);
         let level = 0;
         let currentNode = null;
@@ -951,7 +954,7 @@ export class Tree {
                         if (isNaN(value)) {
                             value = currentNode.label;
                         }
-                        currentNode.annotations[labelName] = value;
+                        currentNode.annotations[options.labelName] = value;
                     } else {
                         currentNode.id = currentNode.label.substring(1);
                     }
@@ -973,19 +976,33 @@ export class Tree {
                     }
                     name = name.trim();
 
+                    let decimalDate = undefined;
                     let date = undefined;
-                    if (datePrefix) {
-                        const parts = name.split(datePrefix);
+                    if (options.datePrefix) {
+                        const parts = name.split(options.datePrefix);
                         if (parts.length === 0) {
-                            throw new Error(`the tip, ${name}, doesn't have a date separated by the prefix, '${datePrefix}'`);
+                            throw new Error(`the tip, ${name}, doesn't have a date separated by the prefix, '${options.datePrefix}'`);
                         }
-                        date = parseFloat(parts[parts.length - 1]);
+                        const dateBit = parts[parts.length-1];
+                        if(options.dateFormat==="decimal"){
+                            decimalDate = parseFloat(parts[parts.length - 1]);
+                        }else{
+                            date = timeParse(options.dateFormat)(dateBit);
+                            if(!date){
+                                date = timeParse(options.dateFormat)(`${dateBit}-15`)
+                            }
+                            if(!date){
+                                date = timeParse(options.dateFormat)(`${dateBit}-06-15`)
+                            }
+                            decimalDate = dateToDecimal(date);
+                        }
+
                     }
 
                     const externalNode = {
                         name: name,
                         parent: currentNode,
-                        annotations: { date: date }
+                        annotations: { date: decimalDate }
                     };
 
                     if (currentNode) {

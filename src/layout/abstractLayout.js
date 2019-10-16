@@ -1,5 +1,5 @@
 "use strict";
-import {format,curveStepBefore,max,min,line,mean,scaleLinear,curveLinear} from "d3";
+import {format,max,min,mean} from "d3";
 import {Tree, Type} from "../tree";
 import {layoutInterface} from "./layoutInterface";
 import extent from "d3-array/src/extent";
@@ -11,7 +11,7 @@ export const  VertexStyle = {
     INCLUDED:Symbol("INCLUDED"),// Only included nodes are sent to the figtree class
     HIDDEN:Symbol("HIDDEN"), // The only difference between hidden and included nodes is that hidden nodes are not sent to the figtree class
     MASKED:Symbol("MASKED") // Masked nodes have an x and y coordinate but are then ignored. They don't count towards their parent's x and y
-}
+};
 
 
 export const  makeVerticesFromNodes=Symbol("makeVerticesFromNodes");
@@ -281,7 +281,7 @@ export class  AbstractLayout extends layoutInterface {
                 ...newTopVertex, ...{y: min(cartoonVertexDecedents, d => d.y), id: `${cartoonVertex.id}-bottom`}
             };
             // place in middle of tips.
-            cartoonVertex.y = mean([newTopVertex, newBottomVertex], d => d.y)
+            cartoonVertex.y = mean([newTopVertex, newBottomVertex], d => d.y);
             let currentNode = cartoonVertex.node;
             while (currentNode.parent) {
                 const parentVertex = this._nodeMap.get(currentNode.parent);
@@ -377,12 +377,17 @@ export class  AbstractLayout extends layoutInterface {
                     degree : (n.children ? n.children.length + 1 : 1) ,// the number of edges (including stem)
                     id :n.id
                 };
-                this[setVertexClasses](vertex);
-                this[setVertexLabels](vertex);
+
                 this._vertices.push(vertex);
                 this._nodeMap.set(n, vertex);
             }
-        });
+            //update classes as needed.
+            const vertex = this._nodeMap.get(n);
+                this[setVertexClasses](vertex);
+                this[setVertexLabels](vertex);
+        }
+
+        );
 
         //remove vertices not in nodes
         for(const n of this._nodeMap.keys()){
@@ -445,12 +450,12 @@ export class  AbstractLayout extends layoutInterface {
                     this._edges.push(edge);
                     this._edgeMap.set(edge.v1, edge);
                 }
-            })
+            });
 
         //remove edges not in nodes
         for(const v1 of this._edgeMap.keys()){
             if(!nodes.includes(v1.node)){
-                this._edges=this._edges.filter(e=>e!==this._edgeMap.get(v1))
+                this._edges=this._edges.filter(e=>e!==this._edgeMap.get(v1));
                 this._edgeMap.delete(v1);
             }
         }

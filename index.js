@@ -5,7 +5,6 @@ import {ExplodedLayout} from "./src/layout/explodedlayout.js"
 import {Bauble} from "./src/baubles/bauble.js"
 import {FigTree} from "./src/figtree/figtree.js";
 import {RootToTipPlot} from './src/layout/roottotipplot'
-import {RoughFigTree} from './src/figtree/roughfigtree.js'
 import {CircleBauble} from "./src/baubles/circlebauble";
 import {RectangularBauble} from "./src/baubles/rectanglebauble";
 import {RoughCircleBauble} from "./src/baubles/roughcirclebauble";
@@ -14,5 +13,5 @@ import {RoughBranchBauble} from "./src/baubles/roughbranchbauble";
 import {EqualAngleLayout} from "./src/layout/equalanglelayout";
 import {Axis} from "./src/baubles/axes";
 
-export{Tree,Type,RootToTipPlot,RectangularLayout,TransmissionLayout, ExplodedLayout, FigTree,RoughFigTree,
+export{Tree,Type,RootToTipPlot,RectangularLayout,TransmissionLayout, ExplodedLayout, FigTree,
     Bauble,CircleBauble,RoughCircleBauble,RectangularBauble,BranchBauble,RoughBranchBauble,Axis,EqualAngleLayout};
