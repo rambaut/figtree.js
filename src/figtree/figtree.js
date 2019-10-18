@@ -483,11 +483,11 @@ export class FigTree {
         // create the scales
         const xScale = this.settings.xScale.scale()
             .domain([this.layout.horizontalDomain[0]+this.xScaleOffset+this.settings.xScale.revisions.hedge,this.layout.horizontalDomain[1]])
-            .range([this.margins.left, width - this.margins.right]);
+            .range([0, width - this.margins.right-this.margins.left]);
 
         const yScale = this.settings.yScale.scale()
             .domain([this.layout.verticalDomain[0]+this.yScaleOffset,this.layout.verticalDomain[1]])
-            .range([this.margins.top, height -this.margins.bottom]);
+            .range([0, height -this.margins.bottom-this.margins.top]);
 
         this.scales = {x:xScale, y:yScale, width, height};
     }
@@ -759,12 +759,12 @@ export class FigTree {
         this.settings.xScale.axes.forEach(axis=>{
             axis.createAxis({selection:axesLayer,
                 x:0,
-                y:this.scales.height - this.margins.bottom +this.settings.xScale.gap,
+                y:this.scales.height - this.margins.bottom-this.margins.top +this.settings.xScale.gap,
                 length:xAxisWidth,
                 scale:axisScale})
         });
     }
-
+ 
     [p.addYAxis]() {
         const yRevisions = this.settings.yScale.revisions;
         const reverse = yRevisions.reverseAxis? -1:1;
@@ -777,7 +777,7 @@ export class FigTree {
 
         this.settings.yScale.axes.forEach(axis=>{
             axis.createAxis({selection:axesLayer,
-                x:this.margins.left-this.settings.yScale.gap,
+                x:0-this.settings.yScale.gap,
                 y:0,
                 length:yAxisHeight,
                 scale:axisScale})
@@ -795,10 +795,11 @@ export class FigTree {
         const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
         const axesLayer = this.svgSelection.select(".axes-layer");
 
+        console.log(xAxisWidth);
         this.settings.xScale.axes.forEach(axis=>{
             axis.updateAxis({selection:axesLayer,
                 x:0,
-                y:this.scales.height - this.margins.bottom +this.settings.xScale.gap,
+                y:this.scales.height - this.margins.bottom-this.margins.top +this.settings.xScale.gap,
                 length:xAxisWidth,
                 scale:axisScale})
         });
@@ -815,7 +816,7 @@ export class FigTree {
 
         this.settings.yScale.axes.forEach(axis=>{
             axis.updateAxis({selection:axesLayer,
-                x:this.margins.left-this.settings.yScale.gap,
+                x:0-this.settings.yScale.gap,
                 y:0,
                 length:yAxisHeight,
                 scale:axisScale})

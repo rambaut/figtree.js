@@ -176,14 +176,13 @@
 
 
     const rootedFigTree = new FigTree(rootedSVG, layout,
-        { top: 10, bottom: 60, left: 10, right: 150},
+        { top: 10, bottom: 60, left: 10, right: 30},
         {
             transition: transitions,
             edges: {baubles: [new BranchBauble({curve:d3.curveStepBefore,transitions: transitions})]},
             xScale:{axes:[new Axis({title:{text:"Divergence",yPadding: 25}})],
                     revisions:{reverseAxis:true,
                               origin: ()=>tree.root.height}},
-
         });
     rootedFigTree.draw()
         .onHoverNode({
@@ -194,7 +193,7 @@
             update:true})        .hilightBranches();
 
     const figTree = new FigTree(treeSVG, equalAngleLayout,
-        { top: 10, bottom: 60, left: 10, right: 150},
+        { top: 10, bottom: 60, left: 10, right: 30},
         {
             transition: transitions,
             edges: {baubles: [new BranchBauble({curve:d3.curveNatural,transitions: transitions})]},

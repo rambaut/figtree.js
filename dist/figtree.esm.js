@@ -12267,8 +12267,8 @@ function () {
       } // create the scales
 
 
-      var xScale = this.settings.xScale.scale().domain([this.layout.horizontalDomain[0] + this.xScaleOffset + this.settings.xScale.revisions.hedge, this.layout.horizontalDomain[1]]).range([this.margins.left, width - this.margins.right]);
-      var yScale = this.settings.yScale.scale().domain([this.layout.verticalDomain[0] + this.yScaleOffset, this.layout.verticalDomain[1]]).range([this.margins.top, height - this.margins.bottom]);
+      var xScale = this.settings.xScale.scale().domain([this.layout.horizontalDomain[0] + this.xScaleOffset + this.settings.xScale.revisions.hedge, this.layout.horizontalDomain[1]]).range([0, width - this.margins.right - this.margins.left]);
+      var yScale = this.settings.yScale.scale().domain([this.layout.verticalDomain[0] + this.yScaleOffset, this.layout.verticalDomain[1]]).range([0, height - this.margins.bottom - this.margins.top]);
       this.scales = {
         x: xScale,
         y: yScale,
@@ -12769,7 +12769,7 @@ function () {
         axis.createAxis({
           selection: axesLayer,
           x: 0,
-          y: _this10.scales.height - _this10.margins.bottom + _this10.settings.xScale.gap,
+          y: _this10.scales.height - _this10.margins.bottom - _this10.margins.top + _this10.settings.xScale.gap,
           length: xAxisWidth,
           scale: axisScale
         });
@@ -12789,7 +12789,7 @@ function () {
       this.settings.yScale.axes.forEach(function (axis) {
         axis.createAxis({
           selection: axesLayer,
-          x: _this11.margins.left - _this11.settings.yScale.gap,
+          x: 0 - _this11.settings.yScale.gap,
           y: 0,
           length: yAxisHeight,
           scale: axisScale
@@ -12807,11 +12807,12 @@ function () {
       var axisScale = this.settings.xScale.scale().domain(domain).range(this.scales.x.range());
       var xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
       var axesLayer = this.svgSelection.select(".axes-layer");
+      console.log(xAxisWidth);
       this.settings.xScale.axes.forEach(function (axis) {
         axis.updateAxis({
           selection: axesLayer,
           x: 0,
-          y: _this12.scales.height - _this12.margins.bottom + _this12.settings.xScale.gap,
+          y: _this12.scales.height - _this12.margins.bottom - _this12.margins.top + _this12.settings.xScale.gap,
           length: xAxisWidth,
           scale: axisScale
         });
@@ -12831,7 +12832,7 @@ function () {
       this.settings.yScale.axes.forEach(function (axis) {
         axis.updateAxis({
           selection: axesLayer,
-          x: _this13.margins.left - _this13.settings.yScale.gap,
+          x: 0 - _this13.settings.yScale.gap,
           y: 0,
           length: yAxisHeight,
           scale: axisScale
