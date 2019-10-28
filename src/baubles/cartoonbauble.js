@@ -1,6 +1,7 @@
 import {curveBasisClosed, line} from "d3-shape";
 import {mergeDeep} from "../utilities";
 import {Bauble} from "./bauble";
+/** @module bauble */
 
 export class CartoonBauble extends Bauble {
     static DEFAULT_SETTINGS() {

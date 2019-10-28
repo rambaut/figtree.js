@@ -6,6 +6,8 @@ import {
     setupEdge
 } from "./abstractLayout";
 import {min} from "d3"
+/** @module layout */
+
 export class EqualAngleLayout extends AbstractLayout {
 
 

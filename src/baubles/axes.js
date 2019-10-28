@@ -3,7 +3,7 @@ import {axisBottom,axisTop,axisLeft,axisRight} from "d3";
 import {mergeDeep} from "../utilities";
 import uuid from "uuid";
 
-/** @module axes */
+/** @module bauble */
 
 /**
  * The Axes class

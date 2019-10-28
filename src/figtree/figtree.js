@@ -39,14 +39,6 @@ export class FigTree {
         return {
             xScale: {
                 axes:[],
-                // axes:[new Axis({ title: {
-                //         text:"Height",
-                //         rotation:0,
-                //         xPadding:0,
-                //         yPadding:25,
-                //     },
-                //     location:"bottom",
-                //     tickArguments:[5,".2f"]})],
                 gap:10,
                 scale: scaleLinear,
                 revisions: {
@@ -64,7 +56,6 @@ export class FigTree {
                 revisions: {
                     origin: null,
                     reverseAxis: false,
-                    branchScale: 1,
                     offset: 0,
                     hedge: 0
                 }
@@ -89,10 +80,40 @@ export class FigTree {
 
     /**
      * The constructor.
-     * @param svg
-     * @param layout - an instance of class AbstractLayout
-     * @param margins
-     * @param settings
+     * @param {svg} svg -  the html svg that will hold the figure
+     * @param {Object} layout - an instance of class AbstractLayout
+     * @param {Object} margins -  the space within the svg along the border that will not be used to draw the tree. Axis will be placed in this space
+     * @param {number} margins.top - the distance from the top
+     * @param {number} margins.bottom - the distance from the bottom
+     * @param {number} margins.left - the distance from the left
+     * @param {number} margins.right - the distance from the right
+     * @param {Object} [settings={}] - Settings for the figure. Settings provided in part will not affect defaults not explicitly mentioned
+     * @param {Object} settings.xScale - Settings specific for the xscale of the figure
+     * @param {Object[]} [settings.xScale.axes=[]] - An array of axis that will use the xScale
+     * @param {number} [settings.xScale.gap=10] - The number of pixels between the axis line and the bottom of the svg drawing space
+     * @param {function} [settings.xScale.scale=d3.scaleLinear] - A d3 scale for the x dimension
+     * @param {Object} settings.xScale.revisions - Any updates or revisions to be made to the x scale set by the layout
+     * @param {number} [settings.xScale.revisions.origin=null] - An optional value for specifying the right most edge of the plot.
+     * @param {boolean} [settings.xScale.revisions.reverseAxis=false] - Should the x axis decrease from right to left? (default false => number increase from height 0 as we move right to left)
+     * @param {number} [settings.xScale.revisions.branchScale=1] - Factor to scale the branchlengths by
+     * @param {number} [settings.xScale.revisions.offset=0] - Space to add between the origin and right-most vertex
+     * @param {number} [settings.xScale.revisions.hedge = 0] - Space to add between the left edge of the plot and the left most vertex.
+     * @param {Object} settings.xScale - Settings specific for the xscale of the figure
+     * @param {Object[]} [settings.yScale.axes=[]] - An array of axis that will use the yScale
+     * @param {number} [settings.yScale.gap=10] - The number of pixels between the axis line and the left of the svg drawing space
+     * @param {function} [settings.yScale.scale=d3.scaleLinear] - A d3 scale for the y dimension
+     * @param {Object} settings.vertices - Options specific to the vertices that map to the nodes of the tree
+     * @param {number} [settings.vertices.hoverBorder=2] - the number of pixels by which the radius of the vertices will increase by if the highlightNodes option is used and the vertex is hovered
+     * @param {Object[]} [settings.vertices.baubles=[new CircleBauble()]] - An array of baubles for the nodes, each bauble can have it's own settings
+     * @param {Object[]} [settings.vertices.backgroundBaubles=[]] - An array of baubles that will go behind the main bauble of the nodes, each bauble can have it's own settings
+     * @param {Object}    settings.edges - Options specific to the edges that map to the branches of the tree
+     * @param {Object[]}  [settings.edges.baubles=[new BranchBauble()]] - An array of baubles that form the branches of the tree, each bauble can have it's own settings
+     * @param {Object}    settings.cartoons - Options specific to the cartoons on the tree (triangle clades ect.)
+     * @param {Object[]}  [settings.edges.baubles=[new CartoonBauble()]] - An array of baubles that form the cartoons on the firgure, each bauble can have it's own settings     cartoons:{
+     * @param {Object} settings.transition - Options controling the how the figure changes upon interaction
+     * @param {number} [settings.transition.transitionDuration=500] - the number of milliseconds to take when transitioning
+     * @param {function} [transitionEase=d3.easeLinear] - the d3 ease function used to interpolate during transitioning
+     *
      */
     constructor(svg, layout, margins, settings = {}) {
         this.layout = layout;
@@ -109,6 +130,11 @@ export class FigTree {
 
         return this;
     }
+
+    /**
+     * An instance method that makes the svg object and places them in the page. Without calling this method the figure will not be drawn
+     * @return {FigTree}
+     */
     draw(){
         
 
@@ -184,6 +210,7 @@ export class FigTree {
 
     /**
      * set mouseover highlighting of branches
+     * This changes the branch path class to hovered. It is expected that css will handel any changes needed
      */
     hilightBranches() {
         const self=this;
@@ -230,7 +257,9 @@ export class FigTree {
     }
 
     /**
-     * Set mouseover highlighting of nodes
+     * Set mouseover highlighting of nodes. Node shapes are classed as hovered and bauble sizes are updated according to
+     * the hoverborder in the settings.
+     * @param {string} selection - the d3 style string that will be pased to the select method
      */
     hilightNodes(selection) {
         const self = this;

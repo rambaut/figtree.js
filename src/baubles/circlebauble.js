@@ -1,5 +1,6 @@
 import {mergeDeep} from "../utilities";
 import {Bauble} from "./bauble";
+/** @module bauble */
 
 /**
  * The CircleBauble class. Each vertex is assigned a circle in the svg.

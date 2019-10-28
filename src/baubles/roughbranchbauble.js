@@ -3,6 +3,7 @@ import {mergeDeep} from "../utilities";
 import {branchPathGenerator} from "./branchbauble";
 import {roughFactory} from "./roughcirclebauble";
 import {curveStepBefore} from "d3"
+/** @module bauble */
 
 export class RoughBranchBauble extends Bauble {
     static DEFAULT_SETTINGS() {

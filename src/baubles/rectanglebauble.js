@@ -1,5 +1,6 @@
 import {mergeDeep} from "../utilities";
 import {Bauble} from "./bauble";
+/** @module bauble */
 
 export class RectangularBauble extends Bauble {
 

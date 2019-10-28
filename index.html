@@ -142,7 +142,7 @@
         { top: 10, bottom: 60, left: 10, right: 150});
     figTree.draw();
     figTree.hilightNodes();
-    figTree.onClickNode(layout.rotate());
+    figTree.onClickNode({action:layout.rotate()});
 
     layout.internalNodeLabels="probability";
 

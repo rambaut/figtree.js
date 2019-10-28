@@ -4,6 +4,7 @@
 
 import {mean,extent} from "d3";
 import {AbstractLayout, updateVerticesY, VertexStyle} from "./abstractLayout";
+/** @module layout */
 
 
 export const Direction = {
