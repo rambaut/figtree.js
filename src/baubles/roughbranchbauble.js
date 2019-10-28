@@ -36,6 +36,7 @@ export class RoughBranchBauble extends Bauble {
         this.branchPath = (edge)=>{
             const basicPath =basicPathGenerator(edge);
             return [...roughFactory.path(basicPath,this.settings).childNodes].map(d=>d.getAttribute("d"))[0]
+
         }
     }
 
