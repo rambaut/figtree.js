@@ -1,4 +1,10 @@
-import {AbstractLayout, makeEdgesFromNodes, makeVerticesFromNodes, setupEdge} from "./abstractLayout";
+import {
+    AbstractLayout,
+    getMostAncestralCartoons,
+    makeEdgesFromNodes,
+    makeVerticesFromNodes,
+    setupEdge
+} from "./abstractLayout";
 import {min} from "d3"
 export class EqualAngleLayout extends AbstractLayout {
 
@@ -140,5 +146,39 @@ export class EqualAngleLayout extends AbstractLayout {
         const pseudoChildren=  this.nodeOrder.slice(this.nodeOrder.indexOf(node),this.nodeOrder.length).filter(n=>relatives.includes(n))
         return (pseudoChildren.length>0? pseudoChildren:null)
     }
+
+
+    equalDaylight(node){
+        // get the subtrees down each subtree
+        const relatives = [(node.parent&&node.parent)].concat((node.children&&node.children)).filter(n=>n) ;// to remove null
+        const nodeVertex = this._nodeMap.get(node);
+        const nodesOfInterest = relatives.map(relative=>{
+
+            const tips = [...this.traverseFromTip(relative),[node]].filter(n=>!n.children).sort((a,b)=>getAngle(nodeVertex,this._nodeMap.get(a)));
+            return {rightMost:tips[0],leftMost:tips[tips.length-1]}
+        })
+        // get Angles
+        // adjust subtree angles
+        // Rest the x,y in the layout.
+
+
+
+
+    }
+
+}
+
+/**
+ * A function that gets the angle between vertices linked by the hypotenuse of a right triangle
+ * @param vertex1
+ * @param vertex2
+ * @return {number}
+ */
+function getAngle(vertex1,vertex2){
+    return Math.tan((vertex1.y-vertex2.y)/(vertex1.x-vertex2.x))
+}
+
+function getArcAngle(vertex1,vertex2,pivotVertex){
+    return Math.PI - getAngle(pivotVertex,vertex1)-getAngle(pivotVertex,vertex2);
 
 }

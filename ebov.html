@@ -3,82 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <title>FigTree Demo</title>
-    <!-- <script src="./js/d3.js" charset="utf-8"></script> -->
+     <script src="./js/d3.js" charset="utf-8"></script>
+    <script src="js/d3-selection-multi.min.js" charset="utf-8"></script>
     <!--<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>-->
     <style>
-        text {
-            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
-            font-size: 10pt;
-            font-weight: 300;
-        }
-
-        .branch {
+        .branch .branch-path {
             fill: none;
             stroke: #541753;
-            stroke-width: 2;
+            stroke-width: 2px;
             stroke-linecap: round;
             stroke-linejoin: round;
         }
 
-        .branch.hovered {
-            stroke-width: 4;
+        .branch.hovered .branch-path {
+            stroke-width: 4px;
         }
 
-        .node-background {
-            fill: #541753;
-        }
-
-        .node-shape {
-            fill: #22b680;
-        }
-
-        .external-node .node-shape.hovered {
-            fill: #edb23b;
-        }
-        .external-node .node-shape.unselected {
+        .external-node .node-shape {
             fill: #22b680;
             /*stroke: rgb(255, 255, 255);*/
-        }
-        .external-node .node-shape.selected {
-            fill: #edb23b;
-            /*stroke: rgb(0,0,0);*/
+            /*stroke-width: 1;*/
         }
 
         .internal-node .node-shape {
             fill: #29c5ef;
             /*stroke: rgb(255, 255, 255);*/
             /*stroke-width: 1;*/
-            display: none;
+        }
+        .internal-node.hovered .node-shape {
+            stroke: rgb(0,0,0);
         }
 
-        #root .node-shape {
+        .root-true .node-shape {
             fill: #e31e58;
-            stroke: rgb(255, 255, 255);
-            stroke-width: 1;
-            display: none;
+            /*stroke: rgb(255, 255, 255);*/
+            /*stroke-width: 1;*/
         }
+
+        .hover-true .node-shape{
+            stroke: rgb(0, 0, 0);
+            stroke-width: 1;
+        }
+
+        .excluded-true .node-shape{
+            fill: #edb23b;
+        }
+
+        .node-background .node-shape{
+            fill: #541753;
+            /*stroke: rgb(255, 255, 255);*/
+            /*stroke-width: 1;*/
+        }
+
 
         .node-label {
             font-family: "helvetica-neue",  "helvetica",  "sans-serif";
-            font-size: 8pt;
+            font-size: 10pt;
             font-weight: 300;
+        }
+
+        #unrooted .node-label{
+            display:none;
+        }
+
+        #unrooted .hover-true .node-label{
+            display:inline;
         }
 
         .trend-line {
             stroke: rgb(0,0,0);
-            stroke-width: 2;
+            stroke-width: 2px;
             stroke-linecap: round;
         }
 
         .axis text {
             font-family: "helvetica-neue",  "helvetica",  "sans-serif";
-            font-size: 8pt;
+            font-size: 12pt;
             font-weight: 300;
         }
 
         .axis-label text {
             font-family: "helvetica-neue",  "helvetica",  "sans-serif";
-            font-size: 8pt;
+            font-size: 12pt;
             font-weight: bold;
         }
 
@@ -87,8 +93,12 @@
         }
 
         .branch-label.length {
-            display: none;
+            /*display: none;*/
             font-size: 8pt;
+        }
+        .original-root .node-shape{
+            fill: #e31e58;
+            opacity: 0.4;
         }
 
         #tooltip {
@@ -113,47 +123,171 @@
     Click on a node to include/exclude it from the regression. Click on a branch to reroot the tree at that position.
     </div>
     -->
-    <svg id="tree-2-svg"  width="450" height="400"></svg>
-    <svg id="rrt-2-svg"  width="400" height="400"></svg>
+    <svg id="unrooted"  width="450" height="400"></svg>
+    <svg id="rooted"  width="400" height="400"></svg>
+    <svg id="root-to-tip"  width="400" height="400"></svg>
+
 </div>
 
 <script type="module">
-    import { Tree } from "./dist/figtree.esm.js";
-    import { RectangularLayout } from "./dist/figtree.esm.js";
-    import { CircleBauble } from "./dist/figtree.esm.js";
-    import { FigTree } from "./dist/figtree.esm.js";
-    import { RootToTipPlot } from "./dist/figtree.esm.js";
+    import {Tree,RectangularLayout,CircleBauble,FigTree,BranchBauble,EqualAngleLayout,Axis,RootToTipPlot} from "./dist/figtree.esm.js";
+
+    const rootAnnotation=(figtreeObject)=>()=>{
+        const root =figtreeObject.layout.tree.root;
+        const rootVertex = figtreeObject.layout.nodeMap.get(root);
+
+        const rootBauble =new CircleBauble();
+        figtreeObject.svgSelection
+            .select(".annotation-layer")
+            .selectAll(".original-root")
+            .data([rootVertex])
+            .join(
+                enter=>enter
+                    .append("g")
+                    .attr("class",'original-root')
+                    .attr("transform", (v) => {
+                        return `translate(${figtreeObject.scales.x(v.x+figtreeObject.xScaleOffset)}, ${figtreeObject.scales.y(v.y)})`;
+                    })
+                    .each(function(v){
+                        rootBauble.updateShapes(d3.select(this))
+                    }));
+    };
+
 
     const timeTreeString =
         '((Bonduni_DRC_1977-06:5.3E-5,Yambuku-Mayinga_DRC_1976-10-01:2.0E-6):0.002186,((Muembe1_DRC_2017-05:0.007975,Beni-18FHV090_DRC_2018-07-28:0.00898):0.002026,(((Ilembe_Gabon_2002-02-23:0.001437,Kelle_2_COG_2003-10:0.001852):0.01144,(Makona-C07_Guinea_2014-03-20:0.020514,(034-KS_DRC_2008-12-31:5.43E-4,M-M_DRC_2007-08-31:4.5E-5):0.009434):2.05E-4):0.005346,(Kikwit-9510621_DRC_1995-05-04:0.003643,((Lomela-Lokolia16_DRC_2014-08-20:0.002216,BIK009-Bikoro_DRC_2018-05-10:0.002896):0.001998,(2Nza_Gabon_1996-10-27:0.002238,(Gabon_Gabon_1994-12-27:7.94E-4,1Eko_Gabon_1996-02:0.00106):6.25E-4):0.004065):5.18E-4):0.003691):2.81E-4):0.002186);';
 
-    const tree = Tree.parseNewick(timeTreeString, null, "_");
-    const treeSVG = document.getElementById('tree-2-svg');
-    const layout = new RectangularLayout(tree);
-    const figTree = new FigTree(treeSVG, layout,
-        { top: 10, bottom: 60, left: 20, right: 190},
-        {   hoverBorder: 2, backgroundBorder: 1,
-            baubles: [
-                new CircleBauble({ vertexFilter: (v) => v.degree === 1 }),
-            ]
+    const tree = Tree.parseNewick(timeTreeString, {datePrefix: "_",dateFormat: "%Y-%m-%d"});
+    tree.annotateNode(tree.root,{root:true});
+
+    const rttText = figtreeObject=>()=> {
+
+        const regression = figtreeObject.layout.regression;
+        const stats = ["Slope","X intercept","R^2"];
+        figtreeObject.svgSelection
+            .select(".annotation-layer")
+            .selectAll("text")
+            .data([d3.format(".3e")(regression.slope),d3.format(".1f")(regression.xIntercept),d3.format(".3")(regression.rSquare)])
+            .join(
+                enter=>enter
+                    .append("text")
+                    .attr("class", ".rttp-statistic")
+                    .attr("transform", `translate(${figtreeObject.margins.left + 20},${figtreeObject.margins.top})`)
+                    .style("text-anchor", "left")
+                    .attr("alignment-baseline", "hanging")
+                    .attr("dy", (d,i)=>`${i*1.5}em`)
+                    .text((d,i)=>`${stats[i]} : ${d}`),
+                update=>update
+                    .attr("transform", `translate(${figtreeObject.margins.left + 20},${figtreeObject.margins.top})`)
+                    .style("text-anchor", "left")
+                    .attr("alignment-baseline", "hanging")
+                    .attr("dy", (d,i)=>`${i*1.5}em`)
+                    .text((d,i)=>`${stats[i]} : ${d}`)
+            );
+    };
+    // settings for the figures
+    const transitions={
+        transitionDuration: 500};
+const selectedNodes = ["BIK009-Bikoro_DRC_2018-05-10","Lomela-Lokolia16_DRC_2014-08-20","Beni-18FHV090_DRC_2018-07-28","Muembe1_DRC_2017-05"];
+    tree.externalNodes.filter(n=> selectedNodes.includes(n.name))
+        .forEach(node=>{
+            tree.annotateNode(node,{excluded:!node.annotations.excluded});
+    });
+
+    const annotateHover=(tree)=>(d,i,n)=>{
+        tree.annotateNode(d.node,{hover:!d.node.annotations.hover});
+        tree.treeUpdateCallback()
+    };
+
+    const annotateSelect=(tree)=>(d,i,n)=>{
+        tree.annotateNode(d.node,{excluded:!d.node.annotations.excluded});
+        tree.treeUpdateCallback();
+    };
+
+    const regularBauble = new CircleBauble({radius:5,transitions:transitions,vertexFilter:(v)=>(!v.node.children||v.node===tree.rootNode)&& !v.node.annotations.hover});
+    const hoveredBauble =  new CircleBauble({radius:8,transitions:transitions,vertexFilter:(v)=>(!v.node.children||v.node===tree.rootNode)&&v.node.annotations.hover});
+    const backgroundBauble = new CircleBauble({radius:6,transitions:transitions,vertexFilter:(v)=>(!v.node.children||v.node===tree.rootNode)});
+    const margins = { top: 10, bottom: 60, left: 10, right: 150};
+
+    //svgs
+    const treeSVG = document.getElementById('unrooted');
+    const rootedSVG =document.getElementById('rooted');
+    const rootToTipSVG = document.getElementById('root-to-tip');
+
+    // layouts
+    const layout = new RectangularLayout(tree,
+        {externalNodeLabelAnnotationName:"name"});
+    const equalAngleLayout = new EqualAngleLayout(tree,
+        {externalNodeLabelAnnotationName:"name",
+            startingNode:tree.getExternalNode("Muembe1_DRC_2017-05")
         });
-    figTree.draw();
-    figTree.hilightBranches();
-    figTree.onClickBranch(layout.reroot());
 
-    figTree.hilightExternalNodes();
-    // figTree.onClickNode(layout.rotate());
+    const rttpLayout = new RootToTipPlot(tree,
+        {externalNodeLabelAnnotationName:null,
+            regressionFilter:(v)=>!v.node.annotations.excluded});
+    //Figures
+    const rootedFigTree = new FigTree(rootedSVG, layout,margins,{
+        transition: transitions,
+        edges: {baubles: [new BranchBauble({curve:d3.curveStepBefore,transitions: transitions})]},
+        xScale:{axes:[new Axis({title:{text:"Divergence",yPadding: 25},tickArguments: [5,".3"]})],
+            revisions:{reverseAxis:true,
+                origin: ()=>tree.root.height}},
+        vertices:{baubles:[regularBauble,hoveredBauble],backgroundBaubles: [backgroundBauble]}
+    });
 
-    figTree.addToolTip('.external-node', RectangularLayout.nodeInfo);
+    rootedFigTree.draw()
+        .onHoverNode({
+            action: {
+                enter: annotateHover(tree),
+                exit: annotateHover(tree)
+            }
+        })
+        .onClickExternalNode(annotateSelect(tree));
 
-    const rrtp = new RootToTipPlot(document.getElementById('rrt-2-svg'), tree, { top: 10, bottom: 60, left: 60, right: 20},
-        { slopeFormat: ",.5f" });
 
-    rrtp.addToolTip('.external-node', RootToTipPlot.nodeInfo);
 
-    rrtp.linkWithTree(treeSVG);
+    const unRootedFigtree = new FigTree(treeSVG, equalAngleLayout,margins,
+        {
+            transition: transitions,
+            edges: {baubles: [new BranchBauble({curve:d3.curveNatural,transitions: transitions})]},
+            vertices:{baubles:[regularBauble,hoveredBauble],backgroundBaubles: [backgroundBauble]}
 
-    rrtp.selectTips(treeSVG, ["Muembe1_DRC_2017-05", "Beni-18FHV090_DRC_2018-07-28", "Lomela-Lokolia16_DRC_2014-08-20", "BIK009-Bikoro_DRC_2018-05-10"]);
+        });
+
+    unRootedFigtree
+        .draw()
+        .onHoverNode({
+            action: {
+                enter: annotateHover(tree),
+                exit: annotateHover(tree)
+            }
+        })
+        .onClickExternalNode(annotateSelect(tree))
+        .hilightBranches()
+        .onClickBranch({action:equalAngleLayout.reroot(),proportionMethod:"euclidean"})
+        .addAnnotation(rootAnnotation(unRootedFigtree));
+
+
+    const rootToTipPlot = new FigTree(rootToTipSVG, rttpLayout,{top:10,bottom:60,left:50,right:100},
+        {
+            xScale:{axes:[new Axis({title:{text:"Time",yPadding: 25},tickArguments:[4,"f"]})]},
+            yScale:{axes:[new Axis({title:{text:"Divergence",xPadding: -65,rotation:-90},location:"left"})]},
+            edges:{
+                baubles: [
+                    new BranchBauble({curve:d3.curveNatural}),
+                ]},
+            vertices:{baubles:[regularBauble,hoveredBauble],backgroundBaubles: [backgroundBauble]}
+        });
+
+    rootToTipPlot.draw()
+        .onHoverNode({
+            action: {
+                enter: annotateHover(tree),
+                exit: annotateHover(tree)
+            }
+        })
+        .onClickExternalNode(annotateSelect(tree))
+        .addAnnotation(rttText(rootToTipPlot))
 
 </script>
 

@@ -12811,7 +12811,6 @@ function () {
       var axisScale = this.settings.xScale.scale().domain(domain).range(this.scales.x.range());
       var xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
       var axesLayer = this.svgSelection.select(".axes-layer");
-      console.log(xAxisWidth);
       this.settings.xScale.axes.forEach(function (axis) {
         axis.updateAxis({
           selection: axesLayer,
@@ -13967,10 +13966,46 @@ function (_AbstractLayout) {
       });
       return pseudoChildren.length > 0 ? pseudoChildren : null;
     }
+  }, {
+    key: "equalDaylight",
+    value: function equalDaylight(node) {
+      var _this3 = this;
+
+      // get the subtrees down each subtree
+      var relatives = [node.parent && node.parent].concat(node.children && node.children).filter(function (n) {
+        return n;
+      }); // to remove null
+
+      var nodeVertex = this._nodeMap.get(node);
+
+      var nodesOfInterest = relatives.map(function (relative) {
+        var tips = [].concat(toConsumableArray(_this3.traverseFromTip(relative)), [[node]]).filter(function (n) {
+          return !n.children;
+        }).sort(function (a, b) {
+          return getAngle(nodeVertex, _this3._nodeMap.get(a));
+        });
+        return {
+          rightMost: tips[0],
+          leftMost: tips[tips.length - 1]
+        };
+      }); // get Angles
+      // adjust subtree angles
+      // Rest the x,y in the layout.
+    }
   }]);
 
   return EqualAngleLayout;
 }(AbstractLayout);
+/**
+ * A function that gets the angle between vertices linked by the hypotenuse of a right triangle
+ * @param vertex1
+ * @param vertex2
+ * @return {number}
+ */
+
+function getAngle(vertex1, vertex2) {
+  return Math.tan((vertex1.y - vertex2.y) / (vertex1.x - vertex2.x));
+}
 
 /** @module axes */
 
