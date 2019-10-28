@@ -12658,6 +12658,7 @@ function () {
       var _this9 = this;
 
       var cartoonLayer = this.svgSelection.select(".cartoon-layer");
+      var self = this;
       cartoonLayer.selectAll("g .cartoon").data(this.layout.cartoons, function (c) {
         return "c_".concat(c.id);
       }).join(function (enter) {
@@ -12676,7 +12677,7 @@ function () {
             for (var _iterator10 = self.settings.cartoons.baubles[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
               var bauble = _step10.value;
 
-              if (bauble.edgeFilter(c)) {
+              if (bauble.cartoonFilter(c)) {
                 bauble.updateShapes(select(this));
               }
             }
@@ -12709,7 +12710,7 @@ function () {
             for (var _iterator11 = self.settings.cartoons.baubles[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
               var bauble = _step11.value;
 
-              if (bauble.edgeFilter(c)) {
+              if (bauble.cartoonFilter(c)) {
                 bauble.updateShapes(select(this));
               }
             }
@@ -13506,7 +13507,8 @@ function (_Bauble) {
         vertexFilter: null,
         edgeFilter: function edgeFilter() {
           return true;
-        }
+        },
+        roughness: 20
       };
     }
   }]);
