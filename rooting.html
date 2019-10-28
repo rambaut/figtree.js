@@ -185,6 +185,7 @@
                               origin: ()=>tree.root.height}},
         });
     rootedFigTree.draw()
+
         .onHoverNode({
             action:{
                 enter:(d,i,n)=>{tree.annotateNode(d.node,{hover:!d.node.annotations.hover});tree.treeUpdateCallback();console.log(d)},

@@ -795,7 +795,6 @@ export class FigTree {
         const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
         const axesLayer = this.svgSelection.select(".axes-layer");
 
-        console.log(xAxisWidth);
         this.settings.xScale.axes.forEach(axis=>{
             axis.updateAxis({selection:axesLayer,
                 x:0,
