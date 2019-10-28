@@ -189,11 +189,12 @@
     const layout = new RectangularLayout(tree);
     const figTree = new FigTree(treeSVG, layout,
         { top: 10, bottom: 60, left: 10, right: 150},
-        {   hoverBorder: 2, backgroundBorder: 2,
-            baubles: [
+        {
+           vertices:{ baubles: [
                 new CircleBauble({ vertexFilter: (v) => v.degree !== 2 }),
                 new RectangularBauble({ vertexFilter: (v) => v.degree === 2})
-            ]
+            ],
+           }
         });
     figTree.draw();
 
@@ -203,8 +204,8 @@
     // figTree.addToolTip('.node', FigTree.nodeInfo);
 
     figTree.hilightBranches();
-    figTree.onClickBranch(layout.reroot());
-    figTree.hilightInternalNodes();
+    figTree.onClickBranch({action:layout.reroot()});
+    // figTree.hilightInternalNodes();
     figTree.onClickNode(layout.rotate());
 
     tree.annotateNodesFromTips("host");

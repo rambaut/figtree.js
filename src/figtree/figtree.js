@@ -700,7 +700,7 @@ export class FigTree {
 
     [p.updateCartoons](){
         const cartoonLayer = this.svgSelection.select(".cartoon-layer");
-
+        const self = this;
         cartoonLayer.selectAll("g .cartoon")
             .data(this.layout.cartoons, (c) => `c_${c.id}`)
             .join(
@@ -713,7 +713,7 @@ export class FigTree {
                         })
                         .each(function(c) {
                             for(const bauble of  self.settings.cartoons.baubles){
-                                if (bauble.edgeFilter(c)) {
+                                if (bauble.cartoonFilter(c)) {
                                     bauble
                                         .updateShapes(select(this))
                                 }
@@ -729,7 +729,7 @@ export class FigTree {
                     })
                     .each(function(c) {
                         for(const bauble of  self.settings.cartoons.baubles){
-                            if (bauble.edgeFilter(c)) {
+                            if (bauble.cartoonFilter(c)) {
                                 bauble
                                     .updateShapes(select(this))
                             }

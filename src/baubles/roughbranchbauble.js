@@ -15,7 +15,8 @@ export class RoughBranchBauble extends Bauble {
             },
             styles:  {},
             vertexFilter: null,
-            edgeFilter: () => true
+            edgeFilter: () => true,
+            roughness:20,
         }
 
 

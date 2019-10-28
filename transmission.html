@@ -176,12 +176,7 @@
         return (countA - countB);
     });
     const layout = new TransmissionLayout(tree);
-    const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150},
-        { hoverBorder: 2, backgroundBorder: 2,
-            baubles: [
-                new CircleBauble(),
-            ]
-        });
+    const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150});
     figTree.draw();
     figTree.hilightInternalNodes();
     figTree.onClickInternalNode(layout.rotate())

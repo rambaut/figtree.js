@@ -127,27 +127,21 @@
 </div>
 
 <script type="module">
-    import { Tree, RectangularLayout,CircleBauble,RoughCircleBauble,FigTree,RoughFigTree} from "./dist/figtree.esm.js"
+    import { Tree, RectangularLayout,BranchBauble,CircleBauble,RoughCircleBauble,FigTree} from "./dist/figtree.esm.js"
 
 
     const newickString =
         '((((((virus1:0.1,virus2:0.12)0.95:0.08,(virus3:0.011,virus4:0.0087)1.0:0.15)0.65:0.03,virus5:0.21)1.0:0.2,(virus6:0.45,virus7:0.4)0.51:0.02)1.0:0.1,virus8:0.4)1.0:0.1,(virus9:0.04,virus10:0.03)1.0:0.6);';
 
-    const tree = Tree.parseNewick(newickString, "probability");
+    const tree = Tree.parseNewick(newickString);
     const treeSVG = document.getElementById('phylogram_1a');
 
     const layout = new RectangularLayout(tree);
 
     const figTree = new FigTree(treeSVG, layout,
-        { top: 10, bottom: 60, left: 10, right: 150},
-        {vertices:{ hoverBorder: 2, backgroundBorder: 2,
-            baubles: [
-                new CircleBauble(),
-            ],
-            }
-        });
+        { top: 10, bottom: 60, left: 10, right: 150});
     figTree.draw();
-    figTree.hilightInternalNodes();
+    figTree.hilightNodes();
     figTree.onClickNode(layout.rotate());
 
     layout.internalNodeLabels="probability";
@@ -166,18 +160,11 @@
     };
 
     document.getElementById('rectangular_button').onclick = function() {
-        figTree.updateSettings({edges:{curve:d3.curveStepBefore}});
+        figTree.updateSettings({edges:{baubles:[new BranchBauble()]}});
     };
     document.getElementById('triangular_button').onclick = function() {
-        figTree.updateSettings({edges:{curve:d3.curveNatural}});
+        figTree.updateSettings({edges:{baubles:[new BranchBauble({curve:d3.curveNatural})]}});
     };
-
-    const sketch = new RoughFigTree(document.getElementById('phylogram_1b'), layout,
-        { top: 10, bottom: 60, left: 10, right: 150},
-        {vertices:{ hoverBorder: 2, backgroundBorder: -2, baubles:[new RoughCircleBauble({radius:10,roughness:2,vertexFilter:(v)=>v.degree===1})]},
-            edges:{roughOptions:{roughness:0.5},curve:d3.curveNatural}
-        });
-    sketch.draw();
 
 </script>
 
@@ -225,7 +212,7 @@
         .select("#root")
         .attr("display", "none");
 
-    figTree.onClickNode((vertex) => {
+    figTree.onClickNode({action:(vertex) => {
         tree.reroot(vertex.node, 1.0);
         d3.select(treeSVG)
             .select("#root")
@@ -234,7 +221,7 @@
         d3.select(treeSVG)
             .select("#old-root")
             .attr("display", "none");
-    }, "#old-root");
+    }, selection:"#old-root"});
 
     figTree.addToolTip('#old-root', "This is the position of the root node<br>in the rooted trees, above.<br><br>Click on it to root the tree\n");
 
@@ -246,12 +233,12 @@
 </div>
 
 <script type="module">
-    import { Tree, RectangularLayout,RootToTipPlot,CircleBauble,FigTree} from "./dist/figtree.esm.js"
+    import { Tree, RectangularLayout,RootToTipPlot,BranchBauble,CircleBauble,FigTree,Axis} from "./dist/figtree.esm.js"
 
     const timeTreeString =
         '((((virusA_1975:20.0,virusB_1965:10.0):10.0,virusC_1985:40.0):15.0,(virusD_1970:35.0,virusE_1955:20.0):5.0):25.0,(virusF_2000:55.0,virusG_1960:15.0):40.0);';
 
-    const tree = Tree.parseNewick(timeTreeString, null, "_");
+    const tree = Tree.parseNewick(timeTreeString, {datePrefix:"_"});
     const treeSVG = document.getElementById('tree-2-svg');
     const layout = new RectangularLayout(tree);
     const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150},
@@ -263,31 +250,21 @@
     figTree.draw();
 
     figTree.hilightBranches();
-    figTree.onClickBranch(layout.reroot());
+    figTree.onClickBranch({action:layout.reroot()});
     figTree.hilightInternalNodes();
     figTree.onClickNode(layout.rotate());
 
     const rttpLayout = new RootToTipPlot(tree);
     const rootToTipPlot = new FigTree(document.getElementById('rrt-2-svg'), rttpLayout, { top: 10, bottom: 60, left: 60, right: 100},
-        {vertices: {
-                hoverBorder: 2, backgroundBorder: 2,
-                baubles: [
-                    new CircleBauble(),
-                ],
-            },
-            yScale:{
-            axis:d3.axisLeft,
-            title:"divergence"
-            },
-            xScale:{tickFormat: d3.format("")},
+        { xScale:{axes:[new Axis({title:{text:"Time",yPadding: 25,tickArguments:[2,"f"]}})]},
+            yScale:{axes:[new Axis({title:{text:"Divergence",xPadding: -40,rotation:-90},location:"left"})]},
             edges:{
-                curve:d3.curveLinear
-            }
+                baubles: [
+                    new BranchBauble({curve:d3.curveNatural}),
+                ]}
         });
     rootToTipPlot.draw();
 
-    console.log(rttpLayout.horizontalDomain)
-    console.log(rootToTipPlot.settings.origin)
     // rrtp.linkWithTree(treeSVG);
 
 </script>
@@ -317,29 +294,18 @@
 </style>
 
 <script type="module">
-    import { Tree, RectangularLayout,CircleBauble,FigTree,RootToTipPlot} from "./dist/figtree.esm.js"
+    import { Tree, BranchBauble,RectangularLayout,Axis,FigTree,RootToTipPlot} from "./dist/figtree.esm.js"
 
 
     const timeTreeString =
         "(DH_33_1980:0.0357241121,(((HK_1_1968:0.0190452945,BI_808_1969:0.0051286937):0.0010241727,(BI_15793_1968:0.0012510056,(BI_6449_1971:0.0033200826,((BI_21438_1971:0.0020322307,(BI_21801_1971:0.0010262679,BI_6022_1972:0.0113929685):0.0000029378):0.0041127720,((((((BI_21793_1972:0.0000023368,BI_552_1973:0.0020466900):0.0000029167,BI_23337_1972:0.0020463004):0.0020443650,BI_23290_1972:0.0010217748):0.0000020124,(BI_748_1973:0.0000023634,BI_3517_1973:0.0020477342):0.0030733203):0.0010239138,(((PC_1_1973:0.0030978238,(((BI_5930_1974:0.0010207241,BI_5931_1974:0.0000024145):0.0030692009,((BI_7398_1974:0.0000022656,BI_2813_1975:0.0000020253):0.0051598118,BI_9459_1974:0.0051458353):0.0000024293):0.0010140702,((VI_3_1975:0.0051249671,(((BI_1761_1976:0.0000029782,BI_5657_1976:0.0010188191):0.0000022297,((BI_5029_1976:0.0010188046,BI_3895_1977:0.0030726455):0.0000026451,(AM_1609_1977:0.0010192573,(RD_5828_1977:0.0031223914,RD_8179_1977:0.0051653149):0.0009892936):0.0000022168):0.0000029302):0.0000020871,BI_6545_1976:0.0000029782):0.0000021638):0.0146243715,((BI_628_1976:0.0020582540,BI_2271_1976:0.0031065744):0.0028730442,(TE_1_1977:0.0032044399,(((NL_209_1980:0.0041069801,BI_4791_1981:0.0020427797):0.0000022628,(BI_10684_1982:0.0020551307,OS_13676_1983:0.0041084161):0.0051732932):0.0042855908,(RD_577_1980:0.0042819510,((NL_233_1982:0.0010207626,(NL_241_1982:0.0040956474,PH_2_1982:0.0051325080):0.0000023735):0.0009280051,(CE_1_1984:0.0041371768,(((((GF_V728_1985:0.0000020949,WE_4_1985:0.0020517471):0.0000024396,CO_2_1986:0.0114298987):0.0020477128,(ST_10_1985:0.0030813355,(LE_360_1986:0.0030761133,CC_2_1988:0.0051782214):0.0010349701):0.0020509885):0.0000021695,((SH_11_1987:0.0020505095,((((SI_2_1987:0.0020514604,VI_1_1989:0.0000029726):0.0030722028,ST_12_1988:0.0093313842):0.0010415727,(((((AT_211_1989:0.0000020062,CA_1_1991:0.0010236343):0.0051185844,((NL_620_1989:0.0000020388,(NL_650_1989:0.0000020662,NL_738_1989:0.0010246006):0.0010241712):0.0010313893,SU_1_1990:0.0030835689):0.0010623501):0.0010186948,GU_54_1989:0.0061812860):0.0010820145,(GE_5007_1989:0.0030841916,(ME_2_1990:0.0000021943,ME_5_1990:0.0000028665):0.0052000916):0.0041542358):0.0010203375,(((((BE_352_1989:0.0030939595,BE_353_1989:0.0000023995):0.0000029006,((VI_2_1990:0.0010242678,((((((EN_260_1991:0.0000023395,((((ST_7_1992:0.0010261160,VI_68_1992:0.0020540005):0.0000021128,NL_165_1993:0.0010259388):0.0000024054,(MA_G101_1993:0.0010274493,MA_G116_1993:0.0000020181):0.0030905379):0.0010239869,((((ST_13_1992:0.0000029782,UM_1982_1992:0.0000025027):0.0000020997,UM_2000_1992:0.0010297816):0.0000022690,ES_5458_1993:0.0020591991):0.0031008027,PA_287_1993:0.0020651572):0.0020680776):0.0020598112):0.0010230023,(NL_819_1992:0.0000020332,PA_614_1992:0.0020542301):0.0020635899):0.0020600753,EN_261_1991:0.0020595584):0.0000020701,(PA_467_1992:0.0020557197,PA_583_1992:0.0020556369):0.0000022020):0.0000026915,(ES_1285_1992:0.0000027199,NL_935_1992:0.0000023228):0.0030951325):0.0041543238,((MA_G12_1991:0.0010258364,(((AM_4112_1992:0.0000000000,TI_5957_1992:0.0000000000):0.0000029782,(MA_G58_1992:0.0010267845,NI_3129_1992:0.0010251108):0.0000020890):0.0000020402,OV_31_1992:0.0000029782):0.0000023367):0.0000020296,NL_816_1991:0.0010270895):0.0041424575):0.0010053091):0.0000021644,((((((((((((((((((((((((GE_6447_1991:0.0000000000,LY_23672_1991:0.0000000000):0.0000000000,PA_457_1992:0.0000000000):0.0000000000,LY_24222_1991:0.0000000000):0.0000000000,PA_564_1992:0.0000000000):0.0000000000,PA_320_1992:0.0000000000):0.0000000000,LY_1276_1991:0.0000000000):0.0000000000,LY_24103_1991:0.0000000000):0.0000000000,PA_424_1992:0.0000000000):0.0000000000,NL_823_1992:0.0000000000):0.0000000000,FI_218_1992:0.0000000000):0.0000000000,PA_407_1992:0.0000000000):0.0000000000,PA_548_1992:0.0000000000):0.0000000000,GE_5113_1992:0.0000000000):0.0000000000,NI_3126_1992:0.0000000000):0.0000000000,PA_512_1992:0.0000000000):0.0000000000,PA_325_1992:0.0000000000):0.0000000000,HO_56941_1992:0.0000000000):0.0000000000,LY_1373_1991:0.0000000000):0.0000029782,PA_417_1992:0.0010226084):0.0000020052,(LY_1182_1991:0.0000029782,((SA_8_1992:0.0000000000,ST_8_1992:0.0000000000):0.0000020044,SA_23_1992:0.0000020240):0.0010232487):0.0000023665):0.0000022052,((((LY_1149_1991:0.0000020499,LY_1189_1991:0.0000026856):0.0010231751,SA_27_1992:0.0041051902):0.0000021533,HO_56798_1992:0.0010241579):0.0000029782,((LY_1594_1991:0.0020467613,PA_597_1992:0.0010244362):0.0000024938,PA_490_1992:0.0010242454):0.0000026698):0.0000020577):0.0000021946,(LY_1337_1991:0.0010223806,HO_56829_1992:0.0010237105):0.0000028570):0.0000020718,RD_100540_1992:0.0030794307):0.0009773017,(ST_20_1991:0.0000022249,FI_220_1992:0.0000022271):0.0041657103):0.0083621839):0.0030806322):0.0031054139,(SH_24_1990:0.0041546736,((BE_32_1992:0.0030925313,((((((FI_247_1992:0.0000022873,((SE_C273_1992:0.0010247666,(YA_56_1993:0.0010243919,(YA_61_1993:0.0000022948,YA_62_1993:0.0000029782):0.0000020187):0.0010252869):0.0000020193,(SD_9_1993:0.0030827465,SG_6_1993:0.0010246390):0.0000027354):0.0010264316):0.0000025438,ST_12_1992:0.0000022056):0.0000023482,(MA_G102_1993:0.0010259837,((MA_G130_1993:0.0000021145,SP_3_1993:0.0000029782):0.0000020123,NL_101_1993:0.0010283635):0.0000023088):0.0041170576):0.0010249289,((AK_4_1993:0.0010261646,LY_672_1993:0.0000023909):0.0030808973,(((GD_25_1993:0.0041633975,HK_2_1994:0.0051846022):0.0020456833,(((((((((((LY_1815_1993:0.0020653791,LY_22686_1993:0.0020732337):0.0010193695,SL_160_1993:0.0072620779):0.0000020966,(NL_241_1993:0.0000020563,((NL_371_1993:0.0030914397,NL_18_1994:0.0020542614):0.0000021421,((NL_372_1993:0.0010230519,EN_7_1994:0.0030963987):0.0010321112,NL_398_1993:0.0000029782):0.0000020397):0.0000020342):0.0000020437):0.0000027157,LY_23602_1993:0.0020526963):0.0000020403,OS_2219_1993:0.0041203514):0.0020533992,((((HK_1_1994:0.0000020159,HK_55_1994:0.0000029782):0.0000026107,HK_434_1996:0.0030943672):0.0020536137,(JO_33_1994:0.0010273333,((JO_47_1994:0.0041322545,HK_42_1996:0.0083786430):0.0031145043,NL_1_1995:0.0041268286):0.0000021778):0.0000021387):0.0072675988,(SA_15_1994:0.0010274340,SA_25_1994:0.0000020169):0.0041336739):0.0010321191):0.0000020194,MA_G122_1993:0.0010263934):0.0000024300,(ST_20_1993:0.0030856131,WE_59_1993:0.0041170184):0.0000028862):0.0000020719,NL_179_1993:0.0000029782):0.0000023886,(MA_G252_1993:0.0030998923,(HK_56_1994:0.0020649185,((FI_338_1995:0.0020593381,(GE_A9509_1995:0.0000029782,(HK_3_1995:0.0010276609,HK_38_1995:0.0041329527):0.0000020066):0.0010312685):0.0020691684,((((FI_339_1995:0.0010286485,(FI_381_1995:0.0000029782,(LY_2279_1995:0.0041290860,(VI_75_1995:0.0010306781,NL_91_1996:0.0010276415):0.0010328447):0.0000025645):0.0000021235):0.0010252963,NL_271_1995:0.0041641349):0.0020769752,(HK_32_1995:0.0020619614,HK_49_1995:0.0000020783):0.0010296824):0.0010317113,((HK_55_1995:0.0020611078,((GE_3958_1996:0.0010289234,SP_1_1996:0.0020665202):0.0010279084,((HK_20_1996:0.0062928957,((HK_357_1996:0.0020833160,((((AU_10_1997:0.0010293548,SY_5_1997:0.0031192534):0.0010309721,NL_300_1997:0.0031125120):0.0010359141,NL_414_1998:0.0020663677):0.0000025120,((NL_427_1998:0.0052168793,NL_462_1998:0.0041788818):0.0009989061,(MW_10_1999:0.0063100940,(((((NL_301_1999:0.0021066652,NL_126_2001:0.0051834380):0.0010260360,((FU_411_2002:0.0020941359,(((FI_170_2003:0.0010327937,NL_222_2003:0.0020688773):0.0000024856,NL_213_2003:0.0000029782):0.0010333055,NL_217_2003:0.0000020169):0.0020690562):0.0019846000,NL_22_2003:0.0053123680):0.0206296113):0.0010636175,((NL_118_2001:0.0020613345,NL_1_2002:0.0020625301):0.0000021644,(NL_120_2002:0.0020690091,NL_20_2003:0.0073327455):0.0020657880):0.0062384482):0.0000025490,PM_2007_1999:0.0020671686):0.0015269726,(NL_3_2000:0.0036250820,NL_124_2001:0.0078713835):0.0031777430):0.0047800231):0.0009753439):0.0010363885):0.0073222451):0.0010180374,HK_358_1996:0.0010286480):0.0031617505):0.0020250628,((LY_1781_1996:0.0020577498,NE_491_1997:0.0010385149):0.0041603328,(((HK_1_1997:0.0020598402,OS_21_1997:0.0010300669):0.0000022287,(JO_10_1997:0.0083362953,OS_244_1997:0.0020724878):0.0010276096):0.0020598963,(HK_280_1997:0.0093842809,NL_5_1998:0.0093823687):0.0000022687):0.0010405634):0.0010167539):0.0000029414):0.0000028376):0.0010060621,(NA_933_1995:0.0020747432,(WU_359_1995:0.0010428156,BR_8_1996:0.0061896421):0.0010351449):0.0010368642):0.0083935090):0.0000025562):0.0083615515):0.0031201121):0.0000020041):0.0000029782,MA_G109_1993:0.0010265826):0.0000024206):0.0030836172,(NL_115_1993:0.0000022768,NL_126_1993:0.0000022767):0.0051718111):0.0000026159):0.0010242886):0.0010346744,(((LY_1803_1993:0.0062355849,OS_2352_1993:0.0031447166):0.0020357816,(((NL_357_1993:0.0020633878,NL_399_1993:0.0020749357):0.0010200887,NL_440_1993:0.0000020335):0.0010271522,VI_104_1993:0.0020529997):0.0000020333):0.0010037085,SL_142_1993:0.0041594905):0.0041543519):0.0010198587,(NL_3_1993:0.0000022302,NL_17_1993:0.0010248430):0.0020530926):0.0010339996):0.0052168953,NL_938_1992:0.0041709067):0.0020053952):0.0041891867):0.0020532954,((SP_34_1989:0.0000021853,SP_36_1989:0.0000020222):0.0010239443,(((SP_35_1989:0.0000000000,WE_5_1989:0.0000000000):0.0000020107,SP_40_1989:0.0000020107):0.0010255333,SP_53_1989:0.0010237575):0.0000026841):0.0010222101):0.0010383200,HK_1_1989:0.0041226930):0.0010174769):0.0093491695):0.0000020736,VI_7_1987:0.0010218282):0.0000021738):0.0020638845,(EN_427_1988:0.0105315287,NL_450_1988:0.0074005591):0.0019484583):0.0030875278):0.0051869890,NL_330_1985:0.0083586035):0.0030566680):0.0063375309):0.0093671719):0.0009302581):0.0156290588):0.0117418143):0.0065972263):0.0042496516):0.0051932273):0.0041128852,BI_5146_1974:0.0102949315):0.0011883598,BI_2600_1975:0.0168404818):0.0010125888):0.0073002860,EN_42_1972:0.0041109252):0.0073684101):0.0081088962):0.0020460880):0.0018203803):0.0000029450,HK_107_1971:0.0145883210):0.0010422779,((BI_16190_1968:0.0000029782,BI_16398_1968:0.0000029782):0.0000020863,(BI_908_1969:0.0010209579,(BI_17938_1969:0.0010225618,(BI_93_1970:0.0041278171,BI_2668_1970:0.0030921097):0.0010095139):0.0010228619):0.0020451430):0.0009970665);";
 
-    const tree = Tree.parseNewick(timeTreeString, null, "_");
+    const tree = Tree.parseNewick(timeTreeString, {datePrefix: "_"});
 
     const treeSVG = document.getElementById('tree-3-svg');
     const layout = new RectangularLayout(tree);
     const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150},
-        { // the settings
-            xScale:{
-                title: "Divergence (subst./site)"
-            },
-            vertices:{
-                backgroundBorder: 1,
-                baubles: [
-                    new CircleBauble({ radius: 2, vertexFilter: (v) => v.degree === 1 })
-                ]
-            }
-
-        });
+        );
     figTree.draw();
     tree.order(tree.rootNode, false);
 
@@ -347,18 +313,12 @@
 
     const rttpLayout = new RootToTipPlot(tree);
     const rootToTipPlot = new FigTree(document.getElementById('rrt-3-svg'), rttpLayout, { top: 10, bottom: 60, left: 60, right: 150},
-         {xScale:{
-                 title:"Time",
-                 tickFormat: d3.format(""),
-                },
-         yScale:{
-             title:"divergence",
-             axis:d3.axisLeft,
-            },
-         edges:{
-             curve:d3.curveLinear
-            }
-         }
+        { xScale:{axes:[new Axis({title:{text:"Time",yPadding: 25,tickArguments:[2,"f"]}})]},
+            yScale:{axes:[new Axis({title:{text:"Divergence",xPadding: -40,rotation:-90},location:"left"})]},
+            edges:{
+                baubles: [
+                    new BranchBauble({curve:d3.curveNatural}),
+                ]}}
          );
 
     rootToTipPlot.draw();
@@ -433,69 +393,69 @@
 
 
 <script type="module">
-    import { Tree, TransmissionLayout,ExplodedLayout,RectangularBauble,CircleBauble,FigTree} from "./dist/figtree.esm.js"
-
-
-    const newickString =
-        '((((((virus1:0.1,virus2:0.12)0.95:0.08,(virus3:0.011,virus4:0.0087)1.0:0.15)0.65:0.03,virus5:0.21)1.0:0.2,(virus6:0.45,virus7:0.4)0.51:0.02)1.0:0.1,virus8:0.4)1.0:0.1,(virus9:0.04,virus10:0.03)1.0:0.6);';
-
-    const tree = Tree.parseNewick(newickString, "probability");
-    tree.annotateTips({
-        "virus1": { host: "camel" },
-        "virus2": { host: "camel" },
-        "virus3": { host: "human" },
-        "virus4": { host: "human" },
-        "virus5": { host: "bat" },
-        "virus6": { host: "bat" },
-        "virus7": { host: "bat" },
-        "virus8": { host: "bat" },
-        "virus9": { host: "whale" },
-        "virus10": { host: "whale" }
-    });
-
-    tree.annotateNodesFromTips("host");
-    tree.orderByNodeDensity();
-    const treeSVG = document.getElementById('phylogram_3');
-    const layout = new ExplodedLayout(tree,{groupGap:9,direction:"down"});
-
-    const figTree = new FigTree(treeSVG, layout,
-        { top: 10, bottom: 60, left: 10, right: 150},
-        {   hoverBorder: 2, backgroundBorder: 2,
-            baubles: [
-                new CircleBauble({ vertexFilter: (v) => v.degree !== 2 }),
-                new RectangularBauble({ vertexFilter: (v) => v.degree === 2})
-            ],
-            // branchScale:10,
-            origin:0,
-            offset:0,
-            branchScale:10,
-            reverseAxis:false
-        });
-
-
-    figTree.draw();
-
-    layout.internalNodeLabels="probability";
-    const cladeToRemove = tree.tipMap.get("virus4").parent;
-    const leftpareent = cladeToRemove.parent;
-    // tree.removeClade(cladeToRemove).removeNode(leftpareent)
-
-    layout.cartoon(layout.nodeMap.get(tree.tipMap.get("virus1").parent));
-
-    // figTree.addLabels('.external-node', FigTree.nodeInfo);
-    figTree.addToolTip('.node', layout.nodeInfo);
-
-    figTree.hilightBranches();
-    figTree.hilightInternalNodes();
-    figTree.onClickNode((v)=>{
-        console.log(v)
-        console.log(v.x+figTree.settings.offset)
-        layout.cartoon(v)
-    });
-
+    // import { Tree, TransmissionLayout,ExplodedLayout,RectangularBauble,CircleBauble,FigTree} from "./dist/figtree.esm.js"
+    //
+    //
+    // const newickString =
+    //     '((((((virus1:0.1,virus2:0.12)0.95:0.08,(virus3:0.011,virus4:0.0087)1.0:0.15)0.65:0.03,virus5:0.21)1.0:0.2,(virus6:0.45,virus7:0.4)0.51:0.02)1.0:0.1,virus8:0.4)1.0:0.1,(virus9:0.04,virus10:0.03)1.0:0.6);';
+    //
+    // const tree = Tree.parseNewick(newickString, "probability");
+    // tree.annotateTips({
+    //     "virus1": { host: "camel" },
+    //     "virus2": { host: "camel" },
+    //     "virus3": { host: "human" },
+    //     "virus4": { host: "human" },
+    //     "virus5": { host: "bat" },
+    //     "virus6": { host: "bat" },
+    //     "virus7": { host: "bat" },
+    //     "virus8": { host: "bat" },
+    //     "virus9": { host: "whale" },
+    //     "virus10": { host: "whale" }
+    // });
+    //
     // tree.annotateNodesFromTips("host");
-
-    figTree.update();
+    // tree.orderByNodeDensity();
+    // const treeSVG = document.getElementById('phylogram_3');
+    // const layout = new ExplodedLayout(tree,{groupGap:9,direction:"down"});
+    //
+    // const figTree = new FigTree(treeSVG, layout,
+    //     { top: 10, bottom: 60, left: 10, right: 150},
+    //     {   hoverBorder: 2, backgroundBorder: 2,
+    //         baubles: [
+    //             new CircleBauble({ vertexFilter: (v) => v.degree !== 2 }),
+    //             new RectangularBauble({ vertexFilter: (v) => v.degree === 2})
+    //         ],
+    //         // branchScale:10,
+    //         origin:0,
+    //         offset:0,
+    //         branchScale:10,
+    //         reverseAxis:false
+    //     });
+    //
+    //
+    // figTree.draw();
+    //
+    // layout.internalNodeLabels="probability";
+    // const cladeToRemove = tree.tipMap.get("virus4").parent;
+    // const leftpareent = cladeToRemove.parent;
+    // // tree.removeClade(cladeToRemove).removeNode(leftpareent)
+    //
+    // layout.cartoon(layout.nodeMap.get(tree.tipMap.get("virus1").parent));
+    //
+    // // figTree.addLabels('.external-node', FigTree.nodeInfo);
+    // figTree.addToolTip('.node', layout.nodeInfo);
+    //
+    // figTree.hilightBranches();
+    // figTree.hilightInternalNodes();
+    // figTree.onClickNode((v)=>{
+    //     console.log(v)
+    //     console.log(v.x+figTree.settings.offset)
+    //     layout.cartoon(v)
+    // });
+    //
+    // // tree.annotateNodesFromTips("host");
+    //
+    // figTree.update();
 
 </script>
 
