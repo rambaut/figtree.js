@@ -11175,12 +11175,6 @@ var Bauble =
 function () {
   createClass(Bauble, null, [{
     key: "DEFAULT_SETTINGS",
-
-    /**
-     * The default settings for the Bauable class. The default is ()=>true. All vertexs are assigned a bauble
-     * @return {{vertexFilter: (function(): boolean)}}
-     * @constructor
-     */
     value: function DEFAULT_SETTINGS() {
       return {
         vertexFilter: function vertexFilter() {
@@ -11197,7 +11191,10 @@ function () {
     /**
      * The constructor takes a setting object. The keys of the setting object are determined by the type of bauble.
      *
-     * @param settings
+     * @param {Object} settings
+     * @param {function} [settings.vertexFilter=()=>true] - a function that is passed each vertex. If it returns true then bauble applies to that vertex.
+     * @param {Object} [settings.attrs={}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These can be overwritten by css.
+     *  @param {Object} [settings.styles={}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These overwrite css.
      */
 
   }]);
@@ -11220,7 +11217,7 @@ function () {
 
     /**
      * A function that appends the bauble to the selection, joins the data, assigns the attributes to the svg objects
-     * updates and remove unnneed objects.
+     * updates and remove unneeded objects.
      * @param selection
      * @param border
      */
@@ -11336,13 +11333,6 @@ function (_Bauble) {
 
   createClass(CircleBauble, null, [{
     key: "DEFAULT_SETTINGS",
-
-    /**
-     * The default settings for the circleBauble
-     * The default is 6;
-     * @return {{radius: number}}
-     * @constructor
-     */
     value: function DEFAULT_SETTINGS() {
       return {
         radius: 6
@@ -11350,6 +11340,7 @@ function (_Bauble) {
     }
     /**
      * The constructor.
+     * @param [settings.radius=6] - the radius of the circle
      */
 
   }]);
@@ -11365,8 +11356,7 @@ function (_Bauble) {
    * A function that assigns cy,cx,and r attributes to a selection. (cx and cy are set to 0 each r is the settings radius
    * plus the border.
    * @param selection
-   * @param border
-   * @return {*|null|undefined}
+   * @param {number} [border=0] - the amount to change the radius of the circle.
    */
 
 
@@ -11447,6 +11437,17 @@ function (_Bauble) {
         }
       };
     }
+    /**
+     * The constructor takes a setting object. The keys of the setting object are determined by the type of bauble.
+     *
+     * @param {Object} settings
+     * @param {function} [settings.curve=d3.curveStepBefore] - a d3 curve used to draw the edge
+     * @param {number} [settings.curveRadius=0] - if the curve radius is >0 then two points will be placed this many pixels below and to the right of the step point. This can be used with difference curves to make smooth corners
+     * @param {function} [settings.edgeFilter=()=>true] - a function that is passed each edge. If it returns true then bauble applies to that vertex.
+     * @param {Object} [settings.attrs={"fill": d => "none", "stroke-width": d => "2", "stroke": d => "black"}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These can be overwritten by css.
+     *  @param {Object} [settings.styles={}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These overwrite css.
+     */
+
   }]);
 
   function BranchBauble(settings) {
@@ -13316,12 +13317,6 @@ function (_Bauble) {
 
   createClass(RectangularBauble, null, [{
     key: "DEFAULT_SETTINGS",
-
-    /**
-     * The default settings for the rectangular bauble.
-     * @return {{width: number, radius: number, height: number}}
-     * @constructor
-     */
     value: function DEFAULT_SETTINGS() {
       return {
         height: 16,
@@ -13331,7 +13326,10 @@ function (_Bauble) {
     }
     /**
      * The constructor.
-     */
+     * @param [settings.height=16] - the height of the rectangle in pixels
+     * @param [settings.width=6] - the width of the rectangle in pixels
+     * @param [settings.radius=2] - the rx and ry of the rectangle. This rounds the corners
+      */
 
   }]);
 
@@ -14088,8 +14086,22 @@ function () {
       };
     }
     /**
-     * The constructor.
-     */
+     /**
+     * The constructor takes a setting object.
+     *
+     * @param {Object} settings
+     * @param {Array} [settings.tickArguments=[5,"f"] - Arguments passed to the d3 tickArgument function for the axis
+     * @param {Object} [settings.title={
+                    text:"",
+                    xPadding:0,
+                    yPadding:0,
+                    rotation:0
+            }] - options pertaining to the axis title
+     @param {string} settings.title.text - The axis title
+     @param {number} settings.title.xPadding -number of pixels to move the text in the x direction
+      @param {number} settings.title.yPadding -number of pixels to move the text in the y direction
+      @param {string} [settings.location="bottom"] - the direction of the ticks on the axis bottom,top,left,right
+      */
 
   }]);
 

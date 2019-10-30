@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: baubles/cartoonbauble.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: baubles/cartoonbauble.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import {curveBasisClosed, line} from "d3-shape";
+import {mergeDeep} from "../utilities";
+import {Bauble} from "./bauble";
+/** @module bauble */
+
+export class CartoonBauble extends Bauble {
+    static DEFAULT_SETTINGS() {
+        return {
+            curve: curveBasisClosed,
+            attrs: {"fill": d => "none", "stroke-width": d => "2", "stroke": d => "black"},
+            vertexFilter:null,
+            cartoonFilter:()=>true
+        }
+    }
+
+    constructor(settings) {
+        super(mergeDeep(CartoonBauble.DEFAULT_SETTINGS(), settings));
+    }
+
+    setup(scales = {}) {
+        scales = mergeDeep({x: null, y: null, xOffset: 0, yOffset: 0}, scales);
+        this.pathGenerator = pointToPointGen({scales:scales});
+    }
+    get cartoonFilter(){
+        return this.settings.cartoonFilter;
+    }
+    updateShapes(selection) {
+
+        return selection.selectAll("path")
+            .data(d => [d])
+            .join(
+                enter => enter
+                    .append("path")
+                    .attr("d", c => this.pathGenerator(c.points))
+                    .attr("class", "cartoon-path")
+                    .attrs((c) => {
+                        const attributes = this.settings.attrs;
+                        return Object.keys(attributes).reduce((acc, curr) => {
+                            // const vertex = d3.select(n[i].parentNode).datum(); // the vertex data is assigned to the group
+                            return {...acc, [curr]: attributes[curr](c)}
+                        }, {})
+                    })
+                    .styles((c) => {
+                        const styles = this.settings.styles;
+                        return Object.keys(styles).reduce((acc, curr) => {
+                            // const vertex = d3.select(n[i].parentNode).datum(); // the vertex data is assigned to the group
+                            return {...acc, [curr]: styles[curr](c)}
+                        }, {})
+                    }),
+                update => update
+                    .call(update => update.transition()
+                        .attr("d", this.pathGenerator(c.points))
+                        .attrs((c) => {
+                            const attributes = this.settings.attrs;
+                            return Object.keys(attributes).reduce((acc, curr) => {
+                                // const vertex = d3.select(n[i].parentNode).datum(); // the vertex data is assigned to the group
+                                return {...acc, [curr]: attributes[curr](c)}
+                            }, {})
+                        })
+                        .styles((c) => {
+                            const styles = this.settings.styles;
+                            return Object.keys(styles).reduce((acc, curr) => {
+                                // const vertex = d3.select(n[i].parentNode).datum(); // the vertex data is assigned to the group
+                                return {...acc, [curr]: styles[curr](c)}
+                            }, {})
+                        }),
+                    )
+            )
+    };
+}
+
+ export function pointToPointGen({scales}) {
+     const pointToPoint = (points) => {
+         let path = [];
+         const origin = points[0];
+         const pathPoints = points.reverse();
+         let currentPoint = origin;
+         for (const point of pathPoints) {
+             const xdiff = scales.x(point.x + scales.xOffset) - scales.x(currentPoint.x + scales.xOffset);
+             const ydiff = scales.y(point.y) - scales.y(currentPoint.y);
+             path.push(`${xdiff} ${ydiff}`);
+             currentPoint = point;
+         }
+         return `M 0 0 l ${path.join(" l ")} z`;
+     }
+     return pointToPoint;
+ }</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-bauble.html">bauble</a></li><li><a href="module-figtree.html">figtree</a></li><li><a href="module-layout.html">layout</a></li><li><a href="module-roottotipplot.html">roottotipplot</a></li><li><a href="module-tree.html">tree</a></li></ul><h3>Classes</h3><ul><li><a href="module-bauble.Axis.html">Axis</a></li><li><a href="module-bauble.Bauble.html">Bauble</a></li><li><a href="module-bauble.BranchBauble.html">BranchBauble</a></li><li><a href="module-bauble.CircleBauble.html">CircleBauble</a></li><li><a href="module-bauble.RectangularBauble.html">RectangularBauble</a></li><li><a href="module-bauble.RoughCircleBauble.html">RoughCircleBauble</a></li><li><a href="module-bauble.RoughCircleBauble.DEFAULT_SETTINGS.html">DEFAULT_SETTINGS</a></li><li><a href="module-figtree.FigTree.html">FigTree</a></li><li><a href="module-layout.AbstractLayout.html">AbstractLayout</a></li><li><a href="module-layout.AbstractLayout.DEFAULT_SETTINGS.html">DEFAULT_SETTINGS</a></li><li><a href="module-layout.EqualAngleLayout.html">EqualAngleLayout</a></li><li><a href="module-layout.ExplodedLayout.html">ExplodedLayout</a></li><li><a href="module-layout.layoutInterface.html">layoutInterface</a></li><li><a href="module-layout.RectangularLayout.html">RectangularLayout</a></li><li><a href="module-layout.TransmissionLayout.html">TransmissionLayout</a></li><li><a href="module-roottotipplot.RootToTipPlot.html">RootToTipPlot</a></li><li><a href="module-tree.Tree.html">Tree</a></li></ul><h3>Global</h3><ul><li><a href="global.html#dateToDecimal">dateToDecimal</a></li><li><a href="global.html#decimalToDate">decimalToDate</a></li><li><a href="global.html#leapYear">leapYear</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Wed Oct 30 2019 15:26:42 GMT+0000 (Greenwich Mean Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

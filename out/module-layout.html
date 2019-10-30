@@ -1,0 +1,2776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Module: layout</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Module: layout</h1>
+
+    
+
+
+
+
+<section>
+
+<header>
+    
+        
+    
+</header>
+
+<article>
+    <div class="container-overview">
+    
+        
+
+        
+    
+    </div>
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Classes</h3>
+
+        <dl>
+            <dt><a href="module-layout.AbstractLayout.html">AbstractLayout</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.EqualAngleLayout.html">EqualAngleLayout</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.ExplodedLayout.html">ExplodedLayout</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.layoutInterface.html">layoutInterface</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.RectangularLayout.html">RectangularLayout</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.TransmissionLayout.html">TransmissionLayout</a></dt>
+            <dd></dd>
+        </dl>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id=".updateVerticesY"><span class="type-signature">(static) </span>updateVerticesY<span class="signature">(delta, vertices)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    This is a helper function that updates a vertices y position by a specified amount. The function is meant to open a gap
+in the tree around vertices that are moved. A side effect of the function is
+that vertices not listed are moved up (if they are above the selected vertices and the vertices are moved up) and
+down if they are below the selected vertices and the vertices are moved down. It is meant to be called with this
+referring to the layout. Remember that the top of plot has y position 0. So positive numbers move the vertices to
+positions lower on the screen.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>delta</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>vertices</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="layout_abstractLayout.js.html">layout/abstractLayout.js</a>, <a href="layout_abstractLayout.js.html#line529">line 529</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="~getAngle"><span class="type-signature">(inner) </span>getAngle<span class="signature">(vertex1, vertex2)</span><span class="type-signature"> &rarr; {number}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    A function that gets the angle between vertices linked by the hypotenuse of a right triangle
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>vertex1</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>vertex2</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="layout_equalanglelayout.js.html">layout/equalanglelayout.js</a>, <a href="layout_equalanglelayout.js.html#line179">line 179</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">number</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+
+
+
+<section>
+
+<header>
+    
+        
+    
+</header>
+
+<article>
+    <div class="container-overview">
+    
+        
+
+        
+    
+    </div>
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Classes</h3>
+
+        <dl>
+            <dt><a href="module-layout.AbstractLayout.html">AbstractLayout</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.EqualAngleLayout.html">EqualAngleLayout</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.ExplodedLayout.html">ExplodedLayout</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.layoutInterface.html">layoutInterface</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.RectangularLayout.html">RectangularLayout</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.TransmissionLayout.html">TransmissionLayout</a></dt>
+            <dd></dd>
+        </dl>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id=".updateVerticesY"><span class="type-signature">(static) </span>updateVerticesY<span class="signature">(delta, vertices)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    This is a helper function that updates a vertices y position by a specified amount. The function is meant to open a gap
+in the tree around vertices that are moved. A side effect of the function is
+that vertices not listed are moved up (if they are above the selected vertices and the vertices are moved up) and
+down if they are below the selected vertices and the vertices are moved down. It is meant to be called with this
+referring to the layout. Remember that the top of plot has y position 0. So positive numbers move the vertices to
+positions lower on the screen.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>delta</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>vertices</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="layout_abstractLayout.js.html">layout/abstractLayout.js</a>, <a href="layout_abstractLayout.js.html#line529">line 529</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="~getAngle"><span class="type-signature">(inner) </span>getAngle<span class="signature">(vertex1, vertex2)</span><span class="type-signature"> &rarr; {number}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    A function that gets the angle between vertices linked by the hypotenuse of a right triangle
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>vertex1</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>vertex2</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="layout_equalanglelayout.js.html">layout/equalanglelayout.js</a>, <a href="layout_equalanglelayout.js.html#line179">line 179</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">number</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+
+
+
+<section>
+
+<header>
+    
+        
+    
+</header>
+
+<article>
+    <div class="container-overview">
+    
+        
+
+        
+    
+    </div>
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Classes</h3>
+
+        <dl>
+            <dt><a href="module-layout.AbstractLayout.html">AbstractLayout</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.EqualAngleLayout.html">EqualAngleLayout</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.ExplodedLayout.html">ExplodedLayout</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.layoutInterface.html">layoutInterface</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.RectangularLayout.html">RectangularLayout</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.TransmissionLayout.html">TransmissionLayout</a></dt>
+            <dd></dd>
+        </dl>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id=".updateVerticesY"><span class="type-signature">(static) </span>updateVerticesY<span class="signature">(delta, vertices)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    This is a helper function that updates a vertices y position by a specified amount. The function is meant to open a gap
+in the tree around vertices that are moved. A side effect of the function is
+that vertices not listed are moved up (if they are above the selected vertices and the vertices are moved up) and
+down if they are below the selected vertices and the vertices are moved down. It is meant to be called with this
+referring to the layout. Remember that the top of plot has y position 0. So positive numbers move the vertices to
+positions lower on the screen.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>delta</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>vertices</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="layout_abstractLayout.js.html">layout/abstractLayout.js</a>, <a href="layout_abstractLayout.js.html#line529">line 529</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="~getAngle"><span class="type-signature">(inner) </span>getAngle<span class="signature">(vertex1, vertex2)</span><span class="type-signature"> &rarr; {number}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    A function that gets the angle between vertices linked by the hypotenuse of a right triangle
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>vertex1</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>vertex2</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="layout_equalanglelayout.js.html">layout/equalanglelayout.js</a>, <a href="layout_equalanglelayout.js.html#line179">line 179</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">number</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+
+
+
+<section>
+
+<header>
+    
+        
+    
+</header>
+
+<article>
+    <div class="container-overview">
+    
+        
+
+        
+    
+    </div>
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Classes</h3>
+
+        <dl>
+            <dt><a href="module-layout.AbstractLayout.html">AbstractLayout</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.EqualAngleLayout.html">EqualAngleLayout</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.ExplodedLayout.html">ExplodedLayout</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.layoutInterface.html">layoutInterface</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.RectangularLayout.html">RectangularLayout</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.TransmissionLayout.html">TransmissionLayout</a></dt>
+            <dd></dd>
+        </dl>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id=".updateVerticesY"><span class="type-signature">(static) </span>updateVerticesY<span class="signature">(delta, vertices)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    This is a helper function that updates a vertices y position by a specified amount. The function is meant to open a gap
+in the tree around vertices that are moved. A side effect of the function is
+that vertices not listed are moved up (if they are above the selected vertices and the vertices are moved up) and
+down if they are below the selected vertices and the vertices are moved down. It is meant to be called with this
+referring to the layout. Remember that the top of plot has y position 0. So positive numbers move the vertices to
+positions lower on the screen.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>delta</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>vertices</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="layout_abstractLayout.js.html">layout/abstractLayout.js</a>, <a href="layout_abstractLayout.js.html#line529">line 529</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="~getAngle"><span class="type-signature">(inner) </span>getAngle<span class="signature">(vertex1, vertex2)</span><span class="type-signature"> &rarr; {number}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    A function that gets the angle between vertices linked by the hypotenuse of a right triangle
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>vertex1</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>vertex2</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="layout_equalanglelayout.js.html">layout/equalanglelayout.js</a>, <a href="layout_equalanglelayout.js.html#line179">line 179</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">number</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+
+
+
+<section>
+
+<header>
+    
+        
+    
+</header>
+
+<article>
+    <div class="container-overview">
+    
+        
+
+        
+    
+    </div>
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Classes</h3>
+
+        <dl>
+            <dt><a href="module-layout.AbstractLayout.html">AbstractLayout</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.EqualAngleLayout.html">EqualAngleLayout</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.ExplodedLayout.html">ExplodedLayout</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.layoutInterface.html">layoutInterface</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.RectangularLayout.html">RectangularLayout</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.TransmissionLayout.html">TransmissionLayout</a></dt>
+            <dd></dd>
+        </dl>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id=".updateVerticesY"><span class="type-signature">(static) </span>updateVerticesY<span class="signature">(delta, vertices)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    This is a helper function that updates a vertices y position by a specified amount. The function is meant to open a gap
+in the tree around vertices that are moved. A side effect of the function is
+that vertices not listed are moved up (if they are above the selected vertices and the vertices are moved up) and
+down if they are below the selected vertices and the vertices are moved down. It is meant to be called with this
+referring to the layout. Remember that the top of plot has y position 0. So positive numbers move the vertices to
+positions lower on the screen.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>delta</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>vertices</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="layout_abstractLayout.js.html">layout/abstractLayout.js</a>, <a href="layout_abstractLayout.js.html#line529">line 529</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="~getAngle"><span class="type-signature">(inner) </span>getAngle<span class="signature">(vertex1, vertex2)</span><span class="type-signature"> &rarr; {number}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    A function that gets the angle between vertices linked by the hypotenuse of a right triangle
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>vertex1</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>vertex2</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="layout_equalanglelayout.js.html">layout/equalanglelayout.js</a>, <a href="layout_equalanglelayout.js.html#line179">line 179</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">number</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+
+
+
+<section>
+
+<header>
+    
+        
+    
+</header>
+
+<article>
+    <div class="container-overview">
+    
+        
+
+        
+    
+    </div>
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Classes</h3>
+
+        <dl>
+            <dt><a href="module-layout.AbstractLayout.html">AbstractLayout</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.EqualAngleLayout.html">EqualAngleLayout</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.ExplodedLayout.html">ExplodedLayout</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.layoutInterface.html">layoutInterface</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.RectangularLayout.html">RectangularLayout</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.TransmissionLayout.html">TransmissionLayout</a></dt>
+            <dd></dd>
+        </dl>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id=".updateVerticesY"><span class="type-signature">(static) </span>updateVerticesY<span class="signature">(delta, vertices)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    This is a helper function that updates a vertices y position by a specified amount. The function is meant to open a gap
+in the tree around vertices that are moved. A side effect of the function is
+that vertices not listed are moved up (if they are above the selected vertices and the vertices are moved up) and
+down if they are below the selected vertices and the vertices are moved down. It is meant to be called with this
+referring to the layout. Remember that the top of plot has y position 0. So positive numbers move the vertices to
+positions lower on the screen.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>delta</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>vertices</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="layout_abstractLayout.js.html">layout/abstractLayout.js</a>, <a href="layout_abstractLayout.js.html#line529">line 529</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="~getAngle"><span class="type-signature">(inner) </span>getAngle<span class="signature">(vertex1, vertex2)</span><span class="type-signature"> &rarr; {number}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    A function that gets the angle between vertices linked by the hypotenuse of a right triangle
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>vertex1</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>vertex2</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="layout_equalanglelayout.js.html">layout/equalanglelayout.js</a>, <a href="layout_equalanglelayout.js.html#line179">line 179</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">number</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+
+
+
+<section>
+
+<header>
+    
+        
+    
+</header>
+
+<article>
+    <div class="container-overview">
+    
+        
+
+        
+    
+    </div>
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Classes</h3>
+
+        <dl>
+            <dt><a href="module-layout.AbstractLayout.html">AbstractLayout</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.EqualAngleLayout.html">EqualAngleLayout</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.ExplodedLayout.html">ExplodedLayout</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.layoutInterface.html">layoutInterface</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.RectangularLayout.html">RectangularLayout</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-layout.TransmissionLayout.html">TransmissionLayout</a></dt>
+            <dd></dd>
+        </dl>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id=".updateVerticesY"><span class="type-signature">(static) </span>updateVerticesY<span class="signature">(delta, vertices)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    This is a helper function that updates a vertices y position by a specified amount. The function is meant to open a gap
+in the tree around vertices that are moved. A side effect of the function is
+that vertices not listed are moved up (if they are above the selected vertices and the vertices are moved up) and
+down if they are below the selected vertices and the vertices are moved down. It is meant to be called with this
+referring to the layout. Remember that the top of plot has y position 0. So positive numbers move the vertices to
+positions lower on the screen.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>delta</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>vertices</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="layout_abstractLayout.js.html">layout/abstractLayout.js</a>, <a href="layout_abstractLayout.js.html#line529">line 529</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="~getAngle"><span class="type-signature">(inner) </span>getAngle<span class="signature">(vertex1, vertex2)</span><span class="type-signature"> &rarr; {number}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    A function that gets the angle between vertices linked by the hypotenuse of a right triangle
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>vertex1</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>vertex2</code></td>
+            
+
+            <td class="type">
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="layout_equalanglelayout.js.html">layout/equalanglelayout.js</a>, <a href="layout_equalanglelayout.js.html#line179">line 179</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">number</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-bauble.html">bauble</a></li><li><a href="module-figtree.html">figtree</a></li><li><a href="module-layout.html">layout</a></li><li><a href="module-roottotipplot.html">roottotipplot</a></li><li><a href="module-tree.html">tree</a></li></ul><h3>Classes</h3><ul><li><a href="module-bauble.Axis.html">Axis</a></li><li><a href="module-bauble.Bauble.html">Bauble</a></li><li><a href="module-bauble.BranchBauble.html">BranchBauble</a></li><li><a href="module-bauble.CircleBauble.html">CircleBauble</a></li><li><a href="module-bauble.RectangularBauble.html">RectangularBauble</a></li><li><a href="module-bauble.RoughCircleBauble.html">RoughCircleBauble</a></li><li><a href="module-bauble.RoughCircleBauble.DEFAULT_SETTINGS.html">DEFAULT_SETTINGS</a></li><li><a href="module-figtree.FigTree.html">FigTree</a></li><li><a href="module-layout.AbstractLayout.html">AbstractLayout</a></li><li><a href="module-layout.AbstractLayout.DEFAULT_SETTINGS.html">DEFAULT_SETTINGS</a></li><li><a href="module-layout.EqualAngleLayout.html">EqualAngleLayout</a></li><li><a href="module-layout.ExplodedLayout.html">ExplodedLayout</a></li><li><a href="module-layout.layoutInterface.html">layoutInterface</a></li><li><a href="module-layout.RectangularLayout.html">RectangularLayout</a></li><li><a href="module-layout.TransmissionLayout.html">TransmissionLayout</a></li><li><a href="module-roottotipplot.RootToTipPlot.html">RootToTipPlot</a></li><li><a href="module-tree.Tree.html">Tree</a></li></ul><h3>Global</h3><ul><li><a href="global.html#dateToDecimal">dateToDecimal</a></li><li><a href="global.html#decimalToDate">decimalToDate</a></li><li><a href="global.html#leapYear">leapYear</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Wed Oct 30 2019 15:26:42 GMT+0000 (Greenwich Mean Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
