@@ -1022,7 +1022,7 @@ export class Tree {
     /*
 
      */
-   static  parseNexus(nexus){
+   static  parseNexus(nexus,options={}){
 
         const trees=[];
 
@@ -1053,7 +1053,7 @@ export class Tree {
                         }else{
                             // if(tipNameMap.size>0) {
                                 const treeString = token.substring(token.indexOf("("));
-                                const thisTree = Tree.parseNewick(treeString);
+                                const thisTree = Tree.parseNewick(treeString,options);
                                 if(tipNameMap.size>0) {
 
                                     thisTree.externalNodes.forEach(tip => {

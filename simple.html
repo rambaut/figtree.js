@@ -135,15 +135,18 @@
 
     const layout = new RectangularLayout(tree);
     // layout.setBranchLabels("length");
-
+    const externalNodeBauble = new CircleBauble({radius:6,vertexFilter:(v)=>v.degree===1,styles:{fill:()=>"red"}});
     const figTree = new FigTree(treeSVG, layout,
-        { top: 10, bottom: 60, left: 10, right: 150});
-        figTree.draw();
-
-    figTree.hilightInternalNodes();
-    figTree.onClickInternalNode(layout.rotate());
-    figTree.hilightBranches();
-    figTree.onClickBranch({action:layout.reroot()});
+        { top: 10, bottom: 60, left: 10, right: 150},
+        {vertices:{baubles:[externalNodeBauble]}});
+        figTree
+            .hilightInternalNodes()
+            .hilightExternalNodes()
+    .onClickInternalNode(layout.rotate())
+    .hilightBranches()
+    .onClickBranch({action:layout.reroot()})
+            .draw()
+    console.log(figTree)
 
 
     // figTree.addToolTip('#root', "The root node - represents the most recent<br>common ancestor of the whole tree");

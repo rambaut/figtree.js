@@ -269,8 +269,9 @@ export class FigTree {
         const action = {
             enter: (d, i, n) => {
                 const node = select(n[i]);
+                const vertex = d;
                 self.settings.vertices.baubles.forEach((bauble) => {
-                    if (bauble.vertexFilter(node)) {
+                    if (bauble.vertexFilter(vertex)) {
                     bauble.updateShapes(node, self.settings.vertices.hoverBorder);
                     }
                 });
@@ -278,9 +279,9 @@ export class FigTree {
             },
             exit: (d,i,n) =>{
                 const node = select(n[i]);
-
+                const vertex = d;
                 self.settings.vertices.baubles.forEach((bauble) => {
-                    if (bauble.vertexFilter(node)) {
+                    if (bauble.vertexFilter(vertex)) {
                     bauble.updateShapes(node, 0);
                     }
                 });
@@ -406,7 +407,7 @@ export class FigTree {
      * @param {*} selection defualts to .branch
      */
     onHoverBranch({action,selection,update}){
-        selection = selection ? selection : ".branch";
+        selection = selection ? `.branch ${selection}` : ".branch";
         update = update? update:false;
         this.callbacks.branches.push(()=>{
             this.onHover({action:action,selection:selection,update:update});

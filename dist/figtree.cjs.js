@@ -9137,6 +9137,7 @@ function () {
     /*
       */
     value: function parseNexus(nexus) {
+      var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
       var trees = []; // odd parts ensure we're not in a taxon label
       //TODO make this parsing more robust
 
@@ -9182,7 +9183,7 @@ function () {
                     } else {
                       // if(tipNameMap.size>0) {
                       var treeString = token.substring(token.indexOf("("));
-                      var thisTree = Tree.parseNewick(treeString);
+                      var thisTree = Tree.parseNewick(treeString, options);
 
                       if (tipNameMap.size > 0) {
                         thisTree.externalNodes.forEach(function (tip) {
@@ -11993,8 +11994,9 @@ function () {
       var action = {
         enter: function enter(d, i, n) {
           var node = select(n[i]);
+          var vertex = d;
           self.settings.vertices.baubles.forEach(function (bauble) {
-            if (bauble.vertexFilter(node)) {
+            if (bauble.vertexFilter(vertex)) {
               bauble.updateShapes(node, self.settings.vertices.hoverBorder);
             }
           });
@@ -12002,8 +12004,9 @@ function () {
         },
         exit: function exit(d, i, n) {
           var node = select(n[i]);
+          var vertex = d;
           self.settings.vertices.baubles.forEach(function (bauble) {
-            if (bauble.vertexFilter(node)) {
+            if (bauble.vertexFilter(vertex)) {
               bauble.updateShapes(node, 0);
             }
           });
@@ -12183,7 +12186,7 @@ function () {
       var action = _ref4.action,
           selection = _ref4.selection,
           update = _ref4.update;
-      selection = selection ? selection : ".branch";
+      selection = selection ? ".branch ".concat(selection) : ".branch";
       update = update ? update : false;
       this.callbacks.branches.push(function () {
         _this5.onHover({
