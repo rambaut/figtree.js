@@ -88,7 +88,7 @@ export class FigTree {
      * @param {number} margins.left - the distance from the left
      * @param {number} margins.right - the distance from the right
      * @param {Object} [settings={}] - Settings for the figure. Settings provided in part will not affect defaults not explicitly mentioned
-     * @param {Object} settings.xScale - Settings specific for the xscale of the figure
+     * @param {Object} settings.xScale - Settings specific for the x scale of the figure
      * @param {Object[]} [settings.xScale.axes=[]] - An array of axis that will use the xScale
      * @param {number} [settings.xScale.gap=10] - The number of pixels between the axis line and the bottom of the svg drawing space
      * @param {function} [settings.xScale.scale=d3.scaleLinear] - A d3 scale for the x dimension
@@ -98,7 +98,7 @@ export class FigTree {
      * @param {number} [settings.xScale.revisions.branchScale=1] - Factor to scale the branchlengths by
      * @param {number} [settings.xScale.revisions.offset=0] - Space to add between the origin and right-most vertex
      * @param {number} [settings.xScale.revisions.hedge = 0] - Space to add between the left edge of the plot and the left most vertex.
-     * @param {Object} settings.xScale - Settings specific for the xscale of the figure
+     * @param {Object} settings.yScale - Settings specific for the y scale of the figure
      * @param {Object[]} [settings.yScale.axes=[]] - An array of axis that will use the yScale
      * @param {number} [settings.yScale.gap=10] - The number of pixels between the axis line and the left of the svg drawing space
      * @param {function} [settings.yScale.scale=d3.scaleLinear] - A d3 scale for the y dimension
@@ -110,9 +110,9 @@ export class FigTree {
      * @param {Object[]}  [settings.edges.baubles=[new BranchBauble()]] - An array of baubles that form the branches of the tree, each bauble can have it's own settings
      * @param {Object}    settings.cartoons - Options specific to the cartoons on the tree (triangle clades ect.)
      * @param {Object[]}  [settings.edges.baubles=[new CartoonBauble()]] - An array of baubles that form the cartoons on the firgure, each bauble can have it's own settings     cartoons:{
-     * @param {Object} settings.transition - Options controling the how the figure changes upon interaction
+     * @param {Object} settings.transition - Options controlling the how the figure changes upon interaction
      * @param {number} [settings.transition.transitionDuration=500] - the number of milliseconds to take when transitioning
-     * @param {function} [transitionEase=d3.easeLinear] - the d3 ease function used to interpolate during transitioning
+     * @param {function} [settings.transitionEase=d3.easeLinear] - the d3 ease function used to interpolate during transitioning
      *
      */
     constructor(svg, layout, margins, settings = {}) {
@@ -132,7 +132,7 @@ export class FigTree {
     }
 
     /**
-     * An instance method that makes the svg object and places them in the page. Without calling this method the figure will not be drawn
+     * An instance method that makes place the svg object in the page. Without calling this method the figure will not be drawn
      * @return {FigTree}
      */
     draw(){
@@ -178,7 +178,7 @@ export class FigTree {
     }
 
     /**
-     * Updates the tree when it has changed
+     * Updates the figure when the tree has changed
      */
     update() {
         if(!this.drawn){
@@ -210,7 +210,8 @@ export class FigTree {
 
     /**
      * set mouseover highlighting of branches
-     * This changes the branch path class to hovered. It is expected that css will handel any changes needed
+     * This changes the branch path class to hovered. It is expected that css will handel any visual changes needed.
+     * This function is a helper function that calls onHoverBranch with an appropriate action function.
      */
     hilightBranches() {
         const self=this;
@@ -240,7 +241,8 @@ export class FigTree {
     }
 
     /**
-     * Set mouseover highlighting of internal nodes
+     * A helper function that sets mouseover highlighting of internal nodes. This helper function calls hilightNodes with
+     * and ".internal-node" selection.
      */
     hilightInternalNodes() {
         this.hilightNodes(".internal-node");
@@ -248,7 +250,8 @@ export class FigTree {
 
     }
     /**
-     * Set mouseover highlighting of internal nodes
+     * A helper function that sets mouseover highlighting of external nodes. This helper function calls hilightNodes with
+     * and ".external-node" selection.
      */
     hilightExternalNodes() {
         this.hilightNodes(".external-node");
@@ -295,7 +298,7 @@ export class FigTree {
      *
      * Optionally a selection string can be provided - i.e., to select a particular branch by its id.
      *
-     * @param action
+     * @param {Object} action
      * @param selection
      */
     onClickBranch({action, selection,update,proportionMethod}) {
