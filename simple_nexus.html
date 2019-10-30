@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FigTree Demo</title>
+    <!-- <script src="js/d3.js" charset="utf-8"></script> -->
+    <!--<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>-->
+    <style>
+        text {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 14pt;
+            font-weight: 300;
+        }
+
+        .branch .branch-path {
+            fill: none;
+            stroke: #541753;
+            stroke-width: 2px;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .branch.hovered .branch-path {
+            stroke-width: 4px;
+        }
+
+        .external-node .node-shape {
+            fill: #22b680;
+            /*stroke: rgb(255, 255, 255);*/
+            /*stroke-width: 1;*/
+        }
+
+        .external-node .node-shape.hovered {
+            stroke: rgb(0,0,0);
+            /*stroke-width: 1;*/
+        }
+        .external-node .node-shape.unselected {
+            fill: #22b680;
+            /*stroke: rgb(255, 255, 255);*/
+        }
+        .external-node .node-shape.selected {
+            fill: #edb23b;
+            /*stroke: rgb(0,0,0);*/
+        }
+
+        .internal-node .node-shape {
+            fill: #29c5ef;
+            /*stroke: rgb(255, 255, 255);*/
+            /*stroke-width: 1;*/
+        }
+        .internal-node .node-shape.hovered {
+            stroke: rgb(0,0,0);
+        }
+
+        #root .node-shape {
+            fill: #e31e58;
+            /*stroke: rgb(255, 255, 255);*/
+            /*stroke-width: 1;*/
+        }
+
+        .node-background {
+            fill: rgb(255, 255, 255);
+            /*stroke: rgb(255, 255, 255);*/
+            /*stroke-width: 1;*/
+        }
+
+        .node-label {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 14pt;
+            font-weight: 300;
+        }
+
+        .trend-line {
+            stroke: rgb(0,0,0);
+            stroke-width: 2px;
+            stroke-linecap: round;
+        }
+
+        .axis text {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 12pt;
+            font-weight: 300;
+        }
+
+        .axis-label text {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 12pt;
+            font-weight: bold;
+        }
+
+        .node-label.support {
+            font-size: 10pt;
+        }
+
+        .branch-label.length {
+            /*display: none;*/
+            font-size: 8pt;
+        }
+
+        #tooltip {
+            background: #F6EECA;
+            border: 1px solid #005C68;
+            color: #005C68;
+            border-radius: 5px;
+            padding: 5px;
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 12pt;
+            font-weight: 300;
+        }
+    </style>
+</head>
+
+<body>
+<div id="tooltip" display="none" style="position: absolute; display: none;"></div>
+
+<div>
+    <figure>
+        <svg id="phylogram_1a"  width="600" height="500"></svg>
+    </figure>
+    <!--<button id="sort_up_button">Sort ascending</button>-->
+    <!--<button id="sort_down_button">Sort descending</button>-->
+    <!--<button id="rectangular_button">Draw rectangular</button>-->
+    <!--<button id="triangular_button">Draw triangular</button>-->
+</div>
+<script src ="dist/figtree.umd.js"></script>
+<script type="module">
+
+    import {Tree,RectangularLayout,CircleBauble,FigTree,BranchBauble,EqualAngleLayout,Axis,RootToTipPlot}  from "./dist/figtree.esm.js";
+
+    const treeURL = "https://raw.githubusercontent.com/evogytis/fluB/master/data/mcc%20trees/InfB_PB1t_ALLs1.mcc.tre"
+    const tree = fetch(treeURL)
+        .then(response=>response.text()).then(string=>Tree.parseNexus(string)).then(trees=>makeFigure(trees[0]));
+
+
+    function makeFigure(tree){
+        const treeSVG = document.getElementById('phylogram_1a');
+        const layout = new RectangularLayout(tree);
+        // layout.setBranchLabels("length");
+
+        const figTree = new FigTree(treeSVG, layout,
+            { top: 10, bottom: 60, left: 10, right: 150});
+        figTree.draw();
+
+        figTree.hilightInternalNodes();
+        figTree.onClickInternalNode(layout.rotate());
+        figTree.hilightBranches();
+        figTree.onClickBranch({action:layout.reroot()});
+    }
+
+
+
+    // figTree.addToolTip('#root', "The root node - represents the most recent<br>common ancestor of the whole tree");
+    // figTree.addToolTip('.internal-node .node-shape', "This is an internal node - it is the most recent<br>common ancestor of the viruses to the right" );
+    // figTree.addToolTip('.internal-node .node-label', "This is a support value - it gives the degree<br>of statistical support that the viruses to the<br>right cluster together");
+    // figTree.addToolTip('.external-node', "This is an external, leaf, or tip node - it represents<br>a sampled, sequenced virus");
+    // figTree.addToolTip('.branch', "This is a branch - it represents an<br>evolutionary lineage joining two nodes");
+    //
+    // document.getElementById('sort_up_button').onclick = function() {
+    //  tree.orderByNodeDensity(false);
+    // };
+    // document.getElementById('sort_down_button').onclick = function() {
+    // tree.orderByNodeDensity(false);
+    // };
+    //
+    // document.getElementById('rectangular_button').onclick = function() {
+    //     figTree.curve = d3.curveStepBefore;
+    // };
+    // document.getElementById('triangular_button').onclick = function() {
+    //     figTree.curve = d3.curveNatural;
+    // };
+
+</script>
+
+
+</body>
+
+</html>

@@ -56,12 +56,12 @@ export class Tree {
                 node._id = node.label.substring(1);
             }
             const newAnnotations ={};
-            if(node.label){
-                newAnnotations.label=node.label;
-            }
-            if(node.name){
-                newAnnotations.name=node.name
-            }
+            // if(node.label){
+            //     newAnnotations.label=node.label;
+            // }
+            // if(node.name){
+            //     newAnnotations.name=node.name
+            // }
             node.annotations = node.annotations?{...newAnnotations,...node.annotations,}:newAnnotations;
             this.addAnnotations(node.annotations);
         });
@@ -1026,13 +1026,13 @@ export class Tree {
 
         const trees=[];
 
-
-        const nexusTokens = nexus.split(/\s*Begin|begin|end|End|BEGIN|END\s*/);
+       // odd parts ensure we're not in a taxon label
+       //TODO make this parsing more robust
+        const nexusTokens = nexus.split(/\s*(?:^|[^\w\d])Begin(?:^|[^\w\d])|(?:^|[^\w\d])begin(?:^|[^\w\d])|(?:^|[^\w\d])end(?:^|[^\w\d])|(?:^|[^\w\d])End(?:^|[^\w\d])|(?:^|[^\w\d])BEGIN(?:^|[^\w\d])|(?:^|[^\w\d])END(?:^|[^\w\d])\s*/)
         const firstToken = nexusTokens.shift().trim();
         if(firstToken.toLowerCase()!=='#nexus'){
             throw Error("File does not begin with #NEXUS is it a nexus file?")
         }
-
         for(const section of nexusTokens){
             const workingSection = section.replace(/^\s+|\s+$/g, '').split(/\n/);
             const sectionTitle = workingSection.shift();
@@ -1055,7 +1055,11 @@ export class Tree {
                                 const treeString = token.substring(token.indexOf("("));
                                 const thisTree = Tree.parseNewick(treeString);
                                 if(tipNameMap.size>0) {
-                                    thisTree.externalNodes.forEach(tip => tip.name = tipNameMap.get(tip.name));
+
+                                    thisTree.externalNodes.forEach(tip => {
+                                        tip.name = tipNameMap.get(tip.name);
+                                    });
+
                                 }
                                 trees.push(thisTree);
 
@@ -1240,6 +1244,8 @@ function setUpArraysAndMaps() {
     this._nodeMap = new Map(this.nodeList.map((node) => [node.id, node]));
     this._tipMap = new Map(this.externalNodes.map((tip) => [tip.name, tip]));
 }
+
+
 
 class Node{
 

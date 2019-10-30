@@ -40,7 +40,7 @@ export class  AbstractLayout extends layoutInterface {
             lengthFormat: format(".2f"),
             branchLabelAnnotationName:null,
             internalNodeLabelAnnotationName:null,
-            externalNodeLabelAnnotationName:"name",
+            externalNodeLabelAnnotationName:null,
         }
     }
 
@@ -421,18 +421,26 @@ export class  AbstractLayout extends layoutInterface {
     [setVertexLabels](v){
         // either the tip name or the internal node label
         if (v.node.children) {
-            v.leftLabel = (this.settings.internalNodeLabelAnnotationName?
+            v.leftLabel = (this.settings.internalNodeLabelAnnotationName)?
+                (this.settings.internalNodeLabelAnnotationName==="label")?
+                    v.node["label"]:
+                    (this.settings.internalNodeLabelAnnotationName==="name")?
+                        v.node["name"]:
                 v.node.annotations[this.settings.internalNodeLabelAnnotationName]:
-                "");
+                "";
             v.rightLabel = "";
 
             // should the left node label be above or below the node?
             v.labelBelow = (!v.node.parent || v.node.parent.children[0] !== v.node);
         } else {
             v.leftLabel = "";
-            v.rightLabel = (this.settings.externalNodeLabelAnnotationName?
-                v.node.annotations[this.settings.externalNodeLabelAnnotationName]:
-               "");
+            v.rightLabel = (this.settings.externalNodeLabelAnnotationName)?
+                (this.settings.externalNodeLabelAnnotationName==="label")?
+                    v.node["label"]:
+                    (this.settings.externalNodeLabelAnnotationName==="name")?
+                        v.node["name"]:
+                        v.node.annotations[this.settings.externalNodeLabelAnnotationName]:
+                "";
         }
     }
 
