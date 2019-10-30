@@ -129,7 +129,7 @@
 
     const treeURL = "https://raw.githubusercontent.com/evogytis/fluB/master/data/mcc%20trees/InfB_PB1t_ALLs1.mcc.tre"
     const tree = fetch(treeURL)
-        .then(response=>response.text()).then(string=>Tree.parseNexus(string)).then(trees=>makeFigure(trees[0]));
+        .then(response=>response.text()).then(string=>Tree.parseNexus(string,{datePrefix:"_",dateFormat:"%Y-%m-%d"})).then(trees=>makeFigure(trees[0]));
 
 
     function makeFigure(tree){

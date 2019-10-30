@@ -823,7 +823,7 @@ export class Tree {
      * @returns {Tree} - an instance of the Tree class
      */
     static parseNewick(newickString, options={}) {
-        options ={...{labelName: "label",datePrefix:undefined,dateFormat:"decimal"},...options}
+        options ={...{labelName: "label",datePrefix:undefined,dateFormat:"decimal",tipNameMap:null},...options}
 
         const tokens = newickString.split(/\s*('[^']+'|"[^"]+"|;|\(|\)|,|:|=|\[&|\]|\{|\})\s*/);
         let level = 0;
@@ -965,7 +965,7 @@ export class Tree {
                         currentNode.children = []
                     }
 
-                    let name = token;
+                    let name = options.tipNameMap?options.tipNameMap.get(token):token;
 
                     // remove any quoting and then trim whitespace
                     if (name.startsWith("\"") || name.startsWith("'")) {
@@ -1053,7 +1053,7 @@ export class Tree {
                         }else{
                             // if(tipNameMap.size>0) {
                                 const treeString = token.substring(token.indexOf("("));
-                                const thisTree = Tree.parseNewick(treeString,options);
+                                const thisTree = Tree.parseNewick(treeString,{...options,tipNameMap:tipNameMap});
                                 if(tipNameMap.size>0) {
 
                                     thisTree.externalNodes.forEach(tip => {

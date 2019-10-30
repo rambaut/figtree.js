@@ -8900,7 +8900,8 @@ function () {
       options = objectSpread({}, {
         labelName: "label",
         datePrefix: undefined,
-        dateFormat: "decimal"
+        dateFormat: "decimal",
+        tipNameMap: null
       }, options);
       var tokens = newickString.split(/\s*('[^']+'|"[^"]+"|;|\(|\)|,|:|=|\[&|\]|\{|\})\s*/);
       var level = 0;
@@ -9054,7 +9055,7 @@ function () {
                 currentNode.children = [];
               }
 
-              var name = token; // remove any quoting and then trim whitespace
+              var name = options.tipNameMap ? options.tipNameMap.get(token) : token; // remove any quoting and then trim whitespace
 
               if (name.startsWith("\"") || name.startsWith("'")) {
                 name = name.substr(1);
@@ -9183,7 +9184,9 @@ function () {
                     } else {
                       // if(tipNameMap.size>0) {
                       var treeString = token.substring(token.indexOf("("));
-                      var thisTree = Tree.parseNewick(treeString, options);
+                      var thisTree = Tree.parseNewick(treeString, objectSpread({}, options, {
+                        tipNameMap: tipNameMap
+                      }));
 
                       if (tipNameMap.size > 0) {
                         thisTree.externalNodes.forEach(function (tip) {
