@@ -7632,7 +7632,10 @@ function dateToDecimal(date) {
   var day = parseInt(timeFormat("%j")(date));
   var totalNumberOfDays = leapYear(year) ? 366 : 365;
   return year + day / totalNumberOfDays;
-}
+} //https://stackoverflow.com/questions/14636536/how-to-check-if-a-variable-is-an-integer-in-javascript
+
+// const BitSet =BitSetModule.__moduleExports;
+// for unique node ids
 
 var Type = {
   DISCRETE: Symbol("DISCRETE"),
@@ -8762,6 +8765,16 @@ function () {
         func();
       };
     }
+  }, {
+    key: "getClades",
+    value: function getClades() {
+      var tipNameMap = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+      return this.nodeList.filter(function (n) {
+        return n.parent;
+      }).map(function (node) {
+        return node.getClade(tipNameMap);
+      });
+    }
     /**
      * A class method to create a Tree instance from a Newick format string (potentially with node
      * labels and branch lengths). Taxon labels should be quoted (either " or ') if they contain whitespace
@@ -9093,6 +9106,7 @@ function () {
 
               var externalNode = {
                 name: name,
+                id: parseInt(token) ? parseInt(token) : token,
                 parent: currentNode,
                 annotations: {
                   date: decimalDate
@@ -9156,59 +9170,50 @@ function () {
           var sectionTitle = workingSection.shift();
 
           if (sectionTitle.toLowerCase().trim() === "trees;") {
-            (function () {
-              var inTaxaMap = false;
-              var tipNameMap = new Map();
-              var _iteratorNormalCompletion8 = true;
-              var _didIteratorError8 = false;
-              var _iteratorError8 = undefined;
+            var inTaxaMap = false;
+            var tipNameMap = new Map();
+            var _iteratorNormalCompletion8 = true;
+            var _didIteratorError8 = false;
+            var _iteratorError8 = undefined;
 
-              try {
-                for (var _iterator8 = workingSection[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-                  var token = _step8.value;
+            try {
+              for (var _iterator8 = workingSection[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+                var token = _step8.value;
 
-                  if (token.trim().toLowerCase() === "translate") {
-                    inTaxaMap = true;
-                  } else {
-                    if (inTaxaMap) {
-                      if (token.trim() === ";") {
-                        inTaxaMap = false;
-                      } else {
-                        var taxaData = token.trim().replace(",", "").split(/\s*\s\s*/);
-                        tipNameMap.set(taxaData[0], taxaData[1]);
-                      }
+                if (token.trim().toLowerCase() === "translate") {
+                  inTaxaMap = true;
+                } else {
+                  if (inTaxaMap) {
+                    if (token.trim() === ";") {
+                      inTaxaMap = false;
                     } else {
-                      // if(tipNameMap.size>0) {
-                      var treeString = token.substring(token.indexOf("("));
-                      var thisTree = Tree.parseNewick(treeString, objectSpread({}, options, {
-                        tipNameMap: tipNameMap
-                      }));
-
-                      if (tipNameMap.size > 0) {
-                        thisTree.externalNodes.forEach(function (tip) {
-                          tip.name = tipNameMap.get(tip.name);
-                        });
-                      }
-
-                      trees.push(thisTree);
+                      var taxaData = token.trim().replace(",", "").split(/\s*\s\s*/);
+                      tipNameMap.set(taxaData[0], taxaData[1]);
                     }
-                  }
-                }
-              } catch (err) {
-                _didIteratorError8 = true;
-                _iteratorError8 = err;
-              } finally {
-                try {
-                  if (!_iteratorNormalCompletion8 && _iterator8["return"] != null) {
-                    _iterator8["return"]();
-                  }
-                } finally {
-                  if (_didIteratorError8) {
-                    throw _iteratorError8;
+                  } else {
+                    // if(tipNameMap.size>0) {
+                    var treeString = token.substring(token.indexOf("("));
+                    var thisTree = Tree.parseNewick(treeString, objectSpread({}, options, {
+                      tipNameMap: tipNameMap
+                    }));
+                    trees.push(thisTree);
                   }
                 }
               }
-            })();
+            } catch (err) {
+              _didIteratorError8 = true;
+              _iteratorError8 = err;
+            } finally {
+              try {
+                if (!_iteratorNormalCompletion8 && _iterator8["return"] != null) {
+                  _iterator8["return"]();
+                }
+              } finally {
+                if (_didIteratorError8) {
+                  throw _iteratorError8;
+                }
+              }
+            }
           }
         }
       } catch (err) {
@@ -9518,6 +9523,56 @@ function () {
       this._tree.nodesUpdated = true;
     }
   }, {
+    key: "getClade",
+    value: function getClade() {
+      var tipNameMap = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (tipNameMap == null && this.clade && this._tree.nodesUpdated === false) {
+        return this._clade;
+      }
+
+      var bits = [];
+
+      if (!this.children) {
+        var nodeNumericId = tipNameMap ? tipNameMap.get(this.name) : this.id;
+
+        if (nodeNumericId !== parseInt(nodeNumericId)) {
+          throw new Error("Getting clade requires tips have integer id's. If they do not please provide a map to integers keyed by the tips' names ");
+        }
+
+        bits = bits.concat(this.id);
+        this._clade = bits;
+      } else {
+        var _iteratorNormalCompletion12 = true;
+        var _didIteratorError12 = false;
+        var _iteratorError12 = undefined;
+
+        try {
+          for (var _iterator12 = this.children[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+            var child = _step12.value;
+            bits = bits.concat(child.getClade(tipNameMap));
+          }
+        } catch (err) {
+          _didIteratorError12 = true;
+          _iteratorError12 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion12 && _iterator12["return"] != null) {
+              _iterator12["return"]();
+            }
+          } finally {
+            if (_didIteratorError12) {
+              throw _iteratorError12;
+            }
+          }
+        }
+
+        this._clade = bits;
+      }
+
+      return bits;
+    }
+  }, {
     key: "toJSON",
     value: function toJSON() {
       return {
@@ -9611,26 +9666,26 @@ function () {
     },
     set: function set(value) {
       this._children = value;
-      var _iteratorNormalCompletion12 = true;
-      var _didIteratorError12 = false;
-      var _iteratorError12 = undefined;
+      var _iteratorNormalCompletion13 = true;
+      var _didIteratorError13 = false;
+      var _iteratorError13 = undefined;
 
       try {
-        for (var _iterator12 = this._children[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-          var child = _step12.value;
+        for (var _iterator13 = this._children[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+          var child = _step13.value;
           child.parent = this;
         }
       } catch (err) {
-        _didIteratorError12 = true;
-        _iteratorError12 = err;
+        _didIteratorError13 = true;
+        _iteratorError13 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion12 && _iterator12["return"] != null) {
-            _iterator12["return"]();
+          if (!_iteratorNormalCompletion13 && _iterator13["return"] != null) {
+            _iterator13["return"]();
           }
         } finally {
-          if (_didIteratorError12) {
-            throw _iteratorError12;
+          if (_didIteratorError13) {
+            throw _iteratorError13;
           }
         }
       }

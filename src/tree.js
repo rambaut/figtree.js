@@ -5,7 +5,9 @@
 import uuid from "uuid";
 import {max,timeParse} from "d3";
 import {maxIndex,minIndex} from "d3-array";
-import {dateToDecimal} from "./utilities";
+import {dateToDecimal,isInt} from "./utilities";
+// import * as BitSetModule from "bitset";
+// const BitSet =BitSetModule.__moduleExports;
 // for unique node ids
 export const Type = {
     DISCRETE : Symbol("DISCRETE"),
@@ -812,6 +814,10 @@ export class Tree {
         }
     }
 
+    getClades(tipNameMap=null){
+            return  this.nodeList.filter(n=>n.parent).map(node=>node.getClade(tipNameMap));
+    }
+
     /**
      * A class method to create a Tree instance from a Newick format string (potentially with node
      * labels and branch lengths). Taxon labels should be quoted (either " or ') if they contain whitespace
@@ -846,7 +852,7 @@ export class Tree {
                         annotationKeyNext=true;
                     }
                 }else if (token==="{"){
-                    isAnnotationARange=true
+                    isAnnotationARange=true;
                     currentNode.annotations[annotationKey]=[];
                 }else if (token==="}"){
                     isAnnotationARange=false
@@ -1001,6 +1007,7 @@ export class Tree {
 
                     const externalNode = {
                         name: name,
+                        id:parseInt(token)?parseInt(token):token,
                         parent: currentNode,
                         annotations: { date: decimalDate }
                     };
@@ -1054,13 +1061,6 @@ export class Tree {
                             // if(tipNameMap.size>0) {
                                 const treeString = token.substring(token.indexOf("("));
                                 const thisTree = Tree.parseNewick(treeString,{...options,tipNameMap:tipNameMap});
-                                if(tipNameMap.size>0) {
-
-                                    thisTree.externalNodes.forEach(tip => {
-                                        tip.name = tipNameMap.get(tip.name);
-                                    });
-
-                                }
                                 trees.push(thisTree);
 
                         }
@@ -1375,6 +1375,28 @@ class Node{
         this._tree.nodesUpdated=true;
         this._id = value;
     }
+    getClade(tipNameMap=null){
+        if(tipNameMap==null && this.clade && this._tree.nodesUpdated===false){
+            return(this._clade)
+        }
+
+        let bits = [];
+        if(!this.children){
+            const nodeNumericId = tipNameMap? tipNameMap.get(this.name):this.id;
+            if(nodeNumericId!==parseInt(nodeNumericId)){
+                throw new Error("Getting clade requires tips have integer id's. If they do not please provide a map to integers keyed by the tips' names ")
+            }
+            bits = bits.concat(this.id);
+            this._clade = bits;
+        }else{
+            for(const child of this.children){
+                bits = bits.concat(child.getClade(tipNameMap));
+            }
+           this._clade=bits;
+        }
+        return bits;
+    };
+
 
     toJSON(){
         return ({
