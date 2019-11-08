@@ -56,3 +56,9 @@ export function dateToDecimal(date){
     const totalNumberOfDays = leapYear(year)? 366:365;
     return year+day/totalNumberOfDays
 }
+//https://stackoverflow.com/questions/14636536/how-to-check-if-a-variable-is-an-integer-in-javascript
+export function isInt(value) {
+    return !isNaN(value) &&
+        parseInt(Number(value)) == value &&
+        !isNaN(parseInt(value, 10));
+}
