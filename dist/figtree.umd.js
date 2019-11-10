@@ -11965,6 +11965,7 @@
 	        return;
 	      }
 
+	      select("#".concat(this.svgId)).attr("transform", "translate(".concat(this.margins.left, ",").concat(this.margins.top, ")"));
 	      this[p.setUpScales]();
 	      this[p.updateAnnotations]();
 	      this[p.updateCartoons]();

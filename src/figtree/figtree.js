@@ -184,6 +184,8 @@ export class FigTree {
         if(!this.drawn){
             return
         }
+        select(`#${this.svgId}`)
+            .attr("transform",`translate(${this.margins.left},${this.margins.top})`);
 
         this[p.setUpScales]();
 
