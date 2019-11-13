@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="js/d3.js"></script>
+    <script src="js/d3-selection-multi.min.js"/>
+    <script src="js/d3-geo.js"></script>
+    <script src="js/d3-geo-polygon.js"></script>
+    <script src="js/d3-geo-projection.js"></script>
+    <script src="js/topojson.js"></script>
+
+
+
+
+
+
+</head>
+<div id="tooltip" display="none" style="position: absolute; display: none;"></div>
+
+<div>
+    <figure>
+        <svg id="phylogram_1a"  width="600" height="500"></svg>
+    </figure>
+</div>
+<script type="module">
+
+    import {Tree,GeoLayout,CircleBauble,FigTree,GreatCircleBranchBauble}  from "./dist/figtree.esm.js";
+
+
+    const gotGeoData = fetch("./data/world-110m.json").then(res=>res.json()).then( world =>{
+
+    console.log(topojson.mesh(world, world.objects.countries, function(a, b) { return a !== b; }))
+
+        const width = 600;
+        const height = 500;
+        const newickString =
+            '(virus1:0.1,virus2:0.12)0.95:0.08;';
+// projection based on https://observablehq.com/d/ac79c14a0d279be5
+        const projection = d3.geoBonne()
+            .parallel(52)
+            .rotate([-20, 0])
+            .center([0, 0])
+            .translate([width / 2, height / 2])
+            .scale(width / 1.5);
+        const n = 10; // precision
+        const p = 40; // padding
+        const viewport = {
+            type: "Polygon",
+            coordinates: [
+                [
+                    ...Array.from({length: n}, (_, t) => [p + (width - p * 2) * t / n, p]),
+                    ...Array.from({length: n}, (_, t) => [width - p, (height - p * 2) * t / n + p]),
+                    ...Array.from({length: n}, (_, t) => [p + (width - p * 2) * (n - t) / n, height - p]),
+                    ...Array.from({length: n}, (_, t) => [p, (height - p * 2) * (n - t) / n + p]),
+                    [p, p]
+                ].map(p => projection.invert(p))
+            ]
+        };
+
+        const clipPolygon = d3.geoClipPolygon({
+            type: "Polygon",
+            coordinates: [viewport.coordinates[0].map(d3.geoRotation(projection.rotate()))]
+        });
+
+
+
+       const land =  topojson.feature(world, world.objects.land);
+        projection.preclip(d3.geoClipAntimeridian);
+        projection.preclip(clipPolygon);
+
+
+
+
+
+        const tree = Tree.parseNewick(newickString, "probability");
+
+        tree.nodeList.forEach((node, i) => {
+            tree.annotateNode(node, {location: [(i<2?0:i*20), i*10]})
+        });
+
+
+        const treeSVG = document.getElementById('phylogram_1a');
+
+        const layout = new GeoLayout(tree,projection);
+        const externalNodeBauble = new CircleBauble({
+            radius: 6,
+            styles: {fill: () => "red"}
+        });
+        const branches = new GreatCircleBranchBauble();
+
+        const figTree = new FigTree(treeSVG, layout,
+            {top: 0, bottom: 0, left: 0, right: 0}, // margins come from projection
+            {
+                vertices: {baubles: [externalNodeBauble]},
+                edges: {baubles: [branches]}
+            });
+        figTree
+            .hilightInternalNodes()
+            .hilightExternalNodes()
+            .hilightBranches()
+            .draw()
+            .addAnnotation(drawWorld(figTree,land,world))
+
+
+    });
+
+    function drawWorld(figtreeObject,land,world){
+
+        return function () {
+            figtreeObject.svgSelection
+                .select(".annotation-layer")
+                .append("path")
+                .attr("d",d3.geoPath(figtreeObject.layout.projection)(land))
+                .attr("fill","none")
+                .attr("stroke","black");
+
+            figtreeObject.svgSelection
+                .select(".annotation-layer")
+                .append("path")
+                .attr("d",d3.geoPath(figtreeObject.layout.projection)(topojson.mesh(world, world.objects.countries, function(a, b) { return a !== b; })))
+                .attr("class", "boundary")
+                .attr("stroke","black")
+                .attr("fill","none")
+
+
+        }
+    }
+
+
+</script>
+
+</body>
+</html>

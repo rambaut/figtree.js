@@ -5517,6 +5517,82 @@
 	}
 
 	var pi$3 = Math.PI;
+	var tau$2 = pi$3 * 2;
+
+	var abs = Math.abs;
+	var sqrt = Math.sqrt;
+
+	function noop$1() {}
+
+	function streamGeometry(geometry, stream) {
+	  if (geometry && streamGeometryType.hasOwnProperty(geometry.type)) {
+	    streamGeometryType[geometry.type](geometry, stream);
+	  }
+	}
+
+	var streamObjectType = {
+	  Feature: function(object, stream) {
+	    streamGeometry(object.geometry, stream);
+	  },
+	  FeatureCollection: function(object, stream) {
+	    var features = object.features, i = -1, n = features.length;
+	    while (++i < n) streamGeometry(features[i].geometry, stream);
+	  }
+	};
+
+	var streamGeometryType = {
+	  Sphere: function(object, stream) {
+	    stream.sphere();
+	  },
+	  Point: function(object, stream) {
+	    object = object.coordinates;
+	    stream.point(object[0], object[1], object[2]);
+	  },
+	  MultiPoint: function(object, stream) {
+	    var coordinates = object.coordinates, i = -1, n = coordinates.length;
+	    while (++i < n) object = coordinates[i], stream.point(object[0], object[1], object[2]);
+	  },
+	  LineString: function(object, stream) {
+	    streamLine(object.coordinates, stream, 0);
+	  },
+	  MultiLineString: function(object, stream) {
+	    var coordinates = object.coordinates, i = -1, n = coordinates.length;
+	    while (++i < n) streamLine(coordinates[i], stream, 0);
+	  },
+	  Polygon: function(object, stream) {
+	    streamPolygon(object.coordinates, stream);
+	  },
+	  MultiPolygon: function(object, stream) {
+	    var coordinates = object.coordinates, i = -1, n = coordinates.length;
+	    while (++i < n) streamPolygon(coordinates[i], stream);
+	  },
+	  GeometryCollection: function(object, stream) {
+	    var geometries = object.geometries, i = -1, n = geometries.length;
+	    while (++i < n) streamGeometry(geometries[i], stream);
+	  }
+	};
+
+	function streamLine(coordinates, stream, closed) {
+	  var i = -1, n = coordinates.length - closed, coordinate;
+	  stream.lineStart();
+	  while (++i < n) coordinate = coordinates[i], stream.point(coordinate[0], coordinate[1], coordinate[2]);
+	  stream.lineEnd();
+	}
+
+	function streamPolygon(coordinates, stream) {
+	  var i = -1, n = coordinates.length;
+	  stream.polygonStart();
+	  while (++i < n) streamLine(coordinates[i], stream, 1);
+	  stream.polygonEnd();
+	}
+
+	function geoStream(object, stream) {
+	  if (object && streamObjectType.hasOwnProperty(object.type)) {
+	    streamObjectType[object.type](object, stream);
+	  } else {
+	    streamGeometry(object, stream);
+	  }
+	}
 
 	var areaRingSum = adder();
 
@@ -5566,10 +5642,372 @@
 
 	var lengthSum = adder();
 
-	var areaSum$1 = adder(),
-	    areaRingSum$1 = adder();
+	function identity$3(x) {
+	  return x;
+	}
 
-	var lengthSum$1 = adder();
+	var areaSum$1 = adder(),
+	    areaRingSum$1 = adder(),
+	    x00,
+	    y00,
+	    x0,
+	    y0;
+
+	var areaStream = {
+	  point: noop$1,
+	  lineStart: noop$1,
+	  lineEnd: noop$1,
+	  polygonStart: function() {
+	    areaStream.lineStart = areaRingStart;
+	    areaStream.lineEnd = areaRingEnd;
+	  },
+	  polygonEnd: function() {
+	    areaStream.lineStart = areaStream.lineEnd = areaStream.point = noop$1;
+	    areaSum$1.add(abs(areaRingSum$1));
+	    areaRingSum$1.reset();
+	  },
+	  result: function() {
+	    var area = areaSum$1 / 2;
+	    areaSum$1.reset();
+	    return area;
+	  }
+	};
+
+	function areaRingStart() {
+	  areaStream.point = areaPointFirst;
+	}
+
+	function areaPointFirst(x, y) {
+	  areaStream.point = areaPoint;
+	  x00 = x0 = x, y00 = y0 = y;
+	}
+
+	function areaPoint(x, y) {
+	  areaRingSum$1.add(y0 * x - x0 * y);
+	  x0 = x, y0 = y;
+	}
+
+	function areaRingEnd() {
+	  areaPoint(x00, y00);
+	}
+
+	var x0$1 = Infinity,
+	    y0$1 = x0$1,
+	    x1 = -x0$1,
+	    y1 = x1;
+
+	var boundsStream = {
+	  point: boundsPoint,
+	  lineStart: noop$1,
+	  lineEnd: noop$1,
+	  polygonStart: noop$1,
+	  polygonEnd: noop$1,
+	  result: function() {
+	    var bounds = [[x0$1, y0$1], [x1, y1]];
+	    x1 = y1 = -(y0$1 = x0$1 = Infinity);
+	    return bounds;
+	  }
+	};
+
+	function boundsPoint(x, y) {
+	  if (x < x0$1) x0$1 = x;
+	  if (x > x1) x1 = x;
+	  if (y < y0$1) y0$1 = y;
+	  if (y > y1) y1 = y;
+	}
+
+	// TODO Enforce positive area for exterior, negative area for interior?
+
+	var X0 = 0,
+	    Y0 = 0,
+	    Z0 = 0,
+	    X1 = 0,
+	    Y1 = 0,
+	    Z1 = 0,
+	    X2 = 0,
+	    Y2 = 0,
+	    Z2 = 0,
+	    x00$1,
+	    y00$1,
+	    x0$2,
+	    y0$2;
+
+	var centroidStream = {
+	  point: centroidPoint,
+	  lineStart: centroidLineStart,
+	  lineEnd: centroidLineEnd,
+	  polygonStart: function() {
+	    centroidStream.lineStart = centroidRingStart;
+	    centroidStream.lineEnd = centroidRingEnd;
+	  },
+	  polygonEnd: function() {
+	    centroidStream.point = centroidPoint;
+	    centroidStream.lineStart = centroidLineStart;
+	    centroidStream.lineEnd = centroidLineEnd;
+	  },
+	  result: function() {
+	    var centroid = Z2 ? [X2 / Z2, Y2 / Z2]
+	        : Z1 ? [X1 / Z1, Y1 / Z1]
+	        : Z0 ? [X0 / Z0, Y0 / Z0]
+	        : [NaN, NaN];
+	    X0 = Y0 = Z0 =
+	    X1 = Y1 = Z1 =
+	    X2 = Y2 = Z2 = 0;
+	    return centroid;
+	  }
+	};
+
+	function centroidPoint(x, y) {
+	  X0 += x;
+	  Y0 += y;
+	  ++Z0;
+	}
+
+	function centroidLineStart() {
+	  centroidStream.point = centroidPointFirstLine;
+	}
+
+	function centroidPointFirstLine(x, y) {
+	  centroidStream.point = centroidPointLine;
+	  centroidPoint(x0$2 = x, y0$2 = y);
+	}
+
+	function centroidPointLine(x, y) {
+	  var dx = x - x0$2, dy = y - y0$2, z = sqrt(dx * dx + dy * dy);
+	  X1 += z * (x0$2 + x) / 2;
+	  Y1 += z * (y0$2 + y) / 2;
+	  Z1 += z;
+	  centroidPoint(x0$2 = x, y0$2 = y);
+	}
+
+	function centroidLineEnd() {
+	  centroidStream.point = centroidPoint;
+	}
+
+	function centroidRingStart() {
+	  centroidStream.point = centroidPointFirstRing;
+	}
+
+	function centroidRingEnd() {
+	  centroidPointRing(x00$1, y00$1);
+	}
+
+	function centroidPointFirstRing(x, y) {
+	  centroidStream.point = centroidPointRing;
+	  centroidPoint(x00$1 = x0$2 = x, y00$1 = y0$2 = y);
+	}
+
+	function centroidPointRing(x, y) {
+	  var dx = x - x0$2,
+	      dy = y - y0$2,
+	      z = sqrt(dx * dx + dy * dy);
+
+	  X1 += z * (x0$2 + x) / 2;
+	  Y1 += z * (y0$2 + y) / 2;
+	  Z1 += z;
+
+	  z = y0$2 * x - x0$2 * y;
+	  X2 += z * (x0$2 + x);
+	  Y2 += z * (y0$2 + y);
+	  Z2 += z * 3;
+	  centroidPoint(x0$2 = x, y0$2 = y);
+	}
+
+	function PathContext(context) {
+	  this._context = context;
+	}
+
+	PathContext.prototype = {
+	  _radius: 4.5,
+	  pointRadius: function(_) {
+	    return this._radius = _, this;
+	  },
+	  polygonStart: function() {
+	    this._line = 0;
+	  },
+	  polygonEnd: function() {
+	    this._line = NaN;
+	  },
+	  lineStart: function() {
+	    this._point = 0;
+	  },
+	  lineEnd: function() {
+	    if (this._line === 0) this._context.closePath();
+	    this._point = NaN;
+	  },
+	  point: function(x, y) {
+	    switch (this._point) {
+	      case 0: {
+	        this._context.moveTo(x, y);
+	        this._point = 1;
+	        break;
+	      }
+	      case 1: {
+	        this._context.lineTo(x, y);
+	        break;
+	      }
+	      default: {
+	        this._context.moveTo(x + this._radius, y);
+	        this._context.arc(x, y, this._radius, 0, tau$2);
+	        break;
+	      }
+	    }
+	  },
+	  result: noop$1
+	};
+
+	var lengthSum$1 = adder(),
+	    lengthRing,
+	    x00$2,
+	    y00$2,
+	    x0$3,
+	    y0$3;
+
+	var lengthStream = {
+	  point: noop$1,
+	  lineStart: function() {
+	    lengthStream.point = lengthPointFirst;
+	  },
+	  lineEnd: function() {
+	    if (lengthRing) lengthPoint(x00$2, y00$2);
+	    lengthStream.point = noop$1;
+	  },
+	  polygonStart: function() {
+	    lengthRing = true;
+	  },
+	  polygonEnd: function() {
+	    lengthRing = null;
+	  },
+	  result: function() {
+	    var length = +lengthSum$1;
+	    lengthSum$1.reset();
+	    return length;
+	  }
+	};
+
+	function lengthPointFirst(x, y) {
+	  lengthStream.point = lengthPoint;
+	  x00$2 = x0$3 = x, y00$2 = y0$3 = y;
+	}
+
+	function lengthPoint(x, y) {
+	  x0$3 -= x, y0$3 -= y;
+	  lengthSum$1.add(sqrt(x0$3 * x0$3 + y0$3 * y0$3));
+	  x0$3 = x, y0$3 = y;
+	}
+
+	function PathString() {
+	  this._string = [];
+	}
+
+	PathString.prototype = {
+	  _radius: 4.5,
+	  _circle: circle(4.5),
+	  pointRadius: function(_) {
+	    if ((_ = +_) !== this._radius) this._radius = _, this._circle = null;
+	    return this;
+	  },
+	  polygonStart: function() {
+	    this._line = 0;
+	  },
+	  polygonEnd: function() {
+	    this._line = NaN;
+	  },
+	  lineStart: function() {
+	    this._point = 0;
+	  },
+	  lineEnd: function() {
+	    if (this._line === 0) this._string.push("Z");
+	    this._point = NaN;
+	  },
+	  point: function(x, y) {
+	    switch (this._point) {
+	      case 0: {
+	        this._string.push("M", x, ",", y);
+	        this._point = 1;
+	        break;
+	      }
+	      case 1: {
+	        this._string.push("L", x, ",", y);
+	        break;
+	      }
+	      default: {
+	        if (this._circle == null) this._circle = circle(this._radius);
+	        this._string.push("M", x, ",", y, this._circle);
+	        break;
+	      }
+	    }
+	  },
+	  result: function() {
+	    if (this._string.length) {
+	      var result = this._string.join("");
+	      this._string = [];
+	      return result;
+	    } else {
+	      return null;
+	    }
+	  }
+	};
+
+	function circle(radius) {
+	  return "m0," + radius
+	      + "a" + radius + "," + radius + " 0 1,1 0," + -2 * radius
+	      + "a" + radius + "," + radius + " 0 1,1 0," + 2 * radius
+	      + "z";
+	}
+
+	function geoPath(projection, context) {
+	  var pointRadius = 4.5,
+	      projectionStream,
+	      contextStream;
+
+	  function path(object) {
+	    if (object) {
+	      if (typeof pointRadius === "function") contextStream.pointRadius(+pointRadius.apply(this, arguments));
+	      geoStream(object, projectionStream(contextStream));
+	    }
+	    return contextStream.result();
+	  }
+
+	  path.area = function(object) {
+	    geoStream(object, projectionStream(areaStream));
+	    return areaStream.result();
+	  };
+
+	  path.measure = function(object) {
+	    geoStream(object, projectionStream(lengthStream));
+	    return lengthStream.result();
+	  };
+
+	  path.bounds = function(object) {
+	    geoStream(object, projectionStream(boundsStream));
+	    return boundsStream.result();
+	  };
+
+	  path.centroid = function(object) {
+	    geoStream(object, projectionStream(centroidStream));
+	    return centroidStream.result();
+	  };
+
+	  path.projection = function(_) {
+	    return arguments.length ? (projectionStream = _ == null ? (projection = null, identity$3) : (projection = _).stream, path) : projection;
+	  };
+
+	  path.context = function(_) {
+	    if (!arguments.length) return context;
+	    contextStream = _ == null ? (context = null, new PathString) : new PathContext(context = _);
+	    if (typeof pointRadius !== "function") contextStream.pointRadius(pointRadius);
+	    return path;
+	  };
+
+	  path.pointRadius = function(_) {
+	    if (!arguments.length) return pointRadius;
+	    pointRadius = typeof _ === "function" ? _ : (contextStream.pointRadius(+_), +_);
+	    return path;
+	  };
+
+	  return path.projection(projection).context(context);
+	}
 
 	function ascending$5(a, b) {
 	  return a < b ? -1 : a > b ? 1 : a >= b ? 0 : NaN;
@@ -5688,7 +6126,7 @@
 
 	var unit = [0, 1];
 
-	function identity$3(x) {
+	function identity$4(x) {
 	  return x;
 	}
 
@@ -5752,7 +6190,7 @@
 	      transform,
 	      untransform,
 	      unknown,
-	      clamp = identity$3,
+	      clamp = identity$4,
 	      piecewise,
 	      output,
 	      input;
@@ -5772,7 +6210,7 @@
 	  };
 
 	  scale.domain = function(_) {
-	    return arguments.length ? (domain = map$1.call(_, number$2), clamp === identity$3 || (clamp = clamper(domain)), rescale()) : domain.slice();
+	    return arguments.length ? (domain = map$1.call(_, number$2), clamp === identity$4 || (clamp = clamper(domain)), rescale()) : domain.slice();
 	  };
 
 	  scale.range = function(_) {
@@ -5784,7 +6222,7 @@
 	  };
 
 	  scale.clamp = function(_) {
-	    return arguments.length ? (clamp = _ ? clamper(domain) : identity$3, scale) : clamp !== identity$3;
+	    return arguments.length ? (clamp = _ ? clamper(domain) : identity$4, scale) : clamp !== identity$4;
 	  };
 
 	  scale.interpolate = function(_) {
@@ -5889,7 +6327,7 @@
 	}
 
 	function linear$2() {
-	  var scale = continuous(identity$3, identity$3);
+	  var scale = continuous(identity$4, identity$4);
 
 	  scale.copy = function() {
 	    return copy(scale, linear$2());
@@ -7340,7 +7778,7 @@
 	  return line;
 	}
 
-	function noop$1() {}
+	function noop$2() {}
 
 	function point$1(that, x, y) {
 	  that._context.bezierCurveTo(
@@ -7358,8 +7796,8 @@
 	}
 
 	BasisClosed.prototype = {
-	  areaStart: noop$1,
-	  areaEnd: noop$1,
+	  areaStart: noop$2,
+	  areaEnd: noop$2,
 	  lineStart: function() {
 	    this._x0 = this._x1 = this._x2 = this._x3 = this._x4 =
 	    this._y0 = this._y1 = this._y2 = this._y3 = this._y4 = NaN;
@@ -7499,6 +7937,72 @@
 	  lineTo: function(x, y) { this._context.lineTo(y, x); },
 	  bezierCurveTo: function(x1, y1, x2, y2, x, y) { this._context.bezierCurveTo(y1, x1, y2, x2, y, x); }
 	};
+
+	function Natural(context) {
+	  this._context = context;
+	}
+
+	Natural.prototype = {
+	  areaStart: function() {
+	    this._line = 0;
+	  },
+	  areaEnd: function() {
+	    this._line = NaN;
+	  },
+	  lineStart: function() {
+	    this._x = [];
+	    this._y = [];
+	  },
+	  lineEnd: function() {
+	    var x = this._x,
+	        y = this._y,
+	        n = x.length;
+
+	    if (n) {
+	      this._line ? this._context.lineTo(x[0], y[0]) : this._context.moveTo(x[0], y[0]);
+	      if (n === 2) {
+	        this._context.lineTo(x[1], y[1]);
+	      } else {
+	        var px = controlPoints(x),
+	            py = controlPoints(y);
+	        for (var i0 = 0, i1 = 1; i1 < n; ++i0, ++i1) {
+	          this._context.bezierCurveTo(px[0][i0], py[0][i0], px[1][i0], py[1][i0], x[i1], y[i1]);
+	        }
+	      }
+	    }
+
+	    if (this._line || (this._line !== 0 && n === 1)) this._context.closePath();
+	    this._line = 1 - this._line;
+	    this._x = this._y = null;
+	  },
+	  point: function(x, y) {
+	    this._x.push(+x);
+	    this._y.push(+y);
+	  }
+	};
+
+	// See https://www.particleincell.com/2012/bezier-splines/ for derivation.
+	function controlPoints(x) {
+	  var i,
+	      n = x.length - 1,
+	      m,
+	      a = new Array(n),
+	      b = new Array(n),
+	      r = new Array(n);
+	  a[0] = 0, b[0] = 2, r[0] = x[0] + 2 * x[1];
+	  for (i = 1; i < n - 1; ++i) a[i] = 1, b[i] = 4, r[i] = 4 * x[i] + 2 * x[i + 1];
+	  a[n - 1] = 2, b[n - 1] = 7, r[n - 1] = 8 * x[n - 1] + x[n];
+	  for (i = 1; i < n; ++i) m = a[i] / b[i - 1], b[i] -= m, r[i] -= m * r[i - 1];
+	  a[n - 1] = r[n - 1] / b[n - 1];
+	  for (i = n - 2; i >= 0; --i) a[i] = (r[i] - a[i + 1]) / b[i];
+	  b[n - 1] = (x[n] + a[n - 1]) / 2;
+	  for (i = 0; i < n - 1; ++i) b[i] = 2 * x[i + 1] - a[i + 1];
+	  return [a, b];
+	}
+
+	function curveNatural(context) {
+	  return new Natural(context);
+	}
 
 	function Step(context, t) {
 	  this._context = context;
@@ -11523,7 +12027,7 @@
 	        xOffset: 0,
 	        yOffset: 0
 	      }, scales);
-	      this.branchPath = branchPathGenerator({
+	      this.branchPath = this.branchPathGenerator({
 	        scales: scales,
 	        curve: this.settings.curve,
 	        curveRadius: this.settings.curveRadius
@@ -11573,6 +12077,45 @@
 	      });
 	    }
 	  }, {
+	    key: "branchPathGenerator",
+	    value: function branchPathGenerator(_ref) {
+	      var scales = _ref.scales,
+	          curveRadius = _ref.curveRadius,
+	          curve = _ref.curve;
+
+	      var branchPath = function branchPath(e, i) {
+	        var branchLine = line().x(function (v) {
+	          return v.x;
+	        }).y(function (v) {
+	          return v.y;
+	        }).curve(curve);
+	        var factor = e.v0.y - e.v1.y > 0 ? 1 : -1;
+	        var dontNeedCurve = e.v0.y - e.v1.y === 0 ? 0 : 1;
+	        var output = curveRadius > 0 ? branchLine([{
+	          x: 0,
+	          y: scales.y(e.v0.y) - scales.y(e.v1.y)
+	        }, {
+	          x: 0,
+	          y: dontNeedCurve * factor * curveRadius
+	        }, {
+	          x: 0 + dontNeedCurve * curveRadius,
+	          y: 0
+	        }, {
+	          x: scales.x(e.v1.x + scales.xOffset) - scales.x(e.v0.x + scales.xOffset),
+	          y: 0
+	        }]) : branchLine([{
+	          x: 0,
+	          y: scales.y(e.v0.y) - scales.y(e.v1.y)
+	        }, {
+	          x: scales.x(e.v1.x + scales.xOffset) - scales.x(e.v0.x + scales.xOffset),
+	          y: 0
+	        }]);
+	        return output;
+	      };
+
+	      return branchPath;
+	    }
+	  }, {
 	    key: "edgeFilter",
 	    get: function get() {
 	      return this.settings.edgeFilter;
@@ -11593,10 +12136,10 @@
 	 * @return {function(*, *)}
 	 */
 
-	function branchPathGenerator(_ref) {
-	  var scales = _ref.scales,
-	      curveRadius = _ref.curveRadius,
-	      curve = _ref.curve;
+	function branchPathGenerator(_ref2) {
+	  var scales = _ref2.scales,
+	      curveRadius = _ref2.curveRadius,
+	      curve = _ref2.curve;
 
 	  var branchPath = function branchPath(e, i) {
 	    var branchLine = line().x(function (v) {
@@ -11772,6 +12315,53 @@
 
 	  return pointToPoint;
 	}
+
+	var GeoLayout =
+	/*#__PURE__*/
+	function (_AbstractLayout) {
+	  inherits(GeoLayout, _AbstractLayout);
+
+	  function GeoLayout(tree, projection) {
+	    var _this;
+
+	    var settings = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {
+	      locationKey: "location"
+	    };
+
+	    classCallCheck(this, GeoLayout);
+
+	    _this = possibleConstructorReturn(this, getPrototypeOf(GeoLayout).call(this, tree, settings));
+	    _this.projection = projection;
+	    return _this;
+	  }
+
+	  createClass(GeoLayout, [{
+	    key: "setYPosition",
+	    value: function setYPosition(vertex, currentY) {
+	      if (vertex.node.annotations[this.settings.locationKey]) {
+	        vertex.y = this.projection(vertex.node.annotations[this.settings.locationKey])[1];
+	      } else {
+	        vertex.y = undefined;
+	      }
+	    }
+	  }, {
+	    key: "setXPosition",
+	    value: function setXPosition(vertex, currentX) {
+	      if (vertex.node.annotations[this.settings.locationKey]) {
+	        vertex.x = this.projection(vertex.node.annotations[this.settings.locationKey])[0];
+	      } else {
+	        vertex.x = undefined;
+	      }
+	    }
+	  }, {
+	    key: "_getTreeNodes",
+	    value: function _getTreeNodes() {
+	      return this.tree.nodeList;
+	    }
+	  }]);
+
+	  return GeoLayout;
+	}(AbstractLayout);
 
 	/** @module figtree */
 
@@ -12373,13 +12963,24 @@
 	      } // create the scales
 
 
-	      var xScale = this.settings.xScale.scale().domain([this.layout.horizontalDomain[0] + this.xScaleOffset + this.settings.xScale.revisions.hedge, this.layout.horizontalDomain[1]]).range([0, width - this.margins.right - this.margins.left]);
-	      var yScale = this.settings.yScale.scale().domain([this.layout.verticalDomain[0] + this.yScaleOffset, this.layout.verticalDomain[1]]).range([0, height - this.margins.bottom - this.margins.top]);
+	      var xScale, yScale;
+	      var projection = null;
+
+	      if (this.layout instanceof GeoLayout) {
+	        xScale = linear$2();
+	        yScale = linear$2();
+	        projection = this.layout.projection;
+	      } else {
+	        xScale = this.settings.xScale.scale().domain([this.layout.horizontalDomain[0] + this.xScaleOffset + this.settings.xScale.revisions.hedge, this.layout.horizontalDomain[1]]).range([0, width - this.margins.right - this.margins.left]);
+	        yScale = this.settings.yScale.scale().domain([this.layout.verticalDomain[0] + this.yScaleOffset, this.layout.verticalDomain[1]]).range([0, height - this.margins.bottom - this.margins.top]);
+	      }
+
 	      this.scales = {
 	        x: xScale,
 	        y: yScale,
 	        width: width,
-	        height: height
+	        height: height,
+	        projection: projection
 	      };
 	    }
 	    /**
@@ -12873,6 +13474,10 @@
 	      var xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
 	      var axesLayer = this.svgSelection.select(".axes-layer");
 	      this.settings.xScale.axes.forEach(function (axis) {
+	        if (_this10.layout instanceof GeoLayout) {
+	          throw new Error("Can not add axis to geolayout");
+	        }
+
 	        axis.createAxis({
 	          selection: axesLayer,
 	          x: 0,
@@ -12894,6 +13499,10 @@
 	      var yAxisHeight = this.scales.height - this.margins.top - this.margins.bottom;
 	      var axesLayer = this.svgSelection.select(".axes-layer");
 	      this.settings.yScale.axes.forEach(function (axis) {
+	        if (_this11.layout instanceof GeoLayout) {
+	          throw new Error("Can not add axis to geolayout");
+	        }
+
 	        axis.createAxis({
 	          selection: axesLayer,
 	          x: 0 - _this11.settings.yScale.gap,
@@ -14247,6 +14856,134 @@
 	  }
 	}
 
+	var GreatCircleBranchBauble =
+	/*#__PURE__*/
+	function (_BranchBauble) {
+	  inherits(GreatCircleBranchBauble, _BranchBauble);
+
+	  createClass(GreatCircleBranchBauble, null, [{
+	    key: "DEFAULT_SETTINGS",
+	    value: function DEFAULT_SETTINGS() {
+	      return {
+	        curve: curveNatural,
+	        attrs: {
+	          "fill": function fill(d) {
+	            return "none";
+	          },
+	          "stroke-width": function strokeWidth(d) {
+	            return "2";
+	          },
+	          "stroke": function stroke(d) {
+	            return "black";
+	          }
+	        },
+	        vertexFilter: null,
+	        edgeFilter: function edgeFilter() {
+	          return true;
+	        }
+	      };
+	    }
+	    /**
+	     * The constructor takes a setting object. The keys of the setting object are determined by the type of bauble.
+	     *
+	     * @param {Object} settings
+	     * @param {function} [settings.curve=d3.curveNatural] - a d3 curve used to draw the edge
+	     * @param {function} [settings.edgeFilter=()=>true] - a function that is passed each edge. If it returns true then bauble applies to that vertex.
+	     * @param {Object} [settings.attrs={"fill": d => "none", "stroke-width": d => "2", "stroke": d => "black"}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These can be overwritten by css.
+	     *  @param {Object} [settings.styles={}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These overwrite css.
+	     */
+
+	  }]);
+
+	  function GreatCircleBranchBauble() {
+	    var settings = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+	    classCallCheck(this, GreatCircleBranchBauble);
+
+	    return possibleConstructorReturn(this, getPrototypeOf(GreatCircleBranchBauble).call(this, mergeDeep(GreatCircleBranchBauble.DEFAULT_SETTINGS(), settings)));
+	  } //TODO
+
+
+	  createClass(GreatCircleBranchBauble, [{
+	    key: "branchPathGenerator",
+	    value: function branchPathGenerator(_ref) {
+	      var scales = _ref.scales,
+	          curveRadius = _ref.curveRadius,
+	          curve = _ref.curve;
+
+	      var _geoPath = geoPath(scales.projection);
+
+	      var branchPath = function branchPath(e, i) {
+	        // get og line
+	        var geoLine = {
+	          "type": "LineString",
+	          "coordinates": [[e.v0.x, e.v0.y], [e.v1.x, e.v1.y]]
+	        };
+	        console.log(_geoPath(geoLine));
+	        console.log(transformedLine(_geoPath(geoLine)));
+	        return transformedLine(_geoPath(geoLine));
+	      };
+
+	      return branchPath;
+	    }
+	  }]);
+
+	  return GreatCircleBranchBauble;
+	}(BranchBauble); //TODO fix this hack that only takes M and L
+
+	var transformedLine = function transformedLine(string) {
+	  var parsedString = string.split(/\s*('[^']+'|"[^"]+"|M|L|,)\s*/);
+	  var currentValues = [0, 0];
+	  var startingPoint = [];
+	  var newString = [];
+	  var currentPos = 0;
+	  var _iteratorNormalCompletion = true;
+	  var _didIteratorError = false;
+	  var _iteratorError = undefined;
+
+	  try {
+	    for (var _iterator = parsedString.filter(function (t) {
+	      return t.length > 0;
+	    })[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	      var token = _step.value;
+
+	      if (token === "M" || token === "L" || token === ",") {
+	        newString.push(token.toLowerCase());
+	      } else {
+	        var number = parseFloat(token);
+
+	        if (currentValues[currentPos] === 0) {
+	          newString.push(0);
+	          startingPoint.push(number);
+	          currentValues[currentPos] = number;
+	          currentPos = Math.abs(currentPos - 1);
+	        } else {
+	          newString.push(number - currentValues[currentPos]);
+	          currentValues[currentPos] = number;
+	          currentPos = Math.abs(currentPos - 1);
+	        }
+	      }
+	    } // now fix to handel how the branch is transformed
+
+	  } catch (err) {
+	    _didIteratorError = true;
+	    _iteratorError = err;
+	  } finally {
+	    try {
+	      if (!_iteratorNormalCompletion && _iterator["return"] != null) {
+	        _iterator["return"]();
+	      }
+	    } finally {
+	      if (_didIteratorError) {
+	        throw _iteratorError;
+	      }
+	    }
+	  }
+
+	  newString[3] = startingPoint[1] - currentValues[1];
+	  return newString.join("");
+	};
+
 	exports.Axis = Axis;
 	exports.Bauble = Bauble;
 	exports.BranchBauble = BranchBauble;
@@ -14254,6 +14991,8 @@
 	exports.EqualAngleLayout = EqualAngleLayout;
 	exports.ExplodedLayout = ExplodedLayout;
 	exports.FigTree = FigTree;
+	exports.GeoLayout = GeoLayout;
+	exports.GreatCircleBranchBauble = GreatCircleBranchBauble;
 	exports.RectangularBauble = RectangularBauble;
 	exports.RectangularLayout = RectangularLayout;
 	exports.RootToTipPlot = RootToTipPlot;

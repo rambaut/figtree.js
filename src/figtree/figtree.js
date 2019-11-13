@@ -6,6 +6,8 @@ import 'd3-selection-multi';
 import {CircleBauble} from "../baubles/circlebauble";
 import {BranchBauble} from "../baubles/branchbauble";
 import {CartoonBauble} from "../baubles/cartoonbauble";
+import {GeoLayout} from "../layout/geoLayout";
+
 /** @module figtree */
 
 export const p= {
@@ -516,15 +518,27 @@ export class FigTree {
         }
 
         // create the scales
-        const xScale = this.settings.xScale.scale()
-            .domain([this.layout.horizontalDomain[0]+this.xScaleOffset+this.settings.xScale.revisions.hedge,this.layout.horizontalDomain[1]])
-            .range([0, width - this.margins.right-this.margins.left]);
+        let xScale,yScale;
+        let projection=null;
 
-        const yScale = this.settings.yScale.scale()
-            .domain([this.layout.verticalDomain[0]+this.yScaleOffset,this.layout.verticalDomain[1]])
-            .range([0, height -this.margins.bottom-this.margins.top]);
+        if(this.layout instanceof GeoLayout){
+            xScale = scaleLinear();
+            yScale = scaleLinear();
+            projection = this.layout.projection;
+        }
+        else{
+            xScale = this.settings.xScale.scale()
+                .domain([this.layout.horizontalDomain[0]+this.xScaleOffset+this.settings.xScale.revisions.hedge,this.layout.horizontalDomain[1]])
+                .range([0, width - this.margins.right-this.margins.left]);
 
-        this.scales = {x:xScale, y:yScale, width, height};
+            yScale = this.settings.yScale.scale()
+                .domain([this.layout.verticalDomain[0]+this.yScaleOffset,this.layout.verticalDomain[1]])
+                .range([0, height -this.margins.bottom-this.margins.top]);
+        }
+
+
+        this.scales = {x:xScale, y:yScale, width, height, projection};
+
     }
     /**
      * Adds or updates nodes
@@ -792,6 +806,9 @@ export class FigTree {
         const axesLayer = this.svgSelection.select(".axes-layer");
 
         this.settings.xScale.axes.forEach(axis=>{
+            if(this.layout instanceof GeoLayout){
+                throw new Error("Can not add axis to geolayout")
+            }
             axis.createAxis({selection:axesLayer,
                 x:0,
                 y:this.scales.height - this.margins.bottom-this.margins.top +this.settings.xScale.gap,
@@ -811,6 +828,9 @@ export class FigTree {
         const axesLayer = this.svgSelection.select(".axes-layer");
 
         this.settings.yScale.axes.forEach(axis=>{
+            if(this.layout instanceof GeoLayout){
+                throw new Error("Can not add axis to geolayout")
+            }
             axis.createAxis({selection:axesLayer,
                 x:0-this.settings.yScale.gap,
                 y:0,

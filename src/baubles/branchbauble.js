@@ -35,7 +35,7 @@ export class BranchBauble extends Bauble {
 
     setup(scales = {}) {
         scales = mergeDeep({x: null, y: null, xOffset: 0, yOffset: 0}, scales);
-        this.branchPath = branchPathGenerator({scales:scales,curve:this.settings.curve,curveRadius:this.settings.curveRadius})
+        this.branchPath = this.branchPathGenerator({scales:scales,curve:this.settings.curve,curveRadius:this.settings.curveRadius})
     }
 
     updateShapes(selection) {
@@ -83,7 +83,32 @@ export class BranchBauble extends Bauble {
                     )
             )
     };
-}
+
+    branchPathGenerator({scales,curveRadius,curve}) {
+        const branchPath = (e, i) => {
+            const branchLine = line()
+                .x((v) => v.x)
+                .y((v) => v.y)
+                .curve(curve);
+            const factor = e.v0.y - e.v1.y > 0 ? 1 : -1;
+            const dontNeedCurve = e.v0.y - e.v1.y === 0 ? 0 : 1;
+            const output = curveRadius > 0 ?
+                branchLine(
+                    [{x: 0, y: scales.y(e.v0.y) - scales.y(e.v1.y)},
+                        {x: 0, y: dontNeedCurve * factor * curveRadius},
+                        {x: 0 + dontNeedCurve * curveRadius, y: 0},
+                        {x: scales.x(e.v1.x + scales.xOffset) - scales.x(e.v0.x + scales.xOffset), y: 0}
+                    ]) :
+                branchLine(
+                    [{x: 0, y: scales.y(e.v0.y) - scales.y(e.v1.y)},
+                        {x: scales.x(e.v1.x + scales.xOffset) - scales.x(e.v0.x + scales.xOffset), y: 0}
+                    ]);
+            return (output)
+
+        };
+        return branchPath;
+    }
+};
 
 /**
  * Generates a line() function that takes an edge and it's index and returns a line for d3 path element. It is called
