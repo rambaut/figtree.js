@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>FigTree Demo</title>
-    <!-- <script src="js/d3.js" charset="utf-8"></script> -->
+     <script src="js/d3.js" charset="utf-8"></script>
     <!--<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>-->
     <style>
         text {
@@ -112,21 +112,31 @@
 
 <body>
 <div id="tooltip" display="none" style="position: absolute; display: none;"></div>
-
-<div>
-    <figure>
-        <svg id="phylogram_1a"  width="600" height="500"></svg>
-    </figure>
-    <!--<button id="sort_up_button">Sort ascending</button>-->
-    <!--<button id="sort_down_button">Sort descending</button>-->
-    <!--<button id="rectangular_button">Draw rectangular</button>-->
-    <!--<button id="triangular_button">Draw triangular</button>-->
-</div>
+<!--<div>-->
+<!--    <figure>-->
+<!--        <svg id="phylogram_1a"  width="600" height="500"></svg>-->
+<!--    </figure>-->
+<!--    &lt;!&ndash;<button id="sort_up_button">Sort ascending</button>&ndash;&gt;-->
+<!--    &lt;!&ndash;<button id="sort_down_button">Sort descending</button>&ndash;&gt;-->
+<!--    &lt;!&ndash;<button id="rectangular_button">Draw rectangular</button>&ndash;&gt;-->
+<!--    &lt;!&ndash;<button id="triangular_button">Draw triangular</button>&ndash;&gt;-->
+<!--</div>-->
 <script src ="dist/figtree.umd.js"></script>
 <script type="module">
 
     import {Tree,RectangularLayout,CircleBauble,FigTree,BranchBauble,EqualAngleLayout,Axis,RootToTipPlot}  from "./dist/figtree.esm.js";
 
+
+    const width = 600,
+        height = 300;
+    const  margins={top:10,bottom:10,left:10,right:10};
+
+    const svg =  d3.select("body")
+        .append("svg")
+        .attr("class","figure")
+        .attr("id","phylogram_1a")
+        .attr("preserveAspectRatio", "xMinYMin meet")
+        .attr("viewBox", `0 0 ${width} ${height}`);
     const newickString =
         '((((((virus1:0.1,virus2:0.12)0.95:0.08,(virus3:0.011,virus4:0.0087)1.0:0.15)0.65:0.03,virus5:0.21)1.0:0.2,(virus6:0.45,virus7:0.4)0.51:0.02)1.0:0.1,virus8:0.4)1.0:0.1,(virus9:0.04,virus10:0.03)1.0:0.6);';
 

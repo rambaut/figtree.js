@@ -1,9 +1,14 @@
 import {AbstractLayout} from "./abstractLayout";
 
 export class GeoLayout extends AbstractLayout{
+    static DEFAULT_SETTINGS() {
+        return {
+           locationKey:"location"
+        }
+    }
 
-    constructor(tree, projection,settings = {locationKey:"location"}) {
-        super(tree,settings);
+    constructor(tree, projection,settings = {}) {
+        super(tree,{...GeoLayout.DEFAULT_SETTINGS(),...settings});
         this.projection=projection;
 
     }

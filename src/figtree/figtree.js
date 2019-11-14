@@ -279,6 +279,7 @@ export class FigTree {
                     bauble.updateShapes(node, self.settings.vertices.hoverBorder);
                     }
                 });
+
                 node.classed("hovered", true);
             },
             exit: (d,i,n) =>{

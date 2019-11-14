@@ -12319,16 +12319,23 @@ var GeoLayout =
 function (_AbstractLayout) {
   inherits(GeoLayout, _AbstractLayout);
 
+  createClass(GeoLayout, null, [{
+    key: "DEFAULT_SETTINGS",
+    value: function DEFAULT_SETTINGS() {
+      return {
+        locationKey: "location"
+      };
+    }
+  }]);
+
   function GeoLayout(tree, projection) {
     var _this;
 
-    var settings = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {
-      locationKey: "location"
-    };
+    var settings = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
     classCallCheck(this, GeoLayout);
 
-    _this = possibleConstructorReturn(this, getPrototypeOf(GeoLayout).call(this, tree, settings));
+    _this = possibleConstructorReturn(this, getPrototypeOf(GeoLayout).call(this, tree, objectSpread({}, GeoLayout.DEFAULT_SETTINGS(), settings)));
     _this.projection = projection;
     return _this;
   }
