@@ -119,6 +119,7 @@ export class FigTree {
      */
     constructor(svg, layout, margins, settings = {}) {
         this.layout = layout;
+        this.originalMargins = {...margins};
         this.margins = margins;
 
         this.settings = mergeDeep(FigTree.DEFAULT_SETTINGS(),settings);
@@ -138,8 +139,7 @@ export class FigTree {
      * @return {FigTree}
      */
     draw(){
-        
-
+        this[p.setUpScales]();
         //remove the tree if it is there already
         select(this.svg).select(`#${this.svgId}`).remove();
 
@@ -162,7 +162,6 @@ export class FigTree {
 
 
         // create the scales
-        this[p.setUpScales]();
 
         if(this.settings.xScale.axes.length>0){
            this[p.addXAxis]();
@@ -175,6 +174,13 @@ export class FigTree {
         this.layout.subscribeCallback(()=>this.update());
         this.drawn=true;
         this.update();
+
+        this.relativeMargins = {
+            left: this.originalMargins.left / this.scales.width,
+            right: this.originalMargins.right / this.scales.width,
+            top: this.originalMargins.top / this.scales.height,
+            bottom: this.originalMargins.bottom / this.scales.height
+        };
         return this;
 
     }
@@ -516,6 +522,16 @@ export class FigTree {
             height =this.settings.height;
         }else{
             height = this.svg.getBoundingClientRect().height;
+        }
+
+
+        if(this.originalMargins.scaleWithSVG && this.drawn){
+            this.margins = {left:this.relativeMargins.left*width,
+                            right:this.relativeMargins.right*width,
+                            top: this.relativeMargins.top*height,
+                            bottom: this.relativeMargins.bottom*height
+            }
+
         }
 
         // create the scales

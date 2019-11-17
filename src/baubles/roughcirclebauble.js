@@ -19,7 +19,7 @@ export class RoughCircleBauble extends Bauble {
             radius: 6,
             fill: "red",
             attrs: {
-                roughFill: {stroke: () => "red", fill: () => "none"},
+                roughFill: {stroke: () => "black", fill: () => "none"},
                 roughStroke: {"stroke-width": () => 0.5, stroke: () => "black", fill: () => "none"}
             },
             styles: {roughFill: {}, roughStroke: {}},

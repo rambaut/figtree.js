@@ -12485,6 +12485,7 @@ function () {
     classCallCheck(this, FigTree);
 
     this.layout = layout;
+    this.originalMargins = objectSpread({}, margins);
     this.margins = margins;
     this.settings = mergeDeep(FigTree.DEFAULT_SETTINGS(), settings);
     this.callbacks = {
@@ -12510,7 +12511,8 @@ function () {
     value: function draw() {
       var _this = this;
 
-      //remove the tree if it is there already
+      this[p.setUpScales](); //remove the tree if it is there already
+
       select(this.svg).select("#".concat(this.svgId)).remove(); // add a group which will contain the new tree
 
       select(this.svg).append("g").attr("id", this.svgId).attr("transform", "translate(".concat(this.margins.left, ",").concat(this.margins.top, ")")); //to selecting every time
@@ -12527,8 +12529,6 @@ function () {
 
       this.svgSelection.append("g").attr("class", "nodes-layer"); // create the scales
 
-      this[p.setUpScales]();
-
       if (this.settings.xScale.axes.length > 0) {
         this[p.addXAxis]();
       }
@@ -12543,6 +12543,12 @@ function () {
       });
       this.drawn = true;
       this.update();
+      this.relativeMargins = {
+        left: this.originalMargins.left / this.scales.width,
+        right: this.originalMargins.right / this.scales.width,
+        top: this.originalMargins.top / this.scales.height,
+        bottom: this.originalMargins.bottom / this.scales.height
+      };
       return this;
     }
     /**
@@ -12961,6 +12967,15 @@ function () {
         height = this.settings.height;
       } else {
         height = this.svg.getBoundingClientRect().height;
+      }
+
+      if (this.originalMargins.scaleWithSVG && this.drawn) {
+        this.margins = {
+          left: this.relativeMargins.left * width,
+          right: this.relativeMargins.right * width,
+          top: this.relativeMargins.top * height,
+          bottom: this.relativeMargins.bottom * height
+        };
       } // create the scales
 
 
@@ -14094,7 +14109,7 @@ function (_Bauble) {
         attrs: {
           roughFill: {
             stroke: function stroke() {
-              return "red";
+              return "black";
             },
             fill: function fill() {
               return "none";
