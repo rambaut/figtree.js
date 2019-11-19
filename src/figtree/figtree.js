@@ -141,6 +141,13 @@ export class FigTree {
     draw(){
         this[p.setUpScales]();
         //remove the tree if it is there already
+
+        this.relativeMargins = {
+            left: this.originalMargins.left / this.scales.width,
+            right: this.originalMargins.right / this.scales.width,
+            top: this.originalMargins.top / this.scales.height,
+            bottom: this.originalMargins.bottom / this.scales.height
+        };
         select(this.svg).select(`#${this.svgId}`).remove();
 
         // add a group which will contain the new tree
@@ -175,12 +182,7 @@ export class FigTree {
         this.drawn=true;
         this.update();
 
-        this.relativeMargins = {
-            left: this.originalMargins.left / this.scales.width,
-            right: this.originalMargins.right / this.scales.width,
-            top: this.originalMargins.top / this.scales.height,
-            bottom: this.originalMargins.bottom / this.scales.height
-        };
+
         return this;
 
     }
