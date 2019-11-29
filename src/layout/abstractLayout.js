@@ -10,12 +10,13 @@ import {mergeDeep} from "../utilities";
 export const  VertexStyle = {
     INCLUDED:Symbol("INCLUDED"),// Only included nodes are sent to the figtree class
     HIDDEN:Symbol("HIDDEN"), // The only difference between hidden and included nodes is that hidden nodes are not sent to the figtree class
-    MASKED:Symbol("MASKED") // Masked nodes have an x and y coordinate but are then ignored. They don't count towards their parent's x and y
+    MASKED:Symbol("MASKED"), // Masked nodes have an x and y coordinate but are then ignored. They don't count towards their parent's x and y
+    IGNORED:Symbol("IGNORE")
 };
 
 
 export const  makeVerticesFromNodes=Symbol("makeVerticesFromNodes");
-export const setVertexClasses = Symbol("setVertexClasses");
+export const setVertexClassesFromNode = Symbol("setVertexClassesFromNode");
 export const setVertexLabels=Symbol("setVertexLabels");
 export const makeEdgesFromNodes = Symbol("makeEdgesFromNodes");
 export const setupEdge=Symbol("setupEdge");
@@ -383,7 +384,7 @@ export class  AbstractLayout extends layoutInterface {
             }
             //update classes as needed.
             const vertex = this._nodeMap.get(n);
-                this[setVertexClasses](vertex);
+                this[setVertexClassesFromNode](vertex);
                 this[setVertexLabels](vertex);
         }
 
@@ -399,7 +400,7 @@ export class  AbstractLayout extends layoutInterface {
 
     }
 
-    [setVertexClasses](v){
+    [setVertexClassesFromNode](v){
         v.classes = [
             (!v.node.children ? "external-node" : "internal-node"),
             (v.node.isSelected ? "selected" : "unselected")];
@@ -510,9 +511,92 @@ export class  AbstractLayout extends layoutInterface {
 
     return cartoons.filter(c=>mostAncestralNode.includes(c.node));
 
-    }
+    };
+
 }
 
+class Vertex{
+    constructor(node,layout){
+            this._layout= layout;
+            this.node=node;
+            this.key=node.id;
+            this.visibility=VertexStyle.INCLUDED;
+            this.degree = (node.children ? node.children.length + 1 : 1) ;// the number of edges (including stem)
+            this.id =node.id;
+            [setVertexClassesFromNode]();
+    };
+    [setVertexClassesFromNode](){
+        this._classes = [
+            (!this.node.children ? "external-node" : "internal-node"),
+            (this.node.isSelected ? "selected" : "unselected")];
+
+        if (this.node.annotations) {
+            this._classes = [
+                ...this._classes,
+                ...Object.entries(this.node.annotations)
+                    .filter(([key]) => {
+                        return this.node.tree.annotations[key] &&
+                            (this.node.tree.annotations[key].type === Type.DISCRETE ||
+                                this.node.tree.annotations[key].type === Type.BOOLEAN ||
+                                this.node.tree.annotations[key].type === Type.INTEGER);
+                    })
+                    .map(([key, value]) => `${key}-${value}`)];
+        }
+
+    }
+    hide(){
+        this.visibility=VertexStyle.HIDDEN;
+    }
+    mask(){
+        this.visibility=VertexStyle.MASKED;
+    }
+    include(){
+        this.visibility=VertexStyle.INCLUDED;
+    }
+    ignore(){
+        this.visibility=VertexStyle.IGNORED;
+    }
+
+    addClass(c){
+        this._classes=this._classes.concat(c);
+    }
+
+    removeClass(c){
+        this._classes=this._classes.filter(d=>d!==c);
+    }
+    get classes(){
+        return this._classes;
+    }
+
+    set label(d){
+        const label = (d instanceof Function) ? d(this) :d;
+        // either the tip name or the internal node label
+        if (this.node.children) {
+            this._leftLabel = label;
+            this._rightLabel = "";
+
+            // should the left node label be above or below the node?
+            this.labelBelow = (!this.node.parent || this.node.parent.children[0] !== this.node);
+        } else {
+            this._leftLabel = "";
+            this._rightLabel =label;
+        }
+    }
+
+    get rightLabel(){
+        if(this._rightLabel){
+            return this._rightLabel;
+        }
+        return ""
+    }
+    get leftLabel(){
+        if(this._leftLabel){
+            return this._leftLabel;
+        }
+        return ""
+    }
+
+}
 
 
 /**

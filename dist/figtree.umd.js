@@ -12518,13 +12518,13 @@
 	      var _this = this;
 
 	      this[p.setUpScales](); //remove the tree if it is there already
+	      // this.relativeMargins = {
+	      //     left: this.originalMargins.left / this.scales.width,
+	      //     right: this.originalMargins.right / this.scales.width,
+	      //     top: this.originalMargins.top / this.scales.height,
+	      //     bottom: this.originalMargins.bottom / this.scales.height
+	      // };
 
-	      this.relativeMargins = {
-	        left: this.originalMargins.left / this.scales.width,
-	        right: this.originalMargins.right / this.scales.width,
-	        top: this.originalMargins.top / this.scales.height,
-	        bottom: this.originalMargins.bottom / this.scales.height
-	      };
 	      select(this.svg).select("#".concat(this.svgId)).remove(); // add a group which will contain the new tree
 
 	      select(this.svg).append("g").attr("id", this.svgId).attr("transform", "translate(".concat(this.margins.left, ",").concat(this.margins.top, ")")); //to selecting every time
@@ -12568,8 +12568,8 @@
 	        return;
 	      }
 
-	      select("#".concat(this.svgId)).attr("transform", "translate(".concat(this.margins.left, ",").concat(this.margins.top, ")"));
 	      this[p.setUpScales]();
+	      select("#".concat(this.svgId)).attr("transform", "translate(".concat(this.margins.left, ",").concat(this.margins.top, ")"));
 	      this[p.updateAnnotations]();
 	      this[p.updateCartoons]();
 	      this[p.updateBranches]();
@@ -12975,12 +12975,12 @@
 	        height = this.svg.getBoundingClientRect().height;
 	      }
 
-	      if (this.originalMargins.scaleWithSVG && this.drawn) {
+	      if (this.originalMargins.relative && this.drawn) {
 	        this.margins = {
-	          left: this.relativeMargins.left * width,
-	          right: this.relativeMargins.right * width,
-	          top: this.relativeMargins.top * height,
-	          bottom: this.relativeMargins.bottom * height
+	          left: this.originalMargins.left * width,
+	          right: this.originalMargins.right * width,
+	          top: this.originalMargins.top * height,
+	          bottom: this.originalMargins.bottom * height
 	        };
 	      } // create the scales
 

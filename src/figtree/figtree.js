@@ -142,12 +142,12 @@ export class FigTree {
         this[p.setUpScales]();
         //remove the tree if it is there already
 
-        this.relativeMargins = {
-            left: this.originalMargins.left / this.scales.width,
-            right: this.originalMargins.right / this.scales.width,
-            top: this.originalMargins.top / this.scales.height,
-            bottom: this.originalMargins.bottom / this.scales.height
-        };
+        // this.relativeMargins = {
+        //     left: this.originalMargins.left / this.scales.width,
+        //     right: this.originalMargins.right / this.scales.width,
+        //     top: this.originalMargins.top / this.scales.height,
+        //     bottom: this.originalMargins.bottom / this.scales.height
+        // };
         select(this.svg).select(`#${this.svgId}`).remove();
 
         // add a group which will contain the new tree
@@ -194,10 +194,10 @@ export class FigTree {
         if(!this.drawn){
             return
         }
+        this[p.setUpScales]();
         select(`#${this.svgId}`)
             .attr("transform",`translate(${this.margins.left},${this.margins.top})`);
 
-        this[p.setUpScales]();
 
         this[p.updateAnnotations]();
         this[p.updateCartoons]();
@@ -527,11 +527,11 @@ export class FigTree {
         }
 
 
-        if(this.originalMargins.scaleWithSVG && this.drawn){
-            this.margins = {left:this.relativeMargins.left*width,
-                            right:this.relativeMargins.right*width,
-                            top: this.relativeMargins.top*height,
-                            bottom: this.relativeMargins.bottom*height
+        if(this.originalMargins.relative && this.drawn){
+            this.margins = {left:this.originalMargins.left*width,
+                            right:this.originalMargins.right*width,
+                            top: this.originalMargins.top*height,
+                            bottom: this.originalMargins.bottom*height
             }
 
         }
@@ -953,38 +953,24 @@ export class FigTree {
         return branchPath;
     }
 
-    get xScaleOrigin(){
-        if(this.settings.xScale.revisions.origin instanceof Function){
-            return this.settings.xScale.revisions.origin()
-        }
-        else{
-            return this.settings.xScale.revisions.origin
-        }
+
+    get nodes(){
+        //TODO make add bauble class for vertex
+        return this.layout.vertices;
     }
-    get xScaleOffset(){
-        if(this.settings.xScale.revisions.offset instanceof Function){
-            return this.settings.xScale.revisions.offset()
-        }
-        else{
-            return this.settings.xScale.revisions.offset
-        }
+    get branches(){
+        //TODO make add bauble class for edges
+
+        return this.layout.edges;
     }
-    get yScaleOffset(){
-        if(this.settings.yScale.revisions.origin instanceof Function){
-            return this.settings.yScale.revisions.origin()
-        }
-        else{
-            return this.settings.yScale.revisions.origin
-        }
+
+    get xAxis(){
+
     }
-    get yScaleOrigin(){
-        if(this.settings.yScale.revisions.offset instanceof Function){
-            return this.settings.yScale.revisions.offset()
-        }
-        else{
-            return this.settings.yScale.revisions.offset
-        }
+    get yAxis(){
+
     }
+
 
 
 }
