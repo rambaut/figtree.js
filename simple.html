@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>FigTree Demo</title>
-     <script src="js/d3.js" charset="utf-8"></script>
+<!--     <script src="js/d3.js" charset="utf-8"></script>-->
     <!--<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>-->
     <style>
         text {
@@ -124,7 +124,7 @@
 <script src ="dist/figtree.umd.js"></script>
 <script type="module">
 
-    import {Tree,RectangularLayout,CircleBauble,FigTree,BranchBauble,EqualAngleLayout,Axis,RootToTipPlot}  from "./dist/figtree.esm.js";
+    import {Tree,rectangularLayout,CircleBauble,FigTree,BranchBauble,EqualAngleLayout,Axis,RootToTipPlot}  from "./dist/figtree.esm.js";
 
 
     const width = 600,
@@ -143,20 +143,33 @@
     const tree = Tree.parseNewick(newickString, "probability");
     const treeSVG = document.getElementById('phylogram_1a');
 
-    const layout = new RectangularLayout(tree);
-    // layout.setBranchLabels("length");
-    const externalNodeBauble = new CircleBauble({radius:6,vertexFilter:(v)=>v.degree===1,styles:{fill:()=>"red"}});
-    const figTree = new FigTree(treeSVG, layout,
-        { top: 10, bottom: 60, left: 10, right: 150},
-        {vertices:{baubles:[externalNodeBauble]}});
-        figTree
-            .hilightInternalNodes()
-            .hilightExternalNodes()
-    .onClickInternalNode(layout.rotate())
-    .hilightBranches()
-    .onClickBranch({action:layout.reroot()})
-            .draw()
-    console.log(figTree)
+    const fig = new FigTree(tree)
+        .svg(treeSVG)
+        .layout(rectangularLayout)
+        .nodes(new CircleBauble()) // could be function to specify difference /style ect.
+            .highlightOnHover()
+            .filter(n=>n.children)
+                .rotateOnClick()
+        .branches(new BranchBauble())
+            .highlightOnHover()
+            .reRootOnClick()
+
+
+
+    // const layout = new RectangularLayout(tree);
+    // // layout.setBranchLabels("length");
+    // const externalNodeBauble = new CircleBauble({radius:6,vertexFilter:(v)=>v.degree===1,styles:{fill:()=>"red"}});
+    // const figTree = new FigTree(treeSVG, layout,
+    //     { top: 10, bottom: 60, left: 10, right: 150},
+    //     {vertices:{baubles:[externalNodeBauble]}});
+    //     figTree
+    //         .hilightInternalNodes()
+    //         .hilightExternalNodes()
+    // .onClickInternalNode(layout.rotate())
+    // .hilightBranches()
+    // .onClickBranch({action:layout.reroot()})
+    //         .draw()
+    // console.log(figTree)
 
 
     // figTree.addToolTip('#root', "The root node - represents the most recent<br>common ancestor of the whole tree");
@@ -181,7 +194,17 @@
 
 </script>
 
+<script type="module">
+    import {rectangularLayout,Tree} from "./dist/figtree.esm.js";
 
+    const newickString = `((((((virus1:0.1 ,virus2:0.12):0.08,(virus3:0.011,virus4:0.0087):0.15):0.03,virus5:0.21):0.2,(virus6:0.45,virus7:0.4):0.02):0.1,virus8:0.4):0.1,(virus9:0.04,virus10:0.03):0.6);`;
+    const tree = Tree.parseNewick(newickString);
+
+
+    const x = rectangularLayout(tree);
+    console.log(x)
+
+</script>
 </body>
 
 </html>

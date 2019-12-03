@@ -1058,11 +1058,14 @@ export class Tree {
                                 tipNameMap.set(taxaData[0],taxaData[1]);
                             }
                         }else{
-                            // if(tipNameMap.size>0) {
                                 const treeString = token.substring(token.indexOf("("));
-                                const thisTree = Tree.parseNewick(treeString,{...options,tipNameMap:tipNameMap});
+                            if(tipNameMap.size>0) {
+                                const thisTree = Tree.parseNewick(treeString, {...options, tipNameMap: tipNameMap});
                                 trees.push(thisTree);
-
+                            }else{
+                                const thisTree = Tree.parseNewick(treeString, {...options});
+                                trees.push(thisTree);
+                            }
                         }
                     }
                 }
@@ -1374,6 +1377,9 @@ class Node{
     set id(value){
         this._tree.nodesUpdated=true;
         this._id = value;
+    }
+    get tree(){
+        return this._tree;
     }
     getClade(tipNameMap=null){
         if(tipNameMap==null && this.clade && this._tree.nodesUpdated===false){

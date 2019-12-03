@@ -9699,12 +9699,18 @@ function () {
                       tipNameMap.set(taxaData[0], taxaData[1]);
                     }
                   } else {
-                    // if(tipNameMap.size>0) {
                     var treeString = token.substring(token.indexOf("("));
-                    var thisTree = Tree.parseNewick(treeString, objectSpread({}, options, {
-                      tipNameMap: tipNameMap
-                    }));
-                    trees.push(thisTree);
+
+                    if (tipNameMap.size > 0) {
+                      var thisTree = Tree.parseNewick(treeString, objectSpread({}, options, {
+                        tipNameMap: tipNameMap
+                      }));
+                      trees.push(thisTree);
+                    } else {
+                      var _thisTree = Tree.parseNewick(treeString, objectSpread({}, options));
+
+                      trees.push(_thisTree);
+                    }
                   }
                 }
               }
@@ -10227,6 +10233,11 @@ function () {
       this._tree.nodesUpdated = true;
       this._id = value;
     }
+  }, {
+    key: "tree",
+    get: function get() {
+      return this._tree;
+    }
   }]);
 
   return Node;
@@ -10727,11 +10738,12 @@ var VertexStyle$1 = {
   // Only included nodes are sent to the figtree class
   HIDDEN: Symbol("HIDDEN"),
   // The only difference between hidden and included nodes is that hidden nodes are not sent to the figtree class
-  MASKED: Symbol("MASKED") // Masked nodes have an x and y coordinate but are then ignored. They don't count towards their parent's x and y
-
+  MASKED: Symbol("MASKED"),
+  // Masked nodes have an x and y coordinate but are then ignored. They don't count towards their parent's x and y
+  IGNORED: Symbol("IGNORE")
 };
 var makeVerticesFromNodes = Symbol("makeVerticesFromNodes");
-var setVertexClasses = Symbol("setVertexClasses");
+var setVertexClassesFromNode = Symbol("setVertexClassesFromNode");
 var setVertexLabels = Symbol("setVertexLabels");
 var makeEdgesFromNodes = Symbol("makeEdgesFromNodes");
 var setupEdge = Symbol("setupEdge");
@@ -11081,7 +11093,7 @@ function (_layoutInterface) {
 
         var vertex = _this10._nodeMap.get(n);
 
-        _this10[setVertexClasses](vertex);
+        _this10[setVertexClassesFromNode](vertex);
 
         _this10[setVertexLabels](vertex);
       }); //remove vertices not in nodes
@@ -11122,7 +11134,7 @@ function (_layoutInterface) {
       }
     }
   }, {
-    key: setVertexClasses,
+    key: setVertexClassesFromNode,
     value: function value(v) {
       var _this11 = this;
 
@@ -11422,6 +11434,7 @@ function (_layoutInterface) {
  * @param delta
  * @param vertices
  */
+
 
 function updateVerticesY(delta) {
   for (var _len2 = arguments.length, vertices = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
@@ -13693,41 +13706,23 @@ function () {
       this.update();
     }
   }, {
-    key: "xScaleOrigin",
+    key: "nodes",
     get: function get() {
-      if (this.settings.xScale.revisions.origin instanceof Function) {
-        return this.settings.xScale.revisions.origin();
-      } else {
-        return this.settings.xScale.revisions.origin;
-      }
+      //TODO make add bauble class for vertex
+      return this.layout.vertices;
     }
   }, {
-    key: "xScaleOffset",
+    key: "branches",
     get: function get() {
-      if (this.settings.xScale.revisions.offset instanceof Function) {
-        return this.settings.xScale.revisions.offset();
-      } else {
-        return this.settings.xScale.revisions.offset;
-      }
+      //TODO make add bauble class for edges
+      return this.layout.edges;
     }
   }, {
-    key: "yScaleOffset",
-    get: function get() {
-      if (this.settings.yScale.revisions.origin instanceof Function) {
-        return this.settings.yScale.revisions.origin();
-      } else {
-        return this.settings.yScale.revisions.origin;
-      }
-    }
+    key: "xAxis",
+    get: function get() {}
   }, {
-    key: "yScaleOrigin",
-    get: function get() {
-      if (this.settings.yScale.revisions.offset instanceof Function) {
-        return this.settings.yScale.revisions.offset();
-      } else {
-        return this.settings.yScale.revisions.offset;
-      }
-    }
+    key: "yAxis",
+    get: function get() {}
   }]);
 
   return FigTree;
@@ -15004,6 +14999,189 @@ var transformedLine = function transformedLine(string) {
   return newString.join("");
 };
 
+function setVertexClassesFromNode$1(v) {
+  v.classes = [!v.node.children ? "external-node" : "internal-node"];
+  var tree = v.node.tree;
+
+  if (v.node.annotations) {
+    v.classes = [].concat(toConsumableArray(v.classes), toConsumableArray(Object.entries(v.node.annotations).filter(function (_ref) {
+      var _ref2 = slicedToArray(_ref, 1),
+          key = _ref2[0];
+
+      return tree.annotations[key] && (tree.annotations[key].type === Type.DISCRETE || tree.annotations[key].type === Type.BOOLEAN || tree.annotations[key].type === Type.INTEGER);
+    }).map(function (_ref3) {
+      var _ref4 = slicedToArray(_ref3, 2),
+          key = _ref4[0],
+          value = _ref4[1];
+
+      return "".concat(key, "-").concat(value);
+    })));
+  }
+
+  return v;
+}
+
+function makeVerticesFromNode(node) {
+  var vertex = {
+    node: node,
+    key: node.id,
+    degree: node.children ? node.children.length + 1 : 1,
+    // the number of edges (including stem)
+    id: node.id,
+    leftLabel: !!node.children,
+    labelBelow: !!node.children && (!node.parent || node.parent.children[0] !== node)
+  }; //update classes as needed.
+
+  return setVertexClassesFromNode$1(vertex);
+}
+
+function rectangularVertices(tree) {
+  var currentY = 0;
+
+  var traverse =
+  /*#__PURE__*/
+  regenerator.mark(function traverse(node) {
+    var siblingPositions,
+        myChildrenPositions,
+        _iteratorNormalCompletion,
+        _didIteratorError,
+        _iteratorError,
+        _iterator,
+        _step,
+        child,
+        vertex,
+        _vertex,
+        _args = arguments;
+
+    return regenerator.wrap(function traverse$(_context) {
+      while (1) {
+        switch (_context.prev = _context.next) {
+          case 0:
+            siblingPositions = _args.length > 1 && _args[1] !== undefined ? _args[1] : [];
+            myChildrenPositions = [];
+
+            if (!node.children) {
+              _context.next = 34;
+              break;
+            }
+
+            _iteratorNormalCompletion = true;
+            _didIteratorError = false;
+            _iteratorError = undefined;
+            _context.prev = 6;
+            _iterator = node.children[Symbol.iterator]();
+
+          case 8:
+            if (_iteratorNormalCompletion = (_step = _iterator.next()).done) {
+              _context.next = 14;
+              break;
+            }
+
+            child = _step.value;
+            return _context.delegateYield(traverse(child, myChildrenPositions), "t0", 11);
+
+          case 11:
+            _iteratorNormalCompletion = true;
+            _context.next = 8;
+            break;
+
+          case 14:
+            _context.next = 20;
+            break;
+
+          case 16:
+            _context.prev = 16;
+            _context.t1 = _context["catch"](6);
+            _didIteratorError = true;
+            _iteratorError = _context.t1;
+
+          case 20:
+            _context.prev = 20;
+            _context.prev = 21;
+
+            if (!_iteratorNormalCompletion && _iterator["return"] != null) {
+              _iterator["return"]();
+            }
+
+          case 23:
+            _context.prev = 23;
+
+            if (!_didIteratorError) {
+              _context.next = 26;
+              break;
+            }
+
+            throw _iteratorError;
+
+          case 26:
+            return _context.finish(23);
+
+          case 27:
+            return _context.finish(20);
+
+          case 28:
+            siblingPositions.push(mean(myChildrenPositions));
+            vertex = objectSpread({}, makeVerticesFromNode(node), {
+              y: mean(myChildrenPositions),
+              x: node.height
+            });
+            _context.next = 32;
+            return vertex;
+
+          case 32:
+            _context.next = 39;
+            break;
+
+          case 34:
+            currentY += 1;
+            siblingPositions.push(currentY);
+            _vertex = objectSpread({}, makeVerticesFromNode(node), {
+              y: currentY,
+              x: node.height
+            });
+            _context.next = 39;
+            return _vertex;
+
+          case 39:
+          case "end":
+            return _context.stop();
+        }
+      }
+    }, traverse, null, [[6, 16, 20, 28], [21,, 23, 27]]);
+  });
+
+  return toConsumableArray(traverse(tree.rootNode));
+}
+function makeEdges(vertices) {
+  var nodeMap = new Map(vertices.map(function (v) {
+    return [v.node, v];
+  }));
+  return vertices.filter(function (v) {
+    return v.node.parent;
+  }).map(function (v) {
+    return {
+      v0: nodeMap.get(v.node.parent),
+      v1: v,
+      key: v.id,
+      classes: v.classes,
+      labelBelow: v.node.parent.children[0] !== v.node
+    };
+  });
+}
+
+var layoutFactory = function layoutFactory(makeVertices) {
+  return function (tree) {
+    var vertices = makeVertices(tree);
+    var edges = makeEdges(vertices);
+    return {
+      vertices: vertices,
+      edges: edges
+    };
+  };
+};
+
+var rectangularLayout = layoutFactory(rectangularVertices);
+
 exports.Axis = Axis;
 exports.Bauble = Bauble;
 exports.BranchBauble = BranchBauble;
@@ -15021,4 +15199,5 @@ exports.RoughCircleBauble = RoughCircleBauble;
 exports.TransmissionLayout = TransmissionLayout;
 exports.Tree = Tree;
 exports.Type = Type;
+exports.rectangularLayout = rectangularLayout;
 //# sourceMappingURL=figtree.cjs.js.map

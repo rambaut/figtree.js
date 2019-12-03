@@ -62,3 +62,7 @@ export function isInt(value) {
         parseInt(Number(value)) == value &&
         !isNaN(parseInt(value, 10));
 }
+
+export const compose=(...fns)=>(arg)=>{
+    return fns.reduceRight((res,fn)=>fn(res),arg);
+}
