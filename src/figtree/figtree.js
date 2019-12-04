@@ -7,27 +7,14 @@ import {CircleBauble} from "../baubles/circlebauble";
 import {BranchBauble} from "../baubles/branchbauble";
 import {CartoonBauble} from "../baubles/cartoonbauble";
 import {GeoLayout} from "../layout/geoLayout";
+import {rectangularLayout} from "../layout/rectangularLayout.f";
+import {Bauble} from "../baubles/bauble";
+import {min,max} from "d3-array";
+import p from "../privateConstants.js"
 
 /** @module figtree */
 
-export const p= {
-    addXAxis: Symbol("addXAxis"),
-    addYAxis: Symbol("addYAxis"),
-    updateXAxis:Symbol("updateXAxis"),
-    updateYAxis:Symbol("updateYAxis"),
-    updateAnnotations:Symbol("updateAnnotations"),
-    updateCartoons:Symbol("updateCartoons"),
-    updateBranches:Symbol("updateBranches"),
-    updateNodeBackgrounds:Symbol("updateNodeBackgrounds"),
-    updateNodes:Symbol("updateNodes"),
-    updateBranchStyles:Symbol("updateBranchStyles"),
-    updateNodeStyles:Symbol("updateNodeStyles"),
-    updateNodeBackgroundStyles:Symbol("updateNodeBackgroundStyles"),
-    updateCartoonStyles:Symbol("updateCartoonStyles"),
-    branchPathGenerator:Symbol("branchPathGenerator"),
-    pointToPoint:Symbol("pointToPoint"),
-    setUpScales:Symbol("setUpScales")
-};
+
 /**
  * The FigTree class
  *
@@ -117,29 +104,34 @@ export class FigTree {
      * @param {function} [settings.transitionEase=d3.easeLinear] - the d3 ease function used to interpolate during transitioning
      *
      */
-    constructor(svg, layout, margins, settings = {}) {
-        this.layout = layout;
-        this.originalMargins = {...margins};
+    constructor(svg=null, layout=rectangularLayout, margins={top:10,bottom:60,left:30,right:60}, settings = {}) {
+        this[p.layout] = layout;
         this.margins = margins;
 
         this.settings = mergeDeep(FigTree.DEFAULT_SETTINGS(),settings);
         this.callbacks= {nodes:[],branches:[],cartoons:[]};
         this._annotations =[];
 
-        this.svg=svg;
+        this[p.svg]=svg;
         this.drawn = false;
         this.svgId = `g-${uuid.v4()}`;
         this.svgSelection=null;
 
+        this[p.vertices]=new DataCollection([],this);
+        this[p.edges] = new DataCollection([],this);
+
         return this;
     }
+
 
     /**
      * An instance method that makes place the svg object in the page. Without calling this method the figure will not be drawn
      * @return {FigTree}
      */
     draw(){
+        this[p.updateVerticesAndEdges]();
         this[p.setUpScales]();
+
         //remove the tree if it is there already
 
         // this.relativeMargins = {
@@ -148,15 +140,15 @@ export class FigTree {
         //     top: this.originalMargins.top / this.scales.height,
         //     bottom: this.originalMargins.bottom / this.scales.height
         // };
-        select(this.svg).select(`#${this.svgId}`).remove();
+        select(this[p.svg]).select(`#${this.svgId}`).remove();
 
         // add a group which will contain the new tree
-        select(this.svg).append("g")
+        select(this[p.svg]).append("g")
             .attr("id",this.svgId)
             .attr("transform",`translate(${this.margins.left},${this.margins.top})`);
 
         //to selecting every time
-        this.svgSelection = select(this.svg).select(`#${this.svgId}`);
+        this.svgSelection = select(this[p.svg]).select(`#${this.svgId}`);
         this.svgSelection.append("g").attr("class","annotation-layer");
         this.svgSelection.append("g").attr("class", "axes-layer");
         this.svgSelection.append("g").attr("class", "cartoon-layer");
@@ -177,8 +169,6 @@ export class FigTree {
             this[p.addYAxis]();
         }
 
-        // Called whenever the layout changes...
-        this.layout.subscribeCallback(()=>this.update());
         this.drawn=true;
         this.update();
 
@@ -194,25 +184,26 @@ export class FigTree {
         if(!this.drawn){
             return
         }
+        this[p.updateVerticesAndEdges]();
         this[p.setUpScales]();
         select(`#${this.svgId}`)
             .attr("transform",`translate(${this.margins.left},${this.margins.top})`);
 
 
-        this[p.updateAnnotations]();
-        this[p.updateCartoons]();
-        this[p.updateBranches]();
-
-        if(this.settings.xScale.axes.length>0){
-            this[p.updateXAxis]();
-        }
-        if(this.settings.yScale.axes.length>0){
-            this[p.updateYAxis]();
-        }
-
-        if (this.settings.vertices.backgroundBaubles.length>0) {
-            this[p.updateNodeBackgrounds]();
-        }
+        // this[p.updateAnnotations]();
+        // this[p.updateCartoons]();
+        // this[p.updateBranches]();
+        //
+        // if(this.settings.xScale.axes.length>0){
+        //     this[p.updateXAxis]();
+        // }
+        // if(this.settings.yScale.axes.length>0){
+        //     this[p.updateYAxis]();
+        // }
+        //
+        // if (this.settings.vertices.backgroundBaubles.length>0) {
+        //     this[p.updateNodeBackgrounds]();
+        // }
 
         this[p.updateNodes]();
 
@@ -510,30 +501,33 @@ export class FigTree {
     }
 
  /*
- * Protected methods, called by the class using.
+ * private methods
  */
+ [p.updateVerticesAndEdges](){
+    const {vertices,edges} = this[p.layout](this[p.tree]);
+    if(!this[p.vertices]){
+        this[p.vertices]=new DataCollection(vertices,this);
+    }else{
+        this[p.vertices].updateData(vertices);
+    }
+     if(!this[p.edges]){
+         this[p.edges]=new DataCollection(edges,this);
+     }else{
+         this[p.edges].updateData(edges);
+     } }
+
 
     [p.setUpScales](){
         let width,height;
         if(Object.keys(this.settings).indexOf("width")>-1){
             width =this.settings.width;
         }else{
-            width = this.svg.getBoundingClientRect().width;
+            width = this[p.svg].getBoundingClientRect().width;
         }
         if(Object.keys(this.settings).indexOf("height")>-1){
             height =this.settings.height;
         }else{
-            height = this.svg.getBoundingClientRect().height;
-        }
-
-
-        if(this.originalMargins.relative && this.drawn){
-            this.margins = {left:this.originalMargins.left*width,
-                            right:this.originalMargins.right*width,
-                            top: this.originalMargins.top*height,
-                            bottom: this.originalMargins.bottom*height
-            }
-
+            height = this[p.svg].getBoundingClientRect().height;
         }
 
         // create the scales
@@ -547,11 +541,11 @@ export class FigTree {
         }
         else{
             xScale = this.settings.xScale.scale()
-                .domain([this.layout.horizontalDomain[0]+this.xScaleOffset+this.settings.xScale.revisions.hedge,this.layout.horizontalDomain[1]])
+                .domain([max(this[p.vertices].data,d=>d.x),min(this[p.vertices].data,d=>d.x)])
                 .range([0, width - this.margins.right-this.margins.left]);
 
             yScale = this.settings.yScale.scale()
-                .domain([this.layout.verticalDomain[0]+this.yScaleOffset,this.layout.verticalDomain[1]])
+                .domain([min(this[p.vertices].data,d=>d.y),max(this[p.vertices].data,d=>d.y)])
                 .range([0, height -this.margins.bottom-this.margins.top]);
         }
 
@@ -565,25 +559,26 @@ export class FigTree {
     [p.updateNodes](){
         const nodesLayer = this.svgSelection.select(".nodes-layer");
 
+        const vertices = this[p.vertices].data;
+        const baubleMap = this[p.vertices].baubleMap;
+
         // DATA JOIN
         // Join new data with old elements, if any.
         const self = this;
         nodesLayer.selectAll(".node")
-            .data(this.layout.vertices, (v) => `n_${v.key}`)
+            .data(vertices, (v) => `n_${v.key}`)
             .join(
                 enter=>enter
                     .append("g")
-                        .attr("id", (v) => v.id)
+                        .attr("id", (v) => v.key)
                         .attr("class", (v) => ["node", ...v.classes].join(" "))
                         .attr("transform", (v) => {
-                            return `translate(${this.scales.x(v.x+this.xScaleOffset)}, ${this.scales.y(v.y)})`;
+                            return `translate(${this.scales.x(v.x)}, ${this.scales.y(v.y)})`;
                         })
                         .each(function(v) {
-                            for(const bauble of  self.settings.vertices.baubles){
-                                if (bauble.vertexFilter(v)) {
-                                    bauble
-                                        .updateShapes(select(this))
-                                }
+                            if(baubleMap.has(v.key)){
+                                const bauble = baubleMap.get(v.key);
+                                bauble.updateShapes(select(this))
                             }
                         })
                     .append("text")
@@ -606,15 +601,13 @@ export class FigTree {
                     .ease(this.settings.transition.transitionEase)
                     .attr("class", (v) => ["node", ...v.classes].join(" "))
                     .attr("transform", (v) => {
-                        return `translate(${this.scales.x(v.x+this.xScaleOffset)}, ${this.scales.y(v.y)})`;
+                        return `translate(${this.scales.x(v.x)}, ${this.scales.y(v.y)})`;
                     })
                     .on("start", function(v) {
-                        for (const bauble of self.settings.vertices.baubles) {
-                            if (bauble.vertexFilter(v)) {
-                                bauble
-                                    .updateShapes(select(this))
+                            if(baubleMap.has(v.key)){
+                                const bauble = baubleMap.get(v.key);
+                                bauble.updateShapes(select(this))
                             }
-                        }
                     })
                     // .each(
                     // })
@@ -655,14 +648,14 @@ export class FigTree {
         // Join new data with old elements, if any.
         const self = this;
         nodesBackgroundLayer.selectAll(".node-background")
-            .data(this.layout.vertices, (v) => `nb_${v.key}`)
+            .data(this[p.vertices], (v) => `nb_${v.key}`)
             .join(
                 enter=>enter
                     .append("g")
                         .attr("id", (v) => v.id)
                         .attr("class", (v) => ["node-background", ...v.classes].join(" "))
                         .attr("transform", (v) => {
-                            return `translate(${this.scales.x(v.x+this.xScaleOffset)}, ${this.scales.y(v.y)})`;
+                            return `translate(${this.scales.x(v.x+this.settings.xScale.revisions.offset)}, ${this.scales.y(v.y)})`;
                         })
                         .each(function(v) {
                             for(const bauble of  self.settings.vertices.backgroundBaubles){
@@ -678,7 +671,7 @@ export class FigTree {
                         .ease(this.settings.transition.transitionEase)
                         .attr("class", (v) => ["node-background", ...v.classes].join(" "))
                         .attr("transform", (v) => {
-                            return `translate(${this.scales.x(v.x+this.xScaleOffset)}, ${this.scales.y(v.y)})`;
+                            return `translate(${this.scales.x(v.x+this.settings.xScale.revisions.offset)}, ${this.scales.y(v.y)})`;
                         })
                         .each(function(v) {
                             for(const bauble of  self.settings.vertices.backgroundBaubles){
@@ -704,19 +697,19 @@ export class FigTree {
         //set up scales for branches
 
         this.settings.edges.baubles.forEach(b=>b.setup({x:this.scales.x,y:this.scales.y,
-            xOffset:this.xScaleOffset,yOffset:this.yScaleOffset}));
+            xOffset:this.settings.xScale.revisions.offset,yOffset:this.yScaleOffset}));
         // DATA JOIN
         // Join new data with old elements, if any.
         const self = this;
         branchesLayer.selectAll(".branch")
-            .data(this.layout.edges, (e) => `b_${e.key}`)
+            .data(this[p.edges], (e) => `b_${e.key}`)
             .join(
                 enter=>enter
                     .append("g")
                         .attr("id", (e) => e.id)
                         .attr("class", (e) => ["branch", ...e.classes].join(" "))
                         .attr("transform", (e) => {
-                            return `translate(${this.scales.x(e.v0.x+this.xScaleOffset)}, ${this.scales.y(e.v1.y)})`;
+                            return `translate(${this.scales.x(e.v0.x+this.settings.xScale.revisions.offset)}, ${this.scales.y(e.v1.y)})`;
                         })
                         .each(function(e) {
                             for(const bauble of  self.settings.edges.baubles){
@@ -728,7 +721,7 @@ export class FigTree {
                         })
                     .append("text")
                         .attr("class", "branch-label")
-                        .attr("dx", (e) => ((this.scales.x(e.v1.x+this.xScaleOffset) - this.scales.x(e.v0.x+this.xScaleOffset)) / 2))
+                        .attr("dx", (e) => ((this.scales.x(e.v1.x+this.settings.xScale.revisions.offset) - this.scales.x(e.v0.x+this.settings.xScale.revisions.offset)) / 2))
                         .attr("dy", (e) => (e.labelBelow ? +6 : -6))
                         .attr("alignment-baseline", (e) => (e.labelBelow ? "hanging" : "bottom"))
                         .attr("text-anchor", "middle")
@@ -739,7 +732,7 @@ export class FigTree {
                         .ease(this.settings.transition.transitionEase)
                         .attr("class", (e) => ["branch", ...e.classes].join(" "))
                         .attr("transform", (e) => {
-                            return `translate(${this.scales.x(e.v0.x+this.xScaleOffset)}, ${this.scales.y(e.v1.y)})`;
+                            return `translate(${this.scales.x(e.v0.x+this.settings.xScale.revisions.offset)}, ${this.scales.y(e.v1.y)})`;
                         })
                     .on("start",function(e) {
                         for(const bauble of  self.settings.edges.baubles){
@@ -752,7 +745,7 @@ export class FigTree {
                         // .each(
                     .select("text .branch-label .length")
                         .attr("class", "branch-label length")
-                        .attr("dx", (e) => ((this.scales.x(e.v1.x+this.xScaleOffset) - this.scales.x(e.v0.x+this.xScaleOffset)) / 2))
+                        .attr("dx", (e) => ((this.scales.x(e.v1.x+this.settings.xScale.revisions.offset) - this.scales.x(e.v0.x+this.settings.xScale.revisions.offset)) / 2))
                         .attr("dy", (e) => (e.labelBelow ? +6 : -6))
                         .attr("alignment-baseline", (e) => (e.labelBelow ? "hanging" : "bottom"))
                         .attr("text-anchor", "middle")
@@ -777,7 +770,7 @@ export class FigTree {
                         .attr("id", (c) => `cartoon-${c.id}`)
                         .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
                         .attr("transform", (c) => {
-                            return `translate(${this.scales.x(c.vertices[0].x+this.xScaleOffset)}, ${this.scales.y(c.vertices[0].y+this.xScaleOffset)})`;
+                            return `translate(${this.scales.x(c.vertices[0].x+this.settings.xScale.revisions.offset)}, ${this.scales.y(c.vertices[0].y+this.settings.xScale.revisions.offset)})`;
                         })
                         .each(function(c) {
                             for(const bauble of  self.settings.cartoons.baubles){
@@ -793,7 +786,7 @@ export class FigTree {
                     .ease(this.settings.transition.transitionEase)
                     .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
                     .attr("transform", (c) => {
-                        return `translate(${this.scales.x(c.vertices[0].x+this.xScaleOffset)}, ${this.scales.y(c.vertices[0].y+this.xScaleOffset)})`;
+                        return `translate(${this.scales.x(c.vertices[0].x+this.settings.xScale.revisions.offset)}, ${this.scales.y(c.vertices[0].y+this.settings.xScale.revisions.offset)})`;
                     })
                     .each(function(c) {
                         for(const bauble of  self.settings.cartoons.baubles){
@@ -902,7 +895,7 @@ export class FigTree {
         const pathPoints =points.reverse();
         let currentPoint =origin;
         for(const point of pathPoints){
-            const xdiff = this.scales.x(point.x+this.xScaleOffset)-this.scales.x(currentPoint.x+this.xScaleOffset);
+            const xdiff = this.scales.x(point.x+this.settings.xScale.revisions.offset)-this.scales.x(currentPoint.x+this.settings.xScale.revisions.offset);
             const ydiff = this.scales.y(point.y)- this.scales.y(currentPoint.y);
             path.push(`${xdiff} ${ydiff}`);
             currentPoint = point;
@@ -941,27 +934,58 @@ export class FigTree {
                     [{x: 0, y: this.scales.y(e.v0.y) - this.scales.y(e.v1.y)},
                         { x:0, y:dontNeedCurve*factor * this.settings.edges.curveRadius},
                         {x:0 + dontNeedCurve*this.settings.edges.curveRadius, y:0},
-                        {x: this.scales.x(e.v1.x+this.xScaleOffset) - this.scales.x(e.v0.x+this.xScaleOffset), y: 0}
+                        {x: this.scales.x(e.v1.x+this.settings.xScale.revisions.offset) - this.scales.x(e.v0.x+this.settings.xScale.revisions.offset), y: 0}
                     ]):
                 branchLine(
                     [{x: 0, y: this.scales.y(e.v0.y) - this.scales.y(e.v1.y)},
-                        {x: this.scales.x(e.v1.x+this.xScaleOffset) - this.scales.x(e.v0.x+this.xScaleOffset), y: 0}
+                        {x: this.scales.x(e.v1.x+this.settings.xScale.revisions.offset) - this.scales.x(e.v0.x+this.settings.xScale.revisions.offset), y: 0}
                     ]);
             return(output)
 
         };
         return branchPath;
     }
+// setters and getters
 
+    svg(svg=null){
+        if(svg===null){
+            return this[p.svg]
+        }
+        else {
+            this[p.svg] = svg;
+            return this;
+        }
+        }
+    tree(tree=null){
+        if(tree===null){
+            return this[p.tree]
+        }else{
+            this[p.tree] = tree;
+            this[p.tree].subscribeCallback( () => {
+                this.update();
+            });
+            return this;
+        }
+    }
+    layout(layout=null){
+        if(layout===null){
+            return this[p.layout]
+        }else{
+            this[p.layout] = layout;
+            return this;
+        }
+    }
 
-    get nodes(){
-        //TODO make add bauble class for vertex
-        return this.layout.vertices;
+    nodes(){
+        if(!this[p.vertices]){
+            this[p.updateVerticesAndEdges]();
+        }
+        return this[p.vertices]
     }
     get branches(){
         //TODO make add bauble class for edges
 
-        return this.layout.edges;
+        return this[p.edges];
     }
 
     get xAxis(){
@@ -971,16 +995,87 @@ export class FigTree {
 
     }
 
-
-
 }
 
 
 
+class DataCollection {
+    constructor(data, figure) {
+
+        this.figure = figure;
+        this.data = data;
+        this.baubleMap = new Map();
+        this.attrs={};
+        this.baubleMaker=null;
+
+        return new Proxy(this,
+        { get : function(target, prop)
+        {
+            if(target[prop] === undefined)
+                return this.figure[prop]
+            else
+                return target[prop];
+        }
+            });
+    }
+    updateData(data){
+        this.data = data;
+        //remake baubles
+        this.baubles(this.baubleMaker);
+        // update bauble styles
+        for(const [key,value] of Object.entries(this.attrs)){
+            this.attr(key,value);
+        }
+    }
+
+    baubles(b=null) {
+        if(b){
+            this.baubleMaker=b;
+        }
+        if(this.baubleMaker) {
+            if (!isFunction(this.baubleMaker)) {
+                for (const d of this.data) {
+                    this.baubleMap.set(d.key, new this.baubleMaker())
+                }
+            } else if (this.baubleMaker instanceof Function) {
+                for (const d of this.data) {
+                    const bauble = this.baubleMaker(d.key);
+                    if (bauble) {
+                        this.baubleMap.set(d.key, new this.baubleMaker(d))
+                    }
+                }
+            }
+            return this;
+        }
+        return this.baubleMap;
+    }
+    attr(string, f) {
+        this.attrs[string]=f;
+        if (f instanceof Function) {
+            for (const d of this.data) {
+                if (f(d)) {
+                    const bauble = this.baubleMap.get(d.key);
+                    if (bauble) {
+                        bauble.attr(string, f(d))
+                    }
+                }
+            }
+        } else {
+            for (const d of this.data) {
+                const bauble = this.baubleMap.get(d.key);
+                if (bauble) {
+                    bauble.attr(string, f)
+                }
+            }
+        }
+        return this;
+    }
+}
 
 
-
-
-
-
+//https://stackoverflow.com/questions/526559/testing-if-something-is-a-class-in-javascript
+function isFunction(funcOrClass) {
+    const propertyNames = Object.getOwnPropertyNames(funcOrClass);
+    return (!propertyNames.includes('prototype') || propertyNames.includes('arguments'));
+}
 

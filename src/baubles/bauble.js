@@ -3,6 +3,7 @@
 /** @module bauble */
 import {mergeDeep} from "../utilities";
 import {easeLinear} from "d3"
+import set from "@babel/runtime/helpers/esm/set";
 
 /**
  * The Bauble class
@@ -32,16 +33,8 @@ export class Bauble {
      *  @param {Object} [settings.styles={}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These overwrite css.
      */
     constructor(settings = {}) {
-        this.settings = mergeDeep(Bauble.DEFAULT_SETTINGS(),settings);
-    }
-
-    /**
-     * A getter for the vertexFilter
-     * @return {*|vertexFilter|(function(): boolean)}
-     */
-
-    get vertexFilter() {
-        return this.settings.vertexFilter;
+        const options = mergeDeep(Bauble.DEFAULT_SETTINGS(),settings);
+        this.attrs = options.attrs
     }
 
     /**
@@ -52,6 +45,10 @@ export class Bauble {
      */
     updateShapes(selection, border = 0) {
         throw new Error("don't call the base class methods")
+    }
+
+    attr(string,value){
+        this.attrs[string] = value;
     }
 
 }

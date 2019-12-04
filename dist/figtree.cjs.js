@@ -8078,6 +8078,27 @@ function extent$1(values, valueof) {
   return [min, max];
 }
 
+function max$1(values, valueof) {
+  let max;
+  if (valueof === undefined) {
+    for (const value of values) {
+      if (value != null
+          && (max < value || (max === undefined && value >= value))) {
+        max = value;
+      }
+    }
+  } else {
+    let index = -1;
+    for (let value of values) {
+      if ((value = valueof(value, ++index, values)) != null
+          && (max < value || (max === undefined && value >= value))) {
+        max = value;
+      }
+    }
+  }
+  return max;
+}
+
 function maxIndex(values, valueof) {
   let max;
   let maxIndex = -1;
@@ -8099,6 +8120,27 @@ function maxIndex(values, valueof) {
     }
   }
   return maxIndex;
+}
+
+function min$1(values, valueof) {
+  let min;
+  if (valueof === undefined) {
+    for (const value of values) {
+      if (value != null
+          && (min > value || (min === undefined && value >= value))) {
+        min = value;
+      }
+    }
+  } else {
+    let index = -1;
+    for (let value of values) {
+      if ((value = valueof(value, ++index, values)) != null
+          && (min > value || (min === undefined && value >= value))) {
+        min = value;
+      }
+    }
+  }
+  return min;
 }
 
 function isObject(item) {
@@ -8783,7 +8825,7 @@ function () {
         return n.level;
       })]; // intermediate nodes with show up as
 
-      var subtree = new Tree(mrca.toJSON());
+      var subtree = new Tree(mrca.toJS());
       subtree.externalNodes.forEach(function (node) {
         if (!chosenNodes.map(function (n) {
           return n.id;
@@ -10087,8 +10129,8 @@ function () {
       return bits;
     }
   }, {
-    key: "toJSON",
-    value: function toJSON() {
+    key: "toJS",
+    value: function toJS() {
       return {
         id: this.id,
         name: this.name,
@@ -10098,7 +10140,7 @@ function () {
         level: this.level,
         annotations: this.annotations,
         children: this.children && this.children.length > 0 ? this.children.map(function (child) {
-          return child.toJSON();
+          return child.toJS();
         }) : null
       };
     }
@@ -10168,7 +10210,7 @@ function () {
   }, {
     key: "annotations",
     get: function get() {
-      return this._annotations;
+      return objectSpread({}, this._annotations);
     },
     set: function set(value) {
       this._annotations = value;
@@ -11776,30 +11818,26 @@ function () {
 
     classCallCheck(this, Bauble);
 
-    this.settings = mergeDeep(Bauble.DEFAULT_SETTINGS(), settings);
+    var options = mergeDeep(Bauble.DEFAULT_SETTINGS(), settings);
+    this.attrs = options.attrs;
   }
   /**
-   * A getter for the vertexFilter
-   * @return {*|vertexFilter|(function(): boolean)}
+   * A function that appends the bauble to the selection, joins the data, assigns the attributes to the svg objects
+   * updates and remove unneeded objects.
+   * @param selection
+   * @param border
    */
 
 
   createClass(Bauble, [{
     key: "updateShapes",
-
-    /**
-     * A function that appends the bauble to the selection, joins the data, assigns the attributes to the svg objects
-     * updates and remove unneeded objects.
-     * @param selection
-     * @param border
-     */
     value: function updateShapes(selection) {
       throw new Error("don't call the base class methods");
     }
   }, {
-    key: "vertexFilter",
-    get: function get() {
-      return this.settings.vertexFilter;
+    key: "attr",
+    value: function attr(string, value) {
+      this.attrs[string] = value;
     }
   }]);
 
@@ -11907,7 +11945,9 @@ function (_Bauble) {
     key: "DEFAULT_SETTINGS",
     value: function DEFAULT_SETTINGS() {
       return {
-        radius: 6
+        attrs: {
+          r: 6
+        }
       };
     }
     /**
@@ -11937,40 +11977,13 @@ function (_Bauble) {
     value: function updateShapes(selection) {
       var _this = this;
 
-      var border = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
       return selection.selectAll("circle").data(function (d) {
         return [d];
       }).join(function (enter) {
-        return enter.append("circle").attr("class", "node-shape").attr("cx", 0).attr("cy", 0).attr("r", _this.settings.radius + border).attrs(function (vertex) {
-          var attributes = _this.settings.attrs;
-          return Object.keys(attributes).reduce(function (acc, curr) {
-            // const vertex = d3.select(n[i].parentNode).datum(); // the vertex data is assigned to the group
-            return objectSpread({}, acc, defineProperty({}, curr, attributes[curr](vertex)));
-          }, {});
-        }).styles(function (vertex) {
-          var styles = _this.settings.styles;
-          return Object.keys(styles).reduce(function (acc, curr) {
-            // const vertex = d3.select(n[i].parentNode).datum(); // the vertex data is assigned to the group
-            return objectSpread({}, acc, defineProperty({}, curr, styles[curr](vertex)));
-          }, {});
-        });
+        return enter.append("circle").attr("class", "node-shape").attr("cx", 0).attr("cy", 0).attrs(_this.attrs);
       }, function (update) {
         return update.call(function (update) {
-          return update.transition().attr("r", function (v) {
-            return _this.settings.radius + border;
-          }).attrs(function (vertex) {
-            var attributes = _this.settings.attrs;
-            return Object.keys(attributes).reduce(function (acc, curr) {
-              // const vertex = d3.select(n[i].parentNode).datum(); // the vertex data is assigned to the group
-              return objectSpread({}, acc, defineProperty({}, curr, attributes[curr](vertex)));
-            }, {});
-          }).styles(function (vertex) {
-            var styles = _this.settings.styles;
-            return Object.keys(styles).reduce(function (acc, curr) {
-              // const vertex = d3.select(n[i].parentNode).datum(); // the vertex data is assigned to the group
-              return objectSpread({}, acc, defineProperty({}, curr, styles[curr](vertex)));
-            }, {});
-          });
+          return update.transition().attrs(_this.attrs);
         });
       });
     }
@@ -12381,8 +12394,6 @@ function (_AbstractLayout) {
   return GeoLayout;
 }(AbstractLayout);
 
-/** @module figtree */
-
 var p = {
   addXAxis: Symbol("addXAxis"),
   addYAxis: Symbol("addYAxis"),
@@ -12399,8 +12410,210 @@ var p = {
   updateCartoonStyles: Symbol("updateCartoonStyles"),
   branchPathGenerator: Symbol("branchPathGenerator"),
   pointToPoint: Symbol("pointToPoint"),
-  setUpScales: Symbol("setUpScales")
+  setUpScales: Symbol("setUpScales"),
+  svg: Symbol("SVG"),
+  tree: Symbol("tree"),
+  layout: Symbol("layout"),
+  vertices: Symbol("vertices"),
+  edges: Symbol("edges"),
+  baubleMap: Symbol("baubleMap"),
+  branchMap: Symbol("branchMap"),
+  updateVerticesAndEdges: Symbol("updateVerticesAndEdges"),
+  node: Symbol("node")
 };
+
+function getVertexClassesFromNode(node) {
+  var classes = [!node.children ? "external-node" : "internal-node"];
+  var tree = node.tree;
+
+  if (node.annotations) {
+    classes = [].concat(toConsumableArray(classes), toConsumableArray(Object.entries(node.annotations).filter(function (_ref) {
+      var _ref2 = slicedToArray(_ref, 1),
+          key = _ref2[0];
+
+      return tree.annotations[key] && (tree.annotations[key].type === Type.DISCRETE || tree.annotations[key].type === Type.BOOLEAN || tree.annotations[key].type === Type.INTEGER);
+    }).map(function (_ref3) {
+      var _ref4 = slicedToArray(_ref3, 2),
+          key = _ref4[0],
+          value = _ref4[1];
+
+      if (tree.annotations[key].type === Type.DISCRETE || tree.annotations[key].type === Type.INTEGER) {
+        return "".concat(key, "-").concat(value);
+      } else if (tree.annotations[key].type === Type.BOOLEAN && value) {
+        return "".concat(key);
+      }
+    })));
+  }
+
+  return classes;
+}
+
+function makeVertexFromNode(node) {
+  return defineProperty({
+    name: node.name,
+    length: node.length,
+    height: node.height,
+    label: node.label,
+    level: node.level,
+    annotations: node.annotations,
+    key: node.id,
+    degree: node.children ? node.children.length + 1 : 1,
+    // the number of edges (including stem)
+    leftLabel: !!node.children,
+    labelBelow: !!node.children && (!node.parent || node.parent.children[0] !== node),
+    classes: getVertexClassesFromNode(node)
+  }, p.node, node);
+}
+
+function rectangularVertices(tree) {
+  var currentY = 0;
+
+  var traverse =
+  /*#__PURE__*/
+  regenerator.mark(function traverse(node) {
+    var siblingPositions,
+        myChildrenPositions,
+        _iteratorNormalCompletion,
+        _didIteratorError,
+        _iteratorError,
+        _iterator,
+        _step,
+        child,
+        vertex,
+        _vertex,
+        _args = arguments;
+
+    return regenerator.wrap(function traverse$(_context) {
+      while (1) {
+        switch (_context.prev = _context.next) {
+          case 0:
+            siblingPositions = _args.length > 1 && _args[1] !== undefined ? _args[1] : [];
+            myChildrenPositions = [];
+
+            if (!node.children) {
+              _context.next = 34;
+              break;
+            }
+
+            _iteratorNormalCompletion = true;
+            _didIteratorError = false;
+            _iteratorError = undefined;
+            _context.prev = 6;
+            _iterator = node.children[Symbol.iterator]();
+
+          case 8:
+            if (_iteratorNormalCompletion = (_step = _iterator.next()).done) {
+              _context.next = 14;
+              break;
+            }
+
+            child = _step.value;
+            return _context.delegateYield(traverse(child, myChildrenPositions), "t0", 11);
+
+          case 11:
+            _iteratorNormalCompletion = true;
+            _context.next = 8;
+            break;
+
+          case 14:
+            _context.next = 20;
+            break;
+
+          case 16:
+            _context.prev = 16;
+            _context.t1 = _context["catch"](6);
+            _didIteratorError = true;
+            _iteratorError = _context.t1;
+
+          case 20:
+            _context.prev = 20;
+            _context.prev = 21;
+
+            if (!_iteratorNormalCompletion && _iterator["return"] != null) {
+              _iterator["return"]();
+            }
+
+          case 23:
+            _context.prev = 23;
+
+            if (!_didIteratorError) {
+              _context.next = 26;
+              break;
+            }
+
+            throw _iteratorError;
+
+          case 26:
+            return _context.finish(23);
+
+          case 27:
+            return _context.finish(20);
+
+          case 28:
+            siblingPositions.push(mean(myChildrenPositions));
+            vertex = objectSpread({}, makeVertexFromNode(node), {
+              y: mean(myChildrenPositions),
+              x: node.height
+            });
+            _context.next = 32;
+            return vertex;
+
+          case 32:
+            _context.next = 39;
+            break;
+
+          case 34:
+            currentY += 1;
+            siblingPositions.push(currentY);
+            _vertex = objectSpread({}, makeVertexFromNode(node), {
+              y: currentY,
+              x: node.height
+            });
+            _context.next = 39;
+            return _vertex;
+
+          case 39:
+          case "end":
+            return _context.stop();
+        }
+      }
+    }, traverse, null, [[6, 16, 20, 28], [21,, 23, 27]]);
+  });
+
+  return toConsumableArray(traverse(tree.rootNode));
+}
+function makeEdges(vertices) {
+  var nodeMap = new Map(vertices.map(function (v) {
+    return [v[p.node], v];
+  }));
+  return vertices.filter(function (v) {
+    return v[p.node].parent;
+  }).map(function (v) {
+    return {
+      v0: nodeMap.get(v[p.node].parent),
+      v1: v,
+      key: v.id,
+      classes: v.classes,
+      labelBelow: v[p.node].parent.children[0] !== v[p.node]
+    };
+  });
+}
+
+var layoutFactory = function layoutFactory(makeVertices) {
+  return function (tree) {
+    var vertices = makeVertices(tree);
+    var edges = makeEdges(vertices);
+    return {
+      vertices: vertices,
+      edges: edges
+    };
+  };
+};
+
+var rectangularLayout = layoutFactory(rectangularVertices);
+
+/** @module figtree */
+
 /**
  * The FigTree class
  *
@@ -12496,13 +12709,20 @@ function () {
 
   }]);
 
-  function FigTree(svg, layout, margins) {
+  function FigTree() {
+    var svg = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+    var layout = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : rectangularLayout;
+    var margins = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {
+      top: 10,
+      bottom: 60,
+      left: 30,
+      right: 60
+    };
     var settings = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
 
     classCallCheck(this, FigTree);
 
-    this.layout = layout;
-    this.originalMargins = objectSpread({}, margins);
+    this[p.layout] = layout;
     this.margins = margins;
     this.settings = mergeDeep(FigTree.DEFAULT_SETTINGS(), settings);
     this.callbacks = {
@@ -12511,10 +12731,12 @@ function () {
       cartoons: []
     };
     this._annotations = [];
-    this.svg = svg;
+    this[p.svg] = svg;
     this.drawn = false;
     this.svgId = "g-".concat(uuid_1.v4());
     this.svgSelection = null;
+    this[p.vertices] = new DataCollection([], this);
+    this[p.edges] = new DataCollection([], this);
     return this;
   }
   /**
@@ -12526,8 +12748,7 @@ function () {
   createClass(FigTree, [{
     key: "draw",
     value: function draw() {
-      var _this = this;
-
+      this[p.updateVerticesAndEdges]();
       this[p.setUpScales](); //remove the tree if it is there already
       // this.relativeMargins = {
       //     left: this.originalMargins.left / this.scales.width,
@@ -12536,11 +12757,11 @@ function () {
       //     bottom: this.originalMargins.bottom / this.scales.height
       // };
 
-      select(this.svg).select("#".concat(this.svgId)).remove(); // add a group which will contain the new tree
+      select(this[p.svg]).select("#".concat(this.svgId)).remove(); // add a group which will contain the new tree
 
-      select(this.svg).append("g").attr("id", this.svgId).attr("transform", "translate(".concat(this.margins.left, ",").concat(this.margins.top, ")")); //to selecting every time
+      select(this[p.svg]).append("g").attr("id", this.svgId).attr("transform", "translate(".concat(this.margins.left, ",").concat(this.margins.top, ")")); //to selecting every time
 
-      this.svgSelection = select(this.svg).select("#".concat(this.svgId));
+      this.svgSelection = select(this[p.svg]).select("#".concat(this.svgId));
       this.svgSelection.append("g").attr("class", "annotation-layer");
       this.svgSelection.append("g").attr("class", "axes-layer");
       this.svgSelection.append("g").attr("class", "cartoon-layer");
@@ -12558,12 +12779,8 @@ function () {
 
       if (this.settings.yScale.axes.length > 0) {
         this[p.addYAxis]();
-      } // Called whenever the layout changes...
+      }
 
-
-      this.layout.subscribeCallback(function () {
-        return _this.update();
-      });
       this.drawn = true;
       this.update();
       return this;
@@ -12579,23 +12796,22 @@ function () {
         return;
       }
 
+      this[p.updateVerticesAndEdges]();
       this[p.setUpScales]();
-      select("#".concat(this.svgId)).attr("transform", "translate(".concat(this.margins.left, ",").concat(this.margins.top, ")"));
-      this[p.updateAnnotations]();
-      this[p.updateCartoons]();
-      this[p.updateBranches]();
-
-      if (this.settings.xScale.axes.length > 0) {
-        this[p.updateXAxis]();
-      }
-
-      if (this.settings.yScale.axes.length > 0) {
-        this[p.updateYAxis]();
-      }
-
-      if (this.settings.vertices.backgroundBaubles.length > 0) {
-        this[p.updateNodeBackgrounds]();
-      }
+      select("#".concat(this.svgId)).attr("transform", "translate(".concat(this.margins.left, ",").concat(this.margins.top, ")")); // this[p.updateAnnotations]();
+      // this[p.updateCartoons]();
+      // this[p.updateBranches]();
+      //
+      // if(this.settings.xScale.axes.length>0){
+      //     this[p.updateXAxis]();
+      // }
+      // if(this.settings.yScale.axes.length>0){
+      //     this[p.updateYAxis]();
+      // }
+      //
+      // if (this.settings.vertices.backgroundBaubles.length>0) {
+      //     this[p.updateNodeBackgrounds]();
+      // }
 
       this[p.updateNodes]();
       return this;
@@ -12709,7 +12925,7 @@ function () {
   }, {
     key: "onClickBranch",
     value: function onClickBranch(_ref) {
-      var _this2 = this;
+      var _this = this;
 
       var action = _ref.action,
           selection = _ref.selection,
@@ -12722,9 +12938,9 @@ function () {
         // We need to use the "function" keyword here (rather than an arrow) so that "this"
         // points to the actual SVG element (so we can use d3.mouse(this)). We therefore need
         // to store a reference to the object in "self".
-        var self = _this2;
+        var self = _this;
 
-        var selected = _this2.svgSelection.selectAll("".concat(selection));
+        var selected = _this.svgSelection.selectAll("".concat(selection));
 
         selected.on("click", function (edge) {
           var proportion;
@@ -12804,7 +13020,7 @@ function () {
   }, {
     key: "onClickNode",
     value: function onClickNode(_ref2) {
-      var _this3 = this;
+      var _this2 = this;
 
       var action = _ref2.action,
           selection = _ref2.selection,
@@ -12812,7 +13028,7 @@ function () {
       selection = selection ? selection : ".node"; // selection = `${selection} .node-shape`;
 
       this.callbacks.nodes.push(function () {
-        _this3.onClick({
+        _this2.onClick({
           action: action,
           selection: selection,
           update: true
@@ -12830,7 +13046,7 @@ function () {
   }, {
     key: "onHoverNode",
     value: function onHoverNode(_ref3) {
-      var _this4 = this;
+      var _this3 = this;
 
       var action = _ref3.action,
           selection = _ref3.selection,
@@ -12839,7 +13055,7 @@ function () {
       update = update ? update : false; // selection = `${selection} .node-shape`;
 
       this.callbacks.nodes.push(function () {
-        _this4.onHover({
+        _this3.onHover({
           action: action,
           selection: selection,
           update: update
@@ -12857,7 +13073,7 @@ function () {
   }, {
     key: "onHoverBranch",
     value: function onHoverBranch(_ref4) {
-      var _this5 = this;
+      var _this4 = this;
 
       var action = _ref4.action,
           selection = _ref4.selection,
@@ -12865,7 +13081,7 @@ function () {
       selection = selection ? ".branch ".concat(selection) : ".branch";
       update = update ? update : false;
       this.callbacks.branches.push(function () {
-        _this5.onHover({
+        _this4.onHover({
           action: action,
           selection: selection,
           update: update
@@ -12966,9 +13182,28 @@ function () {
       this.update();
     }
     /*
-    * Protected methods, called by the class using.
+    * private methods
     */
 
+  }, {
+    key: p.updateVerticesAndEdges,
+    value: function value() {
+      var _this$p$layout = this[p.layout](this[p.tree]),
+          vertices = _this$p$layout.vertices,
+          edges = _this$p$layout.edges;
+
+      if (!this[p.vertices]) {
+        this[p.vertices] = new DataCollection(vertices, this);
+      } else {
+        this[p.vertices].updateData(vertices);
+      }
+
+      if (!this[p.edges]) {
+        this[p.edges] = new DataCollection(edges, this);
+      } else {
+        this[p.edges].updateData(edges);
+      }
+    }
   }, {
     key: p.setUpScales,
     value: function value() {
@@ -12977,22 +13212,13 @@ function () {
       if (Object.keys(this.settings).indexOf("width") > -1) {
         width = this.settings.width;
       } else {
-        width = this.svg.getBoundingClientRect().width;
+        width = this[p.svg].getBoundingClientRect().width;
       }
 
       if (Object.keys(this.settings).indexOf("height") > -1) {
         height = this.settings.height;
       } else {
-        height = this.svg.getBoundingClientRect().height;
-      }
-
-      if (this.originalMargins.relative && this.drawn) {
-        this.margins = {
-          left: this.originalMargins.left * width,
-          right: this.originalMargins.right * width,
-          top: this.originalMargins.top * height,
-          bottom: this.originalMargins.bottom * height
-        };
+        height = this[p.svg].getBoundingClientRect().height;
       } // create the scales
 
 
@@ -13004,8 +13230,16 @@ function () {
         yScale = linear$2();
         projection = this.layout.projection;
       } else {
-        xScale = this.settings.xScale.scale().domain([this.layout.horizontalDomain[0] + this.xScaleOffset + this.settings.xScale.revisions.hedge, this.layout.horizontalDomain[1]]).range([0, width - this.margins.right - this.margins.left]);
-        yScale = this.settings.yScale.scale().domain([this.layout.verticalDomain[0] + this.yScaleOffset, this.layout.verticalDomain[1]]).range([0, height - this.margins.bottom - this.margins.top]);
+        xScale = this.settings.xScale.scale().domain([max$1(this[p.vertices].data, function (d) {
+          return d.x;
+        }), min$1(this[p.vertices].data, function (d) {
+          return d.x;
+        })]).range([0, width - this.margins.right - this.margins.left]);
+        yScale = this.settings.yScale.scale().domain([min$1(this[p.vertices].data, function (d) {
+          return d.y;
+        }), max$1(this[p.vertices].data, function (d) {
+          return d.y;
+        })]).range([0, height - this.margins.bottom - this.margins.top]);
       }
 
       this.scales = {
@@ -13023,47 +13257,24 @@ function () {
   }, {
     key: p.updateNodes,
     value: function value() {
-      var _this6 = this;
+      var _this5 = this;
 
-      var nodesLayer = this.svgSelection.select(".nodes-layer"); // DATA JOIN
-      // Join new data with old elements, if any.
-
-      var self = this;
-      nodesLayer.selectAll(".node").data(this.layout.vertices, function (v) {
+      var nodesLayer = this.svgSelection.select(".nodes-layer");
+      var vertices = this[p.vertices].data;
+      var baubleMap = this[p.vertices].baubleMap; // DATA JOIN
+      nodesLayer.selectAll(".node").data(vertices, function (v) {
         return "n_".concat(v.key);
       }).join(function (enter) {
         return enter.append("g").attr("id", function (v) {
-          return v.id;
+          return v.key;
         }).attr("class", function (v) {
           return ["node"].concat(toConsumableArray(v.classes)).join(" ");
         }).attr("transform", function (v) {
-          return "translate(".concat(_this6.scales.x(v.x + _this6.xScaleOffset), ", ").concat(_this6.scales.y(v.y), ")");
+          return "translate(".concat(_this5.scales.x(v.x), ", ").concat(_this5.scales.y(v.y), ")");
         }).each(function (v) {
-          var _iteratorNormalCompletion = true;
-          var _didIteratorError = false;
-          var _iteratorError = undefined;
-
-          try {
-            for (var _iterator = self.settings.vertices.baubles[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-              var bauble = _step.value;
-
-              if (bauble.vertexFilter(v)) {
-                bauble.updateShapes(select(this));
-              }
-            }
-          } catch (err) {
-            _didIteratorError = true;
-            _iteratorError = err;
-          } finally {
-            try {
-              if (!_iteratorNormalCompletion && _iterator["return"] != null) {
-                _iterator["return"]();
-              }
-            } finally {
-              if (_didIteratorError) {
-                throw _iteratorError;
-              }
-            }
+          if (baubleMap.has(v.key)) {
+            var bauble = baubleMap.get(v.key);
+            bauble.updateShapes(select(this));
           }
         }).append("text").attr("class", "node-label name").attr("text-anchor", "start").attr("alignment-baseline", "middle").attr("dx", "12").attr("dy", "0").text(function (d) {
           return d.rightLabel;
@@ -13076,42 +13287,20 @@ function () {
         });
       }, function (update) {
         return update.call(function (update) {
-          return update.transition().duration(_this6.settings.transition.transitionDuration).ease(_this6.settings.transition.transitionEase).attr("class", function (v) {
+          return update.transition().duration(_this5.settings.transition.transitionDuration).ease(_this5.settings.transition.transitionEase).attr("class", function (v) {
             return ["node"].concat(toConsumableArray(v.classes)).join(" ");
           }).attr("transform", function (v) {
-            return "translate(".concat(_this6.scales.x(v.x + _this6.xScaleOffset), ", ").concat(_this6.scales.y(v.y), ")");
+            return "translate(".concat(_this5.scales.x(v.x), ", ").concat(_this5.scales.y(v.y), ")");
           }).on("start", function (v) {
-            var _iteratorNormalCompletion2 = true;
-            var _didIteratorError2 = false;
-            var _iteratorError2 = undefined;
-
-            try {
-              for (var _iterator2 = self.settings.vertices.baubles[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-                var bauble = _step2.value;
-
-                if (bauble.vertexFilter(v)) {
-                  bauble.updateShapes(select(this));
-                }
-              }
-            } catch (err) {
-              _didIteratorError2 = true;
-              _iteratorError2 = err;
-            } finally {
-              try {
-                if (!_iteratorNormalCompletion2 && _iterator2["return"] != null) {
-                  _iterator2["return"]();
-                }
-              } finally {
-                if (_didIteratorError2) {
-                  throw _iteratorError2;
-                }
-              }
+            if (baubleMap.has(v.key)) {
+              var bauble = baubleMap.get(v.key);
+              bauble.updateShapes(select(this));
             }
           }) // .each(
           // })
-          .select("text .node-label .name").transition().duration(_this6.settings.transition.transitionDuration).ease(_this6.settings.transition.transitionEase).attr("class", "node-label name").attr("text-anchor", "start").attr("alignment-baseline", "middle").attr("dx", "12").attr("dy", "0").text(function (d) {
+          .select("text .node-label .name").transition().duration(_this5.settings.transition.transitionDuration).ease(_this5.settings.transition.transitionEase).attr("class", "node-label name").attr("text-anchor", "start").attr("alignment-baseline", "middle").attr("dx", "12").attr("dy", "0").text(function (d) {
             return d.rightLabel;
-          }).select("text .node-label .support").transition().duration(_this6.settings.transition.transitionDuration).ease(_this6.settings.transition.transitionEase).attr("alignment-baseline", function (d) {
+          }).select("text .node-label .support").transition().duration(_this5.settings.transition.transitionDuration).ease(_this5.settings.transition.transitionEase).attr("alignment-baseline", function (d) {
             return d.labelBelow ? "bottom" : "hanging";
           }).attr("class", "node-label support").attr("text-anchor", "end").attr("dx", "-6").attr("dy", function (d) {
             return d.labelBelow ? -8 : +8;
@@ -13121,26 +13310,26 @@ function () {
         });
       }); // add callbacks
 
-      var _iteratorNormalCompletion3 = true;
-      var _didIteratorError3 = false;
-      var _iteratorError3 = undefined;
+      var _iteratorNormalCompletion = true;
+      var _didIteratorError = false;
+      var _iteratorError = undefined;
 
       try {
-        for (var _iterator3 = this.callbacks.nodes[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-          var callback = _step3.value;
+        for (var _iterator = this.callbacks.nodes[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+          var callback = _step.value;
           callback();
         }
       } catch (err) {
-        _didIteratorError3 = true;
-        _iteratorError3 = err;
+        _didIteratorError = true;
+        _iteratorError = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion3 && _iterator3["return"] != null) {
-            _iterator3["return"]();
+          if (!_iteratorNormalCompletion && _iterator["return"] != null) {
+            _iterator["return"]();
           }
         } finally {
-          if (_didIteratorError3) {
-            throw _iteratorError3;
+          if (_didIteratorError) {
+            throw _iteratorError;
           }
         }
       }
@@ -13148,13 +13337,13 @@ function () {
   }, {
     key: p.updateNodeBackgrounds,
     value: function value() {
-      var _this7 = this;
+      var _this6 = this;
 
       var nodesBackgroundLayer = this.svgSelection.select(".nodes-background-layer"); // DATA JOIN
       // Join new data with old elements, if any.
 
       var self = this;
-      nodesBackgroundLayer.selectAll(".node-background").data(this.layout.vertices, function (v) {
+      nodesBackgroundLayer.selectAll(".node-background").data(this[p.vertices], function (v) {
         return "nb_".concat(v.key);
       }).join(function (enter) {
         return enter.append("g").attr("id", function (v) {
@@ -13162,91 +13351,91 @@ function () {
         }).attr("class", function (v) {
           return ["node-background"].concat(toConsumableArray(v.classes)).join(" ");
         }).attr("transform", function (v) {
-          return "translate(".concat(_this7.scales.x(v.x + _this7.xScaleOffset), ", ").concat(_this7.scales.y(v.y), ")");
+          return "translate(".concat(_this6.scales.x(v.x + _this6.settings.xScale.revisions.offset), ", ").concat(_this6.scales.y(v.y), ")");
         }).each(function (v) {
-          var _iteratorNormalCompletion4 = true;
-          var _didIteratorError4 = false;
-          var _iteratorError4 = undefined;
+          var _iteratorNormalCompletion2 = true;
+          var _didIteratorError2 = false;
+          var _iteratorError2 = undefined;
 
           try {
-            for (var _iterator4 = self.settings.vertices.backgroundBaubles[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-              var bauble = _step4.value;
+            for (var _iterator2 = self.settings.vertices.backgroundBaubles[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+              var bauble = _step2.value;
 
               if (bauble.vertexFilter(v)) {
                 bauble.updateShapes(select(this));
               }
             }
           } catch (err) {
-            _didIteratorError4 = true;
-            _iteratorError4 = err;
+            _didIteratorError2 = true;
+            _iteratorError2 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion4 && _iterator4["return"] != null) {
-                _iterator4["return"]();
+              if (!_iteratorNormalCompletion2 && _iterator2["return"] != null) {
+                _iterator2["return"]();
               }
             } finally {
-              if (_didIteratorError4) {
-                throw _iteratorError4;
+              if (_didIteratorError2) {
+                throw _iteratorError2;
               }
             }
           }
         });
       }, function (update) {
         return update.call(function (update) {
-          return update.transition().duration(_this7.settings.transition.transitionDuration).ease(_this7.settings.transition.transitionEase).attr("class", function (v) {
+          return update.transition().duration(_this6.settings.transition.transitionDuration).ease(_this6.settings.transition.transitionEase).attr("class", function (v) {
             return ["node-background"].concat(toConsumableArray(v.classes)).join(" ");
           }).attr("transform", function (v) {
-            return "translate(".concat(_this7.scales.x(v.x + _this7.xScaleOffset), ", ").concat(_this7.scales.y(v.y), ")");
+            return "translate(".concat(_this6.scales.x(v.x + _this6.settings.xScale.revisions.offset), ", ").concat(_this6.scales.y(v.y), ")");
           }).each(function (v) {
-            var _iteratorNormalCompletion5 = true;
-            var _didIteratorError5 = false;
-            var _iteratorError5 = undefined;
+            var _iteratorNormalCompletion3 = true;
+            var _didIteratorError3 = false;
+            var _iteratorError3 = undefined;
 
             try {
-              for (var _iterator5 = self.settings.vertices.backgroundBaubles[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-                var bauble = _step5.value;
+              for (var _iterator3 = self.settings.vertices.backgroundBaubles[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+                var bauble = _step3.value;
 
                 if (bauble.vertexFilter(v)) {
                   bauble.updateShapes(select(this));
                 }
               }
             } catch (err) {
-              _didIteratorError5 = true;
-              _iteratorError5 = err;
+              _didIteratorError3 = true;
+              _iteratorError3 = err;
             } finally {
               try {
-                if (!_iteratorNormalCompletion5 && _iterator5["return"] != null) {
-                  _iterator5["return"]();
+                if (!_iteratorNormalCompletion3 && _iterator3["return"] != null) {
+                  _iterator3["return"]();
                 }
               } finally {
-                if (_didIteratorError5) {
-                  throw _iteratorError5;
+                if (_didIteratorError3) {
+                  throw _iteratorError3;
                 }
               }
             }
           });
         });
       });
-      var _iteratorNormalCompletion6 = true;
-      var _didIteratorError6 = false;
-      var _iteratorError6 = undefined;
+      var _iteratorNormalCompletion4 = true;
+      var _didIteratorError4 = false;
+      var _iteratorError4 = undefined;
 
       try {
-        for (var _iterator6 = this.callbacks.nodes[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-          var callback = _step6.value;
+        for (var _iterator4 = this.callbacks.nodes[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+          var callback = _step4.value;
           callback();
         }
       } catch (err) {
-        _didIteratorError6 = true;
-        _iteratorError6 = err;
+        _didIteratorError4 = true;
+        _iteratorError4 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion6 && _iterator6["return"] != null) {
-            _iterator6["return"]();
+          if (!_iteratorNormalCompletion4 && _iterator4["return"] != null) {
+            _iterator4["return"]();
           }
         } finally {
-          if (_didIteratorError6) {
-            throw _iteratorError6;
+          if (_didIteratorError4) {
+            throw _iteratorError4;
           }
         }
       }
@@ -13258,22 +13447,22 @@ function () {
   }, {
     key: p.updateBranches,
     value: function value() {
-      var _this8 = this;
+      var _this7 = this;
 
       var branchesLayer = this.svgSelection.select(".branches-layer"); //set up scales for branches
 
       this.settings.edges.baubles.forEach(function (b) {
         return b.setup({
-          x: _this8.scales.x,
-          y: _this8.scales.y,
-          xOffset: _this8.xScaleOffset,
-          yOffset: _this8.yScaleOffset
+          x: _this7.scales.x,
+          y: _this7.scales.y,
+          xOffset: _this7.settings.xScale.revisions.offset,
+          yOffset: _this7.yScaleOffset
         });
       }); // DATA JOIN
       // Join new data with old elements, if any.
 
       var self = this;
-      branchesLayer.selectAll(".branch").data(this.layout.edges, function (e) {
+      branchesLayer.selectAll(".branch").data(this[p.edges], function (e) {
         return "b_".concat(e.key);
       }).join(function (enter) {
         return enter.append("g").attr("id", function (e) {
@@ -13281,36 +13470,36 @@ function () {
         }).attr("class", function (e) {
           return ["branch"].concat(toConsumableArray(e.classes)).join(" ");
         }).attr("transform", function (e) {
-          return "translate(".concat(_this8.scales.x(e.v0.x + _this8.xScaleOffset), ", ").concat(_this8.scales.y(e.v1.y), ")");
+          return "translate(".concat(_this7.scales.x(e.v0.x + _this7.settings.xScale.revisions.offset), ", ").concat(_this7.scales.y(e.v1.y), ")");
         }).each(function (e) {
-          var _iteratorNormalCompletion7 = true;
-          var _didIteratorError7 = false;
-          var _iteratorError7 = undefined;
+          var _iteratorNormalCompletion5 = true;
+          var _didIteratorError5 = false;
+          var _iteratorError5 = undefined;
 
           try {
-            for (var _iterator7 = self.settings.edges.baubles[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-              var bauble = _step7.value;
+            for (var _iterator5 = self.settings.edges.baubles[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+              var bauble = _step5.value;
 
               if (bauble.edgeFilter(e)) {
                 bauble.updateShapes(select(this));
               }
             }
           } catch (err) {
-            _didIteratorError7 = true;
-            _iteratorError7 = err;
+            _didIteratorError5 = true;
+            _iteratorError5 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion7 && _iterator7["return"] != null) {
-                _iterator7["return"]();
+              if (!_iteratorNormalCompletion5 && _iterator5["return"] != null) {
+                _iterator5["return"]();
               }
             } finally {
-              if (_didIteratorError7) {
-                throw _iteratorError7;
+              if (_didIteratorError5) {
+                throw _iteratorError5;
               }
             }
           }
         }).append("text").attr("class", "branch-label").attr("dx", function (e) {
-          return (_this8.scales.x(e.v1.x + _this8.xScaleOffset) - _this8.scales.x(e.v0.x + _this8.xScaleOffset)) / 2;
+          return (_this7.scales.x(e.v1.x + _this7.settings.xScale.revisions.offset) - _this7.scales.x(e.v0.x + _this7.settings.xScale.revisions.offset)) / 2;
         }).attr("dy", function (e) {
           return e.labelBelow ? +6 : -6;
         }).attr("alignment-baseline", function (e) {
@@ -13320,40 +13509,40 @@ function () {
         });
       }, function (update) {
         return update.call(function (update) {
-          return update.transition().duration(_this8.settings.transition.transitionDuration).ease(_this8.settings.transition.transitionEase).attr("class", function (e) {
+          return update.transition().duration(_this7.settings.transition.transitionDuration).ease(_this7.settings.transition.transitionEase).attr("class", function (e) {
             return ["branch"].concat(toConsumableArray(e.classes)).join(" ");
           }).attr("transform", function (e) {
-            return "translate(".concat(_this8.scales.x(e.v0.x + _this8.xScaleOffset), ", ").concat(_this8.scales.y(e.v1.y), ")");
+            return "translate(".concat(_this7.scales.x(e.v0.x + _this7.settings.xScale.revisions.offset), ", ").concat(_this7.scales.y(e.v1.y), ")");
           }).on("start", function (e) {
-            var _iteratorNormalCompletion8 = true;
-            var _didIteratorError8 = false;
-            var _iteratorError8 = undefined;
+            var _iteratorNormalCompletion6 = true;
+            var _didIteratorError6 = false;
+            var _iteratorError6 = undefined;
 
             try {
-              for (var _iterator8 = self.settings.edges.baubles[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-                var bauble = _step8.value;
+              for (var _iterator6 = self.settings.edges.baubles[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+                var bauble = _step6.value;
 
                 if (bauble.edgeFilter(e)) {
                   bauble.updateShapes(select(this));
                 }
               }
             } catch (err) {
-              _didIteratorError8 = true;
-              _iteratorError8 = err;
+              _didIteratorError6 = true;
+              _iteratorError6 = err;
             } finally {
               try {
-                if (!_iteratorNormalCompletion8 && _iterator8["return"] != null) {
-                  _iterator8["return"]();
+                if (!_iteratorNormalCompletion6 && _iterator6["return"] != null) {
+                  _iterator6["return"]();
                 }
               } finally {
-                if (_didIteratorError8) {
-                  throw _iteratorError8;
+                if (_didIteratorError6) {
+                  throw _iteratorError6;
                 }
               }
             }
           }) // .each(
           .select("text .branch-label .length").attr("class", "branch-label length").attr("dx", function (e) {
-            return (_this8.scales.x(e.v1.x + _this8.xScaleOffset) - _this8.scales.x(e.v0.x + _this8.xScaleOffset)) / 2;
+            return (_this7.scales.x(e.v1.x + _this7.settings.xScale.revisions.offset) - _this7.scales.x(e.v0.x + _this7.settings.xScale.revisions.offset)) / 2;
           }).attr("dy", function (e) {
             return e.labelBelow ? +6 : -6;
           }).attr("alignment-baseline", function (e) {
@@ -13364,26 +13553,26 @@ function () {
         });
       }); // add callbacks
 
-      var _iteratorNormalCompletion9 = true;
-      var _didIteratorError9 = false;
-      var _iteratorError9 = undefined;
+      var _iteratorNormalCompletion7 = true;
+      var _didIteratorError7 = false;
+      var _iteratorError7 = undefined;
 
       try {
-        for (var _iterator9 = this.callbacks.branches[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-          var callback = _step9.value;
+        for (var _iterator7 = this.callbacks.branches[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+          var callback = _step7.value;
           callback();
         }
       } catch (err) {
-        _didIteratorError9 = true;
-        _iteratorError9 = err;
+        _didIteratorError7 = true;
+        _iteratorError7 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion9 && _iterator9["return"] != null) {
-            _iterator9["return"]();
+          if (!_iteratorNormalCompletion7 && _iterator7["return"] != null) {
+            _iterator7["return"]();
           }
         } finally {
-          if (_didIteratorError9) {
-            throw _iteratorError9;
+          if (_didIteratorError7) {
+            throw _iteratorError7;
           }
         }
       }
@@ -13391,7 +13580,7 @@ function () {
   }, {
     key: p.updateCartoons,
     value: function value() {
-      var _this9 = this;
+      var _this8 = this;
 
       var cartoonLayer = this.svgSelection.select(".cartoon-layer");
       var self = this;
@@ -13403,90 +13592,90 @@ function () {
         }).attr("class", function (c) {
           return ["cartoon"].concat(toConsumableArray(c.classes)).join(" ");
         }).attr("transform", function (c) {
-          return "translate(".concat(_this9.scales.x(c.vertices[0].x + _this9.xScaleOffset), ", ").concat(_this9.scales.y(c.vertices[0].y + _this9.xScaleOffset), ")");
+          return "translate(".concat(_this8.scales.x(c.vertices[0].x + _this8.settings.xScale.revisions.offset), ", ").concat(_this8.scales.y(c.vertices[0].y + _this8.settings.xScale.revisions.offset), ")");
         }).each(function (c) {
-          var _iteratorNormalCompletion10 = true;
-          var _didIteratorError10 = false;
-          var _iteratorError10 = undefined;
+          var _iteratorNormalCompletion8 = true;
+          var _didIteratorError8 = false;
+          var _iteratorError8 = undefined;
 
           try {
-            for (var _iterator10 = self.settings.cartoons.baubles[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-              var bauble = _step10.value;
+            for (var _iterator8 = self.settings.cartoons.baubles[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+              var bauble = _step8.value;
 
               if (bauble.cartoonFilter(c)) {
                 bauble.updateShapes(select(this));
               }
             }
           } catch (err) {
-            _didIteratorError10 = true;
-            _iteratorError10 = err;
+            _didIteratorError8 = true;
+            _iteratorError8 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion10 && _iterator10["return"] != null) {
-                _iterator10["return"]();
+              if (!_iteratorNormalCompletion8 && _iterator8["return"] != null) {
+                _iterator8["return"]();
               }
             } finally {
-              if (_didIteratorError10) {
-                throw _iteratorError10;
+              if (_didIteratorError8) {
+                throw _iteratorError8;
               }
             }
           }
         });
       }, function (update) {
-        return update.transition().duration(_this9.settings.transition.transitionDuration).ease(_this9.settings.transition.transitionEase).attr("class", function (c) {
+        return update.transition().duration(_this8.settings.transition.transitionDuration).ease(_this8.settings.transition.transitionEase).attr("class", function (c) {
           return ["cartoon"].concat(toConsumableArray(c.classes)).join(" ");
         }).attr("transform", function (c) {
-          return "translate(".concat(_this9.scales.x(c.vertices[0].x + _this9.xScaleOffset), ", ").concat(_this9.scales.y(c.vertices[0].y + _this9.xScaleOffset), ")");
+          return "translate(".concat(_this8.scales.x(c.vertices[0].x + _this8.settings.xScale.revisions.offset), ", ").concat(_this8.scales.y(c.vertices[0].y + _this8.settings.xScale.revisions.offset), ")");
         }).each(function (c) {
-          var _iteratorNormalCompletion11 = true;
-          var _didIteratorError11 = false;
-          var _iteratorError11 = undefined;
+          var _iteratorNormalCompletion9 = true;
+          var _didIteratorError9 = false;
+          var _iteratorError9 = undefined;
 
           try {
-            for (var _iterator11 = self.settings.cartoons.baubles[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-              var bauble = _step11.value;
+            for (var _iterator9 = self.settings.cartoons.baubles[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+              var bauble = _step9.value;
 
               if (bauble.cartoonFilter(c)) {
                 bauble.updateShapes(select(this));
               }
             }
           } catch (err) {
-            _didIteratorError11 = true;
-            _iteratorError11 = err;
+            _didIteratorError9 = true;
+            _iteratorError9 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion11 && _iterator11["return"] != null) {
-                _iterator11["return"]();
+              if (!_iteratorNormalCompletion9 && _iterator9["return"] != null) {
+                _iterator9["return"]();
               }
             } finally {
-              if (_didIteratorError11) {
-                throw _iteratorError11;
+              if (_didIteratorError9) {
+                throw _iteratorError9;
               }
             }
           }
         });
       }); // add callbacks
 
-      var _iteratorNormalCompletion12 = true;
-      var _didIteratorError12 = false;
-      var _iteratorError12 = undefined;
+      var _iteratorNormalCompletion10 = true;
+      var _didIteratorError10 = false;
+      var _iteratorError10 = undefined;
 
       try {
-        for (var _iterator12 = this.callbacks.cartoons[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-          var callback = _step12.value;
+        for (var _iterator10 = this.callbacks.cartoons[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+          var callback = _step10.value;
           callback();
         }
       } catch (err) {
-        _didIteratorError12 = true;
-        _iteratorError12 = err;
+        _didIteratorError10 = true;
+        _iteratorError10 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion12 && _iterator12["return"] != null) {
-            _iterator12["return"]();
+          if (!_iteratorNormalCompletion10 && _iterator10["return"] != null) {
+            _iterator10["return"]();
           }
         } finally {
-          if (_didIteratorError12) {
-            throw _iteratorError12;
+          if (_didIteratorError10) {
+            throw _iteratorError10;
           }
         }
       }
@@ -13498,7 +13687,7 @@ function () {
   }, {
     key: p.addXAxis,
     value: function value() {
-      var _this10 = this;
+      var _this9 = this;
 
       var xRevisions = this.settings.xScale.revisions;
       var reverse = xRevisions.reverseAxis ? -1 : 1;
@@ -13507,14 +13696,14 @@ function () {
       var xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
       var axesLayer = this.svgSelection.select(".axes-layer");
       this.settings.xScale.axes.forEach(function (axis) {
-        if (_this10.layout instanceof GeoLayout) {
+        if (_this9.layout instanceof GeoLayout) {
           throw new Error("Can not add axis to geolayout");
         }
 
         axis.createAxis({
           selection: axesLayer,
           x: 0,
-          y: _this10.scales.height - _this10.margins.bottom - _this10.margins.top + _this10.settings.xScale.gap,
+          y: _this9.scales.height - _this9.margins.bottom - _this9.margins.top + _this9.settings.xScale.gap,
           length: xAxisWidth,
           scale: axisScale
         });
@@ -13523,7 +13712,7 @@ function () {
   }, {
     key: p.addYAxis,
     value: function value() {
-      var _this11 = this;
+      var _this10 = this;
 
       var yRevisions = this.settings.yScale.revisions;
       var reverse = yRevisions.reverseAxis ? -1 : 1;
@@ -13532,13 +13721,13 @@ function () {
       var yAxisHeight = this.scales.height - this.margins.top - this.margins.bottom;
       var axesLayer = this.svgSelection.select(".axes-layer");
       this.settings.yScale.axes.forEach(function (axis) {
-        if (_this11.layout instanceof GeoLayout) {
+        if (_this10.layout instanceof GeoLayout) {
           throw new Error("Can not add axis to geolayout");
         }
 
         axis.createAxis({
           selection: axesLayer,
-          x: 0 - _this11.settings.yScale.gap,
+          x: 0 - _this10.settings.yScale.gap,
           y: 0,
           length: yAxisHeight,
           scale: axisScale
@@ -13548,7 +13737,7 @@ function () {
   }, {
     key: p.updateXAxis,
     value: function value() {
-      var _this12 = this;
+      var _this11 = this;
 
       var xRevisions = this.settings.xScale.revisions;
       var reverse = xRevisions.reverseAxis ? -1 : 1;
@@ -13560,7 +13749,7 @@ function () {
         axis.updateAxis({
           selection: axesLayer,
           x: 0,
-          y: _this12.scales.height - _this12.margins.bottom - _this12.margins.top + _this12.settings.xScale.gap,
+          y: _this11.scales.height - _this11.margins.bottom - _this11.margins.top + _this11.settings.xScale.gap,
           length: xAxisWidth,
           scale: axisScale
         });
@@ -13569,7 +13758,7 @@ function () {
   }, {
     key: p.updateYAxis,
     value: function value() {
-      var _this13 = this;
+      var _this12 = this;
 
       var yRevisions = this.settings.yScale.revisions;
       var reverse = yRevisions.reverseAxis ? -1 : 1;
@@ -13580,7 +13769,7 @@ function () {
       this.settings.yScale.axes.forEach(function (axis) {
         axis.updateAxis({
           selection: axesLayer,
-          x: 0 - _this13.settings.yScale.gap,
+          x: 0 - _this12.settings.yScale.gap,
           y: 0,
           length: yAxisHeight,
           scale: axisScale
@@ -13594,29 +13783,29 @@ function () {
       var origin = points[0];
       var pathPoints = points.reverse();
       var currentPoint = origin;
-      var _iteratorNormalCompletion13 = true;
-      var _didIteratorError13 = false;
-      var _iteratorError13 = undefined;
+      var _iteratorNormalCompletion11 = true;
+      var _didIteratorError11 = false;
+      var _iteratorError11 = undefined;
 
       try {
-        for (var _iterator13 = pathPoints[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
-          var point = _step13.value;
-          var xdiff = this.scales.x(point.x + this.xScaleOffset) - this.scales.x(currentPoint.x + this.xScaleOffset);
+        for (var _iterator11 = pathPoints[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+          var point = _step11.value;
+          var xdiff = this.scales.x(point.x + this.settings.xScale.revisions.offset) - this.scales.x(currentPoint.x + this.settings.xScale.revisions.offset);
           var ydiff = this.scales.y(point.y) - this.scales.y(currentPoint.y);
           path.push("".concat(xdiff, " ").concat(ydiff));
           currentPoint = point;
         }
       } catch (err) {
-        _didIteratorError13 = true;
-        _iteratorError13 = err;
+        _didIteratorError11 = true;
+        _iteratorError11 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion13 && _iterator13["return"] != null) {
-            _iterator13["return"]();
+          if (!_iteratorNormalCompletion11 && _iterator11["return"] != null) {
+            _iterator11["return"]();
           }
         } finally {
-          if (_didIteratorError13) {
-            throw _iteratorError13;
+          if (_didIteratorError11) {
+            throw _iteratorError11;
           }
         }
       }
@@ -13626,26 +13815,26 @@ function () {
   }, {
     key: p.updateAnnotations,
     value: function value() {
-      var _iteratorNormalCompletion14 = true;
-      var _didIteratorError14 = false;
-      var _iteratorError14 = undefined;
+      var _iteratorNormalCompletion12 = true;
+      var _didIteratorError12 = false;
+      var _iteratorError12 = undefined;
 
       try {
-        for (var _iterator14 = this._annotations[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
-          var annotation = _step14.value;
+        for (var _iterator12 = this._annotations[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+          var annotation = _step12.value;
           annotation();
         }
       } catch (err) {
-        _didIteratorError14 = true;
-        _iteratorError14 = err;
+        _didIteratorError12 = true;
+        _iteratorError12 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion14 && _iterator14["return"] != null) {
-            _iterator14["return"]();
+          if (!_iteratorNormalCompletion12 && _iterator12["return"] != null) {
+            _iterator12["return"]();
           }
         } finally {
-          if (_didIteratorError14) {
-            throw _iteratorError14;
+          if (_didIteratorError12) {
+            throw _iteratorError12;
           }
         }
       }
@@ -13665,39 +13854,90 @@ function () {
   }, {
     key: p.branchPathGenerator,
     value: function value() {
-      var _this14 = this;
+      var _this13 = this;
 
       var branchPath = function branchPath(e, i) {
         var branchLine = line().x(function (v) {
           return v.x;
         }).y(function (v) {
           return v.y;
-        }).curve(_this14.settings.edges.curve);
+        }).curve(_this13.settings.edges.curve);
         var factor = e.v0.y - e.v1.y > 0 ? 1 : -1;
         var dontNeedCurve = e.v0.y - e.v1.y === 0 ? 0 : 1;
-        var output = _this14.settings.edges.curveRadius > 0 ? branchLine([{
+        var output = _this13.settings.edges.curveRadius > 0 ? branchLine([{
           x: 0,
-          y: _this14.scales.y(e.v0.y) - _this14.scales.y(e.v1.y)
+          y: _this13.scales.y(e.v0.y) - _this13.scales.y(e.v1.y)
         }, {
           x: 0,
-          y: dontNeedCurve * factor * _this14.settings.edges.curveRadius
+          y: dontNeedCurve * factor * _this13.settings.edges.curveRadius
         }, {
-          x: 0 + dontNeedCurve * _this14.settings.edges.curveRadius,
+          x: 0 + dontNeedCurve * _this13.settings.edges.curveRadius,
           y: 0
         }, {
-          x: _this14.scales.x(e.v1.x + _this14.xScaleOffset) - _this14.scales.x(e.v0.x + _this14.xScaleOffset),
+          x: _this13.scales.x(e.v1.x + _this13.settings.xScale.revisions.offset) - _this13.scales.x(e.v0.x + _this13.settings.xScale.revisions.offset),
           y: 0
         }]) : branchLine([{
           x: 0,
-          y: _this14.scales.y(e.v0.y) - _this14.scales.y(e.v1.y)
+          y: _this13.scales.y(e.v0.y) - _this13.scales.y(e.v1.y)
         }, {
-          x: _this14.scales.x(e.v1.x + _this14.xScaleOffset) - _this14.scales.x(e.v0.x + _this14.xScaleOffset),
+          x: _this13.scales.x(e.v1.x + _this13.settings.xScale.revisions.offset) - _this13.scales.x(e.v0.x + _this13.settings.xScale.revisions.offset),
           y: 0
         }]);
         return output;
       };
 
       return branchPath;
+    } // setters and getters
+
+  }, {
+    key: "svg",
+    value: function svg() {
+      var _svg = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (_svg === null) {
+        return this[p.svg];
+      } else {
+        this[p.svg] = _svg;
+        return this;
+      }
+    }
+  }, {
+    key: "tree",
+    value: function tree() {
+      var _this14 = this;
+
+      var _tree = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (_tree === null) {
+        return this[p.tree];
+      } else {
+        this[p.tree] = _tree;
+        this[p.tree].subscribeCallback(function () {
+          _this14.update();
+        });
+        return this;
+      }
+    }
+  }, {
+    key: "layout",
+    value: function layout() {
+      var _layout = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (_layout === null) {
+        return this[p.layout];
+      } else {
+        this[p.layout] = _layout;
+        return this;
+      }
+    }
+  }, {
+    key: "nodes",
+    value: function nodes() {
+      if (!this[p.vertices]) {
+        this[p.updateVerticesAndEdges]();
+      }
+
+      return this[p.vertices];
     }
   }, {
     key: "treeLayout",
@@ -13706,16 +13946,10 @@ function () {
       this.update();
     }
   }, {
-    key: "nodes",
-    get: function get() {
-      //TODO make add bauble class for vertex
-      return this.layout.vertices;
-    }
-  }, {
     key: "branches",
     get: function get() {
       //TODO make add bauble class for edges
-      return this.layout.edges;
+      return this[p.edges];
     }
   }, {
     key: "xAxis",
@@ -13727,6 +13961,188 @@ function () {
 
   return FigTree;
 }();
+
+var DataCollection =
+/*#__PURE__*/
+function () {
+  function DataCollection(data, figure) {
+    classCallCheck(this, DataCollection);
+
+    this.figure = figure;
+    this.data = data;
+    this.baubleMap = new Map();
+    this.attrs = {};
+    this.baubleMaker = null;
+    return new Proxy(this, {
+      get: function get(target, prop) {
+        if (target[prop] === undefined) return this.figure[prop];else return target[prop];
+      }
+    });
+  }
+
+  createClass(DataCollection, [{
+    key: "updateData",
+    value: function updateData(data) {
+      this.data = data; //remake baubles
+
+      this.baubles(this.baubleMaker); // update bauble styles
+
+      for (var _i = 0, _Object$entries = Object.entries(this.attrs); _i < _Object$entries.length; _i++) {
+        var _Object$entries$_i = slicedToArray(_Object$entries[_i], 2),
+            key = _Object$entries$_i[0],
+            value = _Object$entries$_i[1];
+
+        this.attr(key, value);
+      }
+    }
+  }, {
+    key: "baubles",
+    value: function baubles() {
+      var b = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (b) {
+        this.baubleMaker = b;
+      }
+
+      if (this.baubleMaker) {
+        if (!isFunction(this.baubleMaker)) {
+          var _iteratorNormalCompletion13 = true;
+          var _didIteratorError13 = false;
+          var _iteratorError13 = undefined;
+
+          try {
+            for (var _iterator13 = this.data[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+              var d = _step13.value;
+              this.baubleMap.set(d.key, new this.baubleMaker());
+            }
+          } catch (err) {
+            _didIteratorError13 = true;
+            _iteratorError13 = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion13 && _iterator13["return"] != null) {
+                _iterator13["return"]();
+              }
+            } finally {
+              if (_didIteratorError13) {
+                throw _iteratorError13;
+              }
+            }
+          }
+        } else if (this.baubleMaker instanceof Function) {
+          var _iteratorNormalCompletion14 = true;
+          var _didIteratorError14 = false;
+          var _iteratorError14 = undefined;
+
+          try {
+            for (var _iterator14 = this.data[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
+              var _d = _step14.value;
+              var bauble = this.baubleMaker(_d.key);
+
+              if (bauble) {
+                this.baubleMap.set(_d.key, new this.baubleMaker(_d));
+              }
+            }
+          } catch (err) {
+            _didIteratorError14 = true;
+            _iteratorError14 = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion14 && _iterator14["return"] != null) {
+                _iterator14["return"]();
+              }
+            } finally {
+              if (_didIteratorError14) {
+                throw _iteratorError14;
+              }
+            }
+          }
+        }
+
+        return this;
+      }
+
+      return this.baubleMap;
+    }
+  }, {
+    key: "attr",
+    value: function attr(string, f) {
+      this.attrs[string] = f;
+
+      if (f instanceof Function) {
+        var _iteratorNormalCompletion15 = true;
+        var _didIteratorError15 = false;
+        var _iteratorError15 = undefined;
+
+        try {
+          for (var _iterator15 = this.data[Symbol.iterator](), _step15; !(_iteratorNormalCompletion15 = (_step15 = _iterator15.next()).done); _iteratorNormalCompletion15 = true) {
+            var d = _step15.value;
+
+            if (f(d)) {
+              var bauble = this.baubleMap.get(d.key);
+
+              if (bauble) {
+                bauble.attr(string, f(d));
+              }
+            }
+          }
+        } catch (err) {
+          _didIteratorError15 = true;
+          _iteratorError15 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion15 && _iterator15["return"] != null) {
+              _iterator15["return"]();
+            }
+          } finally {
+            if (_didIteratorError15) {
+              throw _iteratorError15;
+            }
+          }
+        }
+      } else {
+        var _iteratorNormalCompletion16 = true;
+        var _didIteratorError16 = false;
+        var _iteratorError16 = undefined;
+
+        try {
+          for (var _iterator16 = this.data[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
+            var _d2 = _step16.value;
+
+            var _bauble = this.baubleMap.get(_d2.key);
+
+            if (_bauble) {
+              _bauble.attr(string, f);
+            }
+          }
+        } catch (err) {
+          _didIteratorError16 = true;
+          _iteratorError16 = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion16 && _iterator16["return"] != null) {
+              _iterator16["return"]();
+            }
+          } finally {
+            if (_didIteratorError16) {
+              throw _iteratorError16;
+            }
+          }
+        }
+      }
+
+      return this;
+    }
+  }]);
+
+  return DataCollection;
+}(); //https://stackoverflow.com/questions/526559/testing-if-something-is-a-class-in-javascript
+
+
+function isFunction(funcOrClass) {
+  var propertyNames = Object.getOwnPropertyNames(funcOrClass);
+  return !propertyNames.includes('prototype') || propertyNames.includes('arguments');
+}
 
 /**
  * The RootToTipPlot class
@@ -14998,189 +15414,6 @@ var transformedLine = function transformedLine(string) {
   newString[3] = startingPoint[1] - currentValues[1];
   return newString.join("");
 };
-
-function setVertexClassesFromNode$1(v) {
-  v.classes = [!v.node.children ? "external-node" : "internal-node"];
-  var tree = v.node.tree;
-
-  if (v.node.annotations) {
-    v.classes = [].concat(toConsumableArray(v.classes), toConsumableArray(Object.entries(v.node.annotations).filter(function (_ref) {
-      var _ref2 = slicedToArray(_ref, 1),
-          key = _ref2[0];
-
-      return tree.annotations[key] && (tree.annotations[key].type === Type.DISCRETE || tree.annotations[key].type === Type.BOOLEAN || tree.annotations[key].type === Type.INTEGER);
-    }).map(function (_ref3) {
-      var _ref4 = slicedToArray(_ref3, 2),
-          key = _ref4[0],
-          value = _ref4[1];
-
-      return "".concat(key, "-").concat(value);
-    })));
-  }
-
-  return v;
-}
-
-function makeVerticesFromNode(node) {
-  var vertex = {
-    node: node,
-    key: node.id,
-    degree: node.children ? node.children.length + 1 : 1,
-    // the number of edges (including stem)
-    id: node.id,
-    leftLabel: !!node.children,
-    labelBelow: !!node.children && (!node.parent || node.parent.children[0] !== node)
-  }; //update classes as needed.
-
-  return setVertexClassesFromNode$1(vertex);
-}
-
-function rectangularVertices(tree) {
-  var currentY = 0;
-
-  var traverse =
-  /*#__PURE__*/
-  regenerator.mark(function traverse(node) {
-    var siblingPositions,
-        myChildrenPositions,
-        _iteratorNormalCompletion,
-        _didIteratorError,
-        _iteratorError,
-        _iterator,
-        _step,
-        child,
-        vertex,
-        _vertex,
-        _args = arguments;
-
-    return regenerator.wrap(function traverse$(_context) {
-      while (1) {
-        switch (_context.prev = _context.next) {
-          case 0:
-            siblingPositions = _args.length > 1 && _args[1] !== undefined ? _args[1] : [];
-            myChildrenPositions = [];
-
-            if (!node.children) {
-              _context.next = 34;
-              break;
-            }
-
-            _iteratorNormalCompletion = true;
-            _didIteratorError = false;
-            _iteratorError = undefined;
-            _context.prev = 6;
-            _iterator = node.children[Symbol.iterator]();
-
-          case 8:
-            if (_iteratorNormalCompletion = (_step = _iterator.next()).done) {
-              _context.next = 14;
-              break;
-            }
-
-            child = _step.value;
-            return _context.delegateYield(traverse(child, myChildrenPositions), "t0", 11);
-
-          case 11:
-            _iteratorNormalCompletion = true;
-            _context.next = 8;
-            break;
-
-          case 14:
-            _context.next = 20;
-            break;
-
-          case 16:
-            _context.prev = 16;
-            _context.t1 = _context["catch"](6);
-            _didIteratorError = true;
-            _iteratorError = _context.t1;
-
-          case 20:
-            _context.prev = 20;
-            _context.prev = 21;
-
-            if (!_iteratorNormalCompletion && _iterator["return"] != null) {
-              _iterator["return"]();
-            }
-
-          case 23:
-            _context.prev = 23;
-
-            if (!_didIteratorError) {
-              _context.next = 26;
-              break;
-            }
-
-            throw _iteratorError;
-
-          case 26:
-            return _context.finish(23);
-
-          case 27:
-            return _context.finish(20);
-
-          case 28:
-            siblingPositions.push(mean(myChildrenPositions));
-            vertex = objectSpread({}, makeVerticesFromNode(node), {
-              y: mean(myChildrenPositions),
-              x: node.height
-            });
-            _context.next = 32;
-            return vertex;
-
-          case 32:
-            _context.next = 39;
-            break;
-
-          case 34:
-            currentY += 1;
-            siblingPositions.push(currentY);
-            _vertex = objectSpread({}, makeVerticesFromNode(node), {
-              y: currentY,
-              x: node.height
-            });
-            _context.next = 39;
-            return _vertex;
-
-          case 39:
-          case "end":
-            return _context.stop();
-        }
-      }
-    }, traverse, null, [[6, 16, 20, 28], [21,, 23, 27]]);
-  });
-
-  return toConsumableArray(traverse(tree.rootNode));
-}
-function makeEdges(vertices) {
-  var nodeMap = new Map(vertices.map(function (v) {
-    return [v.node, v];
-  }));
-  return vertices.filter(function (v) {
-    return v.node.parent;
-  }).map(function (v) {
-    return {
-      v0: nodeMap.get(v.node.parent),
-      v1: v,
-      key: v.id,
-      classes: v.classes,
-      labelBelow: v.node.parent.children[0] !== v.node
-    };
-  });
-}
-
-var layoutFactory = function layoutFactory(makeVertices) {
-  return function (tree) {
-    var vertices = makeVertices(tree);
-    var edges = makeEdges(vertices);
-    return {
-      vertices: vertices,
-      edges: edges
-    };
-  };
-};
-
-var rectangularLayout = layoutFactory(rectangularVertices);
 
 exports.Axis = Axis;
 exports.Bauble = Bauble;

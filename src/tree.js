@@ -443,7 +443,7 @@ export class Tree {
         const mrca = sharedNodes[maxIndex(sharedNodes,n=>n.level)];
 
         // intermediate nodes with show up as
-        const subtree = new Tree(mrca.toJSON());
+        const subtree = new Tree(mrca.toJS());
 
 
         subtree.externalNodes.forEach(node=>{
@@ -1336,7 +1336,7 @@ class Node{
     }
 
     get annotations() {
-        return this._annotations;
+        return {...this._annotations};
     }
 
     set annotations(value) {
@@ -1404,7 +1404,7 @@ class Node{
     };
 
 
-    toJSON(){
+    toJS(){
         return ({
                 id: this.id,
                 name:this.name,
@@ -1413,7 +1413,7 @@ class Node{
                 label:this.label,
                 level:this.level,
                 annotations:this.annotations,
-                children: this.children && this.children.length>0? this.children.map(child=>child.toJSON()):null,
+                children: this.children && this.children.length>0? this.children.map(child=>child.toJS()):null,
                 });
 }
 
