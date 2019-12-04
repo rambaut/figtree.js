@@ -1,6 +1,7 @@
 import {curveStepBefore, line} from "d3-shape";
 import {mergeDeep} from "../utilities";
 import {Bauble} from "./bauble";
+import {select} from "d3"
 /** @module bauble */
 
 export class Branch extends Bauble {
@@ -8,7 +9,7 @@ export class Branch extends Bauble {
         return {
             curve: curveStepBefore,
             curveRadius: 0,
-            attrs: {"fill":"none","stroke":2},
+            attrs: {"fill":"none","stroke":"black"},
         }
 
 
@@ -25,7 +26,7 @@ export class Branch extends Bauble {
      */
     constructor(settings) {
         const options = mergeDeep(Branch.DEFAULT_SETTINGS(), settings)
-        super(settings);
+        super(options);
         this.curve=options.curve;
         this.curveRadius = options.curveRadius;
     }
@@ -59,9 +60,6 @@ export class Branch extends Bauble {
                     }),
                 update => update
                     .call(update => update.transition("pathUpdating")
-                        .duration(this.settings.transition.transitionDuration)
-                        .ease(this.settings.transition.transitionEase)
-                        .attr("d", (edge,i) => this.branchPath(edge,i))
                         .attr("d", (edge,i) => this.branchPath(edge,i))
                         .attr("class", "branch-path")
                         .attrs(this.attrs)

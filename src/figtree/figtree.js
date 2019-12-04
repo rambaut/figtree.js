@@ -677,14 +677,14 @@ export class FigTree {
         const branchesLayer = this.svgSelection.select(".branches-layer");
         //set up scales for branches
 
-        const vertices = this[p.edges].data;
+        const edges = this[p.edges].data;
         const elementMap = this[p.edges].elementMap;
 
         // DATA JOIN
         // Join new data with old elements, if any.
         const self = this;
         branchesLayer.selectAll(".branch")
-            .data(this[p.edges], (e) => `b_${e.key}`)
+            .data(edges, (e) => `b_${e.key}`)
             .join(
                 enter=>enter
                     .append("g")
@@ -696,6 +696,7 @@ export class FigTree {
                     .each(function(e) {
                         if(elementMap.has(e.key)){
                             const element = elementMap.get(e.key);
+                            element.setup(self.scales)
                             element.update(select(this))
                         }
                     })

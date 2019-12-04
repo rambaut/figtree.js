@@ -2392,7 +2392,7 @@
 	  dispatch: selection_dispatch
 	};
 
-	function select$1(selector) {
+	function select(selector) {
 	  return typeof selector === "string"
 	      ? new Selection([[document.querySelector(selector)]], [document.documentElement])
 	      : new Selection([[selector]], root);
@@ -11855,7 +11855,7 @@
 
 	function attrsFunction(selection, map) {
 	  return selection.each(function() {
-	    var x = map.apply(this, arguments), s = select$1(this);
+	    var x = map.apply(this, arguments), s = select(this);
 	    for (var name in x) s.attr(name, x[name]);
 	  });
 	}
@@ -11871,7 +11871,7 @@
 
 	function stylesFunction(selection, map, priority) {
 	  return selection.each(function() {
-	    var x = map.apply(this, arguments), s = select$1(this);
+	    var x = map.apply(this, arguments), s = select(this);
 	    for (var name in x) s.style(name, x[name], priority);
 	  });
 	}
@@ -11887,7 +11887,7 @@
 
 	function propertiesFunction(selection, map) {
 	  return selection.each(function() {
-	    var x = map.apply(this, arguments), s = select$1(this);
+	    var x = map.apply(this, arguments), s = select(this);
 	    for (var name in x) s.property(name, x[name]);
 	  });
 	}
@@ -11903,7 +11903,7 @@
 
 	function attrsFunction$1(transition, map) {
 	  return transition.each(function() {
-	    var x = map.apply(this, arguments), t = select$1(this).transition(transition);
+	    var x = map.apply(this, arguments), t = select(this).transition(transition);
 	    for (var name in x) t.attr(name, x[name]);
 	  });
 	}
@@ -11919,7 +11919,7 @@
 
 	function stylesFunction$1(transition, map, priority) {
 	  return transition.each(function() {
-	    var x = map.apply(this, arguments), t = select$1(this).transition(transition);
+	    var x = map.apply(this, arguments), t = select(this).transition(transition);
 	    for (var name in x) t.style(name, x[name], priority);
 	  });
 	}
@@ -12000,7 +12000,7 @@
 	        return [d];
 	      }).join(function (enter) {
 	        return enter.append("circle").attr("class", "node-shape").attr("cx", 0).attr("cy", 0).attrs(_this.attrs).each(function (d, i, n) {
-	          var element = select$1(n[i]);
+	          var element = select(n[i]);
 
 	          var _loop = function _loop() {
 	            var _Object$entries$_i = slicedToArray(_Object$entries[_i], 2),
@@ -12042,7 +12042,7 @@
 	        curveRadius: 0,
 	        attrs: {
 	          "fill": "none",
-	          "stroke": 2
+	          "stroke": "black"
 	        }
 	      };
 	    }
@@ -12065,7 +12065,7 @@
 	    classCallCheck(this, Branch);
 
 	    var options = mergeDeep(Branch.DEFAULT_SETTINGS(), settings);
-	    _this = possibleConstructorReturn(this, getPrototypeOf(Branch).call(this, settings));
+	    _this = possibleConstructorReturn(this, getPrototypeOf(Branch).call(this, options));
 	    _this.curve = options.curve;
 	    _this.curveRadius = options.curveRadius;
 	    return _this;
@@ -12124,9 +12124,7 @@
 	        });
 	      }, function (update) {
 	        return update.call(function (update) {
-	          return update.transition("pathUpdating").duration(_this2.settings.transition.transitionDuration).ease(_this2.settings.transition.transitionEase).attr("d", function (edge, i) {
-	            return _this2.branchPath(edge, i);
-	          }).attr("d", function (edge, i) {
+	          return update.transition("pathUpdating").attr("d", function (edge, i) {
 	            return _this2.branchPath(edge, i);
 	          }).attr("class", "branch-path").attrs(_this2.attrs);
 	        });
@@ -12808,11 +12806,11 @@
 	      //     bottom: this.originalMargins.bottom / this.scales.height
 	      // };
 
-	      select$1(this[p.svg]).select("#".concat(this.svgId)).remove(); // add a group which will contain the new tree
+	      select(this[p.svg]).select("#".concat(this.svgId)).remove(); // add a group which will contain the new tree
 
-	      select$1(this[p.svg]).append("g").attr("id", this.svgId).attr("transform", "translate(".concat(this.margins.left, ",").concat(this.margins.top, ")")); //to selecting every time
+	      select(this[p.svg]).append("g").attr("id", this.svgId).attr("transform", "translate(".concat(this.margins.left, ",").concat(this.margins.top, ")")); //to selecting every time
 
-	      this.svgSelection = select$1(this[p.svg]).select("#".concat(this.svgId));
+	      this.svgSelection = select(this[p.svg]).select("#".concat(this.svgId));
 	      this.svgSelection.append("g").attr("class", "annotation-layer");
 	      this.svgSelection.append("g").attr("class", "axes-layer");
 	      this.svgSelection.append("g").attr("class", "cartoon-layer");
@@ -12849,7 +12847,7 @@
 
 	      this[p.updateVerticesAndEdges]();
 	      this[p.setUpScales]();
-	      select$1("#".concat(this.svgId)).attr("transform", "translate(".concat(this.margins.left, ",").concat(this.margins.top, ")")); // this[p.updateAnnotations]();
+	      select("#".concat(this.svgId)).attr("transform", "translate(".concat(this.margins.left, ",").concat(this.margins.top, ")")); // this[p.updateAnnotations]();
 	      // this[p.updateCartoons]();
 
 	      this[p.updateBranches](); //
@@ -12878,22 +12876,22 @@
 	    value: function hilightBranches() {
 	      var action = {
 	        enter: function enter(d, i, n) {
-	          var branch = select$1(n[i]); // self.settings.edges.baubles.forEach((bauble) => {
+	          var branch = select(n[i]); // self.settings.edges.baubles.forEach((bauble) => {
 	          //     if (bauble.edgeFilter(branch)) {
 	          //         bauble.update(branch);
 	          //     }
 	          // });
 
-	          select$1(n[i]).classed("hovered", true);
+	          select(n[i]).classed("hovered", true);
 	        },
 	        exit: function exit(d, i, n) {
-	          var branch = select$1(n[i]); // self.settings.edges.baubles.forEach((bauble) => {
+	          var branch = select(n[i]); // self.settings.edges.baubles.forEach((bauble) => {
 	          //     if (bauble.edgeFilter(branch)) {
 	          //         bauble.update(branch);
 	          //     }
 	          // });
 
-	          select$1(n[i]).classed("hovered", false);
+	          select(n[i]).classed("hovered", false);
 	        }
 	      };
 	      this.onHoverBranch({
@@ -12936,7 +12934,7 @@
 	      var self = this;
 	      var action = {
 	        enter: function enter(d, i, n) {
-	          var node = select$1(n[i]);
+	          var node = select(n[i]);
 	          var vertex = d;
 	          self.settings.vertices.baubles.forEach(function (bauble) {
 	            if (bauble.vertexFilter(vertex)) {
@@ -12946,7 +12944,7 @@
 	          node.classed("hovered", true);
 	        },
 	        exit: function exit(d, i, n) {
-	          var node = select$1(n[i]);
+	          var node = select(n[i]);
 	          var vertex = d;
 	          self.settings.vertices.baubles.forEach(function (bauble) {
 	            if (bauble.vertexFilter(vertex)) {
@@ -13325,7 +13323,7 @@
 	        }).each(function (v) {
 	          if (elementMap.has(v.key)) {
 	            var element = elementMap.get(v.key);
-	            element.update(select$1(this));
+	            element.update(select(this));
 	          }
 	        }).append("text").attr("class", "node-label").attr("text-anchor", function (d) {
 	          return d.leftLabel ? "end" : "start";
@@ -13347,7 +13345,7 @@
 	          }).on("start", function (v) {
 	            if (elementMap.has(v.key)) {
 	              var element = elementMap.get(v.key);
-	              element.update(select$1(this));
+	              element.update(select(this));
 	            }
 	          }).select("text .node-label").transition().duration(_this5.settings.transition.transitionDuration).ease(_this5.settings.transition.transitionEase).attr("text-anchor", function (d) {
 	            return d.leftLabel ? "end" : "start";
@@ -13415,7 +13413,7 @@
 	              var bauble = _step2.value;
 
 	              if (bauble.vertexFilter(v)) {
-	                bauble.update(select$1(this));
+	                bauble.update(select(this));
 	              }
 	            }
 	          } catch (err) {
@@ -13449,7 +13447,7 @@
 	                var bauble = _step3.value;
 
 	                if (bauble.vertexFilter(v)) {
-	                  bauble.update(select$1(this));
+	                  bauble.update(select(this));
 	                }
 	              }
 	            } catch (err) {
@@ -13504,9 +13502,12 @@
 
 	      var branchesLayer = this.svgSelection.select(".branches-layer"); //set up scales for branches
 
-	      var vertices = this[p.edges].data;
+	      var edges = this[p.edges].data;
 	      var elementMap = this[p.edges].elementMap; // DATA JOIN
-	      branchesLayer.selectAll(".branch").data(this[p.edges], function (e) {
+	      // Join new data with old elements, if any.
+
+	      var self = this;
+	      branchesLayer.selectAll(".branch").data(edges, function (e) {
 	        return "b_".concat(e.key);
 	      }).join(function (enter) {
 	        return enter.append("g").attr("id", function (e) {
@@ -13518,7 +13519,8 @@
 	        }).each(function (e) {
 	          if (elementMap.has(e.key)) {
 	            var element = elementMap.get(e.key);
-	            element.update(select$1(this));
+	            element.setup(self.scales);
+	            element.update(select(this));
 	          }
 	        }).append("text").attr("class", "branch-label").attr("dx", function (e) {
 	          return (_this7.scales.x(e.v1.x) - _this7.scales.x(e.v0.x)) / 2;
@@ -13538,7 +13540,7 @@
 	          }).on("start", function (e) {
 	            if (elementMap.has(e.key)) {
 	              var element = elementMap.get(e.key);
-	              element.update(select$1(this));
+	              element.update(select(this));
 	            }
 	          }) // .each(
 	          .select("text .branch-label").attr("dx", function (e) {
@@ -13603,7 +13605,7 @@
 	              var bauble = _step6.value;
 
 	              if (bauble.cartoonFilter(c)) {
-	                bauble.update(select$1(this));
+	                bauble.update(select(this));
 	              }
 	            }
 	          } catch (err) {
@@ -13636,7 +13638,7 @@
 	              var bauble = _step7.value;
 
 	              if (bauble.cartoonFilter(c)) {
-	                bauble.update(select$1(this));
+	                bauble.update(select(this));
 	              }
 	            }
 	          } catch (err) {
@@ -14446,13 +14448,13 @@
 	      var self = this;
 
 	      var mouseover = function mouseover(d) {
-	        select$1(self.svg).select("#".concat(d.node.id)).select(".node-shape").attr("r", self.settings.hoverNodeRadius);
-	        select$1(treeSVG).select("#".concat(d.node.id)).select(".node-shape").attr("r", self.settings.hoverNodeRadius);
+	        select(self.svg).select("#".concat(d.node.id)).select(".node-shape").attr("r", self.settings.hoverNodeRadius);
+	        select(treeSVG).select("#".concat(d.node.id)).select(".node-shape").attr("r", self.settings.hoverNodeRadius);
 	      };
 
 	      var mouseout = function mouseout(d) {
-	        select$1(self.svg).select("#".concat(d.node.id)).select(".node-shape").attr("r", self.settings.nodeRadius);
-	        select$1(treeSVG).select("#".concat(d.node.id)).select(".node-shape").attr("r", self.settings.nodeRadius);
+	        select(self.svg).select("#".concat(d.node.id)).select(".node-shape").attr("r", self.settings.nodeRadius);
+	        select(treeSVG).select("#".concat(d.node.id)).select(".node-shape").attr("r", self.settings.nodeRadius);
 	      };
 
 	      var clicked = function clicked(d) {
@@ -14464,8 +14466,8 @@
 	        }
 
 	        tip.isSelected = !tip.isSelected;
-	        var node1 = select$1(self.svg).select("#".concat(tip.id)).select(".node-shape");
-	        var node2 = select$1(treeSVG).select("#".concat(tip.id)).select(".node-shape");
+	        var node1 = select(self.svg).select("#".concat(tip.id)).select(".node-shape");
+	        var node2 = select(treeSVG).select("#".concat(tip.id)).select(".node-shape");
 
 	        if (tip.isSelected) {
 	          node1.attr("class", "node-shape selected");
@@ -14478,11 +14480,11 @@
 	        self.update();
 	      };
 
-	      var tips = select$1(this.svg).selectAll(".external-node").selectAll(".node-shape");
+	      var tips = select(this.svg).selectAll(".external-node").selectAll(".node-shape");
 	      tips.on("mouseover", mouseover);
 	      tips.on("mouseout", mouseout);
 	      tips.on("click", clicked);
-	      var points = select$1(treeSVG).selectAll(".node-shape");
+	      var points = select(treeSVG).selectAll(".node-shape");
 	      points.on("mouseover", mouseover);
 	      points.on("mouseout", mouseout);
 	      points.on("click", clicked);
