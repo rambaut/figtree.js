@@ -12291,12 +12291,6 @@ function () {
       this.update();
       return this;
     }
-  }, {
-    key: "updateSettings",
-    value: function updateSettings(settings) {
-      this.settings = mergeDeep(this.settings, settings);
-      this.update();
-    }
     /*
     * private methods
     */
@@ -13003,8 +12997,14 @@ function () {
   }, {
     key: "nodes",
     value: function nodes() {
+      var b = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
       if (!this[p.vertices]) {
         this[p.updateVerticesAndEdges]();
+      }
+
+      if (b) {
+        this[p.vertices].elements(b);
       }
 
       return this[p.vertices];
@@ -13012,17 +13012,17 @@ function () {
   }, {
     key: "branches",
     value: function branches() {
+      var b = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
       if (!this[p.edges]) {
         this[p.updateVerticesAndEdges]();
       }
 
+      if (b) {
+        this[p.edges].elements(b);
+      }
+
       return this[p.edges];
-    }
-  }, {
-    key: "treeLayout",
-    set: function set(layout) {
-      this.layout = layout;
-      this.update();
     }
   }, {
     key: "xAxis",

@@ -149,8 +149,7 @@
         .svg(treeSVG)
         .tree(tree)
         .layout(rectangularLayout)
-        .nodes()
-            .elements(CircleBauble)
+        .nodes(CircleBauble)
                 .attr("fill",d=>d.degree>1?"steelblue":"#c71585")
                 .attr("r",d=>5)
                 .label("name")
@@ -168,8 +167,7 @@
                     const node = tree.getNode(d.key);
                     tree.rotate(node);
                 })
-            .branches()
-            .elements(Branch)
+            .branches(Branch)
         ;
             // .branches()
             // .attr("stoke")

@@ -491,21 +491,11 @@ export class FigTree {
 
     }
 
-    set treeLayout(layout) {
-        this.layout = layout;
-        this.update();
-    }
-
     addAnnotation(annotation){
         this._annotations.push(annotation);
         this.update();
         return this;
 
-    }
-
-    updateSettings(settings){
-       this.settings = mergeDeep(this.settings,settings);
-        this.update();
     }
 
  /*
@@ -964,15 +954,22 @@ export class FigTree {
         }
     }
 
-    nodes(){
+    nodes(b=null){
         if(!this[p.vertices]){
             this[p.updateVerticesAndEdges]();
         }
+        if(b){
+            this[p.vertices].elements(b)
+        }
         return this[p.vertices]
     }
-    branches(){
+    branches(b=null){
         if(!this[p.edges]){
             this[p.updateVerticesAndEdges]();
+        }
+
+        if(b){
+            this[p.edges].elements(b)
         }
         return this[p.edges]
     }
