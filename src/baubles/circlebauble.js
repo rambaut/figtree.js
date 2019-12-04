@@ -52,7 +52,6 @@ export class CircleBauble extends Bauble {
                     .each((d,i,n)=>{
                         const element = select(n[i]);
                         for( const [key,func] of Object.entries(this.interactions)){
-                            console.log(key)
                             element.on(key,(d,i,n)=>func(d,i,n))
                         }
                     }),

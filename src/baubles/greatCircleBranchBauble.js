@@ -1,8 +1,8 @@
-import {BranchBauble} from "./branchbauble";
+import {Branch} from "./branch";
 import {mergeDeep} from "../utilities";
 import {curveNatural,geoPath} from "d3";
 
-export class GreatCircleBranchBauble extends BranchBauble{
+export class GreatCircleBranchBauble extends Branch{
     static DEFAULT_SETTINGS() {
         return {
             curve: curveNatural,

@@ -4,7 +4,7 @@ import uuid from "uuid";
 import {mergeDeep} from "../utilities";
 import 'd3-selection-multi';
 import {CircleBauble} from "../baubles/circlebauble";
-import {BranchBauble} from "../baubles/branchbauble";
+import {Branch} from "../baubles/branch";
 import {CartoonBauble} from "../baubles/cartoonbauble";
 import {GeoLayout} from "../layout/geoLayout";
 import {rectangularLayout} from "../layout/rectangularLayout.f";
@@ -55,7 +55,7 @@ export class FigTree {
                 baubles: [new CircleBauble()],
             },
             edges: {
-                baubles:[new BranchBauble()]
+                baubles:[new Branch()]
             },
             cartoons:{
                 baubles:[new CartoonBauble()]
@@ -96,7 +96,7 @@ export class FigTree {
      * @param {Object[]} [settings.vertices.baubles=[new CircleBauble()]] - An array of baubles for the nodes, each bauble can have it's own settings
      * @param {Object[]} [settings.vertices.backgroundBaubles=[]] - An array of baubles that will go behind the main bauble of the nodes, each bauble can have it's own settings
      * @param {Object}    settings.edges - Options specific to the edges that map to the branches of the tree
-     * @param {Object[]}  [settings.edges.baubles=[new BranchBauble()]] - An array of baubles that form the branches of the tree, each bauble can have it's own settings
+     * @param {Object[]}  [settings.edges.baubles=[new Branch()]] - An array of baubles that form the branches of the tree, each bauble can have it's own settings
      * @param {Object}    settings.cartoons - Options specific to the cartoons on the tree (triangle clades ect.)
      * @param {Object[]}  [settings.edges.baubles=[new CartoonBauble()]] - An array of baubles that form the cartoons on the firgure, each bauble can have it's own settings     cartoons:{
      * @param {Object} settings.transition - Options controlling the how the figure changes upon interaction
@@ -192,7 +192,7 @@ export class FigTree {
 
         // this[p.updateAnnotations]();
         // this[p.updateCartoons]();
-        // this[p.updateBranches]();
+        this[p.updateBranches]();
         //
         // if(this.settings.xScale.axes.length>0){
         //     this[p.updateXAxis]();
@@ -677,8 +677,9 @@ export class FigTree {
         const branchesLayer = this.svgSelection.select(".branches-layer");
         //set up scales for branches
 
-        this.settings.edges.baubles.forEach(b=>b.setup({x:this.scales.x,y:this.scales.y,
-            xOffset:this.settings.xScale.revisions.offset,yOffset:this.yScaleOffset}));
+        const vertices = this[p.edges].data;
+        const elementMap = this[p.edges].elementMap;
+
         // DATA JOIN
         // Join new data with old elements, if any.
         const self = this;
@@ -687,22 +688,20 @@ export class FigTree {
             .join(
                 enter=>enter
                     .append("g")
-                        .attr("id", (e) => e.id)
+                        .attr("id", (e) => e.key)
                         .attr("class", (e) => ["branch", ...e.classes].join(" "))
                         .attr("transform", (e) => {
-                            return `translate(${this.scales.x(e.v0.x+this.settings.xScale.revisions.offset)}, ${this.scales.y(e.v1.y)})`;
+                            return `translate(${this.scales.x(e.v0.x)}, ${this.scales.y(e.v1.y)})`;
                         })
-                        .each(function(e) {
-                            for(const bauble of  self.settings.edges.baubles){
-                                if (bauble.edgeFilter(e)) {
-                                    bauble
-                                        .update(select(this))
-                                }
-                            }
-                        })
+                    .each(function(e) {
+                        if(elementMap.has(e.key)){
+                            const element = elementMap.get(e.key);
+                            element.update(select(this))
+                        }
+                    })
                     .append("text")
                         .attr("class", "branch-label")
-                        .attr("dx", (e) => ((this.scales.x(e.v1.x+this.settings.xScale.revisions.offset) - this.scales.x(e.v0.x+this.settings.xScale.revisions.offset)) / 2))
+                        .attr("dx", (e) => ((this.scales.x(e.v1.x) - this.scales.x(e.v0.x)) / 2))
                         .attr("dy", (e) => (e.labelBelow ? +6 : -6))
                         .attr("alignment-baseline", (e) => (e.labelBelow ? "hanging" : "bottom"))
                         .attr("text-anchor", "middle")
@@ -713,24 +712,22 @@ export class FigTree {
                         .ease(this.settings.transition.transitionEase)
                         .attr("class", (e) => ["branch", ...e.classes].join(" "))
                         .attr("transform", (e) => {
-                            return `translate(${this.scales.x(e.v0.x+this.settings.xScale.revisions.offset)}, ${this.scales.y(e.v1.y)})`;
+                            return `translate(${this.scales.x(e.v0.x)}, ${this.scales.y(e.v1.y)})`;
                         })
                     .on("start",function(e) {
-                        for(const bauble of  self.settings.edges.baubles){
-                            if (bauble.edgeFilter(e)) {
-                                bauble
-                                    .update(select(this))
-                            }
+                        if(elementMap.has(e.key)){
+                            const element = elementMap.get(e.key);
+                            element.update(select(this))
                         }
+
                     })
                         // .each(
-                    .select("text .branch-label .length")
-                        .attr("class", "branch-label length")
-                        .attr("dx", (e) => ((this.scales.x(e.v1.x+this.settings.xScale.revisions.offset) - this.scales.x(e.v0.x+this.settings.xScale.revisions.offset)) / 2))
-                        .attr("dy", (e) => (e.labelBelow ? +6 : -6))
-                        .attr("alignment-baseline", (e) => (e.labelBelow ? "hanging" : "bottom"))
-                        .attr("text-anchor", "middle")
-                        .text((e) => e.label)
+                    .select("text .branch-label")
+                            .attr("dx", (e) => ((this.scales.x(e.v1.x) - this.scales.x(e.v0.x)) / 2))
+                            .attr("dy", (e) => (e.labelBelow ? +6 : -6))
+                            .attr("alignment-baseline", (e) => (e.labelBelow ? "hanging" : "bottom"))
+                            .attr("text-anchor", "middle")
+                            .text((e) => e.label),
                     )
             );
 
@@ -963,10 +960,11 @@ export class FigTree {
         }
         return this[p.vertices]
     }
-    get branches(){
-        //TODO make add bauble class for edges
-
-        return this[p.edges];
+    branches(){
+        if(!this[p.edges]){
+            this[p.updateVerticesAndEdges]();
+        }
+        return this[p.edges]
     }
 
     get xAxis(){
@@ -978,7 +976,12 @@ export class FigTree {
 
 }
 
+//TODO refactor into nodes and branches that can act like
+// .nodes(circlebauble)
+// instead of .nodes().elements()
 
+
+// also but some case specific helper functions for each style.
 
 class DataCollection {
     constructor(data, figure) {
@@ -995,7 +998,7 @@ class DataCollection {
         { get : function(target, prop)
         {
             if(target[prop] === undefined){
-                console.log(this);
+                return figure[prop];
             }
             else{
 

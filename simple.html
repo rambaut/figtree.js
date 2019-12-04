@@ -124,7 +124,7 @@
 <script src ="dist/figtree.umd.js"></script>
 <script type="module">
 
-    import {Tree,rectangularLayout,CircleBauble,FigTree,BranchBauble,EqualAngleLayout,Axis,RootToTipPlot}  from "./dist/figtree.esm.js";
+    import {Tree,rectangularLayout,CircleBauble,FigTree,Branch,EqualAngleLayout,Axis,RootToTipPlot}  from "./dist/figtree.esm.js";
 
 
     const width = 600,
@@ -168,6 +168,8 @@
                     const node = tree.getNode(d.key);
                     tree.rotate(node);
                 })
+            .branches()
+            .elements(Branch)
         ;
             // .branches()
             // .attr("stoke")
@@ -180,7 +182,7 @@
         //     .highlightOnHover()
         //     .filter(n=>n.children)
         //         .rotateOnClick()
-        // .branches(new BranchBauble())
+        // .branches(new Branch())
         //     .highlightOnHover()
         //     .reRootOnClick()
 
