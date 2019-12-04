@@ -30,7 +30,7 @@ export class RectangularBauble extends Bauble {
      * @param border
      * @return {*|null|undefined}
      */
-    updateShapes(selection, border = 0) {
+    update(selection, border = 0) {
         const w = this.settings.width + border;
         const h = this.settings.height + border;
         return selection

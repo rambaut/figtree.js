@@ -41,7 +41,7 @@ export class RoughBranchBauble extends Bauble {
         }
     }
 
-    updateShapes(selection) {
+    update(selection) {
 
         return selection.selectAll("path")
             .data(d => [d])

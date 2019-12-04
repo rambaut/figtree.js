@@ -38,7 +38,7 @@ export class BranchBauble extends Bauble {
         this.branchPath = this.branchPathGenerator({scales:scales,curve:this.settings.curve,curveRadius:this.settings.curveRadius})
     }
 
-    updateShapes(selection) {
+    update(selection) {
 
         return selection.selectAll("path")
             .data(d => [d])

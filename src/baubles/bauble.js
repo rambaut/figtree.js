@@ -20,7 +20,8 @@ export class Bauble {
             transition: {
                 transitionDuration: 500,
                 transitionEase: easeLinear,
-            }
+            },
+            interactions:{}
         };
     }
 
@@ -34,7 +35,8 @@ export class Bauble {
      */
     constructor(settings = {}) {
         const options = mergeDeep(Bauble.DEFAULT_SETTINGS(),settings);
-        this.attrs = options.attrs
+        this.attrs = options.attrs;
+        this.interactions = options.interactions;
     }
 
     /**
@@ -43,14 +45,16 @@ export class Bauble {
      * @param selection
      * @param border
      */
-    updateShapes(selection, border = 0) {
+    update(selection, border = 0) {
         throw new Error("don't call the base class methods")
     }
 
     attr(string,value){
         this.attrs[string] = value;
     }
-
+    on(string,value){
+        this.interactions[string] = value;
+    }
 }
 
 

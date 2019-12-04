@@ -11795,7 +11795,8 @@ function () {
         transition: {
           transitionDuration: 500,
           transitionEase: linear$1
-        }
+        },
+        interactions: {}
       };
     }
     /**
@@ -11816,6 +11817,7 @@ function () {
 
     var options = mergeDeep(Bauble.DEFAULT_SETTINGS(), settings);
     this.attrs = options.attrs;
+    this.interactions = options.interactions;
   }
   /**
    * A function that appends the bauble to the selection, joins the data, assigns the attributes to the svg objects
@@ -11826,14 +11828,19 @@ function () {
 
 
   createClass(Bauble, [{
-    key: "updateShapes",
-    value: function updateShapes(selection) {
+    key: "update",
+    value: function update(selection) {
       throw new Error("don't call the base class methods");
     }
   }, {
     key: "attr",
     value: function attr(string, value) {
       this.attrs[string] = value;
+    }
+  }, {
+    key: "on",
+    value: function on(string, value) {
+      this.interactions[string] = value;
     }
   }]);
 
@@ -11969,14 +11976,41 @@ function (_Bauble) {
 
 
   createClass(CircleBauble, [{
-    key: "updateShapes",
-    value: function updateShapes(selection) {
+    key: "update",
+    value: function update() {
       var _this = this;
 
-      return selection.selectAll("circle").data(function (d) {
+      var selection = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (selection == null && !this.selection) {
+        return;
+      }
+
+      if (selection) {
+        this.selection = selection;
+      }
+
+      return this.selection.selectAll("circle").data(function (d) {
         return [d];
       }).join(function (enter) {
-        return enter.append("circle").attr("class", "node-shape").attr("cx", 0).attr("cy", 0).attrs(_this.attrs);
+        return enter.append("circle").attr("class", "node-shape").attr("cx", 0).attr("cy", 0).attrs(_this.attrs).each(function (d, i, n) {
+          var element = select(n[i]);
+
+          var _loop = function _loop() {
+            var _Object$entries$_i = slicedToArray(_Object$entries[_i], 2),
+                key = _Object$entries$_i[0],
+                func = _Object$entries$_i[1];
+
+            console.log(key);
+            element.on(key, function (d, i, n) {
+              return func(d, i, n);
+            });
+          };
+
+          for (var _i = 0, _Object$entries = Object.entries(_this.interactions); _i < _Object$entries.length; _i++) {
+            _loop();
+          }
+        });
       }, function (update) {
         return update.call(function (update) {
           return update.transition().attrs(_this.attrs);
@@ -12054,8 +12088,8 @@ function (_Bauble) {
       });
     }
   }, {
-    key: "updateShapes",
-    value: function updateShapes(selection) {
+    key: "update",
+    value: function update(selection) {
       var _this = this;
 
       return selection.selectAll("path").data(function (d) {
@@ -12246,8 +12280,8 @@ function (_Bauble) {
       });
     }
   }, {
-    key: "updateShapes",
-    value: function updateShapes(selection) {
+    key: "update",
+    value: function update(selection) {
       var _this = this;
 
       return selection.selectAll("path").data(function (d) {
@@ -12825,7 +12859,7 @@ function () {
         enter: function enter(d, i, n) {
           var branch = select(n[i]); // self.settings.edges.baubles.forEach((bauble) => {
           //     if (bauble.edgeFilter(branch)) {
-          //         bauble.updateShapes(branch);
+          //         bauble.update(branch);
           //     }
           // });
 
@@ -12834,7 +12868,7 @@ function () {
         exit: function exit(d, i, n) {
           var branch = select(n[i]); // self.settings.edges.baubles.forEach((bauble) => {
           //     if (bauble.edgeFilter(branch)) {
-          //         bauble.updateShapes(branch);
+          //         bauble.update(branch);
           //     }
           // });
 
@@ -12885,7 +12919,7 @@ function () {
           var vertex = d;
           self.settings.vertices.baubles.forEach(function (bauble) {
             if (bauble.vertexFilter(vertex)) {
-              bauble.updateShapes(node, self.settings.vertices.hoverBorder);
+              bauble.update(node, self.settings.vertices.hoverBorder);
             }
           });
           node.classed("hovered", true);
@@ -12895,7 +12929,7 @@ function () {
           var vertex = d;
           self.settings.vertices.baubles.forEach(function (bauble) {
             if (bauble.vertexFilter(vertex)) {
-              bauble.updateShapes(node, 0);
+              bauble.update(node, 0);
             }
           });
           node.classed("hovered", false);
@@ -13257,7 +13291,7 @@ function () {
 
       var nodesLayer = this.svgSelection.select(".nodes-layer");
       var vertices = this[p.vertices].data;
-      var baubleMap = this[p.vertices].baubleMap; // DATA JOIN
+      var elementMap = this[p.vertices].elementMap; // DATA JOIN
       nodesLayer.selectAll(".node").data(vertices, function (v) {
         return "n_".concat(v.key);
       }).join(function (enter) {
@@ -13268,18 +13302,20 @@ function () {
         }).attr("transform", function (v) {
           return "translate(".concat(_this5.scales.x(v.x), ", ").concat(_this5.scales.y(v.y), ")");
         }).each(function (v) {
-          if (baubleMap.has(v.key)) {
-            var bauble = baubleMap.get(v.key);
-            bauble.updateShapes(select(this));
+          if (elementMap.has(v.key)) {
+            var element = elementMap.get(v.key);
+            element.update(select(this));
           }
-        }).append("text").attr("class", "node-label name").attr("text-anchor", "start").attr("alignment-baseline", "middle").attr("dx", "12").attr("dy", "0").text(function (d) {
-          return d.rightLabel;
-        }).append("text").attr("class", "node-label support").attr("text-anchor", "end").attr("dx", "-6").attr("dy", function (d) {
-          return d.labelBelow ? -8 : +8;
+        }).append("text").attr("class", "node-label").attr("text-anchor", function (d) {
+          return d.leftLabel ? "end" : "start";
         }).attr("alignment-baseline", function (d) {
-          return d.labelBelow ? "bottom" : "hanging";
+          return d.leftLabel ? d.labelBelow ? "bottom" : "hanging" : "middle";
+        }).attr("dx", function (d) {
+          return d.leftLabel ? "-6" : "12";
+        }).attr("dy", function (d) {
+          return d.leftLabel ? d.labelBelow ? "-8" : "8" : "0";
         }).text(function (d) {
-          return d.leftLabel;
+          return d.textLabel;
         });
       }, function (update) {
         return update.call(function (update) {
@@ -13288,20 +13324,20 @@ function () {
           }).attr("transform", function (v) {
             return "translate(".concat(_this5.scales.x(v.x), ", ").concat(_this5.scales.y(v.y), ")");
           }).on("start", function (v) {
-            if (baubleMap.has(v.key)) {
-              var bauble = baubleMap.get(v.key);
-              bauble.updateShapes(select(this));
+            if (elementMap.has(v.key)) {
+              var element = elementMap.get(v.key);
+              element.update(select(this));
             }
-          }) // .each(
-          // })
-          .select("text .node-label .name").transition().duration(_this5.settings.transition.transitionDuration).ease(_this5.settings.transition.transitionEase).attr("class", "node-label name").attr("text-anchor", "start").attr("alignment-baseline", "middle").attr("dx", "12").attr("dy", "0").text(function (d) {
-            return d.rightLabel;
-          }).select("text .node-label .support").transition().duration(_this5.settings.transition.transitionDuration).ease(_this5.settings.transition.transitionEase).attr("alignment-baseline", function (d) {
-            return d.labelBelow ? "bottom" : "hanging";
-          }).attr("class", "node-label support").attr("text-anchor", "end").attr("dx", "-6").attr("dy", function (d) {
-            return d.labelBelow ? -8 : +8;
+          }).select("text .node-label").transition().duration(_this5.settings.transition.transitionDuration).ease(_this5.settings.transition.transitionEase).attr("text-anchor", function (d) {
+            return d.leftLabel ? "end" : "start";
+          }).attr("alignment-baseline", function (d) {
+            return d.leftLabel ? d.labelBelow ? "bottom" : "hanging" : "middle";
+          }).attr("dx", function (d) {
+            return d.leftLabel ? "-6" : "12";
+          }).attr("dy", function (d) {
+            return d.leftLabel ? d.labelBelow ? "-8" : "8" : "0";
           }).text(function (d) {
-            return d.leftLabel;
+            return d.textLabel;
           });
         });
       }); // add callbacks
@@ -13358,7 +13394,7 @@ function () {
               var bauble = _step2.value;
 
               if (bauble.vertexFilter(v)) {
-                bauble.updateShapes(select(this));
+                bauble.update(select(this));
               }
             }
           } catch (err) {
@@ -13392,7 +13428,7 @@ function () {
                 var bauble = _step3.value;
 
                 if (bauble.vertexFilter(v)) {
-                  bauble.updateShapes(select(this));
+                  bauble.update(select(this));
                 }
               }
             } catch (err) {
@@ -13477,7 +13513,7 @@ function () {
               var bauble = _step5.value;
 
               if (bauble.edgeFilter(e)) {
-                bauble.updateShapes(select(this));
+                bauble.update(select(this));
               }
             }
           } catch (err) {
@@ -13519,7 +13555,7 @@ function () {
                 var bauble = _step6.value;
 
                 if (bauble.edgeFilter(e)) {
-                  bauble.updateShapes(select(this));
+                  bauble.update(select(this));
                 }
               }
             } catch (err) {
@@ -13599,7 +13635,7 @@ function () {
               var bauble = _step8.value;
 
               if (bauble.cartoonFilter(c)) {
-                bauble.updateShapes(select(this));
+                bauble.update(select(this));
               }
             }
           } catch (err) {
@@ -13632,7 +13668,7 @@ function () {
               var bauble = _step9.value;
 
               if (bauble.cartoonFilter(c)) {
-                bauble.updateShapes(select(this));
+                bauble.update(select(this));
               }
             }
           } catch (err) {
@@ -13966,12 +14002,18 @@ function () {
 
     this.figure = figure;
     this.data = data;
-    this.baubleMap = new Map();
+    this.elementMap = new Map();
     this.attrs = {};
-    this.baubleMaker = null;
+    this.interactions = {};
+    this.elementMaker = null;
+    this.labelMaker = null;
     return new Proxy(this, {
       get: function get(target, prop) {
-        if (target[prop] === undefined) return this.figure[prop];else return target[prop];
+        if (target[prop] === undefined) {
+          console.log(this);
+        } else {
+          return target[prop];
+        }
       }
     });
   }
@@ -13979,9 +14021,9 @@ function () {
   createClass(DataCollection, [{
     key: "updateData",
     value: function updateData(data) {
-      this.data = data; //remake baubles
+      this.data = data; //remake elements
 
-      this.baubles(this.baubleMaker); // update bauble styles
+      this.elements(this.elementMaker); // update element styles
 
       for (var _i = 0, _Object$entries = Object.entries(this.attrs); _i < _Object$entries.length; _i++) {
         var _Object$entries$_i = slicedToArray(_Object$entries[_i], 2),
@@ -13990,18 +14032,28 @@ function () {
 
         this.attr(key, value);
       }
+
+      for (var _i2 = 0, _Object$entries2 = Object.entries(this.interactions); _i2 < _Object$entries2.length; _i2++) {
+        var _Object$entries2$_i = slicedToArray(_Object$entries2[_i2], 2),
+            key = _Object$entries2$_i[0],
+            value = _Object$entries2$_i[1];
+
+        this.on(key, value);
+      }
+
+      this.label(this.labelMaker);
     }
   }, {
-    key: "baubles",
-    value: function baubles() {
+    key: "elements",
+    value: function elements() {
       var b = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
       if (b) {
-        this.baubleMaker = b;
+        this.elementMaker = b;
       }
 
-      if (this.baubleMaker) {
-        if (!isFunction(this.baubleMaker)) {
+      if (this.elementMaker) {
+        if (!isFunction(this.elementMaker)) {
           var _iteratorNormalCompletion13 = true;
           var _didIteratorError13 = false;
           var _iteratorError13 = undefined;
@@ -14009,7 +14061,7 @@ function () {
           try {
             for (var _iterator13 = this.data[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
               var d = _step13.value;
-              this.baubleMap.set(d.key, new this.baubleMaker());
+              this.elementMap.set(d.key, new this.elementMaker());
             }
           } catch (err) {
             _didIteratorError13 = true;
@@ -14025,7 +14077,7 @@ function () {
               }
             }
           }
-        } else if (this.baubleMaker instanceof Function) {
+        } else if (this.elementMaker instanceof Function) {
           var _iteratorNormalCompletion14 = true;
           var _didIteratorError14 = false;
           var _iteratorError14 = undefined;
@@ -14033,10 +14085,10 @@ function () {
           try {
             for (var _iterator14 = this.data[Symbol.iterator](), _step14; !(_iteratorNormalCompletion14 = (_step14 = _iterator14.next()).done); _iteratorNormalCompletion14 = true) {
               var _d = _step14.value;
-              var bauble = this.baubleMaker(_d.key);
+              var element = this.elementMaker(_d.key);
 
-              if (bauble) {
-                this.baubleMap.set(_d.key, new this.baubleMaker(_d));
+              if (element) {
+                this.elementMap.set(_d.key, new this.elementMaker(_d));
               }
             }
           } catch (err) {
@@ -14058,7 +14110,7 @@ function () {
         return this;
       }
 
-      return this.baubleMap;
+      return this.elementMap;
     }
   }, {
     key: "attr",
@@ -14075,10 +14127,10 @@ function () {
             var d = _step15.value;
 
             if (f(d)) {
-              var bauble = this.baubleMap.get(d.key);
+              var element = this.elementMap.get(d.key);
 
-              if (bauble) {
-                bauble.attr(string, f(d));
+              if (element) {
+                element.attr(string, f(d));
               }
             }
           }
@@ -14105,10 +14157,10 @@ function () {
           for (var _iterator16 = this.data[Symbol.iterator](), _step16; !(_iteratorNormalCompletion16 = (_step16 = _iterator16.next()).done); _iteratorNormalCompletion16 = true) {
             var _d2 = _step16.value;
 
-            var _bauble = this.baubleMap.get(_d2.key);
+            var _element = this.elementMap.get(_d2.key);
 
-            if (_bauble) {
-              _bauble.attr(string, f);
+            if (_element) {
+              _element.attr(string, f);
             }
           }
         } catch (err) {
@@ -14122,6 +14174,107 @@ function () {
           } finally {
             if (_didIteratorError16) {
               throw _iteratorError16;
+            }
+          }
+        }
+      }
+
+      return this;
+    }
+  }, {
+    key: "on",
+    value: function on(string, f) {
+      this.interactions[string] = f;
+      var _iteratorNormalCompletion17 = true;
+      var _didIteratorError17 = false;
+      var _iteratorError17 = undefined;
+
+      try {
+        for (var _iterator17 = this.data[Symbol.iterator](), _step17; !(_iteratorNormalCompletion17 = (_step17 = _iterator17.next()).done); _iteratorNormalCompletion17 = true) {
+          var d = _step17.value;
+          var element = this.elementMap.get(d.key);
+
+          if (element) {
+            element.on(string, f(element));
+          }
+        }
+      } catch (err) {
+        _didIteratorError17 = true;
+        _iteratorError17 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion17 && _iterator17["return"] != null) {
+            _iterator17["return"]();
+          }
+        } finally {
+          if (_didIteratorError17) {
+            throw _iteratorError17;
+          }
+        }
+      }
+
+      return this;
+    }
+  }, {
+    key: "label",
+    value: function label(l) {
+      if (l) {
+        this.labelMaker = l;
+      }
+
+      if (this.labelMaker) {
+        if (this.labelMaker instanceof Function) {
+          var _iteratorNormalCompletion18 = true;
+          var _didIteratorError18 = false;
+          var _iteratorError18 = undefined;
+
+          try {
+            for (var _iterator18 = this.data[Symbol.iterator](), _step18; !(_iteratorNormalCompletion18 = (_step18 = _iterator18.next()).done); _iteratorNormalCompletion18 = true) {
+              var d = _step18.value;
+
+              if (this.labelMaker(d)) {
+                d.textLabel = this.labelMaker(d);
+              }
+            }
+          } catch (err) {
+            _didIteratorError18 = true;
+            _iteratorError18 = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion18 && _iterator18["return"] != null) {
+                _iterator18["return"]();
+              }
+            } finally {
+              if (_didIteratorError18) {
+                throw _iteratorError18;
+              }
+            }
+          }
+        } else {
+          var _iteratorNormalCompletion19 = true;
+          var _didIteratorError19 = false;
+          var _iteratorError19 = undefined;
+
+          try {
+            for (var _iterator19 = this.data[Symbol.iterator](), _step19; !(_iteratorNormalCompletion19 = (_step19 = _iterator19.next()).done); _iteratorNormalCompletion19 = true) {
+              var _d3 = _step19.value;
+
+              if (_d3[this.labelMaker]) {
+                _d3.textLabel = _d3[this.labelMaker];
+              }
+            }
+          } catch (err) {
+            _didIteratorError19 = true;
+            _iteratorError19 = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion19 && _iterator19["return"] != null) {
+                _iterator19["return"]();
+              }
+            } finally {
+              if (_didIteratorError19) {
+                throw _iteratorError19;
+              }
             }
           }
         }
@@ -14443,8 +14596,8 @@ function (_Bauble) {
 
 
   createClass(RectangularBauble, [{
-    key: "updateShapes",
-    value: function updateShapes(selection) {
+    key: "update",
+    value: function update(selection) {
       var _this = this;
 
       var border = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
@@ -14565,8 +14718,8 @@ function (_Bauble) {
 
 
   createClass(RoughCircleBauble, [{
-    key: "updateShapes",
-    value: function updateShapes(selection) {
+    key: "update",
+    value: function update(selection) {
       var _this = this;
 
       var border = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
@@ -14686,8 +14839,8 @@ function (_Bauble) {
       };
     }
   }, {
-    key: "updateShapes",
-    value: function updateShapes(selection) {
+    key: "update",
+    value: function update(selection) {
       var _this2 = this;
 
       return selection.selectAll("path").data(function (d) {

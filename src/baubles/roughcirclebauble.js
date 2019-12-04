@@ -39,7 +39,7 @@ export class RoughCircleBauble extends Bauble {
      * @param selection
      * @return {Bundle|MagicString|*|void}
      */
-    updateShapes(selection, border = 0) {
+    update(selection, border = 0) {
 
 
         const newPaths = [...roughFactory.circle(0, 0, this.settings.radius + border, this.settings).childNodes]

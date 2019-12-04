@@ -223,7 +223,7 @@ export class FigTree {
                 const branch = select(n[i]);
                 // self.settings.edges.baubles.forEach((bauble) => {
                 //     if (bauble.edgeFilter(branch)) {
-                //         bauble.updateShapes(branch);
+                //         bauble.update(branch);
                 //     }
                 // });
                 select(n[i]).classed("hovered", true);
@@ -232,7 +232,7 @@ export class FigTree {
                 const branch = select(n[i]);
                 // self.settings.edges.baubles.forEach((bauble) => {
                 //     if (bauble.edgeFilter(branch)) {
-                //         bauble.updateShapes(branch);
+                //         bauble.update(branch);
                 //     }
                 // });
                 select(n[i]).classed("hovered", false);
@@ -275,7 +275,7 @@ export class FigTree {
                 const vertex = d;
                 self.settings.vertices.baubles.forEach((bauble) => {
                     if (bauble.vertexFilter(vertex)) {
-                    bauble.updateShapes(node, self.settings.vertices.hoverBorder);
+                    bauble.update(node, self.settings.vertices.hoverBorder);
                     }
                 });
 
@@ -286,7 +286,7 @@ export class FigTree {
                 const vertex = d;
                 self.settings.vertices.baubles.forEach((bauble) => {
                     if (bauble.vertexFilter(vertex)) {
-                    bauble.updateShapes(node, 0);
+                    bauble.update(node, 0);
                     }
                 });
                 node.classed("hovered", false);
@@ -560,7 +560,7 @@ export class FigTree {
         const nodesLayer = this.svgSelection.select(".nodes-layer");
 
         const vertices = this[p.vertices].data;
-        const baubleMap = this[p.vertices].baubleMap;
+        const elementMap = this[p.vertices].elementMap;
 
         // DATA JOIN
         // Join new data with old elements, if any.
@@ -576,25 +576,18 @@ export class FigTree {
                             return `translate(${this.scales.x(v.x)}, ${this.scales.y(v.y)})`;
                         })
                         .each(function(v) {
-                            if(baubleMap.has(v.key)){
-                                const bauble = baubleMap.get(v.key);
-                                bauble.updateShapes(select(this))
+                            if(elementMap.has(v.key)){
+                                const element = elementMap.get(v.key);
+                                element.update(select(this))
                             }
                         })
                     .append("text")
-                        .attr("class", "node-label name")
-                        .attr("text-anchor", "start")
-                        .attr("alignment-baseline", "middle")
-                        .attr("dx", "12")
-                        .attr("dy", "0")
-                        .text((d) => d.rightLabel)
-                    .append("text")
-                        .attr("class", "node-label support")
-                        .attr("text-anchor", "end")
-                        .attr("dx", "-6")
-                        .attr("dy", d => (d.labelBelow ? -8 : +8))
-                        .attr("alignment-baseline", d => (d.labelBelow ? "bottom": "hanging" ))
-                        .text((d) => d.leftLabel),
+                        .attr("class", "node-label")
+                        .attr("text-anchor", d=>d.leftLabel?"end":"start")
+                        .attr("alignment-baseline", d => d.leftLabel?(d.labelBelow ? "bottom": "hanging" ):"middle")
+                        .attr("dx", d=>d.leftLabel?"-6":"12")
+                        .attr("dy", d => d.leftLabel?(d.labelBelow ? "-8": "8" ):"0")
+                        .text((d) => d.textLabel),
                 update => update
                     .call(update => update.transition()
                     .duration(this.settings.transition.transitionDuration)
@@ -604,33 +597,21 @@ export class FigTree {
                         return `translate(${this.scales.x(v.x)}, ${this.scales.y(v.y)})`;
                     })
                     .on("start", function(v) {
-                            if(baubleMap.has(v.key)){
-                                const bauble = baubleMap.get(v.key);
-                                bauble.updateShapes(select(this))
+                            if(elementMap.has(v.key)){
+                                const element = elementMap.get(v.key);
+                                element.update(select(this))
                             }
                     })
-                    // .each(
-                    // })
-                    .select("text .node-label .name")
+
+                    .select("text .node-label")
                         .transition()
                         .duration(this.settings.transition.transitionDuration)
                         .ease(this.settings.transition.transitionEase)
-                        .attr("class", "node-label name")
-                        .attr("text-anchor", "start")
-                        .attr("alignment-baseline", "middle")
-                        .attr("dx", "12")
-                        .attr("dy", "0")
-                        .text((d) => d.rightLabel)
-                    .select("text .node-label .support")
-                        .transition()
-                        .duration(this.settings.transition.transitionDuration)
-                        .ease(this.settings.transition.transitionEase)
-                        .attr("alignment-baseline", d => (d.labelBelow ? "bottom": "hanging" ))
-                        .attr("class", "node-label support")
-                        .attr("text-anchor", "end")
-                        .attr("dx", "-6")
-                        .attr("dy", d => (d.labelBelow ? -8 : +8))
-                        .text((d) => d.leftLabel)
+                        .attr("text-anchor", d=>d.leftLabel?"end":"start")
+                        .attr("alignment-baseline", d => d.leftLabel?(d.labelBelow ? "bottom": "hanging" ):"middle")
+                        .attr("dx", d=>d.leftLabel?"-6":"12")
+                        .attr("dy", d => d.leftLabel?(d.labelBelow ? "-8": "8" ):"0")
+                        .text((d) => d.textLabel),
                     )
 
             );
@@ -661,7 +642,7 @@ export class FigTree {
                             for(const bauble of  self.settings.vertices.backgroundBaubles){
                                 if (bauble.vertexFilter(v)) {
                                     bauble
-                                        .updateShapes(select(this))
+                                        .update(select(this))
                                 }
                             }
                         }),
@@ -677,7 +658,7 @@ export class FigTree {
                             for(const bauble of  self.settings.vertices.backgroundBaubles){
                                 if (bauble.vertexFilter(v)) {
                                     bauble
-                                        .updateShapes(select(this))
+                                        .update(select(this))
                                 }
                             }
                         })
@@ -715,7 +696,7 @@ export class FigTree {
                             for(const bauble of  self.settings.edges.baubles){
                                 if (bauble.edgeFilter(e)) {
                                     bauble
-                                        .updateShapes(select(this))
+                                        .update(select(this))
                                 }
                             }
                         })
@@ -738,7 +719,7 @@ export class FigTree {
                         for(const bauble of  self.settings.edges.baubles){
                             if (bauble.edgeFilter(e)) {
                                 bauble
-                                    .updateShapes(select(this))
+                                    .update(select(this))
                             }
                         }
                     })
@@ -776,7 +757,7 @@ export class FigTree {
                             for(const bauble of  self.settings.cartoons.baubles){
                                 if (bauble.cartoonFilter(c)) {
                                     bauble
-                                        .updateShapes(select(this))
+                                        .update(select(this))
                                 }
                             }
                         }),
@@ -792,7 +773,7 @@ export class FigTree {
                         for(const bauble of  self.settings.cartoons.baubles){
                             if (bauble.cartoonFilter(c)) {
                                 bauble
-                                    .updateShapes(select(this))
+                                    .update(select(this))
                             }
                         }
                     })
@@ -1004,72 +985,118 @@ class DataCollection {
 
         this.figure = figure;
         this.data = data;
-        this.baubleMap = new Map();
+        this.elementMap = new Map();
         this.attrs={};
-        this.baubleMaker=null;
+        this.interactions={};
+        this.elementMaker=null;
+        this.labelMaker=null
 
         return new Proxy(this,
         { get : function(target, prop)
         {
-            if(target[prop] === undefined)
-                return this.figure[prop]
-            else
+            if(target[prop] === undefined){
+                console.log(this);
+            }
+            else{
+
                 return target[prop];
+            }
+
         }
             });
     }
     updateData(data){
         this.data = data;
-        //remake baubles
-        this.baubles(this.baubleMaker);
-        // update bauble styles
+        //remake elements
+        this.elements(this.elementMaker);
+        // update element styles
         for(const [key,value] of Object.entries(this.attrs)){
             this.attr(key,value);
         }
+        for(const [key,value] of Object.entries(this.interactions)){
+            this.on(key,value);
+        }
+        this.label(this.labelMaker);
+
     }
 
-    baubles(b=null) {
+    elements(b=null) {
         if(b){
-            this.baubleMaker=b;
+            this.elementMaker=b;
         }
-        if(this.baubleMaker) {
-            if (!isFunction(this.baubleMaker)) {
+        if(this.elementMaker) {
+            if (!isFunction(this.elementMaker)) {
                 for (const d of this.data) {
-                    this.baubleMap.set(d.key, new this.baubleMaker())
+                    this.elementMap.set(d.key, new this.elementMaker())
                 }
-            } else if (this.baubleMaker instanceof Function) {
+            } else if (this.elementMaker instanceof Function) {
                 for (const d of this.data) {
-                    const bauble = this.baubleMaker(d.key);
-                    if (bauble) {
-                        this.baubleMap.set(d.key, new this.baubleMaker(d))
+                    const element = this.elementMaker(d.key);
+                    if (element) {
+                        this.elementMap.set(d.key, new this.elementMaker(d))
                     }
                 }
             }
             return this;
         }
-        return this.baubleMap;
+        return this.elementMap;
     }
     attr(string, f) {
         this.attrs[string]=f;
         if (f instanceof Function) {
             for (const d of this.data) {
                 if (f(d)) {
-                    const bauble = this.baubleMap.get(d.key);
-                    if (bauble) {
-                        bauble.attr(string, f(d))
+                    const element = this.elementMap.get(d.key);
+                    if (element) {
+                        element.attr(string, f(d))
                     }
                 }
             }
         } else {
             for (const d of this.data) {
-                const bauble = this.baubleMap.get(d.key);
-                if (bauble) {
-                    bauble.attr(string, f)
+                const element = this.elementMap.get(d.key);
+                if (element) {
+                    element.attr(string, f)
                 }
             }
         }
         return this;
     }
+
+    on(string,f){
+        this.interactions[string]=f;
+        for (const d of this.data) {
+                const element = this.elementMap.get(d.key);
+                if (element) {
+                    element.on(string, f(element))
+            }
+        }
+        return this;
+    }
+
+    label(l){
+        if(l) {
+            this.labelMaker = l;
+        }
+        if(this.labelMaker) {
+            if (this.labelMaker instanceof Function) {
+                for (const d of this.data) {
+                    if (this.labelMaker(d)) {
+                        d.textLabel=this.labelMaker(d)
+                    }
+                }
+        }else{
+                for (const d of this.data) {
+                    if(d[this.labelMaker]){
+                        d.textLabel=d[this.labelMaker]
+                    }
+                }
+            }
+        }
+    return this;
+    }
+
+
 }
 
 

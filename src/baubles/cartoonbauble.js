@@ -24,7 +24,7 @@ export class CartoonBauble extends Bauble {
     get cartoonFilter(){
         return this.settings.cartoonFilter;
     }
-    updateShapes(selection) {
+    update(selection) {
 
         return selection.selectAll("path")
             .data(d => [d])

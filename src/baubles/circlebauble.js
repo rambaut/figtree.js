@@ -1,5 +1,6 @@
 import {mergeDeep} from "../utilities";
 import {Bauble} from "./bauble";
+import {select} from "d3";
 /** @module bauble */
 
 /**
@@ -31,8 +32,14 @@ export class CircleBauble extends Bauble {
      * @param selection
      * @param {number} [border=0] - the amount to change the radius of the circle.
      */
-    updateShapes(selection) {
-        return selection
+    update(selection=null) {
+        if(selection==null&&!this.selection){
+            return
+        }
+        if(selection){
+            this.selection=selection;
+        }
+        return this.selection
             .selectAll("circle")
             .data(d => [d])
             .join(
@@ -41,7 +48,14 @@ export class CircleBauble extends Bauble {
                     .attr("class","node-shape")
                     .attr("cx", 0)
                     .attr("cy", 0)
-                    .attrs(this.attrs),
+                    .attrs(this.attrs)
+                    .each((d,i,n)=>{
+                        const element = select(n[i]);
+                        for( const [key,func] of Object.entries(this.interactions)){
+                            console.log(key)
+                            element.on(key,(d,i,n)=>func(d,i,n))
+                        }
+                    }),
                 update => update
                     .call(update => update.transition()
                         .attrs(this.attrs),
