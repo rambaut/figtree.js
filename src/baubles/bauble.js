@@ -17,7 +17,7 @@ export class Bauble {
             vertexFilter: () => true,
             attrs:{},
             styles:{},
-            transition: {
+            transitions: {
                 transitionDuration: 500,
                 transitionEase: easeLinear,
             },
@@ -37,6 +37,7 @@ export class Bauble {
         const options = mergeDeep(Bauble.DEFAULT_SETTINGS(),settings);
         this.attrs = options.attrs;
         this.interactions = options.interactions;
+        this._transitions=options.transitions
     }
 
     /**
@@ -54,6 +55,13 @@ export class Bauble {
     }
     on(string,value){
         this.interactions[string] = value;
+    }
+    transitions(t=null){
+        if(t){
+            this._transitions=t;
+        }else{
+            return this._transitions;
+        }
     }
 }
 

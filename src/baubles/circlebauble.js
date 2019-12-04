@@ -57,6 +57,8 @@ export class CircleBauble extends Bauble {
                     }),
                 update => update
                     .call(update => update.transition()
+                        .duration(this._transitions.transitionDuration)
+                        .ease(this._transitions.transitionEase)
                         .attrs(this.attrs),
                     )
                 );

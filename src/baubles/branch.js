@@ -44,7 +44,8 @@ export class Branch extends Bauble {
         if(selection){
             this.selection=selection;
         }
-        return selection.selectAll("path")
+        const self=this;
+        return this.selection.selectAll("path")
             .data(d => [d])
             .join(
                 enter => enter
@@ -60,8 +61,9 @@ export class Branch extends Bauble {
                     }),
                 update => update
                     .call(update => update.transition("pathUpdating")
+                        .duration(this._transitions.transitionDuration)
+                        .ease(this._transitions.transitionEase)
                         .attr("d", (edge,i) => this.branchPath(edge,i))
-                        .attr("class", "branch-path")
                         .attrs(this.attrs)
                     )
             )

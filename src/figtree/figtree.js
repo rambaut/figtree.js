@@ -1,5 +1,5 @@
 "use strict";
-import {select,easeLinear,scaleLinear,mouse,event,line} from "d3";
+import {select,easeCubic,scaleLinear,mouse,event,line} from "d3";
 import uuid from "uuid";
 import {mergeDeep} from "../utilities";
 import 'd3-selection-multi';
@@ -8,7 +8,7 @@ import {Branch} from "../baubles/branch";
 import {CartoonBauble} from "../baubles/cartoonbauble";
 import {GeoLayout} from "../layout/geoLayout";
 import {rectangularLayout} from "../layout/rectangularLayout.f";
-import {Bauble} from "../baubles/bauble";
+import DataCollection from "../dataWrappers/dataCollection"
 import {min,max} from "d3-array";
 import p from "../privateConstants.js"
 
@@ -62,7 +62,7 @@ export class FigTree {
             },
             transition: {
                 transitionDuration: 500,
-                transitionEase: easeLinear
+                transitionEase: easeCubic
             }
         }
     }
@@ -117,13 +117,21 @@ export class FigTree {
         this.svgId = `g-${uuid.v4()}`;
         this.svgSelection=null;
 
+        this._transitions=this.settings.transition;
+
         this[p.vertices]=new DataCollection([],this);
         this[p.edges] = new DataCollection([],this);
 
         return this;
     }
 
-
+    transitions(t=null){
+        if(t){
+            this._transitions=t;
+        }else{
+            return this._transitions;
+        }
+    }
     /**
      * An instance method that makes place the svg object in the page. Without calling this method the figure will not be drawn
      * @return {FigTree}
@@ -696,7 +704,7 @@ export class FigTree {
                     .each(function(e) {
                         if(elementMap.has(e.key)){
                             const element = elementMap.get(e.key);
-                            element.setup(self.scales)
+                            element.setup(self.scales);
                             element.update(select(this))
                         }
                     })
@@ -718,6 +726,7 @@ export class FigTree {
                     .on("start",function(e) {
                         if(elementMap.has(e.key)){
                             const element = elementMap.get(e.key);
+                            element.setup(self.scales);
                             element.update(select(this))
                         }
 
@@ -977,136 +986,4 @@ export class FigTree {
 
 }
 
-//TODO refactor into nodes and branches that can act like
-// .nodes(circlebauble)
-// instead of .nodes().elements()
-
-
-// also but some case specific helper functions for each style.
-
-class DataCollection {
-    constructor(data, figure) {
-
-        this.figure = figure;
-        this.data = data;
-        this.elementMap = new Map();
-        this.attrs={};
-        this.interactions={};
-        this.elementMaker=null;
-        this.labelMaker=null
-
-        return new Proxy(this,
-        { get : function(target, prop)
-        {
-            if(target[prop] === undefined){
-                return figure[prop];
-            }
-            else{
-
-                return target[prop];
-            }
-
-        }
-            });
-    }
-    updateData(data){
-        this.data = data;
-        //remake elements
-        this.elements(this.elementMaker);
-        // update element styles
-        for(const [key,value] of Object.entries(this.attrs)){
-            this.attr(key,value);
-        }
-        for(const [key,value] of Object.entries(this.interactions)){
-            this.on(key,value);
-        }
-        this.label(this.labelMaker);
-
-    }
-
-    elements(b=null) {
-        if(b){
-            this.elementMaker=b;
-        }
-        if(this.elementMaker) {
-            if (!isFunction(this.elementMaker)) {
-                for (const d of this.data) {
-                    this.elementMap.set(d.key, new this.elementMaker())
-                }
-            } else if (this.elementMaker instanceof Function) {
-                for (const d of this.data) {
-                    const element = this.elementMaker(d.key);
-                    if (element) {
-                        this.elementMap.set(d.key, new this.elementMaker(d))
-                    }
-                }
-            }
-            return this;
-        }
-        return this.elementMap;
-    }
-    attr(string, f) {
-        this.attrs[string]=f;
-        if (f instanceof Function) {
-            for (const d of this.data) {
-                if (f(d)) {
-                    const element = this.elementMap.get(d.key);
-                    if (element) {
-                        element.attr(string, f(d))
-                    }
-                }
-            }
-        } else {
-            for (const d of this.data) {
-                const element = this.elementMap.get(d.key);
-                if (element) {
-                    element.attr(string, f)
-                }
-            }
-        }
-        return this;
-    }
-
-    on(string,f){
-        this.interactions[string]=f;
-        for (const d of this.data) {
-                const element = this.elementMap.get(d.key);
-                if (element) {
-                    element.on(string, f(element))
-            }
-        }
-        return this;
-    }
-
-    label(l){
-        if(l) {
-            this.labelMaker = l;
-        }
-        if(this.labelMaker) {
-            if (this.labelMaker instanceof Function) {
-                for (const d of this.data) {
-                    if (this.labelMaker(d)) {
-                        d.textLabel=this.labelMaker(d)
-                    }
-                }
-        }else{
-                for (const d of this.data) {
-                    if(d[this.labelMaker]){
-                        d.textLabel=d[this.labelMaker]
-                    }
-                }
-            }
-        }
-    return this;
-    }
-
-
-}
-
-
-//https://stackoverflow.com/questions/526559/testing-if-something-is-a-class-in-javascript
-function isFunction(funcOrClass) {
-    const propertyNames = Object.getOwnPropertyNames(funcOrClass);
-    return (!propertyNames.includes('prototype') || propertyNames.includes('arguments'));
-}
 

@@ -66,3 +66,10 @@ export function isInt(value) {
 export const compose=(...fns)=>(arg)=>{
     return fns.reduceRight((res,fn)=>fn(res),arg);
 }
+
+
+//https://stackoverflow.com/questions/526559/testing-if-something-is-a-class-in-javascript
+export function isFunction(funcOrClass) {
+    const propertyNames = Object.getOwnPropertyNames(funcOrClass);
+    return (!propertyNames.includes('prototype') || propertyNames.includes('arguments'));
+}

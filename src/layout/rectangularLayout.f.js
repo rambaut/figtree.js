@@ -75,7 +75,7 @@ export function makeEdges(vertices){
            return {
                v0: nodeMap.get(v[p.node].parent),
                v1: v,
-               key: v.id,
+               key: v.key,
                classes:v.classes,
                labelBelow :v[p.node].parent.children[0] !== v[p.node]
            }
