@@ -16,7 +16,7 @@ export default class ElementFactory{
             { get : function(target, prop)
                 {
                     if(target[prop] === undefined){
-                        return figure[prop];
+                        return figure[prop].bind(figure);
                     }
                     else{
                         return target[prop];

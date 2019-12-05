@@ -11223,7 +11223,9 @@
 	  updateVerticesAndEdges: Symbol("updateVerticesAndEdges"),
 	  node: Symbol("node"),
 	  vertexFactory: Symbol("vertexFactory"),
-	  edgeFactory: Symbol("edgeFactory")
+	  edgeFactory: Symbol("edgeFactory"),
+	  backgroundNodesFactory: Symbol("backgroundNodesFactory"),
+	  updateBackgroundNodes: Symbol("updateBackgroundNodes")
 	};
 
 	function ownKeys$6(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
@@ -11454,7 +11456,7 @@
 	    return new Proxy(this, {
 	      get: function get(target, prop) {
 	        if (target[prop] === undefined) {
-	          return figure[prop];
+	          return figure[prop].bind(figure);
 	        } else {
 	          return target[prop];
 	        }
@@ -11734,29 +11736,29 @@
 	  return EdgeFactory;
 	}(ElementFactory);
 
-	var nodeFactory =
+	var NodeFactory =
 	/*#__PURE__*/
 	function (_ElementFactory) {
-	  inherits(nodeFactory, _ElementFactory);
+	  inherits(NodeFactory, _ElementFactory);
 
-	  function nodeFactory(figure) {
+	  function NodeFactory(figure) {
 	    var _this;
 
-	    classCallCheck(this, nodeFactory);
+	    classCallCheck(this, NodeFactory);
 
-	    _this = possibleConstructorReturn(this, getPrototypeOf(nodeFactory).call(this, figure));
+	    _this = possibleConstructorReturn(this, getPrototypeOf(NodeFactory).call(this, figure));
 	    _this.elementMaker = CircleBauble;
 	    return _this;
 	  }
 
-	  createClass(nodeFactory, [{
+	  createClass(NodeFactory, [{
 	    key: "hover",
 	    value: function hover() {
 	      var _this2 = this;
 
 	      var r = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
 
-	      get$2(getPrototypeOf(nodeFactory.prototype), "on", this).call(this, "mouseenter", function (element) {
+	      get$2(getPrototypeOf(NodeFactory.prototype), "on", this).call(this, "mouseenter", function (element) {
 	        return function (d, i, n) {
 	          if (!_this2.attrs.r) {
 	            _this2.attrs.r = element.attr("r");
@@ -11769,7 +11771,7 @@
 	        };
 	      });
 
-	      get$2(getPrototypeOf(nodeFactory.prototype), "on", this).call(this, "mouseleave", function (element) {
+	      get$2(getPrototypeOf(NodeFactory.prototype), "on", this).call(this, "mouseleave", function (element) {
 	        return function (d, i, n) {
 	          element.attr("r", _this2.attr("r"));
 	          var parent = select(n[i]).node().parentNode;
@@ -11787,7 +11789,7 @@
 
 	      var recursive = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
 
-	      get$2(getPrototypeOf(nodeFactory.prototype), "on", this).call(this, "click", function (element) {
+	      get$2(getPrototypeOf(NodeFactory.prototype), "on", this).call(this, "click", function (element) {
 	        return function (d, n, i) {
 	          var node = _this3.figure[p.tree].getNode(d.key);
 
@@ -11799,7 +11801,7 @@
 	    }
 	  }]);
 
-	  return nodeFactory;
+	  return NodeFactory;
 	}(ElementFactory);
 
 	/** @module figtree */
@@ -11918,12 +11920,6 @@
 	    this[p.layout] = layout;
 	    this.margins = margins;
 	    this.settings = mergeDeep(FigTree.DEFAULT_SETTINGS(), settings);
-	    this.callbacks = {
-	      nodes: [],
-	      branches: [],
-	      cartoons: []
-	    };
-	    this._annotations = [];
 	    this.drawn = false;
 	    this._transitions = this.settings.transition;
 	    this[p.svg] = svg;
@@ -11975,10 +11971,10 @@
 	  }, {
 	    key: "setupUpdaters",
 	    value: function setupUpdaters() {
-	      this[p.vertexFactory] = new nodeFactory(this);
-	      this[p.edgeFactory] = new EdgeFactory(this);
-	      this[p.updateNodes] = this.updateElementFactory(this[p.vertexFactory], "node", this.svgSelection.select(".nodes-layer"));
-	      this[p.updateBranches] = this.updateElementFactory(this[p.edgeFactory], "branch", this.svgSelection.select(".branches-layer"));
+	      this.vertexFactory = new NodeFactory(this);
+	      this.edgeFactory = new EdgeFactory(this);
+	      this.updateNodes = this.updateElementFactory(this.vertexFactory, "node", this.svgSelection.select(".nodes-layer"));
+	      this.updateBranches = this.updateElementFactory(this.edgeFactory, "branch", this.svgSelection.select(".branches-layer"));
 	    }
 	    /**
 	     * Updates the figure when the tree has changed
@@ -11992,9 +11988,10 @@
 	          edges = _this$p$layout.edges;
 
 	      select("#".concat(this.svgId)).attr("transform", "translate(".concat(this.margins.left, ",").concat(this.margins.top, ")"));
-	      this[p.setUpScales](vertices);
-	      this[p.updateNodes](vertices);
-	      this[p.updateBranches](edges);
+	      this.setUpScales(vertices);
+	      this.updateNodes(vertices);
+	      this.updateBackgroundNodes(vertices);
+	      this.updateBranches(edges);
 	      return this;
 	    }
 	  }, {
@@ -12090,8 +12087,8 @@
 	      return this;
 	    }
 	  }, {
-	    key: p.setUpScales,
-	    value: function value(vertices) {
+	    key: "setUpScales",
+	    value: function setUpScales(vertices) {
 	      var width, height;
 
 	      if (Object.keys(this.settings).indexOf("width") > -1) {
@@ -12204,317 +12201,6 @@
 	          });
 	        });
 	      };
-	    }
-	  }, {
-	    key: p.updateCartoons,
-	    value: function value() {
-	      var _this4 = this;
-
-	      var cartoonLayer = this.svgSelection.select(".cartoon-layer");
-	      var self = this;
-	      cartoonLayer.selectAll("g .cartoon").data(this.layout.cartoons, function (c) {
-	        return "c_".concat(c.id);
-	      }).join(function (enter) {
-	        return enter.append("g").attr("id", function (c) {
-	          return "cartoon-".concat(c.id);
-	        }).attr("class", function (c) {
-	          return ["cartoon"].concat(toConsumableArray(c.classes)).join(" ");
-	        }).attr("transform", function (c) {
-	          return "translate(".concat(_this4.scales.x(c.vertices[0].x + _this4.settings.xScale.revisions.offset), ", ").concat(_this4.scales.y(c.vertices[0].y + _this4.settings.xScale.revisions.offset), ")");
-	        }).each(function (c) {
-	          var _iteratorNormalCompletion = true;
-	          var _didIteratorError = false;
-	          var _iteratorError = undefined;
-
-	          try {
-	            for (var _iterator = self.settings.cartoons.baubles[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-	              var bauble = _step.value;
-
-	              if (bauble.cartoonFilter(c)) {
-	                bauble.update(select(this));
-	              }
-	            }
-	          } catch (err) {
-	            _didIteratorError = true;
-	            _iteratorError = err;
-	          } finally {
-	            try {
-	              if (!_iteratorNormalCompletion && _iterator["return"] != null) {
-	                _iterator["return"]();
-	              }
-	            } finally {
-	              if (_didIteratorError) {
-	                throw _iteratorError;
-	              }
-	            }
-	          }
-	        });
-	      }, function (update) {
-	        return update.transition().duration(_this4.settings.transition.transitionDuration).ease(_this4.settings.transition.transitionEase).attr("class", function (c) {
-	          return ["cartoon"].concat(toConsumableArray(c.classes)).join(" ");
-	        }).attr("transform", function (c) {
-	          return "translate(".concat(_this4.scales.x(c.vertices[0].x + _this4.settings.xScale.revisions.offset), ", ").concat(_this4.scales.y(c.vertices[0].y + _this4.settings.xScale.revisions.offset), ")");
-	        }).each(function (c) {
-	          var _iteratorNormalCompletion2 = true;
-	          var _didIteratorError2 = false;
-	          var _iteratorError2 = undefined;
-
-	          try {
-	            for (var _iterator2 = self.settings.cartoons.baubles[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-	              var bauble = _step2.value;
-
-	              if (bauble.cartoonFilter(c)) {
-	                bauble.update(select(this));
-	              }
-	            }
-	          } catch (err) {
-	            _didIteratorError2 = true;
-	            _iteratorError2 = err;
-	          } finally {
-	            try {
-	              if (!_iteratorNormalCompletion2 && _iterator2["return"] != null) {
-	                _iterator2["return"]();
-	              }
-	            } finally {
-	              if (_didIteratorError2) {
-	                throw _iteratorError2;
-	              }
-	            }
-	          }
-	        });
-	      }); // add callbacks
-
-	      var _iteratorNormalCompletion3 = true;
-	      var _didIteratorError3 = false;
-	      var _iteratorError3 = undefined;
-
-	      try {
-	        for (var _iterator3 = this.callbacks.cartoons[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-	          var callback = _step3.value;
-	          callback();
-	        }
-	      } catch (err) {
-	        _didIteratorError3 = true;
-	        _iteratorError3 = err;
-	      } finally {
-	        try {
-	          if (!_iteratorNormalCompletion3 && _iterator3["return"] != null) {
-	            _iterator3["return"]();
-	          }
-	        } finally {
-	          if (_didIteratorError3) {
-	            throw _iteratorError3;
-	          }
-	        }
-	      }
-	    }
-	    /**
-	     * Add axis
-	     */
-
-	  }, {
-	    key: p.addXAxis,
-	    value: function value() {
-	      var _this5 = this;
-
-	      var xRevisions = this.settings.xScale.revisions;
-	      var reverse = xRevisions.reverseAxis ? -1 : 1;
-	      var domain = xRevisions.origin !== null ? [this.xScaleOrigin + xRevisions.hedge + reverse * xRevisions.branchScale * Math.abs(this.scales.x.domain()[0] - this.scales.x.domain()[1]), this.xScaleOrigin] : this.scales.x.domain();
-	      var axisScale = this.settings.xScale.scale().domain(domain).range(this.scales.x.range());
-	      var xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
-	      var axesLayer = this.svgSelection.select(".axes-layer");
-	      this.settings.xScale.axes.forEach(function (axis) {
-	        if (_this5.layout instanceof GeoLayout) {
-	          throw new Error("Can not add axis to geolayout");
-	        }
-
-	        axis.createAxis({
-	          selection: axesLayer,
-	          x: 0,
-	          y: _this5.scales.height - _this5.margins.bottom - _this5.margins.top + _this5.settings.xScale.gap,
-	          length: xAxisWidth,
-	          scale: axisScale
-	        });
-	      });
-	    }
-	  }, {
-	    key: p.addYAxis,
-	    value: function value() {
-	      var _this6 = this;
-
-	      var yRevisions = this.settings.yScale.revisions;
-	      var reverse = yRevisions.reverseAxis ? -1 : 1;
-	      var domain = yRevisions.origin !== null ? [this.yScaleOrigin + reverse * yRevisions.branchScale * Math.abs(this.scales.y.domain()[0] - this.scales.y.domain()[1]), this.yScaleOrigin] : this.scales.y.domain();
-	      var axisScale = this.settings.yScale.scale().domain(domain).range(this.scales.y.range());
-	      var yAxisHeight = this.scales.height - this.margins.top - this.margins.bottom;
-	      var axesLayer = this.svgSelection.select(".axes-layer");
-	      this.settings.yScale.axes.forEach(function (axis) {
-	        if (_this6.layout instanceof GeoLayout) {
-	          throw new Error("Can not add axis to geolayout");
-	        }
-
-	        axis.createAxis({
-	          selection: axesLayer,
-	          x: 0 - _this6.settings.yScale.gap,
-	          y: 0,
-	          length: yAxisHeight,
-	          scale: axisScale
-	        });
-	      });
-	    }
-	  }, {
-	    key: p.updateXAxis,
-	    value: function value() {
-	      var _this7 = this;
-
-	      var xRevisions = this.settings.xScale.revisions;
-	      var reverse = xRevisions.reverseAxis ? -1 : 1;
-	      var domain = xRevisions.origin !== null ? [this.xScaleOrigin + xRevisions.hedge + reverse * xRevisions.branchScale * Math.abs(this.scales.x.domain()[0] - this.scales.x.domain()[1]), this.xScaleOrigin] : this.scales.x.domain();
-	      var axisScale = this.settings.xScale.scale().domain(domain).range(this.scales.x.range());
-	      var xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
-	      var axesLayer = this.svgSelection.select(".axes-layer");
-	      this.settings.xScale.axes.forEach(function (axis) {
-	        axis.updateAxis({
-	          selection: axesLayer,
-	          x: 0,
-	          y: _this7.scales.height - _this7.margins.bottom - _this7.margins.top + _this7.settings.xScale.gap,
-	          length: xAxisWidth,
-	          scale: axisScale
-	        });
-	      });
-	    }
-	  }, {
-	    key: p.updateYAxis,
-	    value: function value() {
-	      var _this8 = this;
-
-	      var yRevisions = this.settings.yScale.revisions;
-	      var reverse = yRevisions.reverseAxis ? -1 : 1;
-	      var domain = yRevisions.origin !== null ? [this.yScaleOrigin + reverse * yRevisions.branchScale * Math.abs(this.scales.y.domain()[0] - this.scales.y.domain()[1]), this.yScaleOrigin] : this.scales.y.domain();
-	      var axisScale = this.settings.yScale.scale().domain(domain).range(this.scales.y.range());
-	      var yAxisHeight = this.scales.height - this.margins.top - this.margins.bottom;
-	      var axesLayer = this.svgSelection.select(".axes-layer");
-	      this.settings.yScale.axes.forEach(function (axis) {
-	        axis.updateAxis({
-	          selection: axesLayer,
-	          x: 0 - _this8.settings.yScale.gap,
-	          y: 0,
-	          length: yAxisHeight,
-	          scale: axisScale
-	        });
-	      });
-	    }
-	  }, {
-	    key: p.pointToPoint,
-	    value: function value(points) {
-	      var path = [];
-	      var origin = points[0];
-	      var pathPoints = points.reverse();
-	      var currentPoint = origin;
-	      var _iteratorNormalCompletion4 = true;
-	      var _didIteratorError4 = false;
-	      var _iteratorError4 = undefined;
-
-	      try {
-	        for (var _iterator4 = pathPoints[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-	          var point = _step4.value;
-	          var xdiff = this.scales.x(point.x + this.settings.xScale.revisions.offset) - this.scales.x(currentPoint.x + this.settings.xScale.revisions.offset);
-	          var ydiff = this.scales.y(point.y) - this.scales.y(currentPoint.y);
-	          path.push("".concat(xdiff, " ").concat(ydiff));
-	          currentPoint = point;
-	        }
-	      } catch (err) {
-	        _didIteratorError4 = true;
-	        _iteratorError4 = err;
-	      } finally {
-	        try {
-	          if (!_iteratorNormalCompletion4 && _iterator4["return"] != null) {
-	            _iterator4["return"]();
-	          }
-	        } finally {
-	          if (_didIteratorError4) {
-	            throw _iteratorError4;
-	          }
-	        }
-	      }
-
-	      return "M 0 0 l ".concat(path.join(" l "), " z");
-	    }
-	  }, {
-	    key: p.updateAnnotations,
-	    value: function value() {
-	      var _iteratorNormalCompletion5 = true;
-	      var _didIteratorError5 = false;
-	      var _iteratorError5 = undefined;
-
-	      try {
-	        for (var _iterator5 = this._annotations[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-	          var annotation = _step5.value;
-	          annotation();
-	        }
-	      } catch (err) {
-	        _didIteratorError5 = true;
-	        _iteratorError5 = err;
-	      } finally {
-	        try {
-	          if (!_iteratorNormalCompletion5 && _iterator5["return"] != null) {
-	            _iterator5["return"]();
-	          }
-	        } finally {
-	          if (_didIteratorError5) {
-	            throw _iteratorError5;
-	          }
-	        }
-	      }
-	    }
-	    /**
-	     * Generates a line() function that takes an edge and it's index and returns a line for d3 path element. It is called
-	     * by the figtree class as
-	     * const branchPath = this.layout.branchPathGenerator(this.scales)
-	     * newBranches.append("path")
-	     .attr("class", "branch-path")
-	     .attr("d", (e,i) => branchPath(e,i));
-	     * @param scales
-	     * @param branchCurve
-	     * @return {function(*, *)}
-	     */
-
-	  }, {
-	    key: p.branchPathGenerator,
-	    value: function value() {
-	      var _this9 = this;
-
-	      var branchPath = function branchPath(e, i) {
-	        var branchLine = line().x(function (v) {
-	          return v.x;
-	        }).y(function (v) {
-	          return v.y;
-	        }).curve(_this9.settings.edges.curve);
-	        var factor = e.v0.y - e.v1.y > 0 ? 1 : -1;
-	        var dontNeedCurve = e.v0.y - e.v1.y === 0 ? 0 : 1;
-	        var output = _this9.settings.edges.curveRadius > 0 ? branchLine([{
-	          x: 0,
-	          y: _this9.scales.y(e.v0.y) - _this9.scales.y(e.v1.y)
-	        }, {
-	          x: 0,
-	          y: dontNeedCurve * factor * _this9.settings.edges.curveRadius
-	        }, {
-	          x: 0 + dontNeedCurve * _this9.settings.edges.curveRadius,
-	          y: 0
-	        }, {
-	          x: _this9.scales.x(e.v1.x + _this9.settings.xScale.revisions.offset) - _this9.scales.x(e.v0.x + _this9.settings.xScale.revisions.offset),
-	          y: 0
-	        }]) : branchLine([{
-	          x: 0,
-	          y: _this9.scales.y(e.v0.y) - _this9.scales.y(e.v1.y)
-	        }, {
-	          x: _this9.scales.x(e.v1.x + _this9.settings.xScale.revisions.offset) - _this9.scales.x(e.v0.x + _this9.settings.xScale.revisions.offset),
-	          y: 0
-	        }]);
-	        return output;
-	      };
-
-	      return branchPath;
 	    } // setters and getters
 
 	  }, {
@@ -12532,7 +12218,7 @@
 	  }, {
 	    key: "tree",
 	    value: function tree() {
-	      var _this10 = this;
+	      var _this4 = this;
 
 	      var _tree = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
@@ -12541,7 +12227,7 @@
 	      } else {
 	        this[p.tree] = _tree;
 	        this[p.tree].subscribeCallback(function () {
-	          _this10.update();
+	          _this4.update();
 	        });
 	        return this;
 	      }
@@ -12564,10 +12250,26 @@
 	      var b = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
 	      if (b) {
-	        this[p.vertexFactory].elements(b);
+	        this.vertexFactory.elements(b);
 	      }
 
-	      return this[p.vertexFactory];
+	      return this.vertexFactory;
+	    }
+	  }, {
+	    key: "nodeBackgrounds",
+	    value: function nodeBackgrounds() {
+	      var b = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+	      if (!this.backgroundNodesFactory) {
+	        this.backgroundNodesFactory = new NodeFactory(this);
+	        this.updateBackgroundNodes = this.updateElementFactory(this.backgroundNodesFactory, "node-background", this.svgSelection.select(".nodes-background-layer"));
+	      }
+
+	      if (b) {
+	        this.backgroundNodesFactory.elements(b);
+	      }
+
+	      return this.backgroundNodesFactory;
 	    }
 	  }, {
 	    key: "branches",
@@ -12575,10 +12277,10 @@
 	      var b = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
 	      if (b) {
-	        this[p.edgeFactory].elements(b);
+	        this.edgeFactory.elements(b);
 	      }
 
-	      return this[p.edgeFactory];
+	      return this.edgeFactory;
 	    }
 	  }, {
 	    key: "xAxis",

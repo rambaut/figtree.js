@@ -79,6 +79,23 @@
         .node.hovered .node-label{
             opacity:1;
         }
+        .node .node-shape{
+            stroke-width:0;
+            stroke: #541753;
+            -webkit-transition: stroke-width 500ms; /* Safari prior 6.1 */
+            transition: stroke-width 500ms;
+        }
+        .node-background .node-shape{
+            fill: #541753;
+
+        }
+
+        .node.hovered .node-shape {
+            stroke-width:2;
+
+        }
+
+
 
         .trend-line {
             stroke: rgb(0,0,0);
@@ -164,6 +181,8 @@
                 .label("name")
                 .hover(10)
                 .rotate()
+        .nodeBackgrounds()
+            .attr("r",7)
         .branches()
             .curveRadius(0.5)
             .curve(d3.curveBasis)

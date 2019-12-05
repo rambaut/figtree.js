@@ -2,7 +2,7 @@ import ElementFactory from "./elementFactory";
 import {CircleBauble} from "../baubles/circlebauble";
 import {select} from "d3";
 import p from "../privateConstants"
-class nodeFactory extends ElementFactory {
+class NodeFactory extends ElementFactory {
     constructor(figure) {
         super(figure);
         this.elementMaker = CircleBauble;
@@ -42,4 +42,4 @@ class nodeFactory extends ElementFactory {
     }
 }
 
-export default nodeFactory
+export default NodeFactory

@@ -25,7 +25,8 @@ const p= {
     updateVerticesAndEdges:Symbol("updateVerticesAndEdges"),
     node:Symbol("node"),
     vertexFactory:Symbol("vertexFactory"),
-    edgeFactory:Symbol("edgeFactory")
-
+    edgeFactory:Symbol("edgeFactory"),
+    backgroundNodesFactory:Symbol("backgroundNodesFactory"),
+    updateBackgroundNodes:Symbol("updateBackgroundNodes")
 };
 export default p;

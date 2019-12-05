@@ -12,7 +12,7 @@ import ElementFactory from "../dataWrappers/elementFactory"
 import EdgeFactory from "../dataWrappers/edgeFactory";
 import {min,max} from "d3-array";
 import p from "../privateConstants.js"
-import nodeFactory from "../dataWrappers/nodeFactory";
+import NodeFactory from "../dataWrappers/nodeFactory";
 
 /** @module figtree */
 
@@ -111,9 +111,6 @@ export class FigTree {
         this.margins = margins;
 
         this.settings = mergeDeep(FigTree.DEFAULT_SETTINGS(),settings);
-        this.callbacks= {nodes:[],branches:[],cartoons:[]};
-        this._annotations =[];
-
         this.drawn = false
         this._transitions=this.settings.transition;
 
@@ -162,12 +159,11 @@ export class FigTree {
 
     }
     setupUpdaters(){
-        this[p.vertexFactory]=new nodeFactory(this);
-        this[p.edgeFactory] = new EdgeFactory(this);
+        this.vertexFactory=new NodeFactory(this);
+        this.edgeFactory = new EdgeFactory(this);
 
-        this[p.updateNodes]= this.updateElementFactory( this[p.vertexFactory],"node",this.svgSelection.select(".nodes-layer"));
-        this[p.updateBranches]= this.updateElementFactory( this[p.edgeFactory],"branch",this.svgSelection.select(".branches-layer"));
-
+        this.updateNodes= this.updateElementFactory( this.vertexFactory,"node",this.svgSelection.select(".nodes-layer"));
+        this.updateBranches= this.updateElementFactory( this.edgeFactory,"branch",this.svgSelection.select(".branches-layer"));
     }
 
 
@@ -181,9 +177,10 @@ export class FigTree {
         select(`#${this.svgId}`)
             .attr("transform",`translate(${this.margins.left},${this.margins.top})`);
 
-        this[p.setUpScales](vertices);
-        this[p.updateNodes](vertices);
-        this[p.updateBranches](edges);
+        this.setUpScales(vertices);
+        this.updateNodes(vertices);
+        this.updateBackgroundNodes(vertices);
+        this.updateBranches(edges);
 
         return this;
 
@@ -271,7 +268,7 @@ export class FigTree {
     }
 
 
-    [p.setUpScales](vertices){
+    setUpScales(vertices){
             let width,height;
             if(Object.keys(this.settings).indexOf("width")>-1){
                 width =this.settings.width;
@@ -375,192 +372,7 @@ export class FigTree {
         }
     }
 
-    [p.updateCartoons](){
-        const cartoonLayer = this.svgSelection.select(".cartoon-layer");
-        const self = this;
-        cartoonLayer.selectAll("g .cartoon")
-            .data(this.layout.cartoons, (c) => `c_${c.id}`)
-            .join(
-                enter=>enter
-                    .append("g")
-                        .attr("id", (c) => `cartoon-${c.id}`)
-                        .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
-                        .attr("transform", (c) => {
-                            return `translate(${this.scales.x(c.vertices[0].x+this.settings.xScale.revisions.offset)}, ${this.scales.y(c.vertices[0].y+this.settings.xScale.revisions.offset)})`;
-                        })
-                        .each(function(c) {
-                            for(const bauble of  self.settings.cartoons.baubles){
-                                if (bauble.cartoonFilter(c)) {
-                                    bauble
-                                        .update(select(this))
-                                }
-                            }
-                        }),
-                update=>update
-                    .transition()
-                    .duration(this.settings.transition.transitionDuration)
-                    .ease(this.settings.transition.transitionEase)
-                    .attr("class", (c) => ["cartoon", ...c.classes].join(" "))
-                    .attr("transform", (c) => {
-                        return `translate(${this.scales.x(c.vertices[0].x+this.settings.xScale.revisions.offset)}, ${this.scales.y(c.vertices[0].y+this.settings.xScale.revisions.offset)})`;
-                    })
-                    .each(function(c) {
-                        for(const bauble of  self.settings.cartoons.baubles){
-                            if (bauble.cartoonFilter(c)) {
-                                bauble
-                                    .update(select(this))
-                            }
-                        }
-                    })
-            );
-        // add callbacks
-        for(const callback of this.callbacks.cartoons){
-            callback();
-        }
-    }
 
-    /**
-     * Add axis
-     */
-    [p.addXAxis]() {
-        const xRevisions = this.settings.xScale.revisions;
-        const reverse = xRevisions.reverseAxis? -1:1;
-        const domain = xRevisions.origin!==null?
-            [this.xScaleOrigin+xRevisions.hedge+reverse*xRevisions.branchScale*(Math.abs(this.scales.x.domain()[0]-this.scales.x.domain()[1])),this.xScaleOrigin]:
-            this.scales.x.domain();
-        const axisScale =  this.settings.xScale.scale().domain(domain).range(this.scales.x.range());
-
-        const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
-        const axesLayer = this.svgSelection.select(".axes-layer");
-
-        this.settings.xScale.axes.forEach(axis=>{
-            if(this.layout instanceof GeoLayout){
-                throw new Error("Can not add axis to geolayout")
-            }
-            axis.createAxis({selection:axesLayer,
-                x:0,
-                y:this.scales.height - this.margins.bottom-this.margins.top +this.settings.xScale.gap,
-                length:xAxisWidth,
-                scale:axisScale})
-        });
-    }
- 
-    [p.addYAxis]() {
-        const yRevisions = this.settings.yScale.revisions;
-        const reverse = yRevisions.reverseAxis? -1:1;
-        const domain = yRevisions.origin!==null?
-            [this.yScaleOrigin+reverse*yRevisions.branchScale*(Math.abs(this.scales.y.domain()[0]-this.scales.y.domain()[1])),this.yScaleOrigin]:
-            this.scales.y.domain();
-        const axisScale =  this.settings.yScale.scale().domain(domain).range(this.scales.y.range());
-        const yAxisHeight = this.scales.height - this.margins.top - this.margins.bottom;
-        const axesLayer = this.svgSelection.select(".axes-layer");
-
-        this.settings.yScale.axes.forEach(axis=>{
-            if(this.layout instanceof GeoLayout){
-                throw new Error("Can not add axis to geolayout")
-            }
-            axis.createAxis({selection:axesLayer,
-                x:0-this.settings.yScale.gap,
-                y:0,
-                length:yAxisHeight,
-                scale:axisScale})
-        });
-    }
-
-    [p.updateXAxis](){
-        const xRevisions = this.settings.xScale.revisions;
-        const reverse = xRevisions.reverseAxis? -1:1;
-        const domain = xRevisions.origin!==null?
-            [this.xScaleOrigin+xRevisions.hedge+reverse*xRevisions.branchScale*(Math.abs(this.scales.x.domain()[0]-this.scales.x.domain()[1])),this.xScaleOrigin]:
-            this.scales.x.domain();
-        const axisScale =  this.settings.xScale.scale().domain(domain).range(this.scales.x.range());
-
-        const xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
-        const axesLayer = this.svgSelection.select(".axes-layer");
-
-        this.settings.xScale.axes.forEach(axis=>{
-            axis.updateAxis({selection:axesLayer,
-                x:0,
-                y:this.scales.height - this.margins.bottom-this.margins.top +this.settings.xScale.gap,
-                length:xAxisWidth,
-                scale:axisScale})
-        });
-    }
-    [p.updateYAxis](){
-        const yRevisions = this.settings.yScale.revisions;
-        const reverse = yRevisions.reverseAxis? -1:1;
-        const domain = yRevisions.origin!==null?
-            [this.yScaleOrigin+reverse*yRevisions.branchScale*(Math.abs(this.scales.y.domain()[0]-this.scales.y.domain()[1])),this.yScaleOrigin]:
-            this.scales.y.domain();
-        const axisScale =  this.settings.yScale.scale().domain(domain).range(this.scales.y.range());
-        const yAxisHeight = this.scales.height - this.margins.top - this.margins.bottom;
-        const axesLayer = this.svgSelection.select(".axes-layer");
-
-        this.settings.yScale.axes.forEach(axis=>{
-            axis.updateAxis({selection:axesLayer,
-                x:0-this.settings.yScale.gap,
-                y:0,
-                length:yAxisHeight,
-                scale:axisScale})
-        });
-    }
-
-    [p.pointToPoint](points){
-        let path = [];
-        const origin = points[0];
-        const pathPoints =points.reverse();
-        let currentPoint =origin;
-        for(const point of pathPoints){
-            const xdiff = this.scales.x(point.x+this.settings.xScale.revisions.offset)-this.scales.x(currentPoint.x+this.settings.xScale.revisions.offset);
-            const ydiff = this.scales.y(point.y)- this.scales.y(currentPoint.y);
-            path.push(`${xdiff} ${ydiff}`);
-            currentPoint = point;
-        }
-        return `M 0 0 l ${path.join(" l ")} z`;
-    }
-
-    [p.updateAnnotations](){
-        for( const annotation of this._annotations){
-            annotation();
-        }
-    }
-
-    /**
-     * Generates a line() function that takes an edge and it's index and returns a line for d3 path element. It is called
-     * by the figtree class as
-     * const branchPath = this.layout.branchPathGenerator(this.scales)
-     * newBranches.append("path")
-     .attr("class", "branch-path")
-     .attr("d", (e,i) => branchPath(e,i));
-     * @param scales
-     * @param branchCurve
-     * @return {function(*, *)}
-     */
-
-    [p.branchPathGenerator](){
-        const branchPath =(e,i)=>{
-            const branchLine = line()
-                .x((v) => v.x)
-                .y((v) => v.y)
-                .curve(this.settings.edges.curve);
-            const factor = e.v0.y-e.v1.y>0? 1:-1;
-            const dontNeedCurve = e.v0.y-e.v1.y===0?0:1;
-            const output = this.settings.edges.curveRadius>0?
-                branchLine(
-                    [{x: 0, y: this.scales.y(e.v0.y) - this.scales.y(e.v1.y)},
-                        { x:0, y:dontNeedCurve*factor * this.settings.edges.curveRadius},
-                        {x:0 + dontNeedCurve*this.settings.edges.curveRadius, y:0},
-                        {x: this.scales.x(e.v1.x+this.settings.xScale.revisions.offset) - this.scales.x(e.v0.x+this.settings.xScale.revisions.offset), y: 0}
-                    ]):
-                branchLine(
-                    [{x: 0, y: this.scales.y(e.v0.y) - this.scales.y(e.v1.y)},
-                        {x: this.scales.x(e.v1.x+this.settings.xScale.revisions.offset) - this.scales.x(e.v0.x+this.settings.xScale.revisions.offset), y: 0}
-                    ]);
-            return(output)
-
-        };
-        return branchPath;
-    }
 // setters and getters
 
     svg(svg=null){
@@ -594,16 +406,27 @@ export class FigTree {
 
     nodes(b=null){
         if(b){
-            this[p.vertexFactory].elements(b)
+            this.vertexFactory.elements(b)
         }
-        return this[p.vertexFactory]
+        return this.vertexFactory
     }
+    nodeBackgrounds(b=null){
+        if(!this.backgroundNodesFactory){
+            this.backgroundNodesFactory=new NodeFactory(this);
+            this.updateBackgroundNodes= this.updateElementFactory( this.backgroundNodesFactory,"node-background",this.svgSelection.select(".nodes-background-layer"));
+        }
+        if(b){
+            this.backgroundNodesFactory.elements(b)
+        }
+        return this.backgroundNodesFactory;
+    }
+
     branches(b=null){
 
         if(b){
-            this[p.edgeFactory].elements(b)
+            this.edgeFactory.elements(b)
         }
-        return this[p.edgeFactory]
+        return this.edgeFactory
     }
 
     get xAxis(){
