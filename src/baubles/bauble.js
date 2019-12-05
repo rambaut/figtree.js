@@ -50,8 +50,12 @@ export class Bauble {
         throw new Error("don't call the base class methods")
     }
 
-    attr(string,value){
-        this.attrs[string] = value;
+    attr(string,value=null){
+        if(value){
+            this.attrs[string] = value;
+        }else{
+            return this.attrs[string]
+        }
     }
     on(string,value){
         this.interactions[string] = value;
@@ -61,6 +65,13 @@ export class Bauble {
             this._transitions=t;
         }else{
             return this._transitions;
+        }
+    }
+    scales(scales=null){
+        if(scales){
+            this.scales=scales
+        }else{
+            return this.scales;
         }
     }
 }

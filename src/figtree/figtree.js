@@ -8,9 +8,11 @@ import {Branch} from "../baubles/branch";
 import {CartoonBauble} from "../baubles/cartoonbauble";
 import {GeoLayout} from "../layout/geoLayout";
 import {rectangularLayout} from "../layout/rectangularLayout.f";
-import DataCollection from "../dataWrappers/dataCollection"
+import ElementFactory from "../dataWrappers/elementFactory"
+import EdgeFactory from "../dataWrappers/edgeFactory";
 import {min,max} from "d3-array";
 import p from "../privateConstants.js"
+import nodeFactory from "../dataWrappers/nodeFactory";
 
 /** @module figtree */
 
@@ -104,7 +106,7 @@ export class FigTree {
      * @param {function} [settings.transitionEase=d3.easeLinear] - the d3 ease function used to interpolate during transitioning
      *
      */
-    constructor(svg=null, layout=rectangularLayout, margins={top:10,bottom:60,left:30,right:60}, settings = {}) {
+    constructor(svg=null,tree=null, layout=rectangularLayout, margins={top:10,bottom:60,left:30,right:60}, settings = {}) {
         this[p.layout] = layout;
         this.margins = margins;
 
@@ -112,16 +114,16 @@ export class FigTree {
         this.callbacks= {nodes:[],branches:[],cartoons:[]};
         this._annotations =[];
 
-        this[p.svg]=svg;
-        this.drawn = false;
-        this.svgId = `g-${uuid.v4()}`;
-        this.svgSelection=null;
-
+        this.drawn = false
         this._transitions=this.settings.transition;
 
-        this[p.vertices]=new DataCollection([],this);
-        this[p.edges] = new DataCollection([],this);
-
+        this[p.svg]=svg;
+        this[p.tree] = tree;
+        this[p.tree].subscribeCallback( () => {
+                this.update();
+            });
+        this.setupSVG();
+        this.setupUpdaters();
         return this;
     }
 
@@ -136,18 +138,9 @@ export class FigTree {
      * An instance method that makes place the svg object in the page. Without calling this method the figure will not be drawn
      * @return {FigTree}
      */
-    draw(){
-        this[p.updateVerticesAndEdges]();
-        this[p.setUpScales]();
+    setupSVG(){
 
-        //remove the tree if it is there already
-
-        // this.relativeMargins = {
-        //     left: this.originalMargins.left / this.scales.width,
-        //     right: this.originalMargins.right / this.scales.width,
-        //     top: this.originalMargins.top / this.scales.height,
-        //     bottom: this.originalMargins.bottom / this.scales.height
-        // };
+        this.svgId = `g-${uuid.v4()}`;
         select(this[p.svg]).select(`#${this.svgId}`).remove();
 
         // add a group which will contain the new tree
@@ -167,143 +160,40 @@ export class FigTree {
         }
         this.svgSelection.append("g").attr("class", "nodes-layer");
 
+    }
+    setupUpdaters(){
+        this[p.vertexFactory]=new nodeFactory(this);
+        this[p.edgeFactory] = new EdgeFactory(this);
 
-        // create the scales
-
-        if(this.settings.xScale.axes.length>0){
-           this[p.addXAxis]();
-        }
-        if(this.settings.yScale.axes.length>0){
-            this[p.addYAxis]();
-        }
-
-        this.drawn=true;
-        this.update();
-
-
-        return this;
+        this[p.updateNodes]= this.updateElementFactory( this[p.vertexFactory],"node",this.svgSelection.select(".nodes-layer"));
+        this[p.updateBranches]= this.updateElementFactory( this[p.edgeFactory],"branch",this.svgSelection.select(".branches-layer"));
 
     }
+
+
 
     /**
      * Updates the figure when the tree has changed
      */
     update() {
-        if(!this.drawn){
-            return
-        }
-        this[p.updateVerticesAndEdges]();
-        this[p.setUpScales]();
+        const {vertices,edges} = this[p.layout](this[p.tree]);
+
         select(`#${this.svgId}`)
             .attr("transform",`translate(${this.margins.left},${this.margins.top})`);
 
-
-        // this[p.updateAnnotations]();
-        // this[p.updateCartoons]();
-        this[p.updateBranches]();
-        //
-        // if(this.settings.xScale.axes.length>0){
-        //     this[p.updateXAxis]();
-        // }
-        // if(this.settings.yScale.axes.length>0){
-        //     this[p.updateYAxis]();
-        // }
-        //
-        // if (this.settings.vertices.backgroundBaubles.length>0) {
-        //     this[p.updateNodeBackgrounds]();
-        // }
-
-        this[p.updateNodes]();
+        this[p.setUpScales](vertices);
+        this[p.updateNodes](vertices);
+        this[p.updateBranches](edges);
 
         return this;
 
     }
-
-    /**
-     * set mouseover highlighting of branches
-     * This changes the branch path class to hovered. It is expected that css will handel any visual changes needed.
-     * This function is a helper function that calls onHoverBranch with an appropriate action function.
-     */
-    hilightBranches() {
-        const self=this;
-        const action = {
-            enter:(d,i,n)=>{
-                const branch = select(n[i]);
-                // self.settings.edges.baubles.forEach((bauble) => {
-                //     if (bauble.edgeFilter(branch)) {
-                //         bauble.update(branch);
-                //     }
-                // });
-                select(n[i]).classed("hovered", true);
-                },
-            exit:(d,i,n)=>{
-                const branch = select(n[i]);
-                // self.settings.edges.baubles.forEach((bauble) => {
-                //     if (bauble.edgeFilter(branch)) {
-                //         bauble.update(branch);
-                //     }
-                // });
-                select(n[i]).classed("hovered", false);
-                }
-        };
-        this.onHoverBranch({action:action,update:false});
-        return this;
+    draw(){
+        this.update();
+        this.drawn = true;
 
     }
 
-    /**
-     * A helper function that sets mouseover highlighting of internal nodes. This helper function calls hilightNodes with
-     * and ".internal-node" selection.
-     */
-    hilightInternalNodes() {
-        this.hilightNodes(".internal-node");
-        return this;
-
-    }
-    /**
-     * A helper function that sets mouseover highlighting of external nodes. This helper function calls hilightNodes with
-     * and ".external-node" selection.
-     */
-    hilightExternalNodes() {
-        this.hilightNodes(".external-node");
-        return this;
-
-    }
-
-    /**
-     * Set mouseover highlighting of nodes. Node shapes are classed as hovered and bauble sizes are updated according to
-     * the hoverborder in the settings.
-     * @param {string} selection - the d3 style string that will be pased to the select method
-     */
-    hilightNodes(selection) {
-        const self = this;
-        const action = {
-            enter: (d, i, n) => {
-                const node = select(n[i]);
-                const vertex = d;
-                self.settings.vertices.baubles.forEach((bauble) => {
-                    if (bauble.vertexFilter(vertex)) {
-                    bauble.update(node, self.settings.vertices.hoverBorder);
-                    }
-                });
-
-                node.classed("hovered", true);
-            },
-            exit: (d,i,n) =>{
-                const node = select(n[i]);
-                const vertex = d;
-                self.settings.vertices.baubles.forEach((bauble) => {
-                    if (bauble.vertexFilter(vertex)) {
-                    bauble.update(node, 0);
-                    }
-                });
-                node.classed("hovered", false);
-            }
-        };
-        this.onHoverNode({action,selection,update:false});
-        return this;
-
-    }
 
     /**
      * Registers action function to be called when an edge is clicked on. The function is passed
@@ -353,117 +243,6 @@ export class FigTree {
     }
 
     /**
-     * Registers action function to be called when an internal node is clicked on. The function should
-     * take the tree and the node that was clicked on.
-     *
-     * A static method - Tree.rotate() is available for rotating the node order at the clicked node.
-     *
-     * @param action
-     */
-    onClickInternalNode(action,update=false) {
-        this.onClickNode({action:action, selection:".internal-node",update:update});
-        return this;
-    }
-
-    /**
-     * Registers action function to be called when an external node is clicked on. The function should
-     * take the tree and the node that was clicked on.
-     *
-     * @param action
-     */
-    onClickExternalNode(action,update=false) {
-        this.onClickNode({action:action,selection:".external-node",update:update});
-        return this;
-    }
-
-    /**
-     * Registers action function to be called when a vertex is clicked on. The function is passed
-     * the vertex object.
-     *
-     * Optionally a selection string can be provided - i.e., to select a particular node by its id.
-     *
-     * @param action
-     * @param selection
-     */
-    onClickNode({action,selection,update}) {
-        selection = selection ? selection : ".node";
-        // selection = `${selection} .node-shape`;
-        this.callbacks.nodes.push(()=>{
-            this.onClick({action:action,selection:selection,update:true})
-        });
-        this.update();
-        return this;
-
-    }
-    /**
-     * General Nodehover callback
-     * @param {*} action and object with an enter and exit function which fire when the mouse enters and exits object
-     * @param {*} selection defualts to ".node" will select this selection's child ".node-shape"
-     */
-
-    onHoverNode({action,selection,update}){
-        selection = selection ? selection : ".node";
-        update = update?update:false
-        // selection = `${selection} .node-shape`;
-        this.callbacks.nodes.push(()=>{
-            this.onHover({action:action,selection:selection,update:update})
-        });
-        this.update();
-        return this;
-
-    }
-
-    /**
-     * General branch hover callback
-     * @param {*} action and object with an enter and exit function which fire when the mouse enters and exits object
-     * @param {*} selection defualts to .branch
-     */
-    onHoverBranch({action,selection,update}){
-        selection = selection ? `.branch ${selection}` : ".branch";
-        update = update? update:false;
-        this.callbacks.branches.push(()=>{
-            this.onHover({action:action,selection:selection,update:update});
-        });
-        // this update binds the callbacks to the html nodes
-        this.update();
-        return this;
-    }
-
-    /**
-     * Add a hover callback
-     * @param {*} action  - object which has 2 functions enter and exit each takes 3 arguments d,i,n d is data n[i] is `this`
-     * @param {*} selection  - what to select defaults to
-     */
-    onHover({action,selection,update}){
-        const self=this;
-        const selected = this.svgSelection.selectAll(`${selection}`);
-        selected.on("mouseover", (d,i,n) => {
-            action.enter(d,i,n);
-            if(update){
-                self.update();
-            }
-        });
-        selected.on("mouseout", (d,i,n) => {
-            action.exit(d,i,n);
-            if(update){
-                self.update()
-            }
-        });
-        return this;
-    }
-
-    onClick({action,selection,update}){
-        const self=this;
-        const selected = this.svgSelection.selectAll(`${selection}`);
-        selected.on("click", (d,i,n) => {
-            action(d,i,n);
-            if(update){
-                self.update();
-            }
-        });
-        return this
-    }
-    /**
      * Registers some text to appear in a popup box when the mouse hovers over the selection.
      *
      * @param selection
@@ -491,249 +270,108 @@ export class FigTree {
 
     }
 
-    addAnnotation(annotation){
-        this._annotations.push(annotation);
-        this.update();
-        return this;
 
+    [p.setUpScales](vertices){
+            let width,height;
+            if(Object.keys(this.settings).indexOf("width")>-1){
+                width =this.settings.width;
+            }else{
+                width = this[p.svg].getBoundingClientRect().width;
+            }
+            if(Object.keys(this.settings).indexOf("height")>-1){
+                height =this.settings.height;
+            }else{
+                height = this[p.svg].getBoundingClientRect().height;
+            }
+
+            // create the scales
+            let xScale,yScale;
+            let projection=null;
+
+            if(this.layout instanceof GeoLayout){
+                xScale = scaleLinear();
+                yScale = scaleLinear();
+                projection = this.layout.projection;
+            }
+            else{
+                xScale = this.settings.xScale.scale()
+                    .domain([max(vertices,d=>d.x),min(vertices,d=>d.x)])
+                    .range([0, width - this.margins.right-this.margins.left]);
+
+                yScale = this.settings.yScale.scale()
+                    .domain([min(vertices,d=>d.y),max(vertices,d=>d.y)])
+                    .range([0, height -this.margins.bottom-this.margins.top]);
+            }
+            this.scales = {x:xScale, y:yScale, width, height, projection};
     }
 
- /*
- * private methods
- */
- [p.updateVerticesAndEdges](){
-    const {vertices,edges} = this[p.layout](this[p.tree]);
-    if(!this[p.vertices]){
-        this[p.vertices]=new DataCollection(vertices,this);
-    }else{
-        this[p.vertices].updateData(vertices);
-    }
-     if(!this[p.edges]){
-         this[p.edges]=new DataCollection(edges,this);
-     }else{
-         this[p.edges].updateData(edges);
-     } }
+    updateElementFactory(elementFactory,elementClass,svgLayer){
+        return function(data) {
 
-
-    [p.setUpScales](){
-        let width,height;
-        if(Object.keys(this.settings).indexOf("width")>-1){
-            width =this.settings.width;
-        }else{
-            width = this[p.svg].getBoundingClientRect().width;
-        }
-        if(Object.keys(this.settings).indexOf("height")>-1){
-            height =this.settings.height;
-        }else{
-            height = this[p.svg].getBoundingClientRect().height;
-        }
-
-        // create the scales
-        let xScale,yScale;
-        let projection=null;
-
-        if(this.layout instanceof GeoLayout){
-            xScale = scaleLinear();
-            yScale = scaleLinear();
-            projection = this.layout.projection;
-        }
-        else{
-            xScale = this.settings.xScale.scale()
-                .domain([max(this[p.vertices].data,d=>d.x),min(this[p.vertices].data,d=>d.x)])
-                .range([0, width - this.margins.right-this.margins.left]);
-
-            yScale = this.settings.yScale.scale()
-                .domain([min(this[p.vertices].data,d=>d.y),max(this[p.vertices].data,d=>d.y)])
-                .range([0, height -this.margins.bottom-this.margins.top]);
-        }
-
-
-        this.scales = {x:xScale, y:yScale, width, height, projection};
-
-    }
-    /**
-     * Adds or updates nodes
-     */
-    [p.updateNodes](){
-        const nodesLayer = this.svgSelection.select(".nodes-layer");
-
-        const vertices = this[p.vertices].data;
-        const elementMap = this[p.vertices].elementMap;
-
-        // DATA JOIN
-        // Join new data with old elements, if any.
-        const self = this;
-        nodesLayer.selectAll(".node")
-            .data(vertices, (v) => `n_${v.key}`)
-            .join(
-                enter=>enter
-                    .append("g")
-                        .attr("id", (v) => v.key)
-                        .attr("class", (v) => ["node", ...v.classes].join(" "))
-                        .attr("transform", (v) => {
-                            return `translate(${this.scales.x(v.x)}, ${this.scales.y(v.y)})`;
+            // DATA JOIN
+            // Join new data with old elements, if any.
+            const self = this;
+            svgLayer.selectAll(`.${elementClass}`)
+                .data(data, (d) => `${elementClass}_${d.key}`)
+                .join(
+                    enter => enter
+                        .append("g")
+                        .attr("id", (d) => d.key)
+                        .attr("class", (d) => [`${elementClass}`, ...d.classes].join(" "))
+                        .attr("transform", (d) => {
+                            return `translate(${this.scales.x(d.x)}, ${this.scales.y(d.y)})`;
                         })
-                        .each(function(v) {
-                            if(elementMap.has(v.key)){
-                                const element = elementMap.get(v.key);
-                                element.update(select(this))
+                        .each(function (d) {
+                            const bauble = elementFactory.getElement(d,self.scales);
+                            if (bauble) {
+                                bauble.update(select(this))
                             }
                         })
-                    .append("text")
-                        .attr("class", "node-label")
-                        .attr("text-anchor", d=>d.leftLabel?"end":"start")
-                        .attr("alignment-baseline", d => d.leftLabel?(d.labelBelow ? "bottom": "hanging" ):"middle")
-                        .attr("dx", d=>d.leftLabel?"-6":"12")
-                        .attr("dy", d => d.leftLabel?(d.labelBelow ? "-8": "8" ):"0")
-                        .text((d) => d.textLabel),
-                update => update
-                    .call(update => update.transition()
-                    .duration(this.settings.transition.transitionDuration)
-                    .ease(this.settings.transition.transitionEase)
-                    .attr("class", (v) => ["node", ...v.classes].join(" "))
-                    .attr("transform", (v) => {
-                        return `translate(${this.scales.x(v.x)}, ${this.scales.y(v.y)})`;
-                    })
-                    .on("start", function(v) {
-                            if(elementMap.has(v.key)){
-                                const element = elementMap.get(v.key);
-                                element.update(select(this))
+                        .append("text")
+                        .attr("class", `${elementClass}-label`)
+                        .attr("text-anchor", d => d.textLabel.textAnchor)
+                        .attr("alignment-baseline", d => d.textLabel.alignmentBaseline)
+                        .attr("dx", d => {
+                            if (elementClass === "branch") {
+                                return ((this.scales.x(d.textLabel.dx[0]) - this.scales.x(d.textLabel.dx[1])) / 2)
+                            } else {
+                                return d.textLabel.dx
                             }
-                    })
-
-                    .select("text .node-label")
-                        .transition()
-                        .duration(this.settings.transition.transitionDuration)
-                        .ease(this.settings.transition.transitionEase)
-                        .attr("text-anchor", d=>d.leftLabel?"end":"start")
-                        .attr("alignment-baseline", d => d.leftLabel?(d.labelBelow ? "bottom": "hanging" ):"middle")
-                        .attr("dx", d=>d.leftLabel?"-6":"12")
-                        .attr("dy", d => d.leftLabel?(d.labelBelow ? "-8": "8" ):"0")
-                        .text((d) => d.textLabel),
-                    )
-
-            );
-        // add callbacks
-        for(const callback of this.callbacks.nodes){
-            callback();
-        }
-    }
-
-    [p.updateNodeBackgrounds]() {
-
-        const nodesBackgroundLayer = this.svgSelection.select(".nodes-background-layer");
-
-        // DATA JOIN
-        // Join new data with old elements, if any.
-        const self = this;
-        nodesBackgroundLayer.selectAll(".node-background")
-            .data(this[p.vertices], (v) => `nb_${v.key}`)
-            .join(
-                enter=>enter
-                    .append("g")
-                        .attr("id", (v) => v.id)
-                        .attr("class", (v) => ["node-background", ...v.classes].join(" "))
-                        .attr("transform", (v) => {
-                            return `translate(${this.scales.x(v.x+this.settings.xScale.revisions.offset)}, ${this.scales.y(v.y)})`;
                         })
-                        .each(function(v) {
-                            for(const bauble of  self.settings.vertices.backgroundBaubles){
-                                if (bauble.vertexFilter(v)) {
-                                    bauble
-                                        .update(select(this))
+                        .attr("dy", d => d.textLabel.dy)
+                        .text((d) => elementFactory.getLabel(d)),
+                    update => update
+                        .call(update => update.transition()
+                            .duration(this.settings.transition.transitionDuration)
+                            .ease(this.settings.transition.transitionEase)
+                            .attr("class", (d) => [`${elementClass}`, ...d.classes].join(" "))
+                            .attr("transform", (d) => {
+                                return `translate(${this.scales.x(d.x)}, ${this.scales.y(d.y)})`;
+                            })
+                            .each(function (d) {
+                                const bauble = elementFactory.getElement(d,self.scales);
+                                if (bauble) {
+                                    bauble.update(select(this))
                                 }
-                            }
-                        }),
-                update => update
-                    .call(update => update.transition()
-                        .duration(this.settings.transition.transitionDuration)
-                        .ease(this.settings.transition.transitionEase)
-                        .attr("class", (v) => ["node-background", ...v.classes].join(" "))
-                        .attr("transform", (v) => {
-                            return `translate(${this.scales.x(v.x+this.settings.xScale.revisions.offset)}, ${this.scales.y(v.y)})`;
-                        })
-                        .each(function(v) {
-                            for(const bauble of  self.settings.vertices.backgroundBaubles){
-                                if (bauble.vertexFilter(v)) {
-                                    bauble
-                                        .update(select(this))
+                            })
+
+                            .select(`.${elementClass}-label`)
+                            .transition()
+                            .duration(this.settings.transition.transitionDuration)
+                            .ease(this.settings.transition.transitionEase)
+                            .attr("text-anchor", d => d.textLabel.textAnchor)
+                            .attr("alignment-baseline", d => d.textLabel.alignmentBaseline)
+                            .attr("dx", d => {
+                                if (elementClass === "branch") {
+                                    return ((this.scales.x(d.textLabel.dx[0]) - this.scales.x(d.textLabel.dx[1])) / 2)
+                                } else {
+                                    return d.textLabel.dx
                                 }
-                            }
-                        })
-                    )
-            );
-        for(const callback of this.callbacks.nodes){
-            callback();
-        }
-    }
-
-    /**
-     * Adds or updates branch lines
-     */
-    [p.updateBranches]() {
-
-        const branchesLayer = this.svgSelection.select(".branches-layer");
-        //set up scales for branches
-
-        const edges = this[p.edges].data;
-        const elementMap = this[p.edges].elementMap;
-
-        // DATA JOIN
-        // Join new data with old elements, if any.
-        const self = this;
-        branchesLayer.selectAll(".branch")
-            .data(edges, (e) => `b_${e.key}`)
-            .join(
-                enter=>enter
-                    .append("g")
-                        .attr("id", (e) => e.key)
-                        .attr("class", (e) => ["branch", ...e.classes].join(" "))
-                        .attr("transform", (e) => {
-                            return `translate(${this.scales.x(e.v0.x)}, ${this.scales.y(e.v1.y)})`;
-                        })
-                    .each(function(e) {
-                        if(elementMap.has(e.key)){
-                            const element = elementMap.get(e.key);
-                            element.setup(self.scales);
-                            element.update(select(this))
-                        }
-                    })
-                    .append("text")
-                        .attr("class", "branch-label")
-                        .attr("dx", (e) => ((this.scales.x(e.v1.x) - this.scales.x(e.v0.x)) / 2))
-                        .attr("dy", (e) => (e.labelBelow ? +6 : -6))
-                        .attr("alignment-baseline", (e) => (e.labelBelow ? "hanging" : "bottom"))
-                        .attr("text-anchor", "middle")
-                        .text((e) => e.label),
-                update => update
-                    .call(update => update.transition()
-                        .duration(this.settings.transition.transitionDuration)
-                        .ease(this.settings.transition.transitionEase)
-                        .attr("class", (e) => ["branch", ...e.classes].join(" "))
-                        .attr("transform", (e) => {
-                            return `translate(${this.scales.x(e.v0.x)}, ${this.scales.y(e.v1.y)})`;
-                        })
-                    .on("start",function(e) {
-                        if(elementMap.has(e.key)){
-                            const element = elementMap.get(e.key);
-                            element.setup(self.scales);
-                            element.update(select(this))
-                        }
-
-                    })
-                        // .each(
-                    .select("text .branch-label")
-                            .attr("dx", (e) => ((this.scales.x(e.v1.x) - this.scales.x(e.v0.x)) / 2))
-                            .attr("dy", (e) => (e.labelBelow ? +6 : -6))
-                            .attr("alignment-baseline", (e) => (e.labelBelow ? "hanging" : "bottom"))
-                            .attr("text-anchor", "middle")
-                            .text((e) => e.label),
-                    )
-            );
-
-        // add callbacks
-        for(const callback of this.callbacks.branches){
-            callback();
+                            })
+                            .attr("dy", d => d.textLabel.dy)
+                            .text((d) => elementFactory.getLabel(d)),
+                        )
+                );
         }
     }
 
@@ -955,23 +593,17 @@ export class FigTree {
     }
 
     nodes(b=null){
-        if(!this[p.vertices]){
-            this[p.updateVerticesAndEdges]();
-        }
         if(b){
-            this[p.vertices].elements(b)
+            this[p.vertexFactory].elements(b)
         }
-        return this[p.vertices]
+        return this[p.vertexFactory]
     }
     branches(b=null){
-        if(!this[p.edges]){
-            this[p.updateVerticesAndEdges]();
-        }
 
         if(b){
-            this[p.edges].elements(b)
+            this[p.edgeFactory].elements(b)
         }
-        return this[p.edges]
+        return this[p.edgeFactory]
     }
 
     get xAxis(){

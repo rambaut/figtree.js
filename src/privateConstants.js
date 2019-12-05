@@ -23,7 +23,9 @@ const p= {
     baubleMap:Symbol("baubleMap"),
     branchMap:Symbol("branchMap"),
     updateVerticesAndEdges:Symbol("updateVerticesAndEdges"),
-    node:Symbol("node")
+    node:Symbol("node"),
+    vertexFactory:Symbol("vertexFactory"),
+    edgeFactory:Symbol("edgeFactory")
 
 };
 export default p;

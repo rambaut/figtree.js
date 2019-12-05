@@ -10560,8 +10560,14 @@
 	    }
 	  }, {
 	    key: "attr",
-	    value: function attr(string, value) {
-	      this.attrs[string] = value;
+	    value: function attr(string) {
+	      var value = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+
+	      if (value) {
+	        this.attrs[string] = value;
+	      } else {
+	        return this.attrs[string];
+	      }
 	    }
 	  }, {
 	    key: "on",
@@ -10577,6 +10583,17 @@
 	        this._transitions = t;
 	      } else {
 	        return this._transitions;
+	      }
+	    }
+	  }, {
+	    key: "scales",
+	    value: function scales() {
+	      var _scales = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+	      if (_scales) {
+	        this.scales = _scales;
+	      } else {
+	        return this.scales;
 	      }
 	    }
 	  }]);
@@ -10686,7 +10703,7 @@
 	    value: function DEFAULT_SETTINGS() {
 	      return {
 	        attrs: {
-	          r: 6
+	          r: 5
 	        }
 	      };
 	    }
@@ -10749,7 +10766,23 @@
 	        });
 	      }, function (update) {
 	        return update.call(function (update) {
-	          return update.transition().duration(_this._transitions.transitionDuration).ease(_this._transitions.transitionEase).attrs(_this.attrs);
+	          return update.transition().duration(_this._transitions.transitionDuration).ease(_this._transitions.transitionEase).attrs(_this.attrs).each(function (d, i, n) {
+	            var element = select(n[i]);
+
+	            var _loop2 = function _loop2() {
+	              var _Object$entries2$_i = slicedToArray(_Object$entries2[_i2], 2),
+	                  key = _Object$entries2$_i[0],
+	                  func = _Object$entries2$_i[1];
+
+	              element.on(key, function (d, i, n) {
+	                return func(d, i, n);
+	              });
+	            };
+
+	            for (var _i2 = 0, _Object$entries2 = Object.entries(_this.interactions); _i2 < _Object$entries2.length; _i2++) {
+	              _loop2();
+	            }
+	          });
 	        });
 	      });
 	    }
@@ -10803,25 +10836,11 @@
 	  }
 
 	  createClass(Branch, [{
-	    key: "setup",
-	    value: function setup() {
-	      var scales = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-	      scales = mergeDeep({
-	        x: null,
-	        y: null,
-	        xOffset: 0,
-	        yOffset: 0
-	      }, scales);
-	      this.branchPath = this.branchPathGenerator({
-	        scales: scales,
-	        curve: this.curve,
-	        curveRadius: this.curveRadius
-	      });
-	    }
-	  }, {
 	    key: "update",
 	    value: function update(selection) {
 	      var _this2 = this;
+
+	      this.branchPath = this.branchPathGenerator();
 
 	      if (selection == null && !this.selection) {
 	        return;
@@ -10862,10 +10881,8 @@
 	    }
 	  }, {
 	    key: "branchPathGenerator",
-	    value: function branchPathGenerator(_ref) {
+	    value: function branchPathGenerator() {
 	      var _this3 = this;
-
-	      var scales = _ref.scales;
 
 	      var branchPath = function branchPath(e, i) {
 	        var branchLine = line().x(function (v) {
@@ -10877,7 +10894,7 @@
 	        var dontNeedCurve = e.v0.y - e.v1.y === 0 ? 0 : 1;
 	        var output = _this3.curveRadius > 0 ? branchLine([{
 	          x: 0,
-	          y: scales.y(e.v0.y) - scales.y(e.v1.y)
+	          y: _this3.scales.y(e.v0.y) - _this3.scales.y(e.v1.y)
 	        }, {
 	          x: 0,
 	          y: dontNeedCurve * factor * _this3.curveRadius
@@ -10885,13 +10902,13 @@
 	          x: 0 + dontNeedCurve * _this3.curveRadius,
 	          y: 0
 	        }, {
-	          x: scales.x(e.v1.x) - scales.x(e.v0.x),
+	          x: _this3.scales.x(e.v1.x) - _this3.scales.x(e.v0.x),
 	          y: 0
 	        }]) : branchLine([{
 	          x: 0,
-	          y: scales.y(e.v0.y) - scales.y(e.v1.y)
+	          y: _this3.scales.y(e.v0.y) - _this3.scales.y(e.v1.y)
 	        }, {
-	          x: scales.x(e.v1.x) - scales.x(e.v0.x),
+	          x: _this3.scales.x(e.v1.x) - _this3.scales.x(e.v0.x),
 	          y: 0
 	        }]);
 	        return output;
@@ -10939,10 +10956,10 @@
 	 * @return {function(*, *)}
 	 */
 
-	function branchPathGenerator(_ref2) {
-	  var scales = _ref2.scales,
-	      curveRadius = _ref2.curveRadius,
-	      curve = _ref2.curve;
+	function branchPathGenerator(_ref) {
+	  var scales = _ref.scales,
+	      curveRadius = _ref.curveRadius,
+	      curve = _ref.curve;
 
 	  var branchPath = function branchPath(e, i) {
 	    var branchLine = line().x(function (v) {
@@ -11204,7 +11221,9 @@
 	  baubleMap: Symbol("baubleMap"),
 	  branchMap: Symbol("branchMap"),
 	  updateVerticesAndEdges: Symbol("updateVerticesAndEdges"),
-	  node: Symbol("node")
+	  node: Symbol("node"),
+	  vertexFactory: Symbol("vertexFactory"),
+	  edgeFactory: Symbol("edgeFactory")
 	};
 
 	function ownKeys$6(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
@@ -11238,18 +11257,25 @@
 	}
 
 	function makeVertexFromNode(node) {
+	  var leftLabel = !!node.children;
+	  var labelBelow = !!node.children && (!node.parent || node.parent.children[0] !== node);
 	  return defineProperty({
 	    name: node.name,
 	    length: node.length,
 	    height: node.height,
-	    label: node.label,
 	    level: node.level,
+	    label: node.label,
 	    annotations: node.annotations,
 	    key: node.id,
+	    id: node.id,
 	    degree: node.children ? node.children.length + 1 : 1,
 	    // the number of edges (including stem)
-	    leftLabel: !!node.children,
-	    labelBelow: !!node.children && (!node.parent || node.parent.children[0] !== node),
+	    textLabel: {
+	      dx: leftLabel ? "-6" : "12",
+	      dy: leftLabel ? labelBelow ? "-8" : "8" : "0",
+	      alignmentBaseline: leftLabel ? labelBelow ? "bottom" : "hanging" : "middle",
+	      textAnchor: leftLabel ? "end" : "start"
+	    },
 	    classes: getVertexClassesFromNode(node)
 	  }, p.node, node);
 	}
@@ -11378,12 +11404,21 @@
 	  return vertices.filter(function (v) {
 	    return v[p.node].parent;
 	  }).map(function (v) {
+	    var labelBelow = v[p.node].parent.children[0] !== v[p.node];
 	    return {
 	      v0: nodeMap.get(v[p.node].parent),
 	      v1: v,
 	      key: v.key,
+	      id: v.id,
 	      classes: v.classes,
-	      labelBelow: v[p.node].parent.children[0] !== v[p.node]
+	      x: nodeMap.get(v[p.node].parent).x,
+	      y: v.y,
+	      textLabel: {
+	        dx: [v.x, nodeMap.get(v[p.node].parent).x],
+	        dy: labelBelow ? +6 : -6,
+	        alignmentBaseline: labelBelow ? "hanging" : "bottom",
+	        textAnchor: "middle"
+	      }
 	    };
 	  });
 	}
@@ -11401,23 +11436,21 @@
 
 	var rectangularLayout = layoutFactory(rectangularVertices);
 
-	// .nodes(circlebauble)
-	// instead of .nodes().elements()
-	// also but some case specific helper functions for each style.
-
-	var DataCollection =
+	var ElementFactory =
 	/*#__PURE__*/
 	function () {
-	  function DataCollection(data, figure) {
-	    classCallCheck(this, DataCollection);
+	  function ElementFactory(figure) {
+	    classCallCheck(this, ElementFactory);
 
 	    this.figure = figure;
-	    this.data = data;
-	    this.elementMap = new Map();
 	    this.attrs = {};
 	    this.interactions = {};
 	    this.elementMaker = null;
-	    this.labelMaker = null;
+
+	    this.labelMaker = function () {
+	      return "";
+	    };
+
 	    return new Proxy(this, {
 	      get: function get(target, prop) {
 	        if (target[prop] === undefined) {
@@ -11429,223 +11462,124 @@
 	    });
 	  }
 
-	  createClass(DataCollection, [{
-	    key: "updateData",
-	    value: function updateData(data) {
-	      this.data = data; //remake elements
-
-	      this.elements(this.elementMaker); // update element styles
-
-	      for (var _i = 0, _Object$entries = Object.entries(this.attrs); _i < _Object$entries.length; _i++) {
-	        var _Object$entries$_i = slicedToArray(_Object$entries[_i], 2),
-	            key = _Object$entries$_i[0],
-	            value = _Object$entries$_i[1];
-
-	        this.attr(key, value);
-	      }
-
-	      for (var _i2 = 0, _Object$entries2 = Object.entries(this.interactions); _i2 < _Object$entries2.length; _i2++) {
-	        var _Object$entries2$_i = slicedToArray(_Object$entries2[_i2], 2),
-	            _key = _Object$entries2$_i[0],
-	            _value = _Object$entries2$_i[1];
-
-	        this.on(_key, _value);
-	      }
-
-	      this.label(this.labelMaker); //set transition attributes to sync elements
-	    }
-	  }, {
+	  createClass(ElementFactory, [{
 	    key: "elements",
 	    value: function elements() {
 	      var b = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
 	      if (b) {
 	        this.elementMaker = b;
-	      }
 
-	      if (this.elementMaker) {
-	        if (!isFunction(this.elementMaker)) {
-	          var _iteratorNormalCompletion = true;
-	          var _didIteratorError = false;
-	          var _iteratorError = undefined;
-
-	          try {
-	            for (var _iterator = this.data[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-	              var d = _step.value;
-	              this.elementMap.set(d.key, new this.elementMaker());
-	            }
-	          } catch (err) {
-	            _didIteratorError = true;
-	            _iteratorError = err;
-	          } finally {
-	            try {
-	              if (!_iteratorNormalCompletion && _iterator["return"] != null) {
-	                _iterator["return"]();
-	              }
-	            } finally {
-	              if (_didIteratorError) {
-	                throw _iteratorError;
-	              }
-	            }
-	          }
-	        } else if (this.elementMaker instanceof Function) {
-	          var _iteratorNormalCompletion2 = true;
-	          var _didIteratorError2 = false;
-	          var _iteratorError2 = undefined;
-
-	          try {
-	            for (var _iterator2 = this.data[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-	              var _d = _step2.value;
-	              var element = this.elementMaker(_d.key);
-
-	              if (element) {
-	                this.elementMap.set(_d.key, new this.elementMaker(_d));
-	              }
-	            }
-	          } catch (err) {
-	            _didIteratorError2 = true;
-	            _iteratorError2 = err;
-	          } finally {
-	            try {
-	              if (!_iteratorNormalCompletion2 && _iterator2["return"] != null) {
-	                _iterator2["return"]();
-	              }
-	            } finally {
-	              if (_didIteratorError2) {
-	                throw _iteratorError2;
-	              }
-	            }
-	          }
-	        }
-
-	        var _iteratorNormalCompletion3 = true;
-	        var _didIteratorError3 = false;
-	        var _iteratorError3 = undefined;
-
-	        try {
-	          for (var _iterator3 = this.elementMap.values()[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-	            var el = _step3.value;
-	            el.transitions(this.figure.transitions());
-	          }
-	        } catch (err) {
-	          _didIteratorError3 = true;
-	          _iteratorError3 = err;
-	        } finally {
-	          try {
-	            if (!_iteratorNormalCompletion3 && _iterator3["return"] != null) {
-	              _iterator3["return"]();
-	            }
-	          } finally {
-	            if (_didIteratorError3) {
-	              throw _iteratorError3;
-	            }
-	          }
+	        if (this.figure.drawn) {
+	          this.figure.update();
 	        }
 
 	        return this;
+	      } else {
+	        return this.elementMaker;
 	      }
-
-	      return this.elementMap;
 	    }
 	  }, {
 	    key: "attr",
 	    value: function attr(string, f) {
 	      this.attrs[string] = f;
 
-	      if (f instanceof Function) {
-	        var _iteratorNormalCompletion4 = true;
-	        var _didIteratorError4 = false;
-	        var _iteratorError4 = undefined;
-
-	        try {
-	          for (var _iterator4 = this.data[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-	            var d = _step4.value;
-
-	            if (f(d)) {
-	              var element = this.elementMap.get(d.key);
-
-	              if (element) {
-	                element.attr(string, f(d));
-	              }
-	            }
-	          }
-	        } catch (err) {
-	          _didIteratorError4 = true;
-	          _iteratorError4 = err;
-	        } finally {
-	          try {
-	            if (!_iteratorNormalCompletion4 && _iterator4["return"] != null) {
-	              _iterator4["return"]();
-	            }
-	          } finally {
-	            if (_didIteratorError4) {
-	              throw _iteratorError4;
-	            }
-	          }
-	        }
-	      } else {
-	        var _iteratorNormalCompletion5 = true;
-	        var _didIteratorError5 = false;
-	        var _iteratorError5 = undefined;
-
-	        try {
-	          for (var _iterator5 = this.data[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-	            var _d2 = _step5.value;
-
-	            var _element = this.elementMap.get(_d2.key);
-
-	            if (_element) {
-	              _element.attr(string, f);
-	            }
-	          }
-	        } catch (err) {
-	          _didIteratorError5 = true;
-	          _iteratorError5 = err;
-	        } finally {
-	          try {
-	            if (!_iteratorNormalCompletion5 && _iterator5["return"] != null) {
-	              _iterator5["return"]();
-	            }
-	          } finally {
-	            if (_didIteratorError5) {
-	              throw _iteratorError5;
-	            }
-	          }
-	        }
+	      if (this.figure.drawn) {
+	        this.figure.update();
 	      }
 
 	      return this;
 	    }
 	  }, {
+	    key: "getAttrs",
+	    value: function getAttrs(d) {
+	      var attrs = {};
+
+	      for (var _i = 0, _Object$entries = Object.entries(this.attrs); _i < _Object$entries.length; _i++) {
+	        var _Object$entries$_i = slicedToArray(_Object$entries[_i], 2),
+	            key = _Object$entries$_i[0],
+	            f = _Object$entries$_i[1];
+
+	        if (f instanceof Function) {
+	          if (f(d)) {
+	            attrs[key] = f(d);
+	          }
+	        } else {
+	          attrs[key] = f;
+	        }
+	      }
+
+	      return attrs;
+	    }
+	  }, {
+	    key: "getElement",
+	    value: function getElement(d, scales) {
+	      var element = null;
+
+	      if (this.elementMaker) {
+	        if (!isFunction(this.elementMaker)) {
+	          element = new this.elementMaker();
+	        } else if (this.elementMaker instanceof Function) {
+	          var elementFactory = this.elementMaker(d);
+
+	          if (elementFactory) {
+	            element = new elementFactory();
+	          }
+	        }
+	      }
+
+	      if (element) {
+	        element.scales(scales);
+	        var attrs = this.getAttrs(d);
+
+	        for (var _i2 = 0, _Object$entries2 = Object.entries(attrs); _i2 < _Object$entries2.length; _i2++) {
+	          var _Object$entries2$_i = slicedToArray(_Object$entries2[_i2], 2),
+	              key = _Object$entries2$_i[0],
+	              value = _Object$entries2$_i[1];
+
+	          element.attr(key, value);
+	        }
+
+	        for (var _i3 = 0, _Object$entries3 = Object.entries(this.interactions); _i3 < _Object$entries3.length; _i3++) {
+	          var _Object$entries3$_i = slicedToArray(_Object$entries3[_i3], 2),
+	              _key = _Object$entries3$_i[0],
+	              f = _Object$entries3$_i[1];
+
+	          element.on(_key, f(element));
+	        }
+
+	        element.transitions(this.figure.transitions());
+	      } // set up scales in branch instance
+
+
+	      return element;
+	    }
+	  }, {
+	    key: "getLabel",
+	    value: function getLabel(d) {
+	      if (this.labelMaker) {
+	        if (this.labelMaker instanceof Function) {
+	          if (this.labelMaker(d)) {
+	            return this.labelMaker(d);
+	          } else {
+	            return "";
+	          }
+	        } else {
+	          if (d[this.labelMaker]) {
+	            return d[this.labelMaker];
+	          } else {
+	            return "";
+	          }
+	        }
+	      }
+	    }
+	  }, {
 	    key: "on",
 	    value: function on(string, f) {
 	      this.interactions[string] = f;
-	      var _iteratorNormalCompletion6 = true;
-	      var _didIteratorError6 = false;
-	      var _iteratorError6 = undefined;
 
-	      try {
-	        for (var _iterator6 = this.data[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-	          var d = _step6.value;
-	          var element = this.elementMap.get(d.key);
-
-	          if (element) {
-	            element.on(string, f(element));
-	          }
-	        }
-	      } catch (err) {
-	        _didIteratorError6 = true;
-	        _iteratorError6 = err;
-	      } finally {
-	        try {
-	          if (!_iteratorNormalCompletion6 && _iterator6["return"] != null) {
-	            _iterator6["return"]();
-	          }
-	        } finally {
-	          if (_didIteratorError6) {
-	            throw _iteratorError6;
-	          }
-	        }
+	      if (this.figure.drawn) {
+	        this.figure.update();
 	      }
 
 	      return this;
@@ -11655,63 +11589,9 @@
 	    value: function label(l) {
 	      if (l) {
 	        this.labelMaker = l;
-	      }
 
-	      if (this.labelMaker) {
-	        if (this.labelMaker instanceof Function) {
-	          var _iteratorNormalCompletion7 = true;
-	          var _didIteratorError7 = false;
-	          var _iteratorError7 = undefined;
-
-	          try {
-	            for (var _iterator7 = this.data[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-	              var d = _step7.value;
-
-	              if (this.labelMaker(d)) {
-	                d.textLabel = this.labelMaker(d);
-	              }
-	            }
-	          } catch (err) {
-	            _didIteratorError7 = true;
-	            _iteratorError7 = err;
-	          } finally {
-	            try {
-	              if (!_iteratorNormalCompletion7 && _iterator7["return"] != null) {
-	                _iterator7["return"]();
-	              }
-	            } finally {
-	              if (_didIteratorError7) {
-	                throw _iteratorError7;
-	              }
-	            }
-	          }
-	        } else {
-	          var _iteratorNormalCompletion8 = true;
-	          var _didIteratorError8 = false;
-	          var _iteratorError8 = undefined;
-
-	          try {
-	            for (var _iterator8 = this.data[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-	              var _d3 = _step8.value;
-
-	              if (_d3[this.labelMaker]) {
-	                _d3.textLabel = _d3[this.labelMaker];
-	              }
-	            }
-	          } catch (err) {
-	            _didIteratorError8 = true;
-	            _iteratorError8 = err;
-	          } finally {
-	            try {
-	              if (!_iteratorNormalCompletion8 && _iterator8["return"] != null) {
-	                _iterator8["return"]();
-	              }
-	            } finally {
-	              if (_didIteratorError8) {
-	                throw _iteratorError8;
-	              }
-	            }
-	          }
+	        if (this.figure.drawn) {
+	          this.figure.update();
 	        }
 	      }
 
@@ -11719,8 +11599,104 @@
 	    }
 	  }]);
 
-	  return DataCollection;
+	  return ElementFactory;
 	}();
+
+	var EdgeFactory =
+	/*#__PURE__*/
+	function (_ElementFactory) {
+	  inherits(EdgeFactory, _ElementFactory);
+
+	  function EdgeFactory(figure) {
+	    var _this;
+
+	    classCallCheck(this, EdgeFactory);
+
+	    _this = possibleConstructorReturn(this, getPrototypeOf(EdgeFactory).call(this, figure));
+	    _this.elementMaker = Branch;
+	    return _this;
+	  }
+
+	  return EdgeFactory;
+	}(ElementFactory);
+
+	function _superPropBase(object, property) {
+	  while (!Object.prototype.hasOwnProperty.call(object, property)) {
+	    object = getPrototypeOf(object);
+	    if (object === null) break;
+	  }
+
+	  return object;
+	}
+
+	var superPropBase = _superPropBase;
+
+	var get$2 = createCommonjsModule(function (module) {
+	function _get(target, property, receiver) {
+	  if (typeof Reflect !== "undefined" && Reflect.get) {
+	    module.exports = _get = Reflect.get;
+	  } else {
+	    module.exports = _get = function _get(target, property, receiver) {
+	      var base = superPropBase(target, property);
+	      if (!base) return;
+	      var desc = Object.getOwnPropertyDescriptor(base, property);
+
+	      if (desc.get) {
+	        return desc.get.call(receiver);
+	      }
+
+	      return desc.value;
+	    };
+	  }
+
+	  return _get(target, property, receiver || target);
+	}
+
+	module.exports = _get;
+	});
+
+	var nodeFactory =
+	/*#__PURE__*/
+	function (_ElementFactory) {
+	  inherits(nodeFactory, _ElementFactory);
+
+	  function nodeFactory(figure) {
+	    var _this;
+
+	    classCallCheck(this, nodeFactory);
+
+	    _this = possibleConstructorReturn(this, getPrototypeOf(nodeFactory).call(this, figure));
+	    _this.elementMaker = CircleBauble;
+	    return _this;
+	  }
+
+	  createClass(nodeFactory, [{
+	    key: "highlight",
+	    value: function highlight() {
+	      var r = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
+
+	      get$2(getPrototypeOf(nodeFactory.prototype), "on", this).call(this, "mouseenter", function (element) {
+	        return function (d, i, n) {
+	          element.attr("r", element.attr("r") + r);
+	          select(n[i]).classed("hovered", true);
+	          element.update();
+	        };
+	      });
+
+	      get$2(getPrototypeOf(nodeFactory.prototype), "on", this).call(this, "mouseleave", function (element) {
+	        return function (d, i, n) {
+	          element.attr("r", element.attr("r") - r);
+	          select(n[i]).classed("hovered", false);
+	          element.update();
+	        };
+	      });
+
+	      return this;
+	    }
+	  }]);
+
+	  return nodeFactory;
+	}(ElementFactory);
 
 	/** @module figtree */
 
@@ -11820,15 +11796,18 @@
 	  }]);
 
 	  function FigTree() {
+	    var _this = this;
+
 	    var svg = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-	    var layout = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : rectangularLayout;
-	    var margins = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {
+	    var tree = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+	    var layout = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : rectangularLayout;
+	    var margins = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {
 	      top: 10,
 	      bottom: 60,
 	      left: 30,
 	      right: 60
 	    };
-	    var settings = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
+	    var settings = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : {};
 
 	    classCallCheck(this, FigTree);
 
@@ -11841,13 +11820,15 @@
 	      cartoons: []
 	    };
 	    this._annotations = [];
-	    this[p.svg] = svg;
 	    this.drawn = false;
-	    this.svgId = "g-".concat(uuid_1.v4());
-	    this.svgSelection = null;
 	    this._transitions = this.settings.transition;
-	    this[p.vertices] = new DataCollection([], this);
-	    this[p.edges] = new DataCollection([], this);
+	    this[p.svg] = svg;
+	    this[p.tree] = tree;
+	    this[p.tree].subscribeCallback(function () {
+	      _this.update();
+	    });
+	    this.setupSVG();
+	    this.setupUpdaters();
 	    return this;
 	  }
 
@@ -11868,17 +11849,9 @@
 	     */
 
 	  }, {
-	    key: "draw",
-	    value: function draw() {
-	      this[p.updateVerticesAndEdges]();
-	      this[p.setUpScales](); //remove the tree if it is there already
-	      // this.relativeMargins = {
-	      //     left: this.originalMargins.left / this.scales.width,
-	      //     right: this.originalMargins.right / this.scales.width,
-	      //     top: this.originalMargins.top / this.scales.height,
-	      //     bottom: this.originalMargins.bottom / this.scales.height
-	      // };
-
+	    key: "setupSVG",
+	    value: function setupSVG() {
+	      this.svgId = "g-".concat(uuid_1.v4());
 	      select(this[p.svg]).select("#".concat(this.svgId)).remove(); // add a group which will contain the new tree
 
 	      select(this[p.svg]).append("g").attr("id", this.svgId).attr("transform", "translate(".concat(this.margins.left, ",").concat(this.margins.top, ")")); //to selecting every time
@@ -11893,19 +11866,15 @@
 	        this.svgSelection.append("g").attr("class", "nodes-background-layer");
 	      }
 
-	      this.svgSelection.append("g").attr("class", "nodes-layer"); // create the scales
-
-	      if (this.settings.xScale.axes.length > 0) {
-	        this[p.addXAxis]();
-	      }
-
-	      if (this.settings.yScale.axes.length > 0) {
-	        this[p.addYAxis]();
-	      }
-
-	      this.drawn = true;
-	      this.update();
-	      return this;
+	      this.svgSelection.append("g").attr("class", "nodes-layer");
+	    }
+	  }, {
+	    key: "setupUpdaters",
+	    value: function setupUpdaters() {
+	      this[p.vertexFactory] = new nodeFactory(this);
+	      this[p.edgeFactory] = new EdgeFactory(this);
+	      this[p.updateNodes] = this.updateElementFactory(this[p.vertexFactory], "node", this.svgSelection.select(".nodes-layer"));
+	      this[p.updateBranches] = this.updateElementFactory(this[p.edgeFactory], "branch", this.svgSelection.select(".branches-layer"));
 	    }
 	    /**
 	     * Updates the figure when the tree has changed
@@ -11914,125 +11883,21 @@
 	  }, {
 	    key: "update",
 	    value: function update() {
-	      if (!this.drawn) {
-	        return;
-	      }
+	      var _this$p$layout = this[p.layout](this[p.tree]),
+	          vertices = _this$p$layout.vertices,
+	          edges = _this$p$layout.edges;
 
-	      this[p.updateVerticesAndEdges]();
-	      this[p.setUpScales]();
-	      select("#".concat(this.svgId)).attr("transform", "translate(".concat(this.margins.left, ",").concat(this.margins.top, ")")); // this[p.updateAnnotations]();
-	      // this[p.updateCartoons]();
-
-	      this[p.updateBranches](); //
-	      // if(this.settings.xScale.axes.length>0){
-	      //     this[p.updateXAxis]();
-	      // }
-	      // if(this.settings.yScale.axes.length>0){
-	      //     this[p.updateYAxis]();
-	      // }
-	      //
-	      // if (this.settings.vertices.backgroundBaubles.length>0) {
-	      //     this[p.updateNodeBackgrounds]();
-	      // }
-
-	      this[p.updateNodes]();
+	      select("#".concat(this.svgId)).attr("transform", "translate(".concat(this.margins.left, ",").concat(this.margins.top, ")"));
+	      this[p.setUpScales](vertices);
+	      this[p.updateNodes](vertices);
+	      this[p.updateBranches](edges);
 	      return this;
 	    }
-	    /**
-	     * set mouseover highlighting of branches
-	     * This changes the branch path class to hovered. It is expected that css will handel any visual changes needed.
-	     * This function is a helper function that calls onHoverBranch with an appropriate action function.
-	     */
-
 	  }, {
-	    key: "hilightBranches",
-	    value: function hilightBranches() {
-	      var action = {
-	        enter: function enter(d, i, n) {
-	          var branch = select(n[i]); // self.settings.edges.baubles.forEach((bauble) => {
-	          //     if (bauble.edgeFilter(branch)) {
-	          //         bauble.update(branch);
-	          //     }
-	          // });
-
-	          select(n[i]).classed("hovered", true);
-	        },
-	        exit: function exit(d, i, n) {
-	          var branch = select(n[i]); // self.settings.edges.baubles.forEach((bauble) => {
-	          //     if (bauble.edgeFilter(branch)) {
-	          //         bauble.update(branch);
-	          //     }
-	          // });
-
-	          select(n[i]).classed("hovered", false);
-	        }
-	      };
-	      this.onHoverBranch({
-	        action: action,
-	        update: false
-	      });
-	      return this;
-	    }
-	    /**
-	     * A helper function that sets mouseover highlighting of internal nodes. This helper function calls hilightNodes with
-	     * and ".internal-node" selection.
-	     */
-
-	  }, {
-	    key: "hilightInternalNodes",
-	    value: function hilightInternalNodes() {
-	      this.hilightNodes(".internal-node");
-	      return this;
-	    }
-	    /**
-	     * A helper function that sets mouseover highlighting of external nodes. This helper function calls hilightNodes with
-	     * and ".external-node" selection.
-	     */
-
-	  }, {
-	    key: "hilightExternalNodes",
-	    value: function hilightExternalNodes() {
-	      this.hilightNodes(".external-node");
-	      return this;
-	    }
-	    /**
-	     * Set mouseover highlighting of nodes. Node shapes are classed as hovered and bauble sizes are updated according to
-	     * the hoverborder in the settings.
-	     * @param {string} selection - the d3 style string that will be pased to the select method
-	     */
-
-	  }, {
-	    key: "hilightNodes",
-	    value: function hilightNodes(selection) {
-	      var self = this;
-	      var action = {
-	        enter: function enter(d, i, n) {
-	          var node = select(n[i]);
-	          var vertex = d;
-	          self.settings.vertices.baubles.forEach(function (bauble) {
-	            if (bauble.vertexFilter(vertex)) {
-	              bauble.update(node, self.settings.vertices.hoverBorder);
-	            }
-	          });
-	          node.classed("hovered", true);
-	        },
-	        exit: function exit(d, i, n) {
-	          var node = select(n[i]);
-	          var vertex = d;
-	          self.settings.vertices.baubles.forEach(function (bauble) {
-	            if (bauble.vertexFilter(vertex)) {
-	              bauble.update(node, 0);
-	            }
-	          });
-	          node.classed("hovered", false);
-	        }
-	      };
-	      this.onHoverNode({
-	        action: action,
-	        selection: selection,
-	        update: false
-	      });
-	      return this;
+	    key: "draw",
+	    value: function draw() {
+	      this.update();
+	      this.drawn = true;
 	    }
 	    /**
 	     * Registers action function to be called when an edge is clicked on. The function is passed
@@ -12047,7 +11912,7 @@
 	  }, {
 	    key: "onClickBranch",
 	    value: function onClickBranch(_ref) {
-	      var _this = this;
+	      var _this2 = this;
 
 	      var action = _ref.action,
 	          selection = _ref.selection,
@@ -12060,9 +11925,9 @@
 	        // We need to use the "function" keyword here (rather than an arrow) so that "this"
 	        // points to the actual SVG element (so we can use d3.mouse(this)). We therefore need
 	        // to store a reference to the object in "self".
-	        var self = _this;
+	        var self = _this2;
 
-	        var selected = _this.svgSelection.selectAll("".concat(selection));
+	        var selected = _this2.svgSelection.selectAll("".concat(selection));
 
 	        selected.on("click", function (edge) {
 	          var proportion;
@@ -12089,175 +11954,6 @@
 	        });
 	      });
 	      this.update();
-	      return this;
-	    }
-	    /**
-	     * Registers action function to be called when an internal node is clicked on. The function should
-	     * take the tree and the node that was clicked on.
-	     *
-	     * A static method - Tree.rotate() is available for rotating the node order at the clicked node.
-	     *
-	     * @param action
-	     */
-
-	  }, {
-	    key: "onClickInternalNode",
-	    value: function onClickInternalNode(action) {
-	      var update = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-	      this.onClickNode({
-	        action: action,
-	        selection: ".internal-node",
-	        update: update
-	      });
-	      return this;
-	    }
-	    /**
-	     * Registers action function to be called when an external node is clicked on. The function should
-	     * take the tree and the node that was clicked on.
-	     *
-	     * @param action
-	     */
-
-	  }, {
-	    key: "onClickExternalNode",
-	    value: function onClickExternalNode(action) {
-	      var update = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-	      this.onClickNode({
-	        action: action,
-	        selection: ".external-node",
-	        update: update
-	      });
-	      return this;
-	    }
-	    /**
-	     * Registers action function to be called when a vertex is clicked on. The function is passed
-	     * the vertex object.
-	     *
-	     * Optionally a selection string can be provided - i.e., to select a particular node by its id.
-	     *
-	     * @param action
-	     * @param selection
-	     */
-
-	  }, {
-	    key: "onClickNode",
-	    value: function onClickNode(_ref2) {
-	      var _this2 = this;
-
-	      var action = _ref2.action,
-	          selection = _ref2.selection,
-	          update = _ref2.update;
-	      selection = selection ? selection : ".node"; // selection = `${selection} .node-shape`;
-
-	      this.callbacks.nodes.push(function () {
-	        _this2.onClick({
-	          action: action,
-	          selection: selection,
-	          update: true
-	        });
-	      });
-	      this.update();
-	      return this;
-	    }
-	    /**
-	     * General Nodehover callback
-	     * @param {*} action and object with an enter and exit function which fire when the mouse enters and exits object
-	     * @param {*} selection defualts to ".node" will select this selection's child ".node-shape"
-	     */
-
-	  }, {
-	    key: "onHoverNode",
-	    value: function onHoverNode(_ref3) {
-	      var _this3 = this;
-
-	      var action = _ref3.action,
-	          selection = _ref3.selection,
-	          update = _ref3.update;
-	      selection = selection ? selection : ".node";
-	      update = update ? update : false; // selection = `${selection} .node-shape`;
-
-	      this.callbacks.nodes.push(function () {
-	        _this3.onHover({
-	          action: action,
-	          selection: selection,
-	          update: update
-	        });
-	      });
-	      this.update();
-	      return this;
-	    }
-	    /**
-	     * General branch hover callback
-	     * @param {*} action and object with an enter and exit function which fire when the mouse enters and exits object
-	     * @param {*} selection defualts to .branch
-	     */
-
-	  }, {
-	    key: "onHoverBranch",
-	    value: function onHoverBranch(_ref4) {
-	      var _this4 = this;
-
-	      var action = _ref4.action,
-	          selection = _ref4.selection,
-	          update = _ref4.update;
-	      selection = selection ? ".branch ".concat(selection) : ".branch";
-	      update = update ? update : false;
-	      this.callbacks.branches.push(function () {
-	        _this4.onHover({
-	          action: action,
-	          selection: selection,
-	          update: update
-	        });
-	      }); // this update binds the callbacks to the html nodes
-
-	      this.update();
-	      return this;
-	    }
-	    /**
-	     * Add a hover callback
-	     * @param {*} action  - object which has 2 functions enter and exit each takes 3 arguments d,i,n d is data n[i] is `this`
-	     * @param {*} selection  - what to select defaults to
-	     */
-
-	  }, {
-	    key: "onHover",
-	    value: function onHover(_ref5) {
-	      var action = _ref5.action,
-	          selection = _ref5.selection,
-	          update = _ref5.update;
-	      var self = this;
-	      var selected = this.svgSelection.selectAll("".concat(selection));
-	      selected.on("mouseover", function (d, i, n) {
-	        action.enter(d, i, n);
-
-	        if (update) {
-	          self.update();
-	        }
-	      });
-	      selected.on("mouseout", function (d, i, n) {
-	        action.exit(d, i, n);
-
-	        if (update) {
-	          self.update();
-	        }
-	      });
-	      return this;
-	    }
-	  }, {
-	    key: "onClick",
-	    value: function onClick(_ref6) {
-	      var action = _ref6.action,
-	          selection = _ref6.selection,
-	          update = _ref6.update;
-	      var self = this;
-	      var selected = this.svgSelection.selectAll("".concat(selection));
-	      selected.on("click", function (d, i, n) {
-	        action(d, i, n);
-
-	        if (update) {
-	          self.update();
-	        }
-	      });
 	      return this;
 	    }
 	    /**
@@ -12290,39 +11986,8 @@
 	      return this;
 	    }
 	  }, {
-	    key: "addAnnotation",
-	    value: function addAnnotation(annotation) {
-	      this._annotations.push(annotation);
-
-	      this.update();
-	      return this;
-	    }
-	    /*
-	    * private methods
-	    */
-
-	  }, {
-	    key: p.updateVerticesAndEdges,
-	    value: function value() {
-	      var _this$p$layout = this[p.layout](this[p.tree]),
-	          vertices = _this$p$layout.vertices,
-	          edges = _this$p$layout.edges;
-
-	      if (!this[p.vertices]) {
-	        this[p.vertices] = new DataCollection(vertices, this);
-	      } else {
-	        this[p.vertices].updateData(vertices);
-	      }
-
-	      if (!this[p.edges]) {
-	        this[p.edges] = new DataCollection(edges, this);
-	      } else {
-	        this[p.edges].updateData(edges);
-	      }
-	    }
-	  }, {
 	    key: p.setUpScales,
-	    value: function value() {
+	    value: function value(vertices) {
 	      var width, height;
 
 	      if (Object.keys(this.settings).indexOf("width") > -1) {
@@ -12346,14 +12011,14 @@
 	        yScale = linear$2();
 	        projection = this.layout.projection;
 	      } else {
-	        xScale = this.settings.xScale.scale().domain([max$1(this[p.vertices].data, function (d) {
+	        xScale = this.settings.xScale.scale().domain([max$1(vertices, function (d) {
 	          return d.x;
-	        }), min$1(this[p.vertices].data, function (d) {
+	        }), min$1(vertices, function (d) {
 	          return d.x;
 	        })]).range([0, width - this.margins.right - this.margins.left]);
-	        yScale = this.settings.yScale.scale().domain([min$1(this[p.vertices].data, function (d) {
+	        yScale = this.settings.yScale.scale().domain([min$1(vertices, function (d) {
 	          return d.y;
-	        }), max$1(this[p.vertices].data, function (d) {
+	        }), max$1(vertices, function (d) {
 	          return d.y;
 	        })]).range([0, height - this.margins.bottom - this.margins.top]);
 	      }
@@ -12366,120 +12031,135 @@
 	        projection: projection
 	      };
 	    }
-	    /**
-	     * Adds or updates nodes
-	     */
-
 	  }, {
-	    key: p.updateNodes,
-	    value: function value() {
-	      var _this5 = this;
+	    key: "updateElementFactory",
+	    value: function updateElementFactory(elementFactory, elementClass, svgLayer) {
+	      return function (data) {
+	        var _this3 = this;
 
-	      var nodesLayer = this.svgSelection.select(".nodes-layer");
-	      var vertices = this[p.vertices].data;
-	      var elementMap = this[p.vertices].elementMap; // DATA JOIN
-	      nodesLayer.selectAll(".node").data(vertices, function (v) {
-	        return "n_".concat(v.key);
-	      }).join(function (enter) {
-	        return enter.append("g").attr("id", function (v) {
-	          return v.key;
-	        }).attr("class", function (v) {
-	          return ["node"].concat(toConsumableArray(v.classes)).join(" ");
-	        }).attr("transform", function (v) {
-	          return "translate(".concat(_this5.scales.x(v.x), ", ").concat(_this5.scales.y(v.y), ")");
-	        }).each(function (v) {
-	          if (elementMap.has(v.key)) {
-	            var element = elementMap.get(v.key);
-	            element.update(select(this));
-	          }
-	        }).append("text").attr("class", "node-label").attr("text-anchor", function (d) {
-	          return d.leftLabel ? "end" : "start";
-	        }).attr("alignment-baseline", function (d) {
-	          return d.leftLabel ? d.labelBelow ? "bottom" : "hanging" : "middle";
-	        }).attr("dx", function (d) {
-	          return d.leftLabel ? "-6" : "12";
-	        }).attr("dy", function (d) {
-	          return d.leftLabel ? d.labelBelow ? "-8" : "8" : "0";
-	        }).text(function (d) {
-	          return d.textLabel;
-	        });
-	      }, function (update) {
-	        return update.call(function (update) {
-	          return update.transition().duration(_this5.settings.transition.transitionDuration).ease(_this5.settings.transition.transitionEase).attr("class", function (v) {
-	            return ["node"].concat(toConsumableArray(v.classes)).join(" ");
-	          }).attr("transform", function (v) {
-	            return "translate(".concat(_this5.scales.x(v.x), ", ").concat(_this5.scales.y(v.y), ")");
-	          }).on("start", function (v) {
-	            if (elementMap.has(v.key)) {
-	              var element = elementMap.get(v.key);
-	              element.update(select(this));
+	        // DATA JOIN
+	        // Join new data with old elements, if any.
+	        var self = this;
+	        svgLayer.selectAll(".".concat(elementClass)).data(data, function (d) {
+	          return "".concat(elementClass, "_").concat(d.key);
+	        }).join(function (enter) {
+	          return enter.append("g").attr("id", function (d) {
+	            return d.key;
+	          }).attr("class", function (d) {
+	            return ["".concat(elementClass)].concat(toConsumableArray(d.classes)).join(" ");
+	          }).attr("transform", function (d) {
+	            return "translate(".concat(_this3.scales.x(d.x), ", ").concat(_this3.scales.y(d.y), ")");
+	          }).each(function (d) {
+	            var bauble = elementFactory.getElement(d, self.scales);
+
+	            if (bauble) {
+	              bauble.update(select(this));
 	            }
-	          }).select("text .node-label").transition().duration(_this5.settings.transition.transitionDuration).ease(_this5.settings.transition.transitionEase).attr("text-anchor", function (d) {
-	            return d.leftLabel ? "end" : "start";
+	          }).append("text").attr("class", "".concat(elementClass, "-label")).attr("text-anchor", function (d) {
+	            return d.textLabel.textAnchor;
 	          }).attr("alignment-baseline", function (d) {
-	            return d.leftLabel ? d.labelBelow ? "bottom" : "hanging" : "middle";
+	            return d.textLabel.alignmentBaseline;
 	          }).attr("dx", function (d) {
-	            return d.leftLabel ? "-6" : "12";
+	            if (elementClass === "branch") {
+	              return (_this3.scales.x(d.textLabel.dx[0]) - _this3.scales.x(d.textLabel.dx[1])) / 2;
+	            } else {
+	              return d.textLabel.dx;
+	            }
 	          }).attr("dy", function (d) {
-	            return d.leftLabel ? d.labelBelow ? "-8" : "8" : "0";
+	            return d.textLabel.dy;
 	          }).text(function (d) {
-	            return d.textLabel;
+	            return elementFactory.getLabel(d);
+	          });
+	        }, function (update) {
+	          return update.call(function (update) {
+	            return update.transition().duration(_this3.settings.transition.transitionDuration).ease(_this3.settings.transition.transitionEase).attr("class", function (d) {
+	              return ["".concat(elementClass)].concat(toConsumableArray(d.classes)).join(" ");
+	            }).attr("transform", function (d) {
+	              return "translate(".concat(_this3.scales.x(d.x), ", ").concat(_this3.scales.y(d.y), ")");
+	            }).each(function (d) {
+	              var bauble = elementFactory.getElement(d, self.scales);
+
+	              if (bauble) {
+	                bauble.update(select(this));
+	              }
+	            }).select(".".concat(elementClass, "-label")).transition().duration(_this3.settings.transition.transitionDuration).ease(_this3.settings.transition.transitionEase).attr("text-anchor", function (d) {
+	              return d.textLabel.textAnchor;
+	            }).attr("alignment-baseline", function (d) {
+	              return d.textLabel.alignmentBaseline;
+	            }).attr("dx", function (d) {
+	              if (elementClass === "branch") {
+	                return (_this3.scales.x(d.textLabel.dx[0]) - _this3.scales.x(d.textLabel.dx[1])) / 2;
+	              } else {
+	                return d.textLabel.dx;
+	              }
+	            }).attr("dy", function (d) {
+	              return d.textLabel.dy;
+	            }).text(function (d) {
+	              return elementFactory.getLabel(d);
+	            });
 	          });
 	        });
-	      }); // add callbacks
-
-	      var _iteratorNormalCompletion = true;
-	      var _didIteratorError = false;
-	      var _iteratorError = undefined;
-
-	      try {
-	        for (var _iterator = this.callbacks.nodes[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-	          var callback = _step.value;
-	          callback();
-	        }
-	      } catch (err) {
-	        _didIteratorError = true;
-	        _iteratorError = err;
-	      } finally {
-	        try {
-	          if (!_iteratorNormalCompletion && _iterator["return"] != null) {
-	            _iterator["return"]();
-	          }
-	        } finally {
-	          if (_didIteratorError) {
-	            throw _iteratorError;
-	          }
-	        }
-	      }
+	      };
 	    }
 	  }, {
-	    key: p.updateNodeBackgrounds,
+	    key: p.updateCartoons,
 	    value: function value() {
-	      var _this6 = this;
+	      var _this4 = this;
 
-	      var nodesBackgroundLayer = this.svgSelection.select(".nodes-background-layer"); // DATA JOIN
-	      // Join new data with old elements, if any.
-
+	      var cartoonLayer = this.svgSelection.select(".cartoon-layer");
 	      var self = this;
-	      nodesBackgroundLayer.selectAll(".node-background").data(this[p.vertices], function (v) {
-	        return "nb_".concat(v.key);
+	      cartoonLayer.selectAll("g .cartoon").data(this.layout.cartoons, function (c) {
+	        return "c_".concat(c.id);
 	      }).join(function (enter) {
-	        return enter.append("g").attr("id", function (v) {
-	          return v.id;
-	        }).attr("class", function (v) {
-	          return ["node-background"].concat(toConsumableArray(v.classes)).join(" ");
-	        }).attr("transform", function (v) {
-	          return "translate(".concat(_this6.scales.x(v.x + _this6.settings.xScale.revisions.offset), ", ").concat(_this6.scales.y(v.y), ")");
-	        }).each(function (v) {
+	        return enter.append("g").attr("id", function (c) {
+	          return "cartoon-".concat(c.id);
+	        }).attr("class", function (c) {
+	          return ["cartoon"].concat(toConsumableArray(c.classes)).join(" ");
+	        }).attr("transform", function (c) {
+	          return "translate(".concat(_this4.scales.x(c.vertices[0].x + _this4.settings.xScale.revisions.offset), ", ").concat(_this4.scales.y(c.vertices[0].y + _this4.settings.xScale.revisions.offset), ")");
+	        }).each(function (c) {
+	          var _iteratorNormalCompletion = true;
+	          var _didIteratorError = false;
+	          var _iteratorError = undefined;
+
+	          try {
+	            for (var _iterator = self.settings.cartoons.baubles[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	              var bauble = _step.value;
+
+	              if (bauble.cartoonFilter(c)) {
+	                bauble.update(select(this));
+	              }
+	            }
+	          } catch (err) {
+	            _didIteratorError = true;
+	            _iteratorError = err;
+	          } finally {
+	            try {
+	              if (!_iteratorNormalCompletion && _iterator["return"] != null) {
+	                _iterator["return"]();
+	              }
+	            } finally {
+	              if (_didIteratorError) {
+	                throw _iteratorError;
+	              }
+	            }
+	          }
+	        });
+	      }, function (update) {
+	        return update.transition().duration(_this4.settings.transition.transitionDuration).ease(_this4.settings.transition.transitionEase).attr("class", function (c) {
+	          return ["cartoon"].concat(toConsumableArray(c.classes)).join(" ");
+	        }).attr("transform", function (c) {
+	          return "translate(".concat(_this4.scales.x(c.vertices[0].x + _this4.settings.xScale.revisions.offset), ", ").concat(_this4.scales.y(c.vertices[0].y + _this4.settings.xScale.revisions.offset), ")");
+	        }).each(function (c) {
 	          var _iteratorNormalCompletion2 = true;
 	          var _didIteratorError2 = false;
 	          var _iteratorError2 = undefined;
 
 	          try {
-	            for (var _iterator2 = self.settings.vertices.backgroundBaubles[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+	            for (var _iterator2 = self.settings.cartoons.baubles[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
 	              var bauble = _step2.value;
 
-	              if (bauble.vertexFilter(v)) {
+	              if (bauble.cartoonFilter(c)) {
 	                bauble.update(select(this));
 	              }
 	            }
@@ -12498,50 +12178,146 @@
 	            }
 	          }
 	        });
-	      }, function (update) {
-	        return update.call(function (update) {
-	          return update.transition().duration(_this6.settings.transition.transitionDuration).ease(_this6.settings.transition.transitionEase).attr("class", function (v) {
-	            return ["node-background"].concat(toConsumableArray(v.classes)).join(" ");
-	          }).attr("transform", function (v) {
-	            return "translate(".concat(_this6.scales.x(v.x + _this6.settings.xScale.revisions.offset), ", ").concat(_this6.scales.y(v.y), ")");
-	          }).each(function (v) {
-	            var _iteratorNormalCompletion3 = true;
-	            var _didIteratorError3 = false;
-	            var _iteratorError3 = undefined;
+	      }); // add callbacks
 
-	            try {
-	              for (var _iterator3 = self.settings.vertices.backgroundBaubles[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-	                var bauble = _step3.value;
+	      var _iteratorNormalCompletion3 = true;
+	      var _didIteratorError3 = false;
+	      var _iteratorError3 = undefined;
 
-	                if (bauble.vertexFilter(v)) {
-	                  bauble.update(select(this));
-	                }
-	              }
-	            } catch (err) {
-	              _didIteratorError3 = true;
-	              _iteratorError3 = err;
-	            } finally {
-	              try {
-	                if (!_iteratorNormalCompletion3 && _iterator3["return"] != null) {
-	                  _iterator3["return"]();
-	                }
-	              } finally {
-	                if (_didIteratorError3) {
-	                  throw _iteratorError3;
-	                }
-	              }
-	            }
-	          });
+	      try {
+	        for (var _iterator3 = this.callbacks.cartoons[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+	          var callback = _step3.value;
+	          callback();
+	        }
+	      } catch (err) {
+	        _didIteratorError3 = true;
+	        _iteratorError3 = err;
+	      } finally {
+	        try {
+	          if (!_iteratorNormalCompletion3 && _iterator3["return"] != null) {
+	            _iterator3["return"]();
+	          }
+	        } finally {
+	          if (_didIteratorError3) {
+	            throw _iteratorError3;
+	          }
+	        }
+	      }
+	    }
+	    /**
+	     * Add axis
+	     */
+
+	  }, {
+	    key: p.addXAxis,
+	    value: function value() {
+	      var _this5 = this;
+
+	      var xRevisions = this.settings.xScale.revisions;
+	      var reverse = xRevisions.reverseAxis ? -1 : 1;
+	      var domain = xRevisions.origin !== null ? [this.xScaleOrigin + xRevisions.hedge + reverse * xRevisions.branchScale * Math.abs(this.scales.x.domain()[0] - this.scales.x.domain()[1]), this.xScaleOrigin] : this.scales.x.domain();
+	      var axisScale = this.settings.xScale.scale().domain(domain).range(this.scales.x.range());
+	      var xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
+	      var axesLayer = this.svgSelection.select(".axes-layer");
+	      this.settings.xScale.axes.forEach(function (axis) {
+	        if (_this5.layout instanceof GeoLayout) {
+	          throw new Error("Can not add axis to geolayout");
+	        }
+
+	        axis.createAxis({
+	          selection: axesLayer,
+	          x: 0,
+	          y: _this5.scales.height - _this5.margins.bottom - _this5.margins.top + _this5.settings.xScale.gap,
+	          length: xAxisWidth,
+	          scale: axisScale
 	        });
 	      });
+	    }
+	  }, {
+	    key: p.addYAxis,
+	    value: function value() {
+	      var _this6 = this;
+
+	      var yRevisions = this.settings.yScale.revisions;
+	      var reverse = yRevisions.reverseAxis ? -1 : 1;
+	      var domain = yRevisions.origin !== null ? [this.yScaleOrigin + reverse * yRevisions.branchScale * Math.abs(this.scales.y.domain()[0] - this.scales.y.domain()[1]), this.yScaleOrigin] : this.scales.y.domain();
+	      var axisScale = this.settings.yScale.scale().domain(domain).range(this.scales.y.range());
+	      var yAxisHeight = this.scales.height - this.margins.top - this.margins.bottom;
+	      var axesLayer = this.svgSelection.select(".axes-layer");
+	      this.settings.yScale.axes.forEach(function (axis) {
+	        if (_this6.layout instanceof GeoLayout) {
+	          throw new Error("Can not add axis to geolayout");
+	        }
+
+	        axis.createAxis({
+	          selection: axesLayer,
+	          x: 0 - _this6.settings.yScale.gap,
+	          y: 0,
+	          length: yAxisHeight,
+	          scale: axisScale
+	        });
+	      });
+	    }
+	  }, {
+	    key: p.updateXAxis,
+	    value: function value() {
+	      var _this7 = this;
+
+	      var xRevisions = this.settings.xScale.revisions;
+	      var reverse = xRevisions.reverseAxis ? -1 : 1;
+	      var domain = xRevisions.origin !== null ? [this.xScaleOrigin + xRevisions.hedge + reverse * xRevisions.branchScale * Math.abs(this.scales.x.domain()[0] - this.scales.x.domain()[1]), this.xScaleOrigin] : this.scales.x.domain();
+	      var axisScale = this.settings.xScale.scale().domain(domain).range(this.scales.x.range());
+	      var xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
+	      var axesLayer = this.svgSelection.select(".axes-layer");
+	      this.settings.xScale.axes.forEach(function (axis) {
+	        axis.updateAxis({
+	          selection: axesLayer,
+	          x: 0,
+	          y: _this7.scales.height - _this7.margins.bottom - _this7.margins.top + _this7.settings.xScale.gap,
+	          length: xAxisWidth,
+	          scale: axisScale
+	        });
+	      });
+	    }
+	  }, {
+	    key: p.updateYAxis,
+	    value: function value() {
+	      var _this8 = this;
+
+	      var yRevisions = this.settings.yScale.revisions;
+	      var reverse = yRevisions.reverseAxis ? -1 : 1;
+	      var domain = yRevisions.origin !== null ? [this.yScaleOrigin + reverse * yRevisions.branchScale * Math.abs(this.scales.y.domain()[0] - this.scales.y.domain()[1]), this.yScaleOrigin] : this.scales.y.domain();
+	      var axisScale = this.settings.yScale.scale().domain(domain).range(this.scales.y.range());
+	      var yAxisHeight = this.scales.height - this.margins.top - this.margins.bottom;
+	      var axesLayer = this.svgSelection.select(".axes-layer");
+	      this.settings.yScale.axes.forEach(function (axis) {
+	        axis.updateAxis({
+	          selection: axesLayer,
+	          x: 0 - _this8.settings.yScale.gap,
+	          y: 0,
+	          length: yAxisHeight,
+	          scale: axisScale
+	        });
+	      });
+	    }
+	  }, {
+	    key: p.pointToPoint,
+	    value: function value(points) {
+	      var path = [];
+	      var origin = points[0];
+	      var pathPoints = points.reverse();
+	      var currentPoint = origin;
 	      var _iteratorNormalCompletion4 = true;
 	      var _didIteratorError4 = false;
 	      var _iteratorError4 = undefined;
 
 	      try {
-	        for (var _iterator4 = this.callbacks.nodes[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-	          var callback = _step4.value;
-	          callback();
+	        for (var _iterator4 = pathPoints[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+	          var point = _step4.value;
+	          var xdiff = this.scales.x(point.x + this.settings.xScale.revisions.offset) - this.scales.x(currentPoint.x + this.settings.xScale.revisions.offset);
+	          var ydiff = this.scales.y(point.y) - this.scales.y(currentPoint.y);
+	          path.push("".concat(xdiff, " ").concat(ydiff));
+	          currentPoint = point;
 	        }
 	      } catch (err) {
 	        _didIteratorError4 = true;
@@ -12557,80 +12333,20 @@
 	          }
 	        }
 	      }
+
+	      return "M 0 0 l ".concat(path.join(" l "), " z");
 	    }
-	    /**
-	     * Adds or updates branch lines
-	     */
-
 	  }, {
-	    key: p.updateBranches,
+	    key: p.updateAnnotations,
 	    value: function value() {
-	      var _this7 = this;
-
-	      var branchesLayer = this.svgSelection.select(".branches-layer"); //set up scales for branches
-
-	      var edges = this[p.edges].data;
-	      var elementMap = this[p.edges].elementMap; // DATA JOIN
-	      // Join new data with old elements, if any.
-
-	      var self = this;
-	      branchesLayer.selectAll(".branch").data(edges, function (e) {
-	        return "b_".concat(e.key);
-	      }).join(function (enter) {
-	        return enter.append("g").attr("id", function (e) {
-	          return e.key;
-	        }).attr("class", function (e) {
-	          return ["branch"].concat(toConsumableArray(e.classes)).join(" ");
-	        }).attr("transform", function (e) {
-	          return "translate(".concat(_this7.scales.x(e.v0.x), ", ").concat(_this7.scales.y(e.v1.y), ")");
-	        }).each(function (e) {
-	          if (elementMap.has(e.key)) {
-	            var element = elementMap.get(e.key);
-	            element.setup(self.scales);
-	            element.update(select(this));
-	          }
-	        }).append("text").attr("class", "branch-label").attr("dx", function (e) {
-	          return (_this7.scales.x(e.v1.x) - _this7.scales.x(e.v0.x)) / 2;
-	        }).attr("dy", function (e) {
-	          return e.labelBelow ? +6 : -6;
-	        }).attr("alignment-baseline", function (e) {
-	          return e.labelBelow ? "hanging" : "bottom";
-	        }).attr("text-anchor", "middle").text(function (e) {
-	          return e.label;
-	        });
-	      }, function (update) {
-	        return update.call(function (update) {
-	          return update.transition().duration(_this7.settings.transition.transitionDuration).ease(_this7.settings.transition.transitionEase).attr("class", function (e) {
-	            return ["branch"].concat(toConsumableArray(e.classes)).join(" ");
-	          }).attr("transform", function (e) {
-	            return "translate(".concat(_this7.scales.x(e.v0.x), ", ").concat(_this7.scales.y(e.v1.y), ")");
-	          }).on("start", function (e) {
-	            if (elementMap.has(e.key)) {
-	              var element = elementMap.get(e.key);
-	              element.setup(self.scales);
-	              element.update(select(this));
-	            }
-	          }) // .each(
-	          .select("text .branch-label").attr("dx", function (e) {
-	            return (_this7.scales.x(e.v1.x) - _this7.scales.x(e.v0.x)) / 2;
-	          }).attr("dy", function (e) {
-	            return e.labelBelow ? +6 : -6;
-	          }).attr("alignment-baseline", function (e) {
-	            return e.labelBelow ? "hanging" : "bottom";
-	          }).attr("text-anchor", "middle").text(function (e) {
-	            return e.label;
-	          });
-	        });
-	      }); // add callbacks
-
 	      var _iteratorNormalCompletion5 = true;
 	      var _didIteratorError5 = false;
 	      var _iteratorError5 = undefined;
 
 	      try {
-	        for (var _iterator5 = this.callbacks.branches[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-	          var callback = _step5.value;
-	          callback();
+	        for (var _iterator5 = this._annotations[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+	          var annotation = _step5.value;
+	          annotation();
 	        }
 	      } catch (err) {
 	        _didIteratorError5 = true;
@@ -12643,268 +12359,6 @@
 	        } finally {
 	          if (_didIteratorError5) {
 	            throw _iteratorError5;
-	          }
-	        }
-	      }
-	    }
-	  }, {
-	    key: p.updateCartoons,
-	    value: function value() {
-	      var _this8 = this;
-
-	      var cartoonLayer = this.svgSelection.select(".cartoon-layer");
-	      var self = this;
-	      cartoonLayer.selectAll("g .cartoon").data(this.layout.cartoons, function (c) {
-	        return "c_".concat(c.id);
-	      }).join(function (enter) {
-	        return enter.append("g").attr("id", function (c) {
-	          return "cartoon-".concat(c.id);
-	        }).attr("class", function (c) {
-	          return ["cartoon"].concat(toConsumableArray(c.classes)).join(" ");
-	        }).attr("transform", function (c) {
-	          return "translate(".concat(_this8.scales.x(c.vertices[0].x + _this8.settings.xScale.revisions.offset), ", ").concat(_this8.scales.y(c.vertices[0].y + _this8.settings.xScale.revisions.offset), ")");
-	        }).each(function (c) {
-	          var _iteratorNormalCompletion6 = true;
-	          var _didIteratorError6 = false;
-	          var _iteratorError6 = undefined;
-
-	          try {
-	            for (var _iterator6 = self.settings.cartoons.baubles[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-	              var bauble = _step6.value;
-
-	              if (bauble.cartoonFilter(c)) {
-	                bauble.update(select(this));
-	              }
-	            }
-	          } catch (err) {
-	            _didIteratorError6 = true;
-	            _iteratorError6 = err;
-	          } finally {
-	            try {
-	              if (!_iteratorNormalCompletion6 && _iterator6["return"] != null) {
-	                _iterator6["return"]();
-	              }
-	            } finally {
-	              if (_didIteratorError6) {
-	                throw _iteratorError6;
-	              }
-	            }
-	          }
-	        });
-	      }, function (update) {
-	        return update.transition().duration(_this8.settings.transition.transitionDuration).ease(_this8.settings.transition.transitionEase).attr("class", function (c) {
-	          return ["cartoon"].concat(toConsumableArray(c.classes)).join(" ");
-	        }).attr("transform", function (c) {
-	          return "translate(".concat(_this8.scales.x(c.vertices[0].x + _this8.settings.xScale.revisions.offset), ", ").concat(_this8.scales.y(c.vertices[0].y + _this8.settings.xScale.revisions.offset), ")");
-	        }).each(function (c) {
-	          var _iteratorNormalCompletion7 = true;
-	          var _didIteratorError7 = false;
-	          var _iteratorError7 = undefined;
-
-	          try {
-	            for (var _iterator7 = self.settings.cartoons.baubles[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-	              var bauble = _step7.value;
-
-	              if (bauble.cartoonFilter(c)) {
-	                bauble.update(select(this));
-	              }
-	            }
-	          } catch (err) {
-	            _didIteratorError7 = true;
-	            _iteratorError7 = err;
-	          } finally {
-	            try {
-	              if (!_iteratorNormalCompletion7 && _iterator7["return"] != null) {
-	                _iterator7["return"]();
-	              }
-	            } finally {
-	              if (_didIteratorError7) {
-	                throw _iteratorError7;
-	              }
-	            }
-	          }
-	        });
-	      }); // add callbacks
-
-	      var _iteratorNormalCompletion8 = true;
-	      var _didIteratorError8 = false;
-	      var _iteratorError8 = undefined;
-
-	      try {
-	        for (var _iterator8 = this.callbacks.cartoons[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-	          var callback = _step8.value;
-	          callback();
-	        }
-	      } catch (err) {
-	        _didIteratorError8 = true;
-	        _iteratorError8 = err;
-	      } finally {
-	        try {
-	          if (!_iteratorNormalCompletion8 && _iterator8["return"] != null) {
-	            _iterator8["return"]();
-	          }
-	        } finally {
-	          if (_didIteratorError8) {
-	            throw _iteratorError8;
-	          }
-	        }
-	      }
-	    }
-	    /**
-	     * Add axis
-	     */
-
-	  }, {
-	    key: p.addXAxis,
-	    value: function value() {
-	      var _this9 = this;
-
-	      var xRevisions = this.settings.xScale.revisions;
-	      var reverse = xRevisions.reverseAxis ? -1 : 1;
-	      var domain = xRevisions.origin !== null ? [this.xScaleOrigin + xRevisions.hedge + reverse * xRevisions.branchScale * Math.abs(this.scales.x.domain()[0] - this.scales.x.domain()[1]), this.xScaleOrigin] : this.scales.x.domain();
-	      var axisScale = this.settings.xScale.scale().domain(domain).range(this.scales.x.range());
-	      var xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
-	      var axesLayer = this.svgSelection.select(".axes-layer");
-	      this.settings.xScale.axes.forEach(function (axis) {
-	        if (_this9.layout instanceof GeoLayout) {
-	          throw new Error("Can not add axis to geolayout");
-	        }
-
-	        axis.createAxis({
-	          selection: axesLayer,
-	          x: 0,
-	          y: _this9.scales.height - _this9.margins.bottom - _this9.margins.top + _this9.settings.xScale.gap,
-	          length: xAxisWidth,
-	          scale: axisScale
-	        });
-	      });
-	    }
-	  }, {
-	    key: p.addYAxis,
-	    value: function value() {
-	      var _this10 = this;
-
-	      var yRevisions = this.settings.yScale.revisions;
-	      var reverse = yRevisions.reverseAxis ? -1 : 1;
-	      var domain = yRevisions.origin !== null ? [this.yScaleOrigin + reverse * yRevisions.branchScale * Math.abs(this.scales.y.domain()[0] - this.scales.y.domain()[1]), this.yScaleOrigin] : this.scales.y.domain();
-	      var axisScale = this.settings.yScale.scale().domain(domain).range(this.scales.y.range());
-	      var yAxisHeight = this.scales.height - this.margins.top - this.margins.bottom;
-	      var axesLayer = this.svgSelection.select(".axes-layer");
-	      this.settings.yScale.axes.forEach(function (axis) {
-	        if (_this10.layout instanceof GeoLayout) {
-	          throw new Error("Can not add axis to geolayout");
-	        }
-
-	        axis.createAxis({
-	          selection: axesLayer,
-	          x: 0 - _this10.settings.yScale.gap,
-	          y: 0,
-	          length: yAxisHeight,
-	          scale: axisScale
-	        });
-	      });
-	    }
-	  }, {
-	    key: p.updateXAxis,
-	    value: function value() {
-	      var _this11 = this;
-
-	      var xRevisions = this.settings.xScale.revisions;
-	      var reverse = xRevisions.reverseAxis ? -1 : 1;
-	      var domain = xRevisions.origin !== null ? [this.xScaleOrigin + xRevisions.hedge + reverse * xRevisions.branchScale * Math.abs(this.scales.x.domain()[0] - this.scales.x.domain()[1]), this.xScaleOrigin] : this.scales.x.domain();
-	      var axisScale = this.settings.xScale.scale().domain(domain).range(this.scales.x.range());
-	      var xAxisWidth = this.scales.width - this.margins.left - this.margins.right;
-	      var axesLayer = this.svgSelection.select(".axes-layer");
-	      this.settings.xScale.axes.forEach(function (axis) {
-	        axis.updateAxis({
-	          selection: axesLayer,
-	          x: 0,
-	          y: _this11.scales.height - _this11.margins.bottom - _this11.margins.top + _this11.settings.xScale.gap,
-	          length: xAxisWidth,
-	          scale: axisScale
-	        });
-	      });
-	    }
-	  }, {
-	    key: p.updateYAxis,
-	    value: function value() {
-	      var _this12 = this;
-
-	      var yRevisions = this.settings.yScale.revisions;
-	      var reverse = yRevisions.reverseAxis ? -1 : 1;
-	      var domain = yRevisions.origin !== null ? [this.yScaleOrigin + reverse * yRevisions.branchScale * Math.abs(this.scales.y.domain()[0] - this.scales.y.domain()[1]), this.yScaleOrigin] : this.scales.y.domain();
-	      var axisScale = this.settings.yScale.scale().domain(domain).range(this.scales.y.range());
-	      var yAxisHeight = this.scales.height - this.margins.top - this.margins.bottom;
-	      var axesLayer = this.svgSelection.select(".axes-layer");
-	      this.settings.yScale.axes.forEach(function (axis) {
-	        axis.updateAxis({
-	          selection: axesLayer,
-	          x: 0 - _this12.settings.yScale.gap,
-	          y: 0,
-	          length: yAxisHeight,
-	          scale: axisScale
-	        });
-	      });
-	    }
-	  }, {
-	    key: p.pointToPoint,
-	    value: function value(points) {
-	      var path = [];
-	      var origin = points[0];
-	      var pathPoints = points.reverse();
-	      var currentPoint = origin;
-	      var _iteratorNormalCompletion9 = true;
-	      var _didIteratorError9 = false;
-	      var _iteratorError9 = undefined;
-
-	      try {
-	        for (var _iterator9 = pathPoints[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
-	          var point = _step9.value;
-	          var xdiff = this.scales.x(point.x + this.settings.xScale.revisions.offset) - this.scales.x(currentPoint.x + this.settings.xScale.revisions.offset);
-	          var ydiff = this.scales.y(point.y) - this.scales.y(currentPoint.y);
-	          path.push("".concat(xdiff, " ").concat(ydiff));
-	          currentPoint = point;
-	        }
-	      } catch (err) {
-	        _didIteratorError9 = true;
-	        _iteratorError9 = err;
-	      } finally {
-	        try {
-	          if (!_iteratorNormalCompletion9 && _iterator9["return"] != null) {
-	            _iterator9["return"]();
-	          }
-	        } finally {
-	          if (_didIteratorError9) {
-	            throw _iteratorError9;
-	          }
-	        }
-	      }
-
-	      return "M 0 0 l ".concat(path.join(" l "), " z");
-	    }
-	  }, {
-	    key: p.updateAnnotations,
-	    value: function value() {
-	      var _iteratorNormalCompletion10 = true;
-	      var _didIteratorError10 = false;
-	      var _iteratorError10 = undefined;
-
-	      try {
-	        for (var _iterator10 = this._annotations[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-	          var annotation = _step10.value;
-	          annotation();
-	        }
-	      } catch (err) {
-	        _didIteratorError10 = true;
-	        _iteratorError10 = err;
-	      } finally {
-	        try {
-	          if (!_iteratorNormalCompletion10 && _iterator10["return"] != null) {
-	            _iterator10["return"]();
-	          }
-	        } finally {
-	          if (_didIteratorError10) {
-	            throw _iteratorError10;
 	          }
 	        }
 	      }
@@ -12924,33 +12378,33 @@
 	  }, {
 	    key: p.branchPathGenerator,
 	    value: function value() {
-	      var _this13 = this;
+	      var _this9 = this;
 
 	      var branchPath = function branchPath(e, i) {
 	        var branchLine = line().x(function (v) {
 	          return v.x;
 	        }).y(function (v) {
 	          return v.y;
-	        }).curve(_this13.settings.edges.curve);
+	        }).curve(_this9.settings.edges.curve);
 	        var factor = e.v0.y - e.v1.y > 0 ? 1 : -1;
 	        var dontNeedCurve = e.v0.y - e.v1.y === 0 ? 0 : 1;
-	        var output = _this13.settings.edges.curveRadius > 0 ? branchLine([{
+	        var output = _this9.settings.edges.curveRadius > 0 ? branchLine([{
 	          x: 0,
-	          y: _this13.scales.y(e.v0.y) - _this13.scales.y(e.v1.y)
+	          y: _this9.scales.y(e.v0.y) - _this9.scales.y(e.v1.y)
 	        }, {
 	          x: 0,
-	          y: dontNeedCurve * factor * _this13.settings.edges.curveRadius
+	          y: dontNeedCurve * factor * _this9.settings.edges.curveRadius
 	        }, {
-	          x: 0 + dontNeedCurve * _this13.settings.edges.curveRadius,
+	          x: 0 + dontNeedCurve * _this9.settings.edges.curveRadius,
 	          y: 0
 	        }, {
-	          x: _this13.scales.x(e.v1.x + _this13.settings.xScale.revisions.offset) - _this13.scales.x(e.v0.x + _this13.settings.xScale.revisions.offset),
+	          x: _this9.scales.x(e.v1.x + _this9.settings.xScale.revisions.offset) - _this9.scales.x(e.v0.x + _this9.settings.xScale.revisions.offset),
 	          y: 0
 	        }]) : branchLine([{
 	          x: 0,
-	          y: _this13.scales.y(e.v0.y) - _this13.scales.y(e.v1.y)
+	          y: _this9.scales.y(e.v0.y) - _this9.scales.y(e.v1.y)
 	        }, {
-	          x: _this13.scales.x(e.v1.x + _this13.settings.xScale.revisions.offset) - _this13.scales.x(e.v0.x + _this13.settings.xScale.revisions.offset),
+	          x: _this9.scales.x(e.v1.x + _this9.settings.xScale.revisions.offset) - _this9.scales.x(e.v0.x + _this9.settings.xScale.revisions.offset),
 	          y: 0
 	        }]);
 	        return output;
@@ -12974,7 +12428,7 @@
 	  }, {
 	    key: "tree",
 	    value: function tree() {
-	      var _this14 = this;
+	      var _this10 = this;
 
 	      var _tree = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
@@ -12983,7 +12437,7 @@
 	      } else {
 	        this[p.tree] = _tree;
 	        this[p.tree].subscribeCallback(function () {
-	          _this14.update();
+	          _this10.update();
 	        });
 	        return this;
 	      }
@@ -13005,30 +12459,22 @@
 	    value: function nodes() {
 	      var b = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
-	      if (!this[p.vertices]) {
-	        this[p.updateVerticesAndEdges]();
-	      }
-
 	      if (b) {
-	        this[p.vertices].elements(b);
+	        this[p.vertexFactory].elements(b);
 	      }
 
-	      return this[p.vertices];
+	      return this[p.vertexFactory];
 	    }
 	  }, {
 	    key: "branches",
 	    value: function branches() {
 	      var b = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
-	      if (!this[p.edges]) {
-	        this[p.updateVerticesAndEdges]();
-	      }
-
 	      if (b) {
-	        this[p.edges].elements(b);
+	        this[p.edgeFactory].elements(b);
 	      }
 
-	      return this[p.edges];
+	      return this[p.edgeFactory];
 	    }
 	  }, {
 	    key: "xAxis",

@@ -11,7 +11,7 @@ export class CircleBauble extends Bauble {
 
     static DEFAULT_SETTINGS() {
         return {attrs: {
-                r: 6,
+                r: 5,
             }
         };
     }
@@ -59,7 +59,13 @@ export class CircleBauble extends Bauble {
                     .call(update => update.transition()
                         .duration(this._transitions.transitionDuration)
                         .ease(this._transitions.transitionEase)
-                        .attrs(this.attrs),
+                        .attrs(this.attrs)
+                        .each((d,i,n)=>{
+                            const element = select(n[i]);
+                            for( const [key,func] of Object.entries(this.interactions)){
+                                element.on(key,(d,i,n)=>func(d,i,n))
+                            }
+                        }),
                     )
                 );
     };
