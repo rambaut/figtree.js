@@ -27,8 +27,8 @@ export class Branch extends Bauble {
     constructor(settings) {
         const options = mergeDeep(Branch.DEFAULT_SETTINGS(), settings)
         super(options);
-        this.curve=options.curve;
-        this.curveRadius = options.curveRadius;
+        this._curve=options.curve;
+        this._curveRadius = options.curveRadius;
     }
 
 
@@ -70,14 +70,14 @@ export class Branch extends Bauble {
             const branchLine = line()
                 .x((v) => v.x)
                 .y((v) => v.y)
-                .curve(this.curve);
+                .curve(this._curve);
             const factor = e.v0.y - e.v1.y > 0 ? 1 : -1;
             const dontNeedCurve = e.v0.y - e.v1.y === 0 ? 0 : 1;
-            const output = this.curveRadius > 0 ?
+            const output = this._curveRadius > 0 ?
                 branchLine(
                     [{x: 0, y: this.scales.y(e.v0.y) - this.scales.y(e.v1.y)},
-                        {x: 0, y: dontNeedCurve * factor * this.curveRadius},
-                        {x: 0 + dontNeedCurve * this.curveRadius, y: 0},
+                        {x: 0, y: dontNeedCurve * factor * this._curveRadius},
+                        {x: 0 + dontNeedCurve * this._curveRadius, y: 0},
                         {x: this.scales.x(e.v1.x) - this.scales.x(e.v0.x), y: 0}
                     ]) :
                 branchLine(
@@ -92,22 +92,22 @@ export class Branch extends Bauble {
 
     curve(curve=null){
         if(curve){
-            this.curve = curve;
+            this._curve = curve;
             return this;
         }else{
-            return this.curve;
+            return this._curve;
         }
     }
     curveRadius(curveRadius=null){
         if(curveRadius){
-            this.curveRadius = curveRadius;
+            this._curveRadius = curveRadius;
             return this;
         }else{
-            return this.curveRadius;
+            return this._curveRadius;
         }
     }
 
-};
+}
 
 /**
  * Generates a line() function that takes an edge and it's index and returns a line for d3 path element. It is called

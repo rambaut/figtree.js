@@ -10830,8 +10830,8 @@
 
 	    var options = mergeDeep(Branch.DEFAULT_SETTINGS(), settings);
 	    _this = possibleConstructorReturn(this, getPrototypeOf(Branch).call(this, options));
-	    _this.curve = options.curve;
-	    _this.curveRadius = options.curveRadius;
+	    _this._curve = options.curve;
+	    _this._curveRadius = options.curveRadius;
 	    return _this;
 	  }
 
@@ -10889,17 +10889,17 @@
 	          return v.x;
 	        }).y(function (v) {
 	          return v.y;
-	        }).curve(_this3.curve);
+	        }).curve(_this3._curve);
 	        var factor = e.v0.y - e.v1.y > 0 ? 1 : -1;
 	        var dontNeedCurve = e.v0.y - e.v1.y === 0 ? 0 : 1;
-	        var output = _this3.curveRadius > 0 ? branchLine([{
+	        var output = _this3._curveRadius > 0 ? branchLine([{
 	          x: 0,
 	          y: _this3.scales.y(e.v0.y) - _this3.scales.y(e.v1.y)
 	        }, {
 	          x: 0,
-	          y: dontNeedCurve * factor * _this3.curveRadius
+	          y: dontNeedCurve * factor * _this3._curveRadius
 	        }, {
-	          x: 0 + dontNeedCurve * _this3.curveRadius,
+	          x: 0 + dontNeedCurve * _this3._curveRadius,
 	          y: 0
 	        }, {
 	          x: _this3.scales.x(e.v1.x) - _this3.scales.x(e.v0.x),
@@ -10922,10 +10922,10 @@
 	      var _curve = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
 	      if (_curve) {
-	        this.curve = _curve;
+	        this._curve = _curve;
 	        return this;
 	      } else {
-	        return this.curve;
+	        return this._curve;
 	      }
 	    }
 	  }, {
@@ -10934,10 +10934,10 @@
 	      var _curveRadius = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
 	      if (_curveRadius) {
-	        this.curveRadius = _curveRadius;
+	        this._curveRadius = _curveRadius;
 	        return this;
 	      } else {
-	        return this.curveRadius;
+	        return this._curveRadius;
 	      }
 	    }
 	  }]);
@@ -11482,13 +11482,17 @@
 	  }, {
 	    key: "attr",
 	    value: function attr(string, f) {
-	      this.attrs[string] = f;
+	      if (f) {
+	        this.attrs[string] = f;
 
-	      if (this.figure.drawn) {
-	        this.figure.update();
+	        if (this.figure.drawn) {
+	          this.figure.update();
+	        }
+
+	        return this;
+	      } else {
+	        return this.attrs[string];
 	      }
-
-	      return this;
 	    }
 	  }, {
 	    key: "getAttrs",
@@ -11575,14 +11579,20 @@
 	    }
 	  }, {
 	    key: "on",
-	    value: function on(string, f) {
-	      this.interactions[string] = f;
+	    value: function on(string) {
+	      var f = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
 
-	      if (this.figure.drawn) {
-	        this.figure.update();
+	      if (f) {
+	        this.interactions[string] = f;
+
+	        if (this.figure.drawn) {
+	          this.figure.update();
+	        }
+
+	        return this;
+	      } else {
+	        return this.interactions[string];
 	      }
-
-	      return this;
 	    }
 	  }, {
 	    key: "label",
@@ -11593,32 +11603,16 @@
 	        if (this.figure.drawn) {
 	          this.figure.update();
 	        }
-	      }
 
-	      return this;
+	        return this;
+	      } else {
+	        return this.labelMaker;
+	      }
 	    }
 	  }]);
 
 	  return ElementFactory;
 	}();
-
-	var EdgeFactory =
-	/*#__PURE__*/
-	function (_ElementFactory) {
-	  inherits(EdgeFactory, _ElementFactory);
-
-	  function EdgeFactory(figure) {
-	    var _this;
-
-	    classCallCheck(this, EdgeFactory);
-
-	    _this = possibleConstructorReturn(this, getPrototypeOf(EdgeFactory).call(this, figure));
-	    _this.elementMaker = Branch;
-	    return _this;
-	  }
-
-	  return EdgeFactory;
-	}(ElementFactory);
 
 	function _superPropBase(object, property) {
 	  while (!Object.prototype.hasOwnProperty.call(object, property)) {
@@ -11655,6 +11649,91 @@
 	module.exports = _get;
 	});
 
+	var EdgeFactory =
+	/*#__PURE__*/
+	function (_ElementFactory) {
+	  inherits(EdgeFactory, _ElementFactory);
+
+	  function EdgeFactory(figure) {
+	    var _this;
+
+	    classCallCheck(this, EdgeFactory);
+
+	    _this = possibleConstructorReturn(this, getPrototypeOf(EdgeFactory).call(this, figure));
+	    _this.elementMaker = Branch;
+	    _this._curveRadius = 0;
+	    _this._curve = stepBefore;
+	    return _this;
+	  }
+
+	  createClass(EdgeFactory, [{
+	    key: "getElement",
+	    value: function getElement(d, scales) {
+	      var element = get$2(getPrototypeOf(EdgeFactory.prototype), "getElement", this).call(this, d, scales);
+
+	      if (this._curveRadius instanceof Function) {
+	        element.curveRadius(this._curveRadius(d));
+	      } else {
+	        element.curveRadius(this._curveRadius);
+	      }
+
+	      element.curve(this._curve);
+	      return element;
+	    }
+	  }, {
+	    key: "curveRadius",
+	    value: function curveRadius(f) {
+	      if (f) {
+	        this._curveRadius = f;
+
+	        if (this.figure.drawn) {
+	          this.figure.update();
+	        }
+
+	        return this;
+	      } else {
+	        return this._curveRadius;
+	      }
+	    }
+	  }, {
+	    key: "curve",
+	    value: function curve(f) {
+	      if (f) {
+	        this._curve = f;
+
+	        if (this.figure.drawn) {
+	          this.figure.update();
+	        }
+
+	        return this;
+	      } else {
+	        return this._curve;
+	      }
+	    }
+	  }, {
+	    key: "hover",
+	    value: function hover() {
+	      get$2(getPrototypeOf(EdgeFactory.prototype), "on", this).call(this, "mouseenter", function (element) {
+	        return function (d, i, n) {
+	          var parent = select(n[i]).node().parentNode;
+	          select(parent).classed("hovered", true);
+	        };
+	      });
+
+	      get$2(getPrototypeOf(EdgeFactory.prototype), "on", this).call(this, "mouseleave", function (element) {
+	        return function (d, i, n) {
+	          var parent = select(n[i]).node().parentNode;
+	          select(parent).classed("hovered", false);
+	        };
+	      });
+
+	      return this;
+	    }
+	  }]);
+
+	  return EdgeFactory;
+	}(ElementFactory);
+
 	var nodeFactory =
 	/*#__PURE__*/
 	function (_ElementFactory) {
@@ -11671,23 +11750,48 @@
 	  }
 
 	  createClass(nodeFactory, [{
-	    key: "highlight",
-	    value: function highlight() {
+	    key: "hover",
+	    value: function hover() {
+	      var _this2 = this;
+
 	      var r = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
 
 	      get$2(getPrototypeOf(nodeFactory.prototype), "on", this).call(this, "mouseenter", function (element) {
 	        return function (d, i, n) {
-	          element.attr("r", element.attr("r") + r);
-	          select(n[i]).classed("hovered", true);
+	          if (!_this2.attrs.r) {
+	            _this2.attrs.r = element.attr("r");
+	          }
+
+	          element.attr("r", r);
+	          var parent = select(n[i]).node().parentNode;
+	          select(parent).classed("hovered", true);
 	          element.update();
 	        };
 	      });
 
 	      get$2(getPrototypeOf(nodeFactory.prototype), "on", this).call(this, "mouseleave", function (element) {
 	        return function (d, i, n) {
-	          element.attr("r", element.attr("r") - r);
-	          select(n[i]).classed("hovered", false);
+	          element.attr("r", _this2.attr("r"));
+	          var parent = select(n[i]).node().parentNode;
+	          select(parent).classed("hovered", false);
 	          element.update();
+	        };
+	      });
+
+	      return this;
+	    }
+	  }, {
+	    key: "rotate",
+	    value: function rotate() {
+	      var _this3 = this;
+
+	      var recursive = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+
+	      get$2(getPrototypeOf(nodeFactory.prototype), "on", this).call(this, "click", function (element) {
+	        return function (d, n, i) {
+	          var node = _this3.figure[p.tree].getNode(d.key);
+
+	          _this3.figure[p.tree].rotate(node, recursive);
 	        };
 	      });
 

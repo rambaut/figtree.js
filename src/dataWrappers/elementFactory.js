@@ -40,10 +40,16 @@ export default class ElementFactory{
 
 
     attr(string, f) {
+        if(f){
         this.attrs[string]=f;
         if(this.figure.drawn){
             this.figure.update();
-        }        return this;
+        }
+        return this;
+        }
+        else{
+            return this.attrs[string];
+        }
     }
 
     getAttrs(d){
@@ -105,11 +111,16 @@ export default class ElementFactory{
             }
         }
 
-    on(string,f){
-        this.interactions[string]=f;
-        if(this.figure.drawn){
-            this.figure.update();
-        }        return this;
+    on(string,f=null){
+        if(f) {
+            this.interactions[string] = f;
+            if (this.figure.drawn) {
+                this.figure.update();
+            }
+            return this;
+        }else{
+            return this.interactions[string];
+        }
     }
 
     label(l){
@@ -118,8 +129,10 @@ export default class ElementFactory{
             if(this.figure.drawn){
                 this.figure.update();
             }
+            return this;
+        } else{
+            return this.labelMaker;
         }
-        return this;
     }
 
 

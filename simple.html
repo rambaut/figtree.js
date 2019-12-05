@@ -5,109 +5,119 @@
     <title>FigTree Demo</title>
      <script src="js/d3.js" charset="utf-8"></script>
     <!--<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>-->
-<!--    <style>-->
-<!--        text {-->
-<!--            font-family: "helvetica-neue",  "helvetica",  "sans-serif";-->
-<!--            font-size: 14pt;-->
-<!--            font-weight: 300;-->
-<!--        }-->
+    <style>
+        text {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 14pt;
+            font-weight: 300;
+        }
 
-<!--        .branch .branch-path {-->
-<!--            fill: none;-->
-<!--            stroke: #541753;-->
-<!--            stroke-width: 2px;-->
-<!--            stroke-linecap: round;-->
-<!--            stroke-linejoin: round;-->
-<!--        }-->
+        .branch .branch-path {
+            fill: none;
+            stroke: #541753;
+            stroke-width: 2px;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            -webkit-transition: stroke-width 500ms; /* Safari prior 6.1 */
+            transition: stroke-width 500ms;
 
-<!--        .branch.hovered .branch-path {-->
-<!--            stroke-width: 4px;-->
-<!--        }-->
+        }
 
-<!--        .external-node .node-shape {-->
-<!--            fill: #22b680;-->
-<!--            /*stroke: rgb(255, 255, 255);*/-->
-<!--            /*stroke-width: 1;*/-->
-<!--        }-->
+        .branch.hovered .branch-path {
+            stroke-width: 4px;
+        }
 
-<!--        .external-node .node-shape.hovered {-->
-<!--            stroke: rgb(0,0,0);-->
-<!--            /*stroke-width: 1;*/-->
-<!--        }-->
-<!--        .external-node .node-shape.unselected {-->
-<!--            fill: #22b680;-->
-<!--            /*stroke: rgb(255, 255, 255);*/-->
-<!--        }-->
-<!--        .external-node .node-shape.selected {-->
-<!--            fill: #edb23b;-->
-<!--            /*stroke: rgb(0,0,0);*/-->
-<!--        }-->
+        /*.external-node .node-shape {*/
+        /*    fill: #22b680;*/
+        /*    !*stroke: rgb(255, 255, 255);*!*/
+        /*    !*stroke-width: 1;*!*/
+        /*}*/
 
-<!--        .internal-node .node-shape {-->
-<!--            fill: #29c5ef;-->
-<!--            /*stroke: rgb(255, 255, 255);*/-->
-<!--            /*stroke-width: 1;*/-->
-<!--        }-->
-<!--        .internal-node .node-shape.hovered {-->
-<!--            stroke: rgb(0,0,0);-->
-<!--        }-->
+        /*.external-node .node-shape.hovered {*/
+        /*    stroke: rgb(0,0,0);*/
+        /*    !*stroke-width: 1;*!*/
+        /*}*/
+        /*.external-node .node-shape.unselected {*/
+        /*    fill: #22b680;*/
+        /*    !*stroke: rgb(255, 255, 255);*!*/
+        /*}*/
+        /*.external-node .node-shape.selected {*/
+        /*    fill: #edb23b;*/
+        /*    !*stroke: rgb(0,0,0);*!*/
+        /*}*/
 
-<!--        #root .node-shape {-->
-<!--            fill: #e31e58;-->
-<!--            /*stroke: rgb(255, 255, 255);*/-->
-<!--            /*stroke-width: 1;*/-->
-<!--        }-->
+        /*.internal-node .node-shape {*/
+        /*    fill: #29c5ef;*/
+        /*    !*stroke: rgb(255, 255, 255);*!*/
+        /*    !*stroke-width: 1;*!*/
+        /*}*/
+        /*.internal-node .node-shape.hovered {*/
+        /*    stroke: rgb(0,0,0);*/
+        /*}*/
 
-<!--        .node-background {-->
-<!--            fill: rgb(255, 255, 255);-->
-<!--            /*stroke: rgb(255, 255, 255);*/-->
-<!--            /*stroke-width: 1;*/-->
-<!--        }-->
+        /*#root .node-shape {*/
+        /*    fill: #e31e58;*/
+        /*    !*stroke: rgb(255, 255, 255);*!*/
+        /*    !*stroke-width: 1;*!*/
+        /*}*/
 
-<!--        .node-label {-->
-<!--            font-family: "helvetica-neue",  "helvetica",  "sans-serif";-->
-<!--            font-size: 14pt;-->
-<!--            font-weight: 300;-->
-<!--        }-->
+        .node-background {
+            fill: rgb(255, 255, 255);
+            /*stroke: rgb(255, 255, 255);*/
+            /*stroke-width: 1;*/
+        }
 
-<!--        .trend-line {-->
-<!--            stroke: rgb(0,0,0);-->
-<!--            stroke-width: 2px;-->
-<!--            stroke-linecap: round;-->
-<!--        }-->
+        .node-label {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 14pt;
+            opacity:0;
+            font-weight: 300;
+            -webkit-transition: opacity 500ms; /* Safari prior 6.1 */
+            transition: opacity 500ms;
 
-<!--        .axis text {-->
-<!--            font-family: "helvetica-neue",  "helvetica",  "sans-serif";-->
-<!--            font-size: 12pt;-->
-<!--            font-weight: 300;-->
-<!--        }-->
+        }
+        .node.hovered .node-label{
+            opacity:1;
+        }
 
-<!--        .axis-label text {-->
-<!--            font-family: "helvetica-neue",  "helvetica",  "sans-serif";-->
-<!--            font-size: 12pt;-->
-<!--            font-weight: bold;-->
-<!--        }-->
+        .trend-line {
+            stroke: rgb(0,0,0);
+            stroke-width: 2px;
+            stroke-linecap: round;
+        }
 
-<!--        .node-label.support {-->
-<!--            font-size: 10pt;-->
-<!--        }-->
+        .axis text {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 12pt;
+            font-weight: 300;
+        }
 
-<!--        .branch-label.length {-->
-<!--            /*display: none;*/-->
-<!--            font-size: 8pt;-->
-<!--        }-->
+        .axis-label text {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 12pt;
+            font-weight: bold;
+        }
 
-<!--        #tooltip {-->
-<!--            background: #F6EECA;-->
-<!--            border: 1px solid #005C68;-->
-<!--            color: #005C68;-->
-<!--            border-radius: 5px;-->
-<!--            padding: 5px;-->
-<!--            font-family: "helvetica-neue",  "helvetica",  "sans-serif";-->
-<!--            font-size: 12pt;-->
-<!--            font-weight: 300;-->
-<!--        }-->
-<!--    </style>-->
+        .node-label.support {
+            font-size: 10pt;
+        }
+
+        .branch-label.length {
+            /*display: none;*/
+            font-size: 8pt;
+        }
+
+        #tooltip {
+            background: #F6EECA;
+            border: 1px solid #005C68;
+            color: #005C68;
+            border-radius: 5px;
+            padding: 5px;
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 12pt;
+            font-weight: 300;
+        }
+    </style>
 </head>
 
 <body>
@@ -129,7 +139,7 @@
 
     const width = 600,
         height = 300;
-    const  margins={top:10,bottom:10,left:10,right:10};
+
 
     const svg =  d3.select("body")
         .append("svg")
@@ -145,19 +155,21 @@
 
 
     const fig = new FigTree(treeSVG,tree);
+
         fig
         .layout(rectangularLayout)
-        .nodes(CircleBauble)
+        .nodes()// can take bauble or function that returns a bauble
                 .attr("fill",d=>d.degree>1?"steelblue":"#c71585")
-                .attr("r",d=>5)
+                .attr("r",5)
                 .label("name")
-                .highlight(4)
-                .on("click",(element)=>(d,n,i)=>{
-                    const node = tree.getNode(d.key);
-                    tree.rotate(node);
-                })
-        .branches(Branch)
+                .hover(10)
+                .rotate()
+        .branches()
+            .curveRadius(0.5)
+            .curve(d3.curveBasis)
+            .hover()
         .draw();
+
 </script>
 
 </body>
