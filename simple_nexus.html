@@ -58,10 +58,14 @@
             /*stroke-width: 1;*/
         }
 
-        .node-background {
-            fill: rgb(255, 255, 255);
-            /*stroke: rgb(255, 255, 255);*/
-            /*stroke-width: 1;*/
+        .node-background .node-shape{
+            fill: #541753;
+
+        }
+        .node.hovered .node-shape {
+            stroke: #541753;
+            stroke-width:2;
+
         }
 
         .node-label {
@@ -122,29 +126,32 @@
     <!--<button id="rectangular_button">Draw rectangular</button>-->
     <!--<button id="triangular_button">Draw triangular</button>-->
 </div>
-<script src ="dist/figtree.umd.js"></script>
+<!--<script src ="dist/figtree.umd.js"></script>-->
 <script type="module">
 
-    import {Tree,RectangularLayout,CircleBauble,FigTree,BranchBauble,EqualAngleLayout,Axis,RootToTipPlot}  from "./dist/figtree.esm.js";
+    import {Tree,rectangularLayout,CircleBauble,FigTree}  from "./dist/figtree.esm.js";
     const treeURL = "https://raw.githubusercontent.com/evogytis/fluB/master/data/mcc%20trees/InfB_PB1t_ALLs1.mcc.tre"
     const tree = fetch(treeURL)
         .then(response=>response.text()).then(string=>Tree.parseNexus(string,{datePrefix:"_",dateFormat:"%Y-%m-%d"})).then(trees=>makeFigure(trees[0]));
 
 
     function makeFigure(tree){
+        tree.orderByNodeDensity();
         const treeSVG = document.getElementById('phylogram_1a');
-        const layout = new RectangularLayout(tree);
-        // layout.setBranchLabels("length");
-
-        const figTree = new FigTree(treeSVG, layout,
-            { top: 10, bottom: 60, left: 10, right: 150});
-        figTree.draw();
-        console.log(tree.getCladeMap());
-
-        figTree.hilightInternalNodes();
-        figTree.onClickInternalNode(layout.rotate());
-        figTree.hilightBranches();
-        figTree.onClickBranch({action:layout.reroot()});
+        const fig = new FigTree(treeSVG,tree);
+        fig
+            .layout(rectangularLayout)
+            .nodes(d=>d.degree===1?CircleBauble:null)// can take bauble or function that returns a bauble
+                .attr("fill",d=>d.degree>1?"steelblue":"#c71585")
+                .attr("r",5)
+                .hilightOnHover(10)
+                .rotateOnClick()
+            .nodeBackgrounds(d=>d.degree===1?CircleBauble:null)
+                .attr("r",7)
+            .branches()
+                .hilightOnHover()
+                .reRootOnClick()
+            .draw();
     }
 
 

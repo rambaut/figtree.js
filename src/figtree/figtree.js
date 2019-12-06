@@ -179,7 +179,9 @@ export class FigTree {
 
         this.setUpScales(vertices);
         this.updateNodes(vertices);
-        this.updateBackgroundNodes(vertices);
+        if( this.updateBackgroundNodes) {
+            this.updateBackgroundNodes(vertices);
+        }
         this.updateBranches(edges);
 
         return this;

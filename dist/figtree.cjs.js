@@ -11282,120 +11282,61 @@ function makeVertexFromNode(node) {
 
 function rectangularVertices(tree) {
   var currentY = 0;
+  var vertices = [];
 
-  var traverse =
-  /*#__PURE__*/
-  regenerator.mark(function traverse(node) {
-    var siblingPositions,
-        myChildrenPositions,
-        _iteratorNormalCompletion,
-        _didIteratorError,
-        _iteratorError,
-        _iterator,
-        _step,
-        child,
-        vertex,
-        _vertex,
-        _args = arguments;
+  var traverse = function traverse(node) {
+    var siblingPositions = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+    var myChildrenPositions = [];
 
-    return regenerator.wrap(function traverse$(_context) {
-      while (1) {
-        switch (_context.prev = _context.next) {
-          case 0:
-            siblingPositions = _args.length > 1 && _args[1] !== undefined ? _args[1] : [];
-            myChildrenPositions = [];
+    if (node.children) {
+      var _iteratorNormalCompletion = true;
+      var _didIteratorError = false;
+      var _iteratorError = undefined;
 
-            if (!node.children) {
-              _context.next = 34;
-              break;
-            }
-
-            _iteratorNormalCompletion = true;
-            _didIteratorError = false;
-            _iteratorError = undefined;
-            _context.prev = 6;
-            _iterator = node.children[Symbol.iterator]();
-
-          case 8:
-            if (_iteratorNormalCompletion = (_step = _iterator.next()).done) {
-              _context.next = 14;
-              break;
-            }
-
-            child = _step.value;
-            return _context.delegateYield(traverse(child, myChildrenPositions), "t0", 11);
-
-          case 11:
-            _iteratorNormalCompletion = true;
-            _context.next = 8;
-            break;
-
-          case 14:
-            _context.next = 20;
-            break;
-
-          case 16:
-            _context.prev = 16;
-            _context.t1 = _context["catch"](6);
-            _didIteratorError = true;
-            _iteratorError = _context.t1;
-
-          case 20:
-            _context.prev = 20;
-            _context.prev = 21;
-
-            if (!_iteratorNormalCompletion && _iterator["return"] != null) {
-              _iterator["return"]();
-            }
-
-          case 23:
-            _context.prev = 23;
-
-            if (!_didIteratorError) {
-              _context.next = 26;
-              break;
-            }
-
+      try {
+        for (var _iterator = node.children[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+          var child = _step.value;
+          traverse(child, myChildrenPositions);
+        }
+      } catch (err) {
+        _didIteratorError = true;
+        _iteratorError = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion && _iterator["return"] != null) {
+            _iterator["return"]();
+          }
+        } finally {
+          if (_didIteratorError) {
             throw _iteratorError;
-
-          case 26:
-            return _context.finish(23);
-
-          case 27:
-            return _context.finish(20);
-
-          case 28:
-            siblingPositions.push(mean(myChildrenPositions));
-            vertex = _objectSpread$6({}, makeVertexFromNode(node), {
-              y: mean(myChildrenPositions),
-              x: node.height
-            });
-            _context.next = 32;
-            return vertex;
-
-          case 32:
-            _context.next = 39;
-            break;
-
-          case 34:
-            currentY += 1;
-            siblingPositions.push(currentY);
-            _vertex = _objectSpread$6({}, makeVertexFromNode(node), {
-              y: currentY,
-              x: node.height
-            });
-            _context.next = 39;
-            return _vertex;
-
-          case 39:
-          case "end":
-            return _context.stop();
+          }
         }
       }
-    }, traverse, null, [[6, 16, 20, 28], [21,, 23, 27]]);
-  });
 
-  return toConsumableArray(traverse(tree.rootNode));
+      siblingPositions.push(mean(myChildrenPositions));
+
+      var vertex = _objectSpread$6({}, makeVertexFromNode(node), {
+        y: mean(myChildrenPositions),
+        x: node.height
+      });
+
+      vertices.push(vertex);
+    } else {
+      currentY += 1;
+      siblingPositions.push(currentY);
+
+      var _vertex = _objectSpread$6({}, makeVertexFromNode(node), {
+        y: currentY,
+        x: node.height
+      });
+
+      vertices.push(_vertex);
+    }
+  };
+
+  traverse(tree.rootNode); //slow!
+
+  return vertices;
 }
 function makeEdges(vertices) {
   var nodeMap = new Map(vertices.map(function (v) {
@@ -12016,7 +11957,11 @@ function () {
       select("#".concat(this.svgId)).attr("transform", "translate(".concat(this.margins.left, ",").concat(this.margins.top, ")"));
       this.setUpScales(vertices);
       this.updateNodes(vertices);
-      this.updateBackgroundNodes(vertices);
+
+      if (this.updateBackgroundNodes) {
+        this.updateBackgroundNodes(vertices);
+      }
+
       this.updateBranches(edges);
       return this;
     }
