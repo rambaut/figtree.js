@@ -65,7 +65,7 @@ export default class ElementFactory{
         }
         return attrs;
     }
-
+//TODO remove scales parameter. Only need it for branches and they  can get it from the figure.
     getElement(d,scales){
         let element=null;
         if(this.elementMaker) {

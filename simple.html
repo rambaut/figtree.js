@@ -72,8 +72,8 @@
             font-size: 14pt;
             opacity:0;
             font-weight: 300;
-            -webkit-transition: opacity 500ms; /* Safari prior 6.1 */
-            transition: opacity 500ms;
+            -webkit-transition: opacity 1000ms; /* Safari prior 6.1 */
+            transition: opacity 1000ms;
 
         }
         .node.hovered .node-label{
@@ -176,17 +176,18 @@
         fig
         .layout(rectangularLayout)
         .nodes()// can take bauble or function that returns a bauble
-                .attr("fill",d=>d.degree>1?"steelblue":"#c71585")
-                .attr("r",5)
-                .label("name")
-                .hover(10)
-                .rotate()
+            .attr("fill",d=>d.degree>1?"steelblue":"#c71585")
+            .attr("r",5)
+            .label("name")
+            .hilightOnHover(10)
+            .rotateOnClick()
         .nodeBackgrounds()
             .attr("r",7)
         .branches()
             .curveRadius(0.5)
             .curve(d3.curveBasis)
-            .hover()
+            .hilightOnHover()
+            .reRootOnClick()
         .draw();
 
 </script>

@@ -11510,7 +11510,8 @@ function () {
       }
 
       return attrs;
-    }
+    } //TODO remove scales parameter. Only need it for branches and they  can get it from the figure.
+
   }, {
     key: "getElement",
     value: function getElement(d, scales) {
@@ -11707,8 +11708,8 @@ function (_ElementFactory) {
       }
     }
   }, {
-    key: "hover",
-    value: function hover() {
+    key: "hilightOnHover",
+    value: function hilightOnHover() {
       get$2(getPrototypeOf(EdgeFactory.prototype), "on", this).call(this, "mouseenter", function (element) {
         return function (d, i, n) {
           var parent = select(n[i]).node().parentNode;
@@ -11720,6 +11721,26 @@ function (_ElementFactory) {
         return function (d, i, n) {
           var parent = select(n[i]).node().parentNode;
           select(parent).classed("hovered", false);
+        };
+      });
+
+      return this;
+    }
+  }, {
+    key: "reRootOnClick",
+    value: function reRootOnClick() {
+      var _this2 = this;
+
+      get$2(getPrototypeOf(EdgeFactory.prototype), "on", this).call(this, "click", function (branch) {
+        return function (d, i, n) {
+          var x1 = _this2.figure.scales.x(d.v1.x),
+              x2 = _this2.figure.scales.x(d.v0.x),
+              mx = mouse(document.getElementById(_this2.figure.svgId))[0],
+              proportion = Math.abs((mx - x2) / (x1 - x2)),
+              tree = _this2.figure.tree(); //TODO add a distance method to layout to handel other cases
+
+
+          tree.reroot(tree.getNode(d.id), proportion);
         };
       });
 
@@ -11743,42 +11764,49 @@ function (_ElementFactory) {
     _this = possibleConstructorReturn(this, getPrototypeOf(NodeFactory).call(this, figure));
     _this.elementMaker = CircleBauble;
     return _this;
-  }
+  } //TODO move onHover to super class and take an attrs object to update;
+
 
   createClass(NodeFactory, [{
-    key: "hover",
-    value: function hover() {
+    key: "hilightOnHover",
+    value: function hilightOnHover() {
       var _this2 = this;
 
-      var r = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 1;
+      var r = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
       get$2(getPrototypeOf(NodeFactory.prototype), "on", this).call(this, "mouseenter", function (element) {
         return function (d, i, n) {
-          if (!_this2.attrs.r) {
-            _this2.attrs.r = element.attr("r");
+          if (r) {
+            if (!_this2.attrs.r) {
+              _this2.attrs.r = element.attr("r");
+            }
+
+            element.attr("r", r);
+            element.update();
           }
 
-          element.attr("r", r);
           var parent = select(n[i]).node().parentNode;
           select(parent).classed("hovered", true);
-          element.update();
         };
       });
 
       get$2(getPrototypeOf(NodeFactory.prototype), "on", this).call(this, "mouseleave", function (element) {
         return function (d, i, n) {
-          element.attr("r", _this2.attr("r"));
+          if (r) {
+            element.attr("r", _this2.attr("r"));
+            element.update();
+          }
+
           var parent = select(n[i]).node().parentNode;
           select(parent).classed("hovered", false);
-          element.update();
         };
       });
 
       return this;
     }
   }, {
-    key: "rotate",
-    value: function rotate() {
+    key: "rotateOnClick",
+    value: function rotateOnClick() {
       var _this3 = this;
 
       var recursive = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
