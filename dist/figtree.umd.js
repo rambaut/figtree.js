@@ -10862,6 +10862,7 @@
 	                key = _Object$entries$_i[0],
 	                func = _Object$entries$_i[1];
 
+	            console.log([key, func]);
 	            element.on(key, function (d, i, n) {
 	              return func(d, i, n);
 	            });
@@ -10875,7 +10876,24 @@
 	        return update.call(function (update) {
 	          return update.transition("pathUpdating").duration(_this2._transitions.transitionDuration).ease(_this2._transitions.transitionEase).attr("d", function (edge, i) {
 	            return _this2.branchPath(edge, i);
-	          }).attrs(_this2.attrs);
+	          }).attrs(_this2.attrs).each(function (d, i, n) {
+	            var element = select(n[i]);
+
+	            var _loop2 = function _loop2() {
+	              var _Object$entries2$_i = slicedToArray(_Object$entries2[_i2], 2),
+	                  key = _Object$entries2$_i[0],
+	                  func = _Object$entries2$_i[1];
+
+	              console.log([key, func]);
+	              element.on(key, function (d, i, n) {
+	                return func(d, i, n);
+	              });
+	            };
+
+	            for (var _i2 = 0, _Object$entries2 = Object.entries(_this2.interactions); _i2 < _Object$entries2.length; _i2++) {
+	              _loop2();
+	            }
+	          });
 	        });
 	      });
 	    }

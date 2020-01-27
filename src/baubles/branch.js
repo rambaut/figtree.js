@@ -52,6 +52,7 @@ export class Branch extends Bauble {
                     .each((d,i,n)=>{
                         const element = select(n[i]);
                         for( const [key,func] of Object.entries(this.interactions)){
+                            console.log([key,func])
                             element.on(key,(d,i,n)=>func(d,i,n))
                         }
                     }),
@@ -61,6 +62,12 @@ export class Branch extends Bauble {
                         .ease(this._transitions.transitionEase)
                         .attr("d", (edge,i) => this.branchPath(edge,i))
                         .attrs(this.attrs)
+                        .each((d,i,n)=>{
+                            const element = select(n[i]);
+                            for( const [key,func] of Object.entries(this.interactions)){
+                                element.on(key,(d,i,n)=>func(d,i,n))
+                            }
+                        })
                     )
             )
     };
