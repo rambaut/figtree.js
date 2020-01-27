@@ -15,8 +15,11 @@ import {Axis} from "./src/baubles/axes";
 import {GeoLayout} from "./src/layout/geoLayout";
 import {GreatCircleBranchBauble} from "./src/baubles/greatCircleBranchBauble";
 import{rectangularLayout} from "./src/layout/rectangularLayout.f";
+import{equalAngleLayout} from "./src/layout/equaleanglelayout.f";
 import {nodes,nodeBackground} from "./src/dataWrappers/nodes";
 import {branches} from "./src/dataWrappers/branches";
 
+
 export{Tree,Type,rectangularLayout,RootToTipPlot,RectangularLayout,TransmissionLayout, ExplodedLayout, FigTree,
-    Bauble,CircleBauble,RoughCircleBauble,RectangularBauble,Branch,GreatCircleBranchBauble,RoughBranchBauble,Axis,EqualAngleLayout,GeoLayout,nodes,nodeBackground,branches};
+    Bauble,CircleBauble,RoughCircleBauble,RectangularBauble,Branch,GreatCircleBranchBauble,RoughBranchBauble,
+    Axis,EqualAngleLayout,GeoLayout,nodes,nodeBackground,branches,equalAngleLayout};

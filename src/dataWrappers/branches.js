@@ -48,7 +48,6 @@ class BranchFactory extends ElementFactory{
             (element) => (d, i,n) => {
                 const parent = select(n[i]).node().parentNode;
                 select(parent).classed("hovered",true);
-                console.log("yep")
             });
         super.on("mouseleave",
             (element) => (d,i,n) => {
@@ -64,11 +63,14 @@ class BranchFactory extends ElementFactory{
 
                 const x1 = this.figure.scales.x(d.v1.x),
                  x2 = this.figure.scales.x(d.v0.x),
-                 mx = mouse(document.getElementById(this.figure.svgId))[0],
-                proportion = Math.abs( (mx - x2) / (x1 - x2)),
-                    tree = this.figure.tree();
-                //TODO add a distance method to layout to handel other cases
+                    y1=this.figure.scales.y(d.v1.y),
+                    y2=this.figure.scales.y(d.v0.y),
+                 [mx,my] = mouse(document.getElementById(this.figure.svgId));
 
+                const proportion = this.curve()==d3.curveStepBefore? Math.abs( (mx - x2) / (x1 - x2)):
+                    this.curveRadius()==0? Math.abs( (mx - x2) / (x1 - x2)):
+                    Math.sqrt(Math.pow(mx-x2,2)+Math.pow(my-y2,2))/Math.sqrt(Math.pow(x1-x2,2)+Math.pow(y1-y2,2)),
+                    tree = this.figure.tree();
                 tree.reroot(tree.getNode(d.id),proportion)
 
 

@@ -151,7 +151,7 @@
 <script src ="dist/figtree.umd.js"></script>
 <script type="module">
 
-    import {Tree,rectangularLayout,CircleBauble,FigTree,Branch,EqualAngleLayout,Axis,RootToTipPlot,nodes,nodeBackground,branches}  from "./dist/figtree.esm.js";
+    import {Tree,rectangularLayout,CircleBauble,FigTree,Branch,EqualAngleLayout,Axis,RootToTipPlot,nodes,nodeBackground,branches,equalAngleLayout}  from "./dist/figtree.esm.js";
 
 
     const width = 600,
@@ -175,7 +175,9 @@
 
 
     fig
-        .layout(rectangularLayout)
+        // .layout(rectangularLayout)
+        // .layout(equalAngleLayout)
+        .layout(equalAngleLayout(tree.externalNodes.map(n=>n.id)))
         .feature(
             nodes()// can take bauble or function that returns a bauble
                 .element(CircleBauble)
@@ -191,6 +193,7 @@
         )
         .feature(
             branches()
+                .curve(d3.curveBasis)
                 .hilightOnHover()
                 .reRootOnClick()
         )

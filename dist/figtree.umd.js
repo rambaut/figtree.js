@@ -6847,6 +6847,26 @@
 	  return maxIndex;
 	}
 
+	function mean$1(values, valueof) {
+	  let count = 0;
+	  let sum = 0;
+	  if (valueof === undefined) {
+	    for (let value of values) {
+	      if (value != null && (value = +value) >= value) {
+	        ++count, sum += value;
+	      }
+	    }
+	  } else {
+	    let index = -1;
+	    for (let value of values) {
+	      if ((value = valueof(value, ++index, values)) != null && (value = +value) >= value) {
+	        ++count, sum += value;
+	      }
+	    }
+	  }
+	  if (count) return sum / count;
+	}
+
 	function isObject(item) {
 	  return item && _typeof_1(item) === 'object' && !Array.isArray(item);
 	}
@@ -10884,7 +10904,6 @@
 	                  key = _Object$entries2$_i[0],
 	                  func = _Object$entries2$_i[1];
 
-	              console.log([key, func]);
 	              element.on(key, function (d, i, n) {
 	                return func(d, i, n);
 	              });
@@ -11248,10 +11267,6 @@
 	  updateBackgroundNodes: Symbol("updateBackgroundNodes")
 	};
 
-	function ownKeys$6(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-	function _objectSpread$6(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$6(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$6(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
 	function getVertexClassesFromNode(node) {
 	  var classes = [!node.children ? "external-node" : "internal-node"];
 	  var tree = node.tree;
@@ -11301,10 +11316,47 @@
 	    classes: getVertexClassesFromNode(node)
 	  }, p.node, node);
 	}
+	function makeEdges(vertices) {
+	  var nodeMap = new Map(vertices.map(function (v) {
+	    return [v[p.node], v];
+	  }));
+	  return vertices.filter(function (v) {
+	    return v[p.node].parent;
+	  }).map(function (v) {
+	    var labelBelow = v[p.node].parent.children[0] !== v[p.node];
+	    return {
+	      v0: nodeMap.get(v[p.node].parent),
+	      v1: v,
+	      key: v.key,
+	      id: v.id,
+	      classes: v.classes,
+	      x: nodeMap.get(v[p.node].parent).x,
+	      y: v.y,
+	      textLabel: {
+	        dx: [v.x, nodeMap.get(v[p.node].parent).x],
+	        dy: labelBelow ? +6 : -6,
+	        alignmentBaseline: labelBelow ? "hanging" : "bottom",
+	        textAnchor: "middle"
+	      }
+	    };
+	  });
+	}
+	var layoutFactory = function layoutFactory(makeVertices) {
+	  return function (tree) {
+	    var vertices = makeVertices(tree);
+	    var edges = makeEdges(vertices);
+	    return {
+	      vertices: vertices,
+	      edges: edges
+	    };
+	  };
+	};
 
+	function ownKeys$6(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+	function _objectSpread$6(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$6(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$6(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 	function rectangularVertices(tree) {
 	  var currentY = 0;
-	  var vertices = [];
 
 	  var traverse = function traverse(node) {
 	    var siblingPositions = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
@@ -11335,10 +11387,10 @@
 	        }
 	      }
 
-	      siblingPositions.push(mean(myChildrenPositions));
+	      siblingPositions.push(mean$1(myChildrenPositions));
 
 	      var vertex = _objectSpread$6({}, makeVertexFromNode(node), {
-	        y: mean(myChildrenPositions),
+	        y: mean$1(myChildrenPositions),
 	        x: node.height
 	      });
 
@@ -11360,43 +11412,6 @@
 
 	  return vertices;
 	}
-	function makeEdges(vertices) {
-	  var nodeMap = new Map(vertices.map(function (v) {
-	    return [v[p.node], v];
-	  }));
-	  return vertices.filter(function (v) {
-	    return v[p.node].parent;
-	  }).map(function (v) {
-	    var labelBelow = v[p.node].parent.children[0] !== v[p.node];
-	    return {
-	      v0: nodeMap.get(v[p.node].parent),
-	      v1: v,
-	      key: v.key,
-	      id: v.id,
-	      classes: v.classes,
-	      x: nodeMap.get(v[p.node].parent).x,
-	      y: v.y,
-	      textLabel: {
-	        dx: [v.x, nodeMap.get(v[p.node].parent).x],
-	        dy: labelBelow ? +6 : -6,
-	        alignmentBaseline: labelBelow ? "hanging" : "bottom",
-	        textAnchor: "middle"
-	      }
-	    };
-	  });
-	}
-
-	var layoutFactory = function layoutFactory(makeVertices) {
-	  return function (tree) {
-	    var vertices = makeVertices(tree);
-	    var edges = makeEdges(vertices);
-	    return {
-	      vertices: vertices,
-	      edges: edges
-	    };
-	  };
-	};
-
 	var rectangularLayout = layoutFactory(rectangularVertices);
 
 	var ElementFactory =
@@ -11657,7 +11672,6 @@
 	        return function (d, i, n) {
 	          var parent = select(n[i]).node().parentNode;
 	          select(parent).classed("hovered", true);
-	          console.log("yep");
 	        };
 	      });
 
@@ -11679,10 +11693,15 @@
 	        return function (d, i, n) {
 	          var x1 = _this2.figure.scales.x(d.v1.x),
 	              x2 = _this2.figure.scales.x(d.v0.x),
-	              mx = mouse(document.getElementById(_this2.figure.svgId))[0],
-	              proportion = Math.abs((mx - x2) / (x1 - x2)),
-	              tree = _this2.figure.tree(); //TODO add a distance method to layout to handel other cases
+	              y1 = _this2.figure.scales.y(d.v1.y),
+	              y2 = _this2.figure.scales.y(d.v0.y),
+	              _mouse = mouse(document.getElementById(_this2.figure.svgId)),
+	              _mouse2 = slicedToArray(_mouse, 2),
+	              mx = _mouse2[0],
+	              my = _mouse2[1];
 
+	          var proportion = _this2.curve() == d3.curveStepBefore ? Math.abs((mx - x2) / (x1 - x2)) : _this2.curveRadius() == 0 ? Math.abs((mx - x2) / (x1 - x2)) : Math.sqrt(Math.pow(mx - x2, 2) + Math.pow(my - y2, 2)) / Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2)),
+	              tree = _this2.figure.tree();
 
 	          tree.reroot(tree.getNode(d.id), proportion);
 	        };
@@ -13536,6 +13555,410 @@
 	  return newString.join("");
 	};
 
+	var _marked =
+	/*#__PURE__*/
+	regenerator.mark(pseudoRerootPreorder);
+
+	function pseudoRerootPreorder(node) {
+	  var visited,
+	      traverse,
+	      _args2 = arguments;
+	  return regenerator.wrap(function pseudoRerootPreorder$(_context2) {
+	    while (1) {
+	      switch (_context2.prev = _context2.next) {
+	        case 0:
+	          visited = _args2.length > 1 && _args2[1] !== undefined ? _args2[1] : [];
+	          traverse =
+	          /*#__PURE__*/
+	          regenerator.mark(function traverse(node) {
+	            var relatives, pseudoChildren, _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, child;
+
+	            return regenerator.wrap(function traverse$(_context) {
+	              while (1) {
+	                switch (_context.prev = _context.next) {
+	                  case 0:
+	                    visited.push(node);
+	                    _context.next = 3;
+	                    return node;
+
+	                  case 3:
+	                    relatives = [node.parent && node.parent].concat(node.children && node.children).filter(function (n) {
+	                      return n;
+	                    }); // to remove null
+
+	                    pseudoChildren = relatives.filter(function (n) {
+	                      return !visited.includes(n);
+	                    });
+
+	                    if (!pseudoChildren) {
+	                      _context.next = 31;
+	                      break;
+	                    }
+
+	                    _iteratorNormalCompletion = true;
+	                    _didIteratorError = false;
+	                    _iteratorError = undefined;
+	                    _context.prev = 9;
+	                    _iterator = pseudoChildren[Symbol.iterator]();
+
+	                  case 11:
+	                    if (_iteratorNormalCompletion = (_step = _iterator.next()).done) {
+	                      _context.next = 17;
+	                      break;
+	                    }
+
+	                    child = _step.value;
+	                    return _context.delegateYield(traverse(child), "t0", 14);
+
+	                  case 14:
+	                    _iteratorNormalCompletion = true;
+	                    _context.next = 11;
+	                    break;
+
+	                  case 17:
+	                    _context.next = 23;
+	                    break;
+
+	                  case 19:
+	                    _context.prev = 19;
+	                    _context.t1 = _context["catch"](9);
+	                    _didIteratorError = true;
+	                    _iteratorError = _context.t1;
+
+	                  case 23:
+	                    _context.prev = 23;
+	                    _context.prev = 24;
+
+	                    if (!_iteratorNormalCompletion && _iterator["return"] != null) {
+	                      _iterator["return"]();
+	                    }
+
+	                  case 26:
+	                    _context.prev = 26;
+
+	                    if (!_didIteratorError) {
+	                      _context.next = 29;
+	                      break;
+	                    }
+
+	                    throw _iteratorError;
+
+	                  case 29:
+	                    return _context.finish(26);
+
+	                  case 30:
+	                    return _context.finish(23);
+
+	                  case 31:
+	                  case "end":
+	                    return _context.stop();
+	                }
+	              }
+	            }, traverse, null, [[9, 19, 23, 31], [24,, 26, 30]]);
+	          });
+	          return _context2.delegateYield(traverse(node), "t0", 3);
+
+	        case 3:
+	        case "end":
+	          return _context2.stop();
+	      }
+	    }
+	  }, _marked);
+	}
+
+	var equalAngleVertices = function equalAngleVertices() {
+	  var tipRank = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+	  return function (tree) {
+	    var _marked2 =
+	    /*#__PURE__*/
+	    regenerator.mark(traverseFromTip),
+	        _marked3 =
+	    /*#__PURE__*/
+	    regenerator.mark(traverse);
+
+	    var startNode = tipRank ? tree.getExternalNode(tipRank[0]) : tree.externalNodes[0];
+
+	    function traverseFromTip(node) {
+	      var visited,
+	          traverse,
+	          _args4 = arguments;
+	      return regenerator.wrap(function traverseFromTip$(_context4) {
+	        while (1) {
+	          switch (_context4.prev = _context4.next) {
+	            case 0:
+	              visited = _args4.length > 1 && _args4[1] !== undefined ? _args4[1] : [];
+	              traverse =
+	              /*#__PURE__*/
+	              regenerator.mark(function traverse(node) {
+	                var relatives, pseudoChildren, _iteratorNormalCompletion2, _didIteratorError2, _iteratorError2, _iterator2, _step2, child;
+
+	                return regenerator.wrap(function traverse$(_context3) {
+	                  while (1) {
+	                    switch (_context3.prev = _context3.next) {
+	                      case 0:
+	                        visited.push(node);
+	                        _context3.next = 3;
+	                        return node;
+
+	                      case 3:
+	                        relatives = [node.parent && node.parent].concat(node.children && node.children).filter(function (n) {
+	                          return n;
+	                        }); // to remove null
+
+	                        pseudoChildren = relatives.filter(function (n) {
+	                          return !visited.includes(n);
+	                        });
+
+	                        if (!pseudoChildren) {
+	                          _context3.next = 32;
+	                          break;
+	                        }
+
+	                        if (tipRank) {
+	                          pseudoChildren = pseudoChildren.sort(function (a, b) {
+	                            var aRank = min$1(toConsumableArray(pseudoRerootPreorder(a, [node])).filter(function (n) {
+	                              return !n.children;
+	                            }).map(function (n) {
+	                              return n.id;
+	                            }).map(function (n) {
+	                              return tipRank.indexOf(n);
+	                            }));
+	                            var bRank = min$1(toConsumableArray(pseudoRerootPreorder(b, [node])).filter(function (n) {
+	                              return !n.children;
+	                            }).map(function (n) {
+	                              return n.id;
+	                            }).map(function (n) {
+	                              return tipRank.indexOf(n);
+	                            }));
+	                            return bRank - aRank;
+	                          });
+	                        }
+
+	                        _iteratorNormalCompletion2 = true;
+	                        _didIteratorError2 = false;
+	                        _iteratorError2 = undefined;
+	                        _context3.prev = 10;
+	                        _iterator2 = pseudoChildren[Symbol.iterator]();
+
+	                      case 12:
+	                        if (_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done) {
+	                          _context3.next = 18;
+	                          break;
+	                        }
+
+	                        child = _step2.value;
+	                        return _context3.delegateYield(traverse(child), "t0", 15);
+
+	                      case 15:
+	                        _iteratorNormalCompletion2 = true;
+	                        _context3.next = 12;
+	                        break;
+
+	                      case 18:
+	                        _context3.next = 24;
+	                        break;
+
+	                      case 20:
+	                        _context3.prev = 20;
+	                        _context3.t1 = _context3["catch"](10);
+	                        _didIteratorError2 = true;
+	                        _iteratorError2 = _context3.t1;
+
+	                      case 24:
+	                        _context3.prev = 24;
+	                        _context3.prev = 25;
+
+	                        if (!_iteratorNormalCompletion2 && _iterator2["return"] != null) {
+	                          _iterator2["return"]();
+	                        }
+
+	                      case 27:
+	                        _context3.prev = 27;
+
+	                        if (!_didIteratorError2) {
+	                          _context3.next = 30;
+	                          break;
+	                        }
+
+	                        throw _iteratorError2;
+
+	                      case 30:
+	                        return _context3.finish(27);
+
+	                      case 31:
+	                        return _context3.finish(24);
+
+	                      case 32:
+	                      case "end":
+	                        return _context3.stop();
+	                    }
+	                  }
+	                }, traverse, null, [[10, 20, 24, 32], [25,, 27, 31]]);
+	              });
+	              return _context4.delegateYield(traverse(node), "t0", 3);
+
+	            case 3:
+	            case "end":
+	              return _context4.stop();
+	          }
+	        }
+	      }, _marked2);
+	    }
+
+	    var nodeOrder = toConsumableArray(traverseFromTip(startNode, [], tipRank));
+
+	    function getPseudoChildren(node) {
+	      var relatives = [node.parent && node.parent].concat(node.children && node.children).filter(function (n) {
+	        return n;
+	      }); // to remove null
+	      // the parent will come before the node in question in the preoder traversal
+
+	      var pseudoChildren = nodeOrder.slice(nodeOrder.indexOf(node), nodeOrder.length).filter(function (n) {
+	        return relatives.includes(n);
+	      });
+	      return pseudoChildren.length > 0 ? pseudoChildren : null;
+	    }
+
+	    var totalTips = tree.externalNodes.length;
+
+	    function traverse(node) {
+	      var dataFromParent,
+	          vertex,
+	          angle,
+	          length,
+	          allocatedRadians,
+	          parentY,
+	          parentX,
+	          children,
+	          totalRadians,
+	          _iteratorNormalCompletion3,
+	          _didIteratorError3,
+	          _iteratorError3,
+	          _iterator3,
+	          _step3,
+	          child,
+	          tips,
+	          r,
+	          _allocatedRadians,
+	          _angle,
+	          _length,
+	          _args5 = arguments;
+
+	      return regenerator.wrap(function traverse$(_context5) {
+	        while (1) {
+	          switch (_context5.prev = _context5.next) {
+	            case 0:
+	              dataFromParent = _args5.length > 1 && _args5[1] !== undefined ? _args5[1] : null;
+	              vertex = makeVertexFromNode(node);
+
+	              if (dataFromParent) {
+	                angle = dataFromParent.angle, length = dataFromParent.length, allocatedRadians = dataFromParent.allocatedRadians, parentY = dataFromParent.parentY, parentX = dataFromParent.parentX;
+	                vertex.y = Math.cos(angle) * length + parentY;
+	                vertex.x = Math.sin(angle) * length + parentX;
+	                vertex.allocatedRadians = allocatedRadians;
+	              } else {
+	                vertex.y = 0;
+	                vertex.x = 0;
+	                vertex.allocatedRadians = [0, 2 * Math.PI];
+	              }
+
+	              children = getPseudoChildren(node);
+
+	              if (!children) {
+	                _context5.next = 37;
+	                break;
+	              }
+
+	              totalRadians = vertex.allocatedRadians[0];
+	              _iteratorNormalCompletion3 = true;
+	              _didIteratorError3 = false;
+	              _iteratorError3 = undefined;
+	              _context5.prev = 9;
+	              _iterator3 = children[Symbol.iterator]();
+
+	            case 11:
+	              if (_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done) {
+	                _context5.next = 23;
+	                break;
+	              }
+
+	              child = _step3.value;
+	              tips = toConsumableArray(traverseFromTip(child, [node])).filter(function (n) {
+	                return !n.children;
+	              }).length;
+	              r = 2 * Math.PI * tips / totalTips;
+	              _allocatedRadians = [totalRadians, totalRadians + r];
+	              _angle = totalRadians + r / 2;
+	              _length = Math.abs(node.height - child.height);
+	              return _context5.delegateYield(traverse(child, {
+	                angle: _angle,
+	                length: _length,
+	                allocatedRadians: _allocatedRadians,
+	                parentY: vertex.y,
+	                parentX: vertex.x
+	              }), "t0", 19);
+
+	            case 19:
+	              totalRadians += r;
+
+	            case 20:
+	              _iteratorNormalCompletion3 = true;
+	              _context5.next = 11;
+	              break;
+
+	            case 23:
+	              _context5.next = 29;
+	              break;
+
+	            case 25:
+	              _context5.prev = 25;
+	              _context5.t1 = _context5["catch"](9);
+	              _didIteratorError3 = true;
+	              _iteratorError3 = _context5.t1;
+
+	            case 29:
+	              _context5.prev = 29;
+	              _context5.prev = 30;
+
+	              if (!_iteratorNormalCompletion3 && _iterator3["return"] != null) {
+	                _iterator3["return"]();
+	              }
+
+	            case 32:
+	              _context5.prev = 32;
+
+	              if (!_didIteratorError3) {
+	                _context5.next = 35;
+	                break;
+	              }
+
+	              throw _iteratorError3;
+
+	            case 35:
+	              return _context5.finish(32);
+
+	            case 36:
+	              return _context5.finish(29);
+
+	            case 37:
+	              _context5.next = 39;
+	              return vertex;
+
+	            case 39:
+	            case "end":
+	              return _context5.stop();
+	          }
+	        }
+	      }, _marked3, null, [[9, 25, 29, 37], [30,, 32, 36]]);
+	    }
+
+	    return toConsumableArray(traverse(startNode));
+	  };
+	};
+	var equalAngleLayout = function equalAngleLayout(tipRank) {
+	  return layoutFactory(equalAngleVertices(tipRank));
+	};
+
 	exports.Axis = Axis;
 	exports.Bauble = Bauble;
 	exports.Branch = Branch;
@@ -13554,6 +13977,7 @@
 	exports.Tree = Tree;
 	exports.Type = Type;
 	exports.branches = branches;
+	exports.equalAngleLayout = equalAngleLayout;
 	exports.nodeBackground = nodeBackground;
 	exports.nodes = nodes;
 	exports.rectangularLayout = rectangularLayout;
