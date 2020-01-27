@@ -4,34 +4,20 @@ import {isFunction} from "../utilities";
 // also but some case specific helper functions for each style.
 
 export default class ElementFactory{
-    constructor(figure) {
+    constructor() {
 
-        this.figure = figure;
         this.attrs={};
         this.interactions={};
         this.elementMaker=null;
         this.labelMaker=()=>"";
+        this.type = null;
 
-        return new Proxy(this,
-            { get : function(target, prop)
-                {
-                    if(target[prop] === undefined){
-                        return figure[prop].bind(figure);
-                    }
-                    else{
-                        return target[prop];
-                    }
-
-                }
-            });
+        return this;
     }
 
-    elements(b=null) {
+    element(b=null) {
         if(b){
             this.elementMaker=b;
-            if(this.figure.drawn){
-                this.figure.update();
-            }
             return this;
         }else{
             return this.elementMaker;
@@ -42,9 +28,6 @@ export default class ElementFactory{
     attr(string, f) {
         if(f){
         this.attrs[string]=f;
-        if(this.figure.drawn){
-            this.figure.update();
-        }
         return this;
         }
         else{
@@ -114,9 +97,6 @@ export default class ElementFactory{
     on(string,f=null){
         if(f) {
             this.interactions[string] = f;
-            if (this.figure.drawn) {
-                this.figure.update();
-            }
             return this;
         }else{
             return this.interactions[string];
@@ -126,12 +106,18 @@ export default class ElementFactory{
     label(l){
         if(l) {
             this.labelMaker = l;
-            if(this.figure.drawn){
-                this.figure.update();
-            }
             return this;
         } else{
             return this.labelMaker;
+        }
+    }
+    figure(f=null){
+        if(f) {
+            this.figure = f;
+            return this;
+        }
+        else{
+            return this.figure;
         }
     }
 

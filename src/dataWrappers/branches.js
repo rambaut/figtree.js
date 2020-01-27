@@ -2,13 +2,15 @@ import ElementFactory from "./elementFactory";
 import {isFunction} from "../utilities";
 import {Branch} from "../baubles/branch";
 import {select,curveStepBefore,mouse} from "d3";
+import p from "../privateConstants";
 
-class EdgeFactory extends ElementFactory{
-    constructor(figure){
-        super(figure);
+class BranchFactory extends ElementFactory{
+    constructor(){
+        super();
         this.elementMaker=Branch;
         this._curveRadius=0;
         this._curve =curveStepBefore;
+        this.type=p.branch;
     }
     getElement(d, scales) {
         const element=super.getElement(d, scales);
@@ -24,9 +26,6 @@ class EdgeFactory extends ElementFactory{
     curveRadius(f) {
         if(f){
             this._curveRadius=f;
-            if(this.figure.drawn){
-                this.figure.update();
-            }
             return this;
         }
         else{
@@ -37,21 +36,19 @@ class EdgeFactory extends ElementFactory{
     curve(f) {
         if(f){
             this._curve=f;
-            if(this.figure.drawn){
-                this.figure.update();
-            }
             return this;
         }
         else{
             return this._curve;
         }
     }
-
+//TODO fix these interactions.
     hilightOnHover() {
         super.on("mouseenter",
             (element) => (d, i,n) => {
                 const parent = select(n[i]).node().parentNode;
                 select(parent).classed("hovered",true);
+                console.log("yep")
             });
         super.on("mouseleave",
             (element) => (d,i,n) => {
@@ -80,4 +77,6 @@ class EdgeFactory extends ElementFactory{
     }
 }
 
-export default EdgeFactory;
+export const branches=()=>{
+    return new BranchFactory
+};

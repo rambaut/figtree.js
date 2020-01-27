@@ -3,8 +3,9 @@ import {CircleBauble} from "../baubles/circlebauble";
 import {select} from "d3";
 import p from "../privateConstants"
 class NodeFactory extends ElementFactory {
-    constructor(figure) {
-        super(figure);
+    constructor(type) {
+        super();
+        this.type=type;
         this.elementMaker = CircleBauble;
     }
 //TODO move onHover to super class and take an attrs object to update;
@@ -45,4 +46,12 @@ class NodeFactory extends ElementFactory {
     }
 }
 
-export default NodeFactory
+export const nodes = ()=>{
+    return new NodeFactory(p.node);
+};
+
+export const nodeBackground = () =>{
+    return new  NodeFactory(p.nodeBackground);
+};
+
+

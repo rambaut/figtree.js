@@ -9,10 +9,10 @@ import {CartoonBauble} from "../baubles/cartoonbauble";
 import {GeoLayout} from "../layout/geoLayout";
 import {rectangularLayout} from "../layout/rectangularLayout.f";
 import ElementFactory from "../dataWrappers/elementFactory"
-import EdgeFactory from "../dataWrappers/edgeFactory";
+import {branches} from "../dataWrappers/branches";
 import {min,max} from "d3-array";
 import p from "../privateConstants.js"
-import NodeFactory from "../dataWrappers/nodeFactory";
+import  {nodes,nodeBackground} from "../dataWrappers/nodes";
 
 /** @module figtree */
 
@@ -159,8 +159,8 @@ export class FigTree {
 
     }
     setupUpdaters(){
-        this.vertexFactory=new NodeFactory(this);
-        this.edgeFactory = new EdgeFactory(this);
+        this.vertexFactory=nodes().figure(this);
+        this.edgeFactory = branches().figure(this);
 
         this.updateNodes= this.updateElementFactory( this.vertexFactory,"node",this.svgSelection.select(".nodes-layer"));
         this.updateBranches= this.updateElementFactory( this.edgeFactory,"branch",this.svgSelection.select(".branches-layer"));
@@ -187,12 +187,6 @@ export class FigTree {
         return this;
 
     }
-    draw(){
-        this.update();
-        this.drawn = true;
-
-    }
-
 
     /**
      * Registers action function to be called when an edge is clicked on. The function is passed
@@ -394,6 +388,7 @@ export class FigTree {
             this[p.tree].subscribeCallback( () => {
                 this.update();
             });
+            this.update();
             return this;
         }
     }
@@ -402,34 +397,27 @@ export class FigTree {
             return this[p.layout]
         }else{
             this[p.layout] = layout;
+            this.update();
             return this;
         }
     }
+    feature(feature){
+        if(feature.type===p.node){
+            this.vertexFactory=feature.figure(this);
+            this.updateNodes= this.updateElementFactory( this.vertexFactory,"node",this.svgSelection.select(".nodes-layer"));
+        }else if(feature.type === p.branch){
+            this.edgeFactory=feature.figure(this);
+            this.updateBranches= this.updateElementFactory( this.edgeFactory,"branch",this.svgSelection.select(".branches-layer"));
 
-    nodes(b=null){
-        if(b){
-            this.vertexFactory.elements(b)
+        }else if(feature.type===p.nodeBackground) {
+                this.backgroundNodesFactory = feature.figure(this);
+                this.updateBackgroundNodes = this.updateElementFactory(this.backgroundNodesFactory, "node-background", this.svgSelection.select(".nodes-background-layer"));
         }
-        return this.vertexFactory
-    }
-    nodeBackgrounds(b=null){
-        if(!this.backgroundNodesFactory){
-            this.backgroundNodesFactory=new NodeFactory(this);
-            this.updateBackgroundNodes= this.updateElementFactory( this.backgroundNodesFactory,"node-background",this.svgSelection.select(".nodes-background-layer"));
-        }
-        if(b){
-            this.backgroundNodesFactory.elements(b)
-        }
-        return this.backgroundNodesFactory;
+
+        this.update();
+        return this;
     }
 
-    branches(b=null){
-
-        if(b){
-            this.edgeFactory.elements(b)
-        }
-        return this.edgeFactory
-    }
 
     get xAxis(){
 

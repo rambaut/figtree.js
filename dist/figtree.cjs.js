@@ -11220,6 +11220,8 @@ var p = {
   branchMap: Symbol("branchMap"),
   updateVerticesAndEdges: Symbol("updateVerticesAndEdges"),
   node: Symbol("node"),
+  branch: Symbol("branch"),
+  nodeBackground: Symbol("node background"),
   vertexFactory: Symbol("vertexFactory"),
   edgeFactory: Symbol("edgeFactory"),
   backgroundNodesFactory: Symbol("backgroundNodesFactory"),
@@ -11380,10 +11382,9 @@ var rectangularLayout = layoutFactory(rectangularVertices);
 var ElementFactory =
 /*#__PURE__*/
 function () {
-  function ElementFactory(figure) {
+  function ElementFactory() {
     classCallCheck(this, ElementFactory);
 
-    this.figure = figure;
     this.attrs = {};
     this.interactions = {};
     this.elementMaker = null;
@@ -11392,29 +11393,17 @@ function () {
       return "";
     };
 
-    return new Proxy(this, {
-      get: function get(target, prop) {
-        if (target[prop] === undefined) {
-          return figure[prop].bind(figure);
-        } else {
-          return target[prop];
-        }
-      }
-    });
+    this.type = null;
+    return this;
   }
 
   createClass(ElementFactory, [{
-    key: "elements",
-    value: function elements() {
+    key: "element",
+    value: function element() {
       var b = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
       if (b) {
         this.elementMaker = b;
-
-        if (this.figure.drawn) {
-          this.figure.update();
-        }
-
         return this;
       } else {
         return this.elementMaker;
@@ -11425,11 +11414,6 @@ function () {
     value: function attr(string, f) {
       if (f) {
         this.attrs[string] = f;
-
-        if (this.figure.drawn) {
-          this.figure.update();
-        }
-
         return this;
       } else {
         return this.attrs[string];
@@ -11526,11 +11510,6 @@ function () {
 
       if (f) {
         this.interactions[string] = f;
-
-        if (this.figure.drawn) {
-          this.figure.update();
-        }
-
         return this;
       } else {
         return this.interactions[string];
@@ -11541,14 +11520,21 @@ function () {
     value: function label(l) {
       if (l) {
         this.labelMaker = l;
-
-        if (this.figure.drawn) {
-          this.figure.update();
-        }
-
         return this;
       } else {
         return this.labelMaker;
+      }
+    }
+  }, {
+    key: "figure",
+    value: function figure() {
+      var f = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (f) {
+        this.figure = f;
+        return this;
+      } else {
+        return this.figure;
       }
     }
   }]);
@@ -11591,27 +11577,28 @@ function _get(target, property, receiver) {
 module.exports = _get;
 });
 
-var EdgeFactory =
+var BranchFactory =
 /*#__PURE__*/
 function (_ElementFactory) {
-  inherits(EdgeFactory, _ElementFactory);
+  inherits(BranchFactory, _ElementFactory);
 
-  function EdgeFactory(figure) {
+  function BranchFactory() {
     var _this;
 
-    classCallCheck(this, EdgeFactory);
+    classCallCheck(this, BranchFactory);
 
-    _this = possibleConstructorReturn(this, getPrototypeOf(EdgeFactory).call(this, figure));
+    _this = possibleConstructorReturn(this, getPrototypeOf(BranchFactory).call(this));
     _this.elementMaker = Branch;
     _this._curveRadius = 0;
     _this._curve = stepBefore;
+    _this.type = p.branch;
     return _this;
   }
 
-  createClass(EdgeFactory, [{
+  createClass(BranchFactory, [{
     key: "getElement",
     value: function getElement(d, scales) {
-      var element = get$2(getPrototypeOf(EdgeFactory.prototype), "getElement", this).call(this, d, scales);
+      var element = get$2(getPrototypeOf(BranchFactory.prototype), "getElement", this).call(this, d, scales);
 
       if (this._curveRadius instanceof Function) {
         element.curveRadius(this._curveRadius(d));
@@ -11627,11 +11614,6 @@ function (_ElementFactory) {
     value: function curveRadius(f) {
       if (f) {
         this._curveRadius = f;
-
-        if (this.figure.drawn) {
-          this.figure.update();
-        }
-
         return this;
       } else {
         return this._curveRadius;
@@ -11642,27 +11624,24 @@ function (_ElementFactory) {
     value: function curve(f) {
       if (f) {
         this._curve = f;
-
-        if (this.figure.drawn) {
-          this.figure.update();
-        }
-
         return this;
       } else {
         return this._curve;
       }
-    }
+    } //TODO fix these interactions.
+
   }, {
     key: "hilightOnHover",
     value: function hilightOnHover() {
-      get$2(getPrototypeOf(EdgeFactory.prototype), "on", this).call(this, "mouseenter", function (element) {
+      get$2(getPrototypeOf(BranchFactory.prototype), "on", this).call(this, "mouseenter", function (element) {
         return function (d, i, n) {
           var parent = select(n[i]).node().parentNode;
           select(parent).classed("hovered", true);
+          console.log("yep");
         };
       });
 
-      get$2(getPrototypeOf(EdgeFactory.prototype), "on", this).call(this, "mouseleave", function (element) {
+      get$2(getPrototypeOf(BranchFactory.prototype), "on", this).call(this, "mouseleave", function (element) {
         return function (d, i, n) {
           var parent = select(n[i]).node().parentNode;
           select(parent).classed("hovered", false);
@@ -11676,7 +11655,7 @@ function (_ElementFactory) {
     value: function reRootOnClick() {
       var _this2 = this;
 
-      get$2(getPrototypeOf(EdgeFactory.prototype), "on", this).call(this, "click", function (branch) {
+      get$2(getPrototypeOf(BranchFactory.prototype), "on", this).call(this, "click", function (branch) {
         return function (d, i, n) {
           var x1 = _this2.figure.scales.x(d.v1.x),
               x2 = _this2.figure.scales.x(d.v0.x),
@@ -11693,20 +11672,25 @@ function (_ElementFactory) {
     }
   }]);
 
-  return EdgeFactory;
+  return BranchFactory;
 }(ElementFactory);
+
+var branches = function branches() {
+  return new BranchFactory();
+};
 
 var NodeFactory =
 /*#__PURE__*/
 function (_ElementFactory) {
   inherits(NodeFactory, _ElementFactory);
 
-  function NodeFactory(figure) {
+  function NodeFactory(type) {
     var _this;
 
     classCallCheck(this, NodeFactory);
 
-    _this = possibleConstructorReturn(this, getPrototypeOf(NodeFactory).call(this, figure));
+    _this = possibleConstructorReturn(this, getPrototypeOf(NodeFactory).call(this));
+    _this.type = type;
     _this.elementMaker = CircleBauble;
     return _this;
   } //TODO move onHover to super class and take an attrs object to update;
@@ -11770,6 +11754,13 @@ function (_ElementFactory) {
 
   return NodeFactory;
 }(ElementFactory);
+
+var nodes = function nodes() {
+  return new NodeFactory(p.node);
+};
+var nodeBackground = function nodeBackground() {
+  return new NodeFactory(p.nodeBackground);
+};
 
 /** @module figtree */
 
@@ -11938,8 +11929,8 @@ function () {
   }, {
     key: "setupUpdaters",
     value: function setupUpdaters() {
-      this.vertexFactory = new NodeFactory(this);
-      this.edgeFactory = new EdgeFactory(this);
+      this.vertexFactory = nodes().figure(this);
+      this.edgeFactory = branches().figure(this);
       this.updateNodes = this.updateElementFactory(this.vertexFactory, "node", this.svgSelection.select(".nodes-layer"));
       this.updateBranches = this.updateElementFactory(this.edgeFactory, "branch", this.svgSelection.select(".branches-layer"));
     }
@@ -11964,12 +11955,6 @@ function () {
 
       this.updateBranches(edges);
       return this;
-    }
-  }, {
-    key: "draw",
-    value: function draw() {
-      this.update();
-      this.drawn = true;
     }
     /**
      * Registers action function to be called when an edge is clicked on. The function is passed
@@ -12200,6 +12185,7 @@ function () {
         this[p.tree].subscribeCallback(function () {
           _this4.update();
         });
+        this.update();
         return this;
       }
     }
@@ -12212,46 +12198,26 @@ function () {
         return this[p.layout];
       } else {
         this[p.layout] = _layout;
+        this.update();
         return this;
       }
     }
   }, {
-    key: "nodes",
-    value: function nodes() {
-      var b = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-
-      if (b) {
-        this.vertexFactory.elements(b);
-      }
-
-      return this.vertexFactory;
-    }
-  }, {
-    key: "nodeBackgrounds",
-    value: function nodeBackgrounds() {
-      var b = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-
-      if (!this.backgroundNodesFactory) {
-        this.backgroundNodesFactory = new NodeFactory(this);
+    key: "feature",
+    value: function feature(_feature) {
+      if (_feature.type === p.node) {
+        this.vertexFactory = _feature.figure(this);
+        this.updateNodes = this.updateElementFactory(this.vertexFactory, "node", this.svgSelection.select(".nodes-layer"));
+      } else if (_feature.type === p.branch) {
+        this.edgeFactory = _feature.figure(this);
+        this.updateBranches = this.updateElementFactory(this.edgeFactory, "branch", this.svgSelection.select(".branches-layer"));
+      } else if (_feature.type === p.nodeBackground) {
+        this.backgroundNodesFactory = _feature.figure(this);
         this.updateBackgroundNodes = this.updateElementFactory(this.backgroundNodesFactory, "node-background", this.svgSelection.select(".nodes-background-layer"));
       }
 
-      if (b) {
-        this.backgroundNodesFactory.elements(b);
-      }
-
-      return this.backgroundNodesFactory;
-    }
-  }, {
-    key: "branches",
-    value: function branches() {
-      var b = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-
-      if (b) {
-        this.edgeFactory.elements(b);
-      }
-
-      return this.edgeFactory;
+      this.update();
+      return this;
     }
   }, {
     key: "xAxis",
@@ -13567,5 +13533,8 @@ exports.RoughCircleBauble = RoughCircleBauble;
 exports.TransmissionLayout = TransmissionLayout;
 exports.Tree = Tree;
 exports.Type = Type;
+exports.branches = branches;
+exports.nodeBackground = nodeBackground;
+exports.nodes = nodes;
 exports.rectangularLayout = rectangularLayout;
 //# sourceMappingURL=figtree.cjs.js.map

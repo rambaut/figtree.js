@@ -24,9 +24,12 @@ const p= {
     branchMap:Symbol("branchMap"),
     updateVerticesAndEdges:Symbol("updateVerticesAndEdges"),
     node:Symbol("node"),
+    branch:Symbol("branch"),
+    nodeBackground:Symbol("node background"),
     vertexFactory:Symbol("vertexFactory"),
     edgeFactory:Symbol("edgeFactory"),
     backgroundNodesFactory:Symbol("backgroundNodesFactory"),
-    updateBackgroundNodes:Symbol("updateBackgroundNodes")
+    updateBackgroundNodes:Symbol("updateBackgroundNodes"),
+
 };
 export default p;

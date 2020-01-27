@@ -151,7 +151,7 @@
 <script src ="dist/figtree.umd.js"></script>
 <script type="module">
 
-    import {Tree,rectangularLayout,CircleBauble,FigTree,Branch,EqualAngleLayout,Axis,RootToTipPlot}  from "./dist/figtree.esm.js";
+    import {Tree,rectangularLayout,CircleBauble,FigTree,Branch,EqualAngleLayout,Axis,RootToTipPlot,nodes,nodeBackground,branches}  from "./dist/figtree.esm.js";
 
 
     const width = 600,
@@ -172,20 +172,28 @@
 
 
     const fig = new FigTree(treeSVG,tree);
-        fig
+
+
+    fig
         .layout(rectangularLayout)
-        .nodes(CircleBauble)// can take bauble or function that returns a bauble
-            .attr("fill",d=>d.degree>1?"steelblue":"#c71585")
-            .attr("r",5)
-            .label("name")
-            .hilightOnHover(10)
-            .rotateOnClick()
-        .nodeBackgrounds()
-            .attr("r",7)
-        .branches()
-            .hilightOnHover()
-            .reRootOnClick()
-        .draw();
+        .feature(
+            nodes()// can take bauble or function that returns a bauble
+                .element(CircleBauble)
+                .attr("fill",d=>d.degree>1?"steelblue":"#c71585")
+                .attr("r",5)
+                .label("name")
+                .hilightOnHover(10)
+                .rotateOnClick()
+        )
+        .feature(
+            nodeBackground()
+                .attr("r",7)
+        )
+        .feature(
+            branches()
+                .hilightOnHover()
+                .reRootOnClick()
+        )
 
 </script>
 
