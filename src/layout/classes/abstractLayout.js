@@ -1,9 +1,9 @@
 "use strict";
 import {format,max,min,mean} from "d3";
-import {Tree, Type} from "../tree";
+import {Tree, Type} from "../../tree";
 import {layoutInterface} from "./layoutInterface";
 import extent from "d3-array/src/extent";
-import {mergeDeep} from "../utilities";
+import {mergeDeep} from "../../utilities";
 
 /** @module layout */
 

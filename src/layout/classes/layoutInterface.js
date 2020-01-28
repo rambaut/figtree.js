@@ -1,6 +1,6 @@
 "use strict";
 import {format,curveStepBefore,max,min,line,mean,scaleLinear,curveLinear} from "d3";
-import {Type} from "../tree";
+import {Type} from "../../tree";
 import uuid from "uuid";
 
 /** @module layout */

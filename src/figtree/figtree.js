@@ -6,7 +6,7 @@ import 'd3-selection-multi';
 import {CircleBauble} from "../baubles/circlebauble";
 import {Branch} from "../baubles/branch";
 import {CartoonBauble} from "../baubles/cartoonbauble";
-import {GeoLayout} from "../layout/geoLayout";
+import {GeoLayout} from "../layout/classes/geoLayout";
 import {rectangularLayout} from "../layout/rectangularLayout.f";
 import ElementFactory from "../dataWrappers/elementFactory"
 import {branches} from "../dataWrappers/branches";
@@ -108,11 +108,14 @@ export class FigTree {
      */
     constructor(svg=null,tree=null, layout=rectangularLayout, margins={top:10,bottom:60,left:30,right:60}, settings = {}) {
         this[p.layout] = layout;
-        this.margins = margins;
+        this._margins = margins;
 
         this.settings = mergeDeep(FigTree.DEFAULT_SETTINGS(),settings);
         this.drawn = false
-        this._transitions=this.settings.transition;
+        this._transitions=  {
+            transitionDuration: 500,
+                transitionEase: easeCubic
+        };
 
         this[p.svg]=svg;
         this[p.tree] = tree;
@@ -120,15 +123,24 @@ export class FigTree {
                 this.update();
             });
         this.setupSVG();
-        this.setupUpdaters();
+        this.axes=[];
+        // this.setupUpdaters();
         return this;
     }
 
     transitions(t=null){
         if(t){
-            this._transitions=t;
+            this._transitions={...this._transitions,...t};
         }else{
             return this._transitions;
+        }
+    }
+    margins(m=null){
+        if(m){
+            this._margins = {...this._margins,...m}
+            return this;
+        }else{
+            return this_margins
         }
     }
     /**
@@ -143,7 +155,7 @@ export class FigTree {
         // add a group which will contain the new tree
         select(this[p.svg]).append("g")
             .attr("id",this.svgId)
-            .attr("transform",`translate(${this.margins.left},${this.margins.top})`);
+            .attr("transform",`translate(${this._margins.left},${this._margins.top})`);
 
         //to selecting every time
         this.svgSelection = select(this[p.svg]).select(`#${this.svgId}`);
@@ -152,21 +164,10 @@ export class FigTree {
         this.svgSelection.append("g").attr("class", "cartoon-layer");
 
         this.svgSelection.append("g").attr("class", "branches-layer");
-        if (this.settings.vertices.backgroundBorder !==null) {
-            this.svgSelection.append("g").attr("class", "nodes-background-layer");
-        }
+        this.svgSelection.append("g").attr("class", "nodes-background-layer");
         this.svgSelection.append("g").attr("class", "nodes-layer");
 
     }
-    setupUpdaters(){
-        this.vertexFactory=nodes().figure(this);
-        this.edgeFactory = branches().figure(this);
-
-        this.updateNodes= this.updateElementFactory( this.vertexFactory,"node",this.svgSelection.select(".nodes-layer"));
-        this.updateBranches= this.updateElementFactory( this.edgeFactory,"branch",this.svgSelection.select(".branches-layer"));
-    }
-
-
 
     /**
      * Updates the figure when the tree has changed
@@ -175,62 +176,22 @@ export class FigTree {
         const {vertices,edges} = this[p.layout](this[p.tree]);
 
         select(`#${this.svgId}`)
-            .attr("transform",`translate(${this.margins.left},${this.margins.top})`);
+            .attr("transform",`translate(${this._margins.left},${this._margins.top})`);
 
         this.setUpScales(vertices);
-        this.updateNodes(vertices);
+        if(this.updateNodes){
+            this.updateNodes(vertices);
+        }
         if( this.updateBackgroundNodes) {
             this.updateBackgroundNodes(vertices);
         }
-        this.updateBranches(edges);
+        if(this.updateBranches){
+            this.updateBranches(edges);
+        }
+        for(const axis of this.axes){
+            axis.updateAxis();
+        }
 
-        return this;
-
-    }
-
-    /**
-     * Registers action function to be called when an edge is clicked on. The function is passed
-     * edge object that was clicked on and the position of the click as a proportion of the edge length.
-     *
-     * Optionally a selection string can be provided - i.e., to select a particular branch by its id.
-     *
-     * @param {Object} action
-     * @param selection
-     */
-    onClickBranch({action, selection,update,proportionMethod}) {
-        selection = selection ? selection : ".branch";
-        update = update?update:false;
-        proportionMethod = proportionMethod? proportionMethod: "manhattan";
-        this.callbacks.branches.push(()=>{
-            // We need to use the "function" keyword here (rather than an arrow) so that "this"
-            // points to the actual SVG element (so we can use d3.mouse(this)). We therefore need
-            // to store a reference to the object in "self".
-            const self = this;
-            const selected = this.svgSelection.selectAll(`${selection}`);
-            selected.on("click", function (edge) {
-                let proportion;
-
-                const x1 = self.scales.x(edge.v1.x+self.settings.xScale.revisions.offset);
-                const x2 = self.scales.x(edge.v0.x+self.settings.xScale.revisions.offset);
-                const mx = mouse(document.getElementById(self.svgId))[0];
-                if(proportionMethod.toLowerCase()==="manhattan"){
-                    proportion = Math.abs( (mx - x2) / (x1 - x2));
-                }else if(proportionMethod.toLocaleString()==="euclidean"){
-                    const y1 = self.scales.y(edge.v1.y+self.settings.yScale.revisions.offset);
-                    const y2 = self.scales.y(edge.v0.y+self.settings.yScale.revisions.offset);
-                    const my =  mouse(document.getElementById(self.svgId))[1];
-                    proportion=  Math.sqrt(Math.pow((my-y2),2)+Math.pow((mx - x2),2)) / Math.sqrt(Math.pow((y1-y2),2)+Math.pow((x1 - x2),2))
-
-                } else{
-                    throw new Error(`proportion method ${proportionMethod} unknown.`)
-                }
-                action(edge, proportion);
-                if(update){
-                    self.update();
-                }
-            })
-        });
-        this.update();
         return this;
 
     }
@@ -289,11 +250,11 @@ export class FigTree {
             else{
                 xScale = this.settings.xScale.scale()
                     .domain([max(vertices,d=>d.x),min(vertices,d=>d.x)])
-                    .range([0, width - this.margins.right-this.margins.left]);
+                    .range([0, width - this._margins.right-this._margins.left]);
 
                 yScale = this.settings.yScale.scale()
                     .domain([min(vertices,d=>d.y),max(vertices,d=>d.y)])
-                    .range([0, height -this.margins.bottom-this.margins.top]);
+                    .range([0, height -this._margins.bottom-this._margins.top]);
             }
             this.scales = {x:xScale, y:yScale, width, height, projection};
     }
@@ -335,8 +296,8 @@ export class FigTree {
                         .text((d) => elementFactory.getLabel(d)),
                     update => update
                         .call(update => update.transition()
-                            .duration(this.settings.transition.transitionDuration)
-                            .ease(this.settings.transition.transitionEase)
+                            .duration(this.transitions().transitionDuration)
+                            .ease(this.transitions().transitionEase)
                             .attr("class", (d) => [`${elementClass}`, ...d.classes].join(" "))
                             .attr("transform", (d) => {
                                 return `translate(${this.scales.x(d.x)}, ${this.scales.y(d.y)})`;
@@ -350,8 +311,8 @@ export class FigTree {
 
                             .select(`.${elementClass}-label`)
                             .transition()
-                            .duration(this.settings.transition.transitionDuration)
-                            .ease(this.settings.transition.transitionEase)
+                            .duration(this.transitions().transitionDuration)
+                            .ease(this.transitions().transitionEase)
                             .attr("text-anchor", d => d.textLabel.textAnchor)
                             .attr("alignment-baseline", d => d.textLabel.alignmentBaseline)
                             .attr("dx", d => {
@@ -412,6 +373,10 @@ export class FigTree {
         }else if(feature.type===p.nodeBackground) {
                 this.backgroundNodesFactory = feature.figure(this);
                 this.updateBackgroundNodes = this.updateElementFactory(this.backgroundNodesFactory, "node-background", this.svgSelection.select(".nodes-background-layer"));
+        }else if(feature.type===p.axis){
+            feature.figure(this);
+            feature.createAxis();
+            this.axes=this.axes.concat(feature);
         }
 
         this.update();

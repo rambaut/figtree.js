@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FigTree Demo</title>
+    <script src="js/d3.js" charset="utf-8"></script>
+    <!--<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>-->
+    <style>
+        text {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 14pt;
+            font-weight: 300;
+        }
+
+        .branch .branch-path {
+            fill: none;
+            stroke: #541753;
+            stroke-width: 2px;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            -webkit-transition: stroke-width 500ms; /* Safari prior 6.1 */
+            transition: stroke-width 500ms;
+        }
+
+        .branch.hovered .branch-path {
+            stroke-width: 4px;
+        }
+
+        /*.external-node .node-shape {*/
+        /*    fill: #22b680;*/
+        /*    !*stroke: rgb(255, 255, 255);*!*/
+        /*    !*stroke-width: 1;*!*/
+        /*}*/
+
+        /*.external-node .node-shape.hovered {*/
+        /*    stroke: rgb(0,0,0);*/
+        /*    !*stroke-width: 1;*!*/
+        /*}*/
+        /*.external-node .node-shape.unselected {*/
+        /*    fill: #22b680;*/
+        /*    !*stroke: rgb(255, 255, 255);*!*/
+        /*}*/
+        /*.external-node .node-shape.selected {*/
+        /*    fill: #edb23b;*/
+        /*    !*stroke: rgb(0,0,0);*!*/
+        /*}*/
+
+        /*.internal-node .node-shape {*/
+        /*    fill: #29c5ef;*/
+        /*    !*stroke: rgb(255, 255, 255);*!*/
+        /*    !*stroke-width: 1;*!*/
+        /*}*/
+        /*.internal-node .node-shape.hovered {*/
+        /*    stroke: rgb(0,0,0);*/
+        /*}*/
+
+        /*#root .node-shape {*/
+        /*    fill: #e31e58;*/
+        /*    !*stroke: rgb(255, 255, 255);*!*/
+        /*    !*stroke-width: 1;*!*/
+        /*}*/
+
+        .node-background {
+            fill: rgb(255, 255, 255);
+            /*stroke: rgb(255, 255, 255);*/
+            /*stroke-width: 1;*/
+        }
+
+        .node-label {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 14pt;
+            opacity:0;
+            font-weight: 300;
+            -webkit-transition: opacity 1000ms; /* Safari prior 6.1 */
+            transition: opacity 1000ms;
+            pointer-events: none;
+
+        }
+        .node.hovered .node-label{
+            opacity:1;
+        }
+        .node .node-shape{
+            stroke-width:0;
+            stroke: #541753;
+            -webkit-transition: stroke-width 500ms; /* Safari prior 6.1 */
+            transition: stroke-width 500ms;
+        }
+        .node-background .node-shape{
+            fill: white;
+
+        }
+
+        .node.hovered .node-shape {
+            stroke-width:2;
+
+        }
+
+        .trend-line {
+            stroke: rgb(0,0,0);
+            stroke-width: 2px;
+            stroke-linecap: round;
+        }
+
+        .axis text {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 12pt;
+            font-weight: 300;
+        }
+
+        .axis-label text {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 12pt;
+            font-weight: bold;
+        }
+
+        .node-label.support {
+            font-size: 10pt;
+        }
+
+        .branch-label.length {
+            /*display: none;*/
+            font-size: 8pt;
+        }
+
+        #tooltip {
+            background: #F6EECA;
+            border: 1px solid #005C68;
+            color: #005C68;
+            border-radius: 5px;
+            padding: 5px;
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 12pt;
+            font-weight: 300;
+        }
+    </style>
+</head>
+
+<body>
+<div id="tooltip" display="none" style="position: absolute; display: none;"></div>
+<svg id="iqtree"  width="600" height="500"></svg>
+<svg id="rootToTip"  width="600" height="500"></svg>
+
+<!--<div>-->
+<!--    <figure>-->
+<!--        <svg id="phylogram_1a"  width="600" height="500"></svg>-->
+<!--    </figure>-->
+<!--    &lt;!&ndash;<button id="sort_up_button">Sort ascending</button>&ndash;&gt;-->
+<!--    &lt;!&ndash;<button id="sort_down_button">Sort descending</button>&ndash;&gt;-->
+<!--    &lt;!&ndash;<button id="rectangular_button">Draw rectangular</button>&ndash;&gt;-->
+<!--    &lt;!&ndash;<button id="triangular_button">Draw triangular</button>&ndash;&gt;-->
+<!--</div>-->
+<script src ="dist/figtree.umd.js"></script>
+<script type="module">
+
+    import {Tree,rectangularLayout,CircleBauble,FigTree,nodes,nodeBackground,branches,rootToTipLayout,axis}  from "./dist/figtree.esm.js";
+
+
+    const newickString ="('BetaCoV/Hubei|Wuhan_City/IPBCAMS-WH-01/2019|EPI_ISL_402123|China|Hubei|Wuhan_City|2019-12-24':5.0E-5,(('BetaCoV/Hubei|Wuhan_City/IVDC-HB-01/2019|EPI_ISL_402119|China|Hubei|Wuhan_City|2019-12-30':0.0,('BetaCoV/Hubei|Wuhan_City/IVDC-HB-05/2019|EPI_ISL_402121|China|Hubei|Wuhan_City|2019-12-30':6.699999999999999E-5,('BetaCoV/Hubei|Wuhan_City/WIV02/2019|EPI_ISL_402127|China|Hubei|Wuhan_City|2019-12-30':6.699999999999999E-5,('BetaCoV/Hubei|Wuhan_City/WIV04/2019|EPI_ISL_402124|China|Hubei|Wuhan_City|2019-12-30':0.0,'BetaCoV/Hubei|Wuhan_City/WIV05/2019|EPI_ISL_402128|China|Hubei|Wuhan_City|2019-12-30':6.699999999999999E-5):0.0):0.0):0.0):0.0,('BetaCoV/Hubei|Wuhan_City/HBCDC-HB-01/2019|EPI_ISL_402132|China|Hubei|Wuhan_City|2019-12-30':3.4E-5,('BetaCoV/Nonthaburi/74/2020|EPI_ISL_403963|Thailand|Nonthaburi|2020-01-13':0.0,(('BetaCoV/Guangdong/20SF028/2020|EPI_ISL_403936|China|Guangdong|Zhuhai_City|2020-01-17':0.0,'BetaCoV/Guangdong/20SF040/2020|EPI_ISL_403937|China|Guangdong|Zhuhai_City|2020-01-18':0.0):3.4E-5,('BetaCoV/Guangdong/20SF014/2020|EPI_ISL_403934|China|Guangdong|Shenzhen_City|2020-01-15':3.4E-5,('BetaCoV/Hubei|Wuhan_City/IPBCAMS-WH-02/2019|EPI_ISL_403931|China|Hubei|Wuhan_City|2019-12-30':0.0,('BetaCoV/Hubei|Wuhan_City/IPBCAMS-WH-03/2019|EPI_ISL_403930|China|Hubei|Wuhan_City|2019-12-30':3.3E-5,('BetaCoV/Hubei|Wuhan_City/IPBCAMS-WH-04/2019|EPI_ISL_403929|China|Hubei|Wuhan_City|2019-12-30':0.0,('BetaCoV|Hubei|Wuhan_City-Hu-1|MN908947|China|Hubei|Wuhan_City|2019-12-26':0.0,(('BetaCoV/Hubei|Wuhan_City/WIV07/2019|EPI_ISL_402130|China|Hubei|Wuhan_City|2019-12-30':6.699999999999999E-5,('BetaCoV/Nonthaburi/61/2020|EPI_ISL_403962|Thailand|Nonthaburi|2020-01-08':0.0,'BetaCoV/Hubei|Wuhan_City/WIV06/2019|EPI_ISL_402129|China|Hubei|Wuhan_City|2019-12-30':0.0):0.0):0.0,('BetaCoV/Zhejiang/WZ-02/2020|EPI_ISL_404228|China|Zhejiang|2020-01-17':0.0,('2019-nCoV|WH03|China|Wuhan|2020-01-01':0.0,('2019-nCoV|WH01|China|Wuhan|2019-12-26':6.699999999999999E-5,('BetaCoV/Zhejiang/WZ-01/2020|EPI_ISL_404227|China|Zhejiang|2020-01-16':6.699999999999999E-5,('BetaCoV/USA/IL1/2020|EPI_ISL_404253|USA|Illinois|Chicago|2020-01-21':0.0,('2019-nCoV/USA-WA1/2020|MN985325|USA|2020-01-19':3.299999999999999E-5,('2019-nCoV|WH04|China|Wuhan|2020-01-05':3.299999999999999E-5,('nCoV-2019|HKU-SZ-002a|MN938384|China|Guangdong|Shenzhen|2020-01-10':0.0,('BetaCoV/Guangdong/20SF012/2020|EPI_ISL_403932|China|Guangdong|Shenzhen_City|2020-01-14':0.0,('BetaCoV/Guangdong/20SF013/2020|EPI_ISL_403933|China|Guangdong|Shenzhen_City|2020-01-15':0.0,('BetaCoV/HKU-SZ-005|EPI_ISL_405839|China|Shenzhen|2020-01-21':6.7E-5,'BetaCoV/Guangdong/20SF025/2020|EPI_ISL_403935|China|Guangdong|Shenzhen_City|2020-01-15':0.0):0.0):0.0):0.0):3.3000000000000016E-5):0.0):3.299999999999999E-5):3.4E-5):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):5.0E-5);"
+
+    const tree = Tree.parseNewick(newickString,{datePrefix: "|",dateFormat:"%Y-%m-%d"});
+    const treeSVG = document.getElementById('iqtree');
+    const rootToTipSVG = document.getElementById('rootToTip');
+
+    tree.externalNodes.forEach(n=>{
+        // Annotating nodes based on meta data in name - there are differences among the names so this doesn't work
+        //
+        const [name,someLocation,sequenceId,country,province,city,date] = n.name.split('|');
+        tree.annotateNode(n,{country,province})
+    });
+
+
+
+
+    const colorScale = d3.scaleOrdinal().domain(tree.annotations.province.values).range(d3.schemeAccent)
+    const margins= {top:10,bottom:60,left:100,right:100};
+
+    const fig = new FigTree(treeSVG,tree)
+        .layout(rectangularLayout)
+        .margins(margins)
+            .feature(
+            nodes()// can take bauble or function that returns a bauble class  - only want tips
+                .element(d=>{return (d.degree===1?CircleBauble:null)})
+                .attr("fill",d=>colorScale(d.annotations.province))
+                .attr("r",d=>d.annotations.hovered?10:5)
+                .label(d=> {
+                    if (d.name) {
+                        const metaData = d.name.split("|");
+                    return `${d.annotations.province} - ${metaData[metaData.length - 1]}`
+                }
+                })
+                .annotateOnHover("hovered")
+
+        )
+        .feature(
+            nodeBackground()
+                // only backgrounds on tips
+                .element(d=>{return (d.degree===1?CircleBauble:null)})
+                .attr("r",7)
+        )
+        .feature(
+            branches()
+                .hilightOnHover()
+        );
+    const rootToTipPlot = new FigTree(rootToTipSVG,tree)
+        .layout(rootToTipLayout())
+        .margins(margins)
+        .feature(
+            nodes()// can take bauble or function that returns a bauble
+                .attr("fill",d=>colorScale(d.annotations.province))
+                .attr("r",d=>d.annotations.hovered?10:5)
+                .annotateOnHover("hovered")
+        )
+        .feature(
+            nodeBackground()
+                .attr("r",7)
+        )
+        .feature(
+            branches()
+                .curve(d3.curveBasis)
+                .hilightOnHover()
+        )
+        .feature(
+            axis()
+                .y(500-margins.bottom-margins.top+5)
+                .location("bottom")
+                .x(0)
+                .title({text:"Divergence",
+                        yPadding:30})
+        )
+    .feature(
+        axis()
+            .y(0)
+            .location("left")
+            .x(0)
+            .title({text:"Date",
+                xPadding:-30,
+            rotation:-90})
+    )
+
+
+
+
+
+</script>
+
+</body>
+
+</html>

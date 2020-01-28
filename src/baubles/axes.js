@@ -47,8 +47,17 @@ export class Axis {
 
      */
     constructor(settings = {}) {
-        this.settings = mergeDeep(Axis.DEFAULT_SETTINGS(),settings);
-        this.d3Axis = getD3Axis(this.settings.location)
+
+        this.tickArguments=[5, "f"];
+            this.title={
+            text:"",
+                xPadding:0,
+                yPadding:0,
+                rotation:0
+        };
+        this.id= `a${uuid.v4()}`;
+            this.location="bottom";
+        this.d3Axis = getD3Axis(this.location)
     }
 
     createAxis({selection, x, y, length,scale}) {

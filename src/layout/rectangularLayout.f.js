@@ -1,11 +1,12 @@
-import {mean} from "d3-array";
-import {layoutFactory, makeVertexFromNode} from "./layoutHelpers";
+import {mean} from "d3";
+import {makeEdges, makeVertexFromNode} from "./layoutHelpers";
+
+
 
 
 export function rectangularVertices(tree){
     let currentY=0;
-    let angel=0;
-    let allocatedRadians = [0, 2 * Math.PI];
+    const vertices=[];
 
     const traverse = function(node,siblingPositions=[]){
         const myChildrenPositions=[];
@@ -33,5 +34,12 @@ export function rectangularVertices(tree){
     return vertices;
 }
 
+
+
+const layoutFactory=makeVertices=>tree=>{
+    const vertices = makeVertices(tree);
+    const edges = makeEdges(vertices);
+    return {vertices,edges}
+};
 
 export const rectangularLayout = layoutFactory(rectangularVertices);

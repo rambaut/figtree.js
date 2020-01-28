@@ -21,7 +21,10 @@ class NodeFactory extends ElementFactory {
                 element.update();
             }
                 const parent = select(n[i]).node().parentNode;
-                select(parent).classed("hovered",true);
+                select(parent).classed("hovered",true)
+                    .raise();
+                // move to top
+
 
             });
         super.on("mouseleave",
@@ -35,6 +38,21 @@ class NodeFactory extends ElementFactory {
 
             });
         return this;
+    }
+    annotateOnHover(key){
+        super.on("mouseenter",
+            (element) => (d, i,n) => {
+                this.figure[p.tree].annotateNode(this.figure[p.tree].getNode(d.id),{[key]:true});
+                this.figure[p.tree].treeUpdateCallback();
+        const parent = select(n[i]).node().parentNode;
+        select(parent).raise();
+    });
+        super.on("mouseleave",
+            (element) => (d,i,n) => {
+                this.figure[p.tree].annotateNode(this.figure[p.tree].getNode(d.id),{[key]:false});
+                this.figure[p.tree].treeUpdateCallback();
+            });
+    return this;
     }
 
     rotateOnClick(recursive=false){

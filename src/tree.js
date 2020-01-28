@@ -1006,8 +1006,8 @@ export class Tree {
                     }
 
                     const externalNode = {
-                        name: name,
-                        id:parseInt(token)?parseInt(token):token,
+                        name: name.replace(/\'/g,''),
+                        id:`node-${parseInt(token)?parseInt(token):token.replace(/\'/g,'')}`,
                         parent: currentNode,
                         annotations: { date: decimalDate }
                     };

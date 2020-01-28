@@ -25,6 +25,8 @@ function getVertexClassesFromNode(node){
     }
     return classes;
 }
+
+// TODO update this to handel location for other layouts that aren't left to right
 export function makeVertexFromNode(node){
     const leftLabel= !!node.children;
     const labelBelow= (!!node.children && (!node.parent || node.parent.children[0] !== node));

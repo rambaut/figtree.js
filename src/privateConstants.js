@@ -30,6 +30,7 @@ const p= {
     edgeFactory:Symbol("edgeFactory"),
     backgroundNodesFactory:Symbol("backgroundNodesFactory"),
     updateBackgroundNodes:Symbol("updateBackgroundNodes"),
+    axis:Symbol("axis"),
 
 };
 export default p;

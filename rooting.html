@@ -132,30 +132,7 @@
 </div>
 <!-- <script src ="dist/figtree.js"></script> -->
 <script type="module">
-    import {Tree,RectangularLayout,CircleBauble,FigTree,BranchBauble,EqualAngleLayout,Axis,RootToTipPlot}  from "./dist/figtree.esm.js";
-
-
-    const rootAnnotation=(figtreeObject)=>()=>{
-        const root =figtreeObject.layout.tree.root;
-        const rootVertex = figtreeObject.layout.nodeMap.get(root);
-
-        const rootBauble =new CircleBauble();
-        const rootGroup = figtreeObject.svgSelection
-            .select(".annotation-layer")
-            .selectAll(".original-root")
-            .data([rootVertex])
-            .join(
-                enter=>enter
-                    .append("g")
-                    .attr("class",'original-root')
-                    .attr("transform", (v) => {
-                        return `translate(${figtreeObject.scales.x(v.x+figtreeObject.xScaleOffset)}, ${figtreeObject.scales.y(v.y)})`;
-                    })
-                    .each(function(v){
-                        rootBauble.updateShapes(d3.select(this))
-                    }));
-
-    };
+    import {Tree,CircleBauble,FigTree,nodes,nodeBackground,branches,equalAngleLayout,rootToTipLayout}  from "./dist/figtree.esm.js";
 
     const timeTreeString =
         '((((virusA_1975.5:20.0,virusB_1966:10.0):10.0,virusC_1986:40.0):15.0,(virusD_1969:35.0,virusE_1955.5:20.0):5.0):25.0,(virusF_2002:55.0,virusG_1965:15.0):40.0);';
@@ -165,92 +142,58 @@
     tree.annotateNode(tree.root,{root:true});
 
     const treeSVG = document.getElementById('phylogram_1a');
-    const rootedSVG =document.getElementById('phylogram_1b');
+    const rootToTipSVG =document.getElementById('phylogram_1b');
 
-    const layout = new RectangularLayout(tree);
-    const equalAngleLayout = new EqualAngleLayout(tree,{startingNode:tree.getExternalNode("virusA_1975.5")});
+    const unRootedFig = new FigTree(treeSVG,tree)
+                            .layout(equalAngleLayout(tree.externalNodes.map(n=>n.id)))
+                            .feature(
+                                nodes()// can take bauble or function that returns a bauble
+                                    .element(CircleBauble)
+                                    .attr("fill",d=>d.degree>1?"steelblue":"#c71585")
+                                    .attr("r",d=>d.annotations.hovered?10:5)
+                                    .label("name")
+                                    // .hilightOnHover(10)
+                                    .rotateOnClick()
+                            )
+                            .feature(
+                                nodeBackground()
+                                    .attr("r",7)
+                            )
+                            .feature(
+                                branches()
+                                    .curve(d3.curveBasis)
+                                    .hilightOnHover()
+                                    .reRootOnClick()
+                            );
 
-    const transitions={
-        transitionDuration: 500};
+    const rootToTipPlot = new FigTree(rootToTipSVG,tree)
+                                .layout(rootToTipLayout())
+                                .feature(
+                                    nodes()// can take bauble or function that returns a bauble
+                                    .element(CircleBauble)
+                                    .attr("fill",d=>d.degree>1?"steelblue":"#c71585")
+                                    .attr("r",d=>d.annotations.hovered?10:5)
+                                    .on("mouseenter",element=>(d,i,n)=>{
+                                        tree.annotateNode(tree.getExternalNode(d.name),{hovered:true});
+                                        tree.treeUpdateCallback();
+                                    })
+                                        .on("mouseout",element=>(d,i,n)=>{
+                                            tree.annotateNode(tree.getExternalNode(d.name),{hovered:false});
+                                            tree.treeUpdateCallback();
+                                        })
+                                )
 
-
-
-    const rootedFigTree = new FigTree(rootedSVG, layout,
-        { top: 10, bottom: 60, left: 10, right: 30},
-        {
-            transition: transitions,
-            edges: {baubles: [new BranchBauble({curve:d3.curveStepBefore,transitions: transitions})]},
-            xScale:{axes:[new Axis({title:{text:"Divergence",yPadding: 25}})],
-                    revisions:{reverseAxis:true,
-                              origin: ()=>tree.root.height}},
-        });
-    rootedFigTree.draw()
-
-        .onHoverNode({
-            action:{
-                enter:(d,i,n)=>{tree.annotateNode(d.node,{hover:!d.node.annotations.hover});tree.treeUpdateCallback();console.log(d)},
-                exit:(d,i,n)=>{tree.annotateNode(d.node,{hover:!d.node.annotations.hover});tree.treeUpdateCallback()}
-            },
-            update:true})        .hilightBranches();
-
-    const figTree = new FigTree(treeSVG, equalAngleLayout,
-        { top: 10, bottom: 60, left: 10, right: 30},
-        {
-            transition: transitions,
-            edges: {baubles: [new BranchBauble({curve:d3.curveNatural,transitions: transitions})]},
-
-
-        });
-    figTree.draw();
-
-    const readyAnnotation = rootAnnotation(figTree);
-
-        figTree
-        .hilightInternalNodes()
-        .onClickInternalNode(equalAngleLayout.rotate())
-        .hilightBranches()
-        .onClickBranch({action:equalAngleLayout.reroot(),proportionMethod:"euclidean"})
-            .addAnnotation(readyAnnotation);
-
-
-    const rttpLayout = new RootToTipPlot(tree);
-    const rootToTipPlot = new FigTree(document.getElementById('phylogram_1c'),
-        rttpLayout,
-        { top: 10, bottom: 60, left: 60, right: 100},
-        {vertices: {
-                baubles: [
-                    new CircleBauble(),
-                ],
-            },
-            xScale:{axes:[new Axis({title:{text:"Time",yPadding: 25,tickArguments:[2,"f"]}})]},
-            yScale:{axes:[new Axis({title:{text:"Divergence",xPadding: -40,rotation:-90},location:"left"})]},
-            edges:{
-                baubles: [
-                    new BranchBauble({curve:d3.curveNatural}),
-                ]}
-        });
-    rootToTipPlot.draw();
+                                .feature(
+                                    nodeBackground()
+                                        .attr("r",7)
+                                )
+                                .feature(
+                                        branches()
+                                            .curve(d3.curveBasis)
+                                            .hilightOnHover()
+                                    );
 
 
-    // figTree.addToolTip('#root', "The root node - represents the most recent<br>common ancestor of the whole tree");
-    // figTree.addToolTip('.internal-node .node-shape', "This is an internal node - it is the most recent<br>common ancestor of the viruses to the right" );
-    // figTree.addToolTip('.internal-node .node-label', "This is a support value - it gives the degree<br>of statistical support that the viruses to the<br>right cluster together");
-    // figTree.addToolTip('.external-node', "This is an external, leaf, or tip node - it represents<br>a sampled, sequenced virus");
-    // figTree.addToolTip('.branch', "This is a branch - it represents an<br>evolutionary lineage joining two nodes");
-    //
-    // document.getElementById('sort_up_button').onclick = function() {
-    //     tree.order(tree.rootNode, false);
-    // };
-    // document.getElementById('sort_down_button').onclick = function
-    //     tree.order(tree.rootNode, true);
-    // };
-    //
-    // document.getElementById('rectangular_button').onclick = function() {
-    //     figTree.curve = d3.curveStepBefore;
-    // };
-    // document.getElementById('triangular_button').onclick = function() {
-    //     figTree.curve = d3.curveNatural;
-    // };
 
 </script>
 
