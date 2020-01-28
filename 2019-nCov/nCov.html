@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>FigTree Demo</title>
-    <script src="js/d3.js" charset="utf-8"></script>
-    <!--<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>-->
+    <script src="./d3.js" charset="utf-8"></script>
+<!--    <script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>-->
     <style>
         text {
             font-family: "helvetica-neue",  "helvetica",  "sans-serif";
@@ -136,42 +136,38 @@
 </head>
 
 <body>
-<div id="tooltip" display="none" style="position: absolute; display: none;"></div>
 <svg id="iqtree"  width="600" height="500"></svg>
 <svg id="rootToTip"  width="600" height="500"></svg>
-
-<!--<div>-->
-<!--    <figure>-->
-<!--        <svg id="phylogram_1a"  width="600" height="500"></svg>-->
-<!--    </figure>-->
-<!--    &lt;!&ndash;<button id="sort_up_button">Sort ascending</button>&ndash;&gt;-->
-<!--    &lt;!&ndash;<button id="sort_down_button">Sort descending</button>&ndash;&gt;-->
-<!--    &lt;!&ndash;<button id="rectangular_button">Draw rectangular</button>&ndash;&gt;-->
-<!--    &lt;!&ndash;<button id="triangular_button">Draw triangular</button>&ndash;&gt;-->
-<!--</div>-->
-<script src ="dist/figtree.umd.js"></script>
+<script src ="../dist/figtree.umd.js"></script>
 <script type="module">
 
-    import {Tree,rectangularLayout,CircleBauble,FigTree,nodes,nodeBackground,branches,rootToTipLayout,axis}  from "./dist/figtree.esm.js";
-
+    import {Tree,rectangularLayout,CircleBauble,FigTree,nodes,nodeBackground,branches,rootToTipLayout,axis,decimalToDate}  from "./figtree.esm.js";
+    /**
+     * A custom date format that converts a decimal year float into "%Y-%m-%d" format
+     * @param d
+     * @return {string}
+     */
+    export const customDateFormat = (d) => {
+        const dateFormat = d3.timeFormat("%Y-%m-%d");
+        return `${dateFormat(decimalToDate(d))}`;
+    };
 
     const newickString ="('BetaCoV/Hubei|Wuhan_City/IPBCAMS-WH-01/2019|EPI_ISL_402123|China|Hubei|Wuhan_City|2019-12-24':5.0E-5,(('BetaCoV/Hubei|Wuhan_City/IVDC-HB-01/2019|EPI_ISL_402119|China|Hubei|Wuhan_City|2019-12-30':0.0,('BetaCoV/Hubei|Wuhan_City/IVDC-HB-05/2019|EPI_ISL_402121|China|Hubei|Wuhan_City|2019-12-30':6.699999999999999E-5,('BetaCoV/Hubei|Wuhan_City/WIV02/2019|EPI_ISL_402127|China|Hubei|Wuhan_City|2019-12-30':6.699999999999999E-5,('BetaCoV/Hubei|Wuhan_City/WIV04/2019|EPI_ISL_402124|China|Hubei|Wuhan_City|2019-12-30':0.0,'BetaCoV/Hubei|Wuhan_City/WIV05/2019|EPI_ISL_402128|China|Hubei|Wuhan_City|2019-12-30':6.699999999999999E-5):0.0):0.0):0.0):0.0,('BetaCoV/Hubei|Wuhan_City/HBCDC-HB-01/2019|EPI_ISL_402132|China|Hubei|Wuhan_City|2019-12-30':3.4E-5,('BetaCoV/Nonthaburi/74/2020|EPI_ISL_403963|Thailand|Nonthaburi|2020-01-13':0.0,(('BetaCoV/Guangdong/20SF028/2020|EPI_ISL_403936|China|Guangdong|Zhuhai_City|2020-01-17':0.0,'BetaCoV/Guangdong/20SF040/2020|EPI_ISL_403937|China|Guangdong|Zhuhai_City|2020-01-18':0.0):3.4E-5,('BetaCoV/Guangdong/20SF014/2020|EPI_ISL_403934|China|Guangdong|Shenzhen_City|2020-01-15':3.4E-5,('BetaCoV/Hubei|Wuhan_City/IPBCAMS-WH-02/2019|EPI_ISL_403931|China|Hubei|Wuhan_City|2019-12-30':0.0,('BetaCoV/Hubei|Wuhan_City/IPBCAMS-WH-03/2019|EPI_ISL_403930|China|Hubei|Wuhan_City|2019-12-30':3.3E-5,('BetaCoV/Hubei|Wuhan_City/IPBCAMS-WH-04/2019|EPI_ISL_403929|China|Hubei|Wuhan_City|2019-12-30':0.0,('BetaCoV|Hubei|Wuhan_City-Hu-1|MN908947|China|Hubei|Wuhan_City|2019-12-26':0.0,(('BetaCoV/Hubei|Wuhan_City/WIV07/2019|EPI_ISL_402130|China|Hubei|Wuhan_City|2019-12-30':6.699999999999999E-5,('BetaCoV/Nonthaburi/61/2020|EPI_ISL_403962|Thailand|Nonthaburi|2020-01-08':0.0,'BetaCoV/Hubei|Wuhan_City/WIV06/2019|EPI_ISL_402129|China|Hubei|Wuhan_City|2019-12-30':0.0):0.0):0.0,('BetaCoV/Zhejiang/WZ-02/2020|EPI_ISL_404228|China|Zhejiang|2020-01-17':0.0,('2019-nCoV|WH03|China|Wuhan|2020-01-01':0.0,('2019-nCoV|WH01|China|Wuhan|2019-12-26':6.699999999999999E-5,('BetaCoV/Zhejiang/WZ-01/2020|EPI_ISL_404227|China|Zhejiang|2020-01-16':6.699999999999999E-5,('BetaCoV/USA/IL1/2020|EPI_ISL_404253|USA|Illinois|Chicago|2020-01-21':0.0,('2019-nCoV/USA-WA1/2020|MN985325|USA|2020-01-19':3.299999999999999E-5,('2019-nCoV|WH04|China|Wuhan|2020-01-05':3.299999999999999E-5,('nCoV-2019|HKU-SZ-002a|MN938384|China|Guangdong|Shenzhen|2020-01-10':0.0,('BetaCoV/Guangdong/20SF012/2020|EPI_ISL_403932|China|Guangdong|Shenzhen_City|2020-01-14':0.0,('BetaCoV/Guangdong/20SF013/2020|EPI_ISL_403933|China|Guangdong|Shenzhen_City|2020-01-15':0.0,('BetaCoV/HKU-SZ-005|EPI_ISL_405839|China|Shenzhen|2020-01-21':6.7E-5,'BetaCoV/Guangdong/20SF025/2020|EPI_ISL_403935|China|Guangdong|Shenzhen_City|2020-01-15':0.0):0.0):0.0):0.0):3.3000000000000016E-5):0.0):3.299999999999999E-5):3.4E-5):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):5.0E-5);"
 
+    // Assumed the last entry is the date. It will take missing data.
     const tree = Tree.parseNewick(newickString,{datePrefix: "|",dateFormat:"%Y-%m-%d"});
     const treeSVG = document.getElementById('iqtree');
     const rootToTipSVG = document.getElementById('rootToTip');
 
+/// Annotate nodes with meta data
     tree.externalNodes.forEach(n=>{
         // Annotating nodes based on meta data in name - there are differences among the names so this doesn't work
-        //
         const [name,someLocation,sequenceId,country,province,city,date] = n.name.split('|');
         tree.annotateNode(n,{country,province})
     });
+    tree.orderByNodeDensity();
 
-
-
-
-    const colorScale = d3.scaleOrdinal().domain(tree.annotations.province.values).range(d3.schemeAccent)
+    const colorScale = d3.scaleOrdinal().domain(tree.annotations.province.values).range(d3.schemeAccent);
     const margins= {top:10,bottom:60,left:100,right:100};
 
     const fig = new FigTree(treeSVG,tree)
@@ -193,7 +189,6 @@
         )
         .feature(
             nodeBackground()
-                // only backgrounds on tips
                 .element(d=>{return (d.degree===1?CircleBauble:null)})
                 .attr("r",7)
         )
@@ -201,6 +196,8 @@
             branches()
                 .hilightOnHover()
         );
+
+
     const rootToTipPlot = new FigTree(rootToTipSVG,tree)
         .layout(rootToTipLayout())
         .margins(margins)
@@ -221,25 +218,44 @@
         )
         .feature(
             axis()
-                .y(500-margins.bottom-margins.top+5)
                 .location("bottom")
+                .y(500-margins.bottom-margins.top+5)
                 .x(0)
-                .title({text:"Divergence",
+                .title({text:"Date",
                         yPadding:30})
+            .tickFormat(customDateFormat)
         )
     .feature(
         axis()
-            .y(0)
             .location("left")
+            .y(0)
             .x(0)
-            .title({text:"Date",
-                xPadding:-30,
-            rotation:-90})
-    )
+            .title({text:"Divergence",
+                xPadding:-90,
+                rotation:-90})
+    );
 
+    // get the regression stats.
+    const {vertices,edges} = rootToTipLayout()(tree);
+    const regression = edges[0].regression;
+    const stats = ["Slope","X intercept","R^2"];
 
-
-
+    rootToTipPlot.svgSelection
+        .select(".annotation-layer")
+        .append("g")
+        .attr("class","trendlineStats")
+        .attr("transform","translate(10,50)")
+        .selectAll("text")
+        .data([d3.format(".3e")(regression.slope),customDateFormat(regression.xIntercept),d3.format(".3")(regression.rSquare)])
+        .join(
+            enter=>enter
+                .append("text")
+                .attr("class", ".rttp-statistic")
+                .attr("transform", `translate(${margins.left + 20},${margins.top})`)
+                .style("text-anchor", "left")
+                .attr("alignment-baseline", "hanging")
+                .attr("dy", (d,i)=>`${i*1.5}em`)
+                .text((d,i)=>`${stats[i]} : ${d}`))
 
 </script>
 
