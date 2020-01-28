@@ -82,7 +82,7 @@ export const equalAngleVertices=(tipRank=null)=>tree=>{
                     const r = 2 * Math.PI * tips / totalTips;
                     const allocatedRadians = [totalRadians, totalRadians + r];
                     const angle = totalRadians + r / 2;
-                    const length = Math.abs(node.height - child.height);
+                    const length = Math.abs(child.length);
                     yield* traverse(child, {angle, length, allocatedRadians, parentY: vertex.y, parentX: vertex.x})
                     totalRadians += r;
 

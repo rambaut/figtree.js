@@ -1135,19 +1135,7 @@ function calculateLengths(){
 
 }
 
-function calculateDivergence(node, divergence, maxDivergence) {
-    let d = divergence + node.length;
-    if (node.children) {
-        // count the number of descendents for each child
-        for (const child of node.children) {
-            calculateDivergence(child, d, maxDivergence);
-        }
-    }
-    if (d > maxDivergence[0]) {
-        maxDivergence[0] = d;
-    }
-    node.divergence = d;
-}
+
 
 
 /**
@@ -1257,6 +1245,7 @@ class Node{
     static DEFAULT_NODE(){
         return{
             height:undefined,
+            divergence:undefined,
             length:undefined,
             name:null,
             annotations:{},
@@ -1273,6 +1262,7 @@ class Node{
 
         this._id = data.id;
         this._height = data.height;
+        this._divergence= data.divergence;
         this._length = data.length;
         this._name = data.name;
         this._annotations= data.annotations;
@@ -1314,6 +1304,19 @@ class Node{
             calculateHeights.call(this._tree);
         }
         return this._height;
+    }
+
+    get divergence(){
+        if(this._tree.lengthsKnown){
+            if(this.parent){
+                return this.parent.divergence+this.length
+            }else{
+                return 0
+            }
+        }else{
+            calculateLengths().call(this._tree);
+            return this.divergence;
+        }
     }
 
     set height(value) {

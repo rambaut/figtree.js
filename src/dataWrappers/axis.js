@@ -53,12 +53,12 @@ class AxisFactory extends ElementFactory {
 
     createAxis() {
 
-        const length = ["top","bottom"].indexOf(this.location)>-1?
+        const length = ["top","bottom"].indexOf(this._location)>-1?
             this.figure.scales.width - this.figure._margins.left - this.figure._margins.right:
             this.figure.scales.height -this.figure._margins.top - this.figure._margins.bottom;
 
         //TODO add options to change scales and all that jazz
-        const axis = this.d3Axis( (["top","bottom"].indexOf(this.location)>-1?this.figure.scales.x:this.figure.scales.y))
+        const axis = this.d3Axis( (["top","bottom"].indexOf(this._location)>-1?this.figure.scales.x:this.figure.scales.y))
             .tickArguments(this._tickArguments);
 
         const selection = this.figure.svgSelection.select(".axes-layer");
@@ -108,17 +108,27 @@ class AxisFactory extends ElementFactory {
         }
     }
 
+    tickFormat(d){
+        if(d){
+            this._tickFormat=d;
+            return this;
+        }else{
+            return this._tickFormat;
+        }
+    }
     updateAxis() {
 
-        const length = ["top","bottom"].indexOf(this.location)>-1?
+        const length = ["top","bottom"].indexOf(this._location)>-1?
             this.figure.scales.width - this.figure._margins.left - this.figure._margins.right:
             this.figure.scales.height -this.figure._margins.top - this.figure._margins.bottom;
-        console.log(length)
 
         //TODO add options to change scales and all that jazz
-        const axis = this.d3Axis( (["top","bottom"].indexOf(this.location)>-1?this.figure.scales.x:this.figure.scales.y))
+        const axis = this.d3Axis( (["top","bottom"].indexOf(this._location)>-1?this.figure.scales.x:this.figure.scales.y))
             .tickArguments(this._tickArguments);
 
+        if(this._tickFormat){
+            axis.tickFormat(this._tickFormat)
+        }
         const selection = this.figure.svgSelection.select(".axes-layer");
 
 

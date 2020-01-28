@@ -8,7 +8,7 @@ export const rootToTipVertices=(tree)=>{
         console.warn("tree must be annotated with dates to use the root to tip layout")
         return [];
     }
-    return tree.externalNodes.map(n=>({...makeVertexFromNode(n),x:n.annotations.date,y:tree.rootToTipLength(n)}));
+    return tree.externalNodes.map(n=>({...makeVertexFromNode(n),x:n.annotations.date,y:n.divergence}));
 }
 // TODO add edges from tips to parent on trendline to compare outliers.
 const makeTrendlineEdge=predicate=>(vertices)=>{
@@ -32,13 +32,12 @@ const makeTrendlineEdge=predicate=>(vertices)=>{
     const startPoint = {key:"startPoint",x:x1,y:y1};
     const endPoint = {key:"endPoint",x:x2,y:y2};
 
-
     return [{
         v0: startPoint,
         v1: endPoint,
         key: "trendline",
         id:"trendline",
-        classes:"trendline",
+        classes:["trendline"],
         x:startPoint.x,
         y:endPoint.y,
         textLabel:{ // TODO update this for regression labeling

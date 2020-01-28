@@ -13,6 +13,7 @@ import {branches} from "../dataWrappers/branches";
 import {min,max} from "d3-array";
 import p from "../privateConstants.js"
 import  {nodes,nodeBackground} from "../dataWrappers/nodes";
+import extent from "d3-array/src/extent";
 
 /** @module figtree */
 
@@ -178,7 +179,8 @@ export class FigTree {
         select(`#${this.svgId}`)
             .attr("transform",`translate(${this._margins.left},${this._margins.top})`);
 
-        this.setUpScales(vertices);
+        this.setUpScales(vertices,edges);
+
         if(this.updateNodes){
             this.updateNodes(vertices);
         }
@@ -225,7 +227,7 @@ export class FigTree {
     }
 
 
-    setUpScales(vertices){
+    setUpScales(vertices,edges){
             let width,height;
             if(Object.keys(this.settings).indexOf("width")>-1){
                 width =this.settings.width;
@@ -248,14 +250,19 @@ export class FigTree {
                 projection = this.layout.projection;
             }
             else{
+                const xdomain = extent(vertices.map(d=>d.x).concat(edges.reduce((acc,e)=> acc.concat([e.v1.x,e.v0.x]),[])));
+                // almost always the same except when the trendline is added as an edge without vertices
+                const ydomain =  extent(vertices.map(d=>d.y).concat(edges.reduce((acc,e)=>acc.concat([e.v1.y,e.v0.y]),[])));
+
                 xScale = this.settings.xScale.scale()
-                    .domain([max(vertices,d=>d.x),min(vertices,d=>d.x)])
+                    .domain(xdomain)
                     .range([0, width - this._margins.right-this._margins.left]);
 
                 yScale = this.settings.yScale.scale()
-                    .domain([min(vertices,d=>d.y),max(vertices,d=>d.y)])
-                    .range([0, height -this._margins.bottom-this._margins.top]);
+                    .domain(ydomain)
+                    .range([height -this._margins.bottom-this._margins.top,0]);
             }
+
             this.scales = {x:xScale, y:yScale, width, height, projection};
     }
 

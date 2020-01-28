@@ -35,6 +35,7 @@ export function makeVertexFromNode(node){
         name:node.name,
         length:node.length,
         height:node.height,
+        divergence:node.divergence,
         level:node.level,
         label:node.label,
         annotations:node.annotations,

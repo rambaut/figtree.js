@@ -19,12 +19,12 @@ export function rectangularVertices(tree){
             siblingPositions.push(mean(myChildrenPositions));
             const vertex = {...makeVertexFromNode(node),
                 y:mean(myChildrenPositions),
-                x:node.height};
+                x:node.divergence};
             vertices.push(vertex);
         }else{
             currentY+=1;
             siblingPositions.push(currentY);
-            const vertex = {...makeVertexFromNode(node), y:currentY, x:node.height};
+            const vertex = {...makeVertexFromNode(node), y:currentY, x:node.divergence};
             vertices.push(vertex);
         }
     };

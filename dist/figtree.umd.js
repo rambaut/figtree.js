@@ -6782,27 +6782,6 @@
 	  return [min, max];
 	}
 
-	function max$1(values, valueof) {
-	  let max;
-	  if (valueof === undefined) {
-	    for (const value of values) {
-	      if (value != null
-	          && (max < value || (max === undefined && value >= value))) {
-	        max = value;
-	      }
-	    }
-	  } else {
-	    let index = -1;
-	    for (let value of values) {
-	      if ((value = valueof(value, ++index, values)) != null
-	          && (max < value || (max === undefined && value >= value))) {
-	        max = value;
-	      }
-	    }
-	  }
-	  return max;
-	}
-
 	function min$1(values, valueof) {
 	  let min;
 	  if (valueof === undefined) {
@@ -8693,13 +8672,13 @@
 	function setUpNodes(node) {
 	  if (node.children) {
 	    var childrenNodes = [];
-	    var _iteratorNormalCompletion11 = true;
-	    var _didIteratorError11 = false;
-	    var _iteratorError11 = undefined;
+	    var _iteratorNormalCompletion10 = true;
+	    var _didIteratorError10 = false;
+	    var _iteratorError10 = undefined;
 
 	    try {
-	      for (var _iterator11 = node.children[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-	        var child = _step11.value;
+	      for (var _iterator10 = node.children[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+	        var child = _step10.value;
 	        var childNode = makeNode.call(this, _objectSpread({}, child, {
 	          parent: node,
 	          level: node.level + 1
@@ -8708,16 +8687,16 @@
 	        setUpNodes.call(this, childNode);
 	      }
 	    } catch (err) {
-	      _didIteratorError11 = true;
-	      _iteratorError11 = err;
+	      _didIteratorError10 = true;
+	      _iteratorError10 = err;
 	    } finally {
 	      try {
-	        if (!_iteratorNormalCompletion11 && _iterator11["return"] != null) {
-	          _iterator11["return"]();
+	        if (!_iteratorNormalCompletion10 && _iterator10["return"] != null) {
+	          _iterator10["return"]();
 	        }
 	      } finally {
-	        if (_didIteratorError11) {
-	          throw _iteratorError11;
+	        if (_didIteratorError10) {
+	          throw _iteratorError10;
 	        }
 	      }
 	    }
@@ -8759,6 +8738,7 @@
 	    value: function DEFAULT_NODE() {
 	      return {
 	        height: undefined,
+	        divergence: undefined,
 	        length: undefined,
 	        name: null,
 	        annotations: {},
@@ -8779,6 +8759,7 @@
 
 	    this._id = data.id;
 	    this._height = data.height;
+	    this._divergence = data.divergence;
 	    this._length = data.length;
 	    this._name = data.name;
 	    this._annotations = data.annotations;
@@ -8823,26 +8804,26 @@
 	        bits = bits.concat(this.id);
 	        this._clade = bits;
 	      } else {
-	        var _iteratorNormalCompletion12 = true;
-	        var _didIteratorError12 = false;
-	        var _iteratorError12 = undefined;
+	        var _iteratorNormalCompletion11 = true;
+	        var _didIteratorError11 = false;
+	        var _iteratorError11 = undefined;
 
 	        try {
-	          for (var _iterator12 = this.children[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-	            var child = _step12.value;
+	          for (var _iterator11 = this.children[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+	            var child = _step11.value;
 	            bits = bits.concat(child.getClade(tipNameMap));
 	          }
 	        } catch (err) {
-	          _didIteratorError12 = true;
-	          _iteratorError12 = err;
+	          _didIteratorError11 = true;
+	          _iteratorError11 = err;
 	        } finally {
 	          try {
-	            if (!_iteratorNormalCompletion12 && _iterator12["return"] != null) {
-	              _iterator12["return"]();
+	            if (!_iteratorNormalCompletion11 && _iterator11["return"] != null) {
+	              _iterator11["return"]();
 	            }
 	          } finally {
-	            if (_didIteratorError12) {
-	              throw _iteratorError12;
+	            if (_didIteratorError11) {
+	              throw _iteratorError11;
 	            }
 	          }
 	        }
@@ -8917,6 +8898,20 @@
 	      this._tree.treeUpdateCallback();
 	    }
 	  }, {
+	    key: "divergence",
+	    get: function get() {
+	      if (this._tree.lengthsKnown) {
+	        if (this.parent) {
+	          return this.parent.divergence + this.length;
+	        } else {
+	          return 0;
+	        }
+	      } else {
+	        calculateLengths().call(this._tree);
+	        return this.divergence;
+	      }
+	    }
+	  }, {
 	    key: "length",
 	    get: function get() {
 	      if (!this._tree.lengthsKnown) {
@@ -8946,26 +8941,26 @@
 	    },
 	    set: function set(value) {
 	      this._children = value;
-	      var _iteratorNormalCompletion13 = true;
-	      var _didIteratorError13 = false;
-	      var _iteratorError13 = undefined;
+	      var _iteratorNormalCompletion12 = true;
+	      var _didIteratorError12 = false;
+	      var _iteratorError12 = undefined;
 
 	      try {
-	        for (var _iterator13 = this._children[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
-	          var child = _step13.value;
+	        for (var _iterator12 = this._children[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+	          var child = _step12.value;
 	          child.parent = this;
 	        }
 	      } catch (err) {
-	        _didIteratorError13 = true;
-	        _iteratorError13 = err;
+	        _didIteratorError12 = true;
+	        _iteratorError12 = err;
 	      } finally {
 	        try {
-	          if (!_iteratorNormalCompletion13 && _iterator13["return"] != null) {
-	            _iterator13["return"]();
+	          if (!_iteratorNormalCompletion12 && _iterator12["return"] != null) {
+	            _iterator12["return"]();
 	          }
 	        } finally {
-	          if (_didIteratorError13) {
-	            throw _iteratorError13;
+	          if (_didIteratorError12) {
+	            throw _iteratorError12;
 	          }
 	        }
 	      }
@@ -11293,6 +11288,7 @@
 	    name: node.name,
 	    length: node.length,
 	    height: node.height,
+	    divergence: node.divergence,
 	    level: node.level,
 	    label: node.label,
 	    annotations: node.annotations,
@@ -11385,7 +11381,7 @@
 
 	      var vertex = _objectSpread$6({}, makeVertexFromNode(node), {
 	        y: mean(myChildrenPositions),
-	        x: node.height
+	        x: node.divergence
 	      });
 
 	      vertices.push(vertex);
@@ -11395,7 +11391,7 @@
 
 	      var _vertex = _objectSpread$6({}, makeVertexFromNode(node), {
 	        y: currentY,
-	        x: node.height
+	        x: node.divergence
 	      });
 
 	      vertices.push(_vertex);
@@ -12024,7 +12020,7 @@
 	          edges = _this$p$layout.edges;
 
 	      select("#".concat(this.svgId)).attr("transform", "translate(".concat(this._margins.left, ",").concat(this._margins.top, ")"));
-	      this.setUpScales(vertices);
+	      this.setUpScales(vertices, edges);
 
 	      if (this.updateNodes) {
 	        this.updateNodes(vertices);
@@ -12095,7 +12091,7 @@
 	    }
 	  }, {
 	    key: "setUpScales",
-	    value: function setUpScales(vertices) {
+	    value: function setUpScales(vertices, edges) {
 	      var width, height;
 
 	      if (Object.keys(this.settings).indexOf("width") > -1) {
@@ -12119,16 +12115,19 @@
 	        yScale = linear$2();
 	        projection = this.layout.projection;
 	      } else {
-	        xScale = this.settings.xScale.scale().domain([max$1(vertices, function (d) {
+	        var xdomain = extent$1(vertices.map(function (d) {
 	          return d.x;
-	        }), min$1(vertices, function (d) {
-	          return d.x;
-	        })]).range([0, width - this._margins.right - this._margins.left]);
-	        yScale = this.settings.yScale.scale().domain([min$1(vertices, function (d) {
+	        }).concat(edges.reduce(function (acc, e) {
+	          return acc.concat([e.v1.x, e.v0.x]);
+	        }, []))); // almost always the same except when the trendline is added as an edge without vertices
+
+	        var ydomain = extent$1(vertices.map(function (d) {
 	          return d.y;
-	        }), max$1(vertices, function (d) {
-	          return d.y;
-	        })]).range([0, height - this._margins.bottom - this._margins.top]);
+	        }).concat(edges.reduce(function (acc, e) {
+	          return acc.concat([e.v1.y, e.v0.y]);
+	        }, [])));
+	        xScale = this.settings.xScale.scale().domain(xdomain).range([0, width - this._margins.right - this._margins.left]);
+	        yScale = this.settings.yScale.scale().domain(ydomain).range([height - this._margins.bottom - this._margins.top, 0]);
 	      }
 
 	      this.scales = {
@@ -13914,7 +13913,7 @@
 	              r = 2 * Math.PI * tips / totalTips;
 	              _allocatedRadians = [totalRadians, totalRadians + r];
 	              _angle = totalRadians + r / 2;
-	              _length = Math.abs(node.height - child.height);
+	              _length = Math.abs(child.length);
 	              return _context5.delegateYield(traverse(child, {
 	                angle: _angle,
 	                length: _length,
@@ -13996,7 +13995,7 @@
 	  return tree.externalNodes.map(function (n) {
 	    return _objectSpread$d({}, makeVertexFromNode(n), {
 	      x: n.annotations.date,
-	      y: tree.rootToTipLength(n)
+	      y: n.divergence
 	    });
 	  });
 	}; // TODO add edges from tips to parent on trendline to compare outliers.
@@ -14040,7 +14039,7 @@
 	      v1: endPoint,
 	      key: "trendline",
 	      id: "trendline",
-	      classes: "trendline",
+	      classes: ["trendline"],
 	      x: startPoint.x,
 	      y: endPoint.y,
 	      textLabel: {
@@ -14182,9 +14181,9 @@
 	  }, {
 	    key: "createAxis",
 	    value: function createAxis() {
-	      var length = ["top", "bottom"].indexOf(this.location) > -1 ? this.figure.scales.width - this.figure._margins.left - this.figure._margins.right : this.figure.scales.height - this.figure._margins.top - this.figure._margins.bottom; //TODO add options to change scales and all that jazz
+	      var length = ["top", "bottom"].indexOf(this._location) > -1 ? this.figure.scales.width - this.figure._margins.left - this.figure._margins.right : this.figure.scales.height - this.figure._margins.top - this.figure._margins.bottom; //TODO add options to change scales and all that jazz
 
-	      var axis = this.d3Axis(["top", "bottom"].indexOf(this.location) > -1 ? this.figure.scales.x : this.figure.scales.y).tickArguments(this._tickArguments);
+	      var axis = this.d3Axis(["top", "bottom"].indexOf(this._location) > -1 ? this.figure.scales.x : this.figure.scales.y).tickArguments(this._tickArguments);
 	      var selection = this.figure.svgSelection.select(".axes-layer");
 	      selection.append("g").attr("id", this._id).attr("class", "axis").attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")).call(axis);
 	      var pos = {
@@ -14226,12 +14225,26 @@
 	      }
 	    }
 	  }, {
+	    key: "tickFormat",
+	    value: function tickFormat(d) {
+	      if (d) {
+	        this._tickFormat = d;
+	        return this;
+	      } else {
+	        return this._tickFormat;
+	      }
+	    }
+	  }, {
 	    key: "updateAxis",
 	    value: function updateAxis() {
-	      var length = ["top", "bottom"].indexOf(this.location) > -1 ? this.figure.scales.width - this.figure._margins.left - this.figure._margins.right : this.figure.scales.height - this.figure._margins.top - this.figure._margins.bottom;
-	      console.log(length); //TODO add options to change scales and all that jazz
+	      var length = ["top", "bottom"].indexOf(this._location) > -1 ? this.figure.scales.width - this.figure._margins.left - this.figure._margins.right : this.figure.scales.height - this.figure._margins.top - this.figure._margins.bottom; //TODO add options to change scales and all that jazz
 
-	      var axis = this.d3Axis(["top", "bottom"].indexOf(this.location) > -1 ? this.figure.scales.x : this.figure.scales.y).tickArguments(this._tickArguments);
+	      var axis = this.d3Axis(["top", "bottom"].indexOf(this._location) > -1 ? this.figure.scales.x : this.figure.scales.y).tickArguments(this._tickArguments);
+
+	      if (this._tickFormat) {
+	        axis.tickFormat(this._tickFormat);
+	      }
+
 	      var selection = this.figure.svgSelection.select(".axes-layer");
 	      selection.select("g#".concat(this._id)).transition() // .duration()
 	      .attr("id", this._id).attr("class", "axis").attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")).call(axis);
