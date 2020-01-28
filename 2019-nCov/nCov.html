@@ -136,9 +136,6 @@
 </head>
 
 <body>
-<svg id="iqtree"  width="600" height="500"></svg>
-<svg id="rootToTip"  width="600" height="500"></svg>
-<script src ="../dist/figtree.umd.js"></script>
 <script type="module">
 
     import {Tree,rectangularLayout,CircleBauble,FigTree,nodes,nodeBackground,branches,rootToTipLayout,axis,decimalToDate}  from "./figtree.esm.js";
@@ -147,32 +144,62 @@
      * @param d
      * @return {string}
      */
-    export const customDateFormat = (d) => {
-        const dateFormat = d3.timeFormat("%Y-%m-%d");
+    const customDateFormat = (d) => {
+        const dateFormat = d3.timeFormat("%b-%d");
         return `${dateFormat(decimalToDate(d))}`;
     };
 
-    const newickString ="('BetaCoV/Hubei|Wuhan_City/IPBCAMS-WH-01/2019|EPI_ISL_402123|China|Hubei|Wuhan_City|2019-12-24':5.0E-5,(('BetaCoV/Hubei|Wuhan_City/IVDC-HB-01/2019|EPI_ISL_402119|China|Hubei|Wuhan_City|2019-12-30':0.0,('BetaCoV/Hubei|Wuhan_City/IVDC-HB-05/2019|EPI_ISL_402121|China|Hubei|Wuhan_City|2019-12-30':6.699999999999999E-5,('BetaCoV/Hubei|Wuhan_City/WIV02/2019|EPI_ISL_402127|China|Hubei|Wuhan_City|2019-12-30':6.699999999999999E-5,('BetaCoV/Hubei|Wuhan_City/WIV04/2019|EPI_ISL_402124|China|Hubei|Wuhan_City|2019-12-30':0.0,'BetaCoV/Hubei|Wuhan_City/WIV05/2019|EPI_ISL_402128|China|Hubei|Wuhan_City|2019-12-30':6.699999999999999E-5):0.0):0.0):0.0):0.0,('BetaCoV/Hubei|Wuhan_City/HBCDC-HB-01/2019|EPI_ISL_402132|China|Hubei|Wuhan_City|2019-12-30':3.4E-5,('BetaCoV/Nonthaburi/74/2020|EPI_ISL_403963|Thailand|Nonthaburi|2020-01-13':0.0,(('BetaCoV/Guangdong/20SF028/2020|EPI_ISL_403936|China|Guangdong|Zhuhai_City|2020-01-17':0.0,'BetaCoV/Guangdong/20SF040/2020|EPI_ISL_403937|China|Guangdong|Zhuhai_City|2020-01-18':0.0):3.4E-5,('BetaCoV/Guangdong/20SF014/2020|EPI_ISL_403934|China|Guangdong|Shenzhen_City|2020-01-15':3.4E-5,('BetaCoV/Hubei|Wuhan_City/IPBCAMS-WH-02/2019|EPI_ISL_403931|China|Hubei|Wuhan_City|2019-12-30':0.0,('BetaCoV/Hubei|Wuhan_City/IPBCAMS-WH-03/2019|EPI_ISL_403930|China|Hubei|Wuhan_City|2019-12-30':3.3E-5,('BetaCoV/Hubei|Wuhan_City/IPBCAMS-WH-04/2019|EPI_ISL_403929|China|Hubei|Wuhan_City|2019-12-30':0.0,('BetaCoV|Hubei|Wuhan_City-Hu-1|MN908947|China|Hubei|Wuhan_City|2019-12-26':0.0,(('BetaCoV/Hubei|Wuhan_City/WIV07/2019|EPI_ISL_402130|China|Hubei|Wuhan_City|2019-12-30':6.699999999999999E-5,('BetaCoV/Nonthaburi/61/2020|EPI_ISL_403962|Thailand|Nonthaburi|2020-01-08':0.0,'BetaCoV/Hubei|Wuhan_City/WIV06/2019|EPI_ISL_402129|China|Hubei|Wuhan_City|2019-12-30':0.0):0.0):0.0,('BetaCoV/Zhejiang/WZ-02/2020|EPI_ISL_404228|China|Zhejiang|2020-01-17':0.0,('2019-nCoV|WH03|China|Wuhan|2020-01-01':0.0,('2019-nCoV|WH01|China|Wuhan|2019-12-26':6.699999999999999E-5,('BetaCoV/Zhejiang/WZ-01/2020|EPI_ISL_404227|China|Zhejiang|2020-01-16':6.699999999999999E-5,('BetaCoV/USA/IL1/2020|EPI_ISL_404253|USA|Illinois|Chicago|2020-01-21':0.0,('2019-nCoV/USA-WA1/2020|MN985325|USA|2020-01-19':3.299999999999999E-5,('2019-nCoV|WH04|China|Wuhan|2020-01-05':3.299999999999999E-5,('nCoV-2019|HKU-SZ-002a|MN938384|China|Guangdong|Shenzhen|2020-01-10':0.0,('BetaCoV/Guangdong/20SF012/2020|EPI_ISL_403932|China|Guangdong|Shenzhen_City|2020-01-14':0.0,('BetaCoV/Guangdong/20SF013/2020|EPI_ISL_403933|China|Guangdong|Shenzhen_City|2020-01-15':0.0,('BetaCoV/HKU-SZ-005|EPI_ISL_405839|China|Shenzhen|2020-01-21':6.7E-5,'BetaCoV/Guangdong/20SF025/2020|EPI_ISL_403935|China|Guangdong|Shenzhen_City|2020-01-15':0.0):0.0):0.0):0.0):3.3000000000000016E-5):0.0):3.299999999999999E-5):3.4E-5):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):5.0E-5);"
+    const formatDate = (d)=>{
+        const parse=d3.timeParse("%Y-%m-%d");
+        const format=d3.timeFormat("%b-%d")
+        return format(parse(d));
+    };
+    const width = 1200,
+        height = 650;
+
+    const svg =  d3.select("body")
+        .append("svg")
+        .attr("class","figure")
+        .attr("id","figure")
+        .attr("preserveAspectRatio", "xMinYMin meet")
+        .attr("viewBox", `0 0 ${width} ${height}`);
+
+    const left=10;
+    const right=50;
+    const innerPadding = 150;
+
+    const figureWidth = (width-left-right-(innerPadding))/2;
+
+    const margins=(i)=>{
+        const margin =  {top:20,bottom:70,
+            left:(left+i*figureWidth+i*innerPadding),
+            right:(right+Math.abs(1-i)*innerPadding+Math.abs(1-i)*figureWidth) }
+        return margin
+    };
+    const newickString ="('nCoV-2019|Hubei|Wuhan/IPBCAMS-WH-01/2019|EPI_ISL_402123|China|Hubei|Wuhan|2019-12-24':5.0E-5,(('nCoV-2019|Hubei|Wuhan/IVDC-HB-01/2019|EPI_ISL_402119|China|Hubei|Wuhan|2019-12-30':0.0,'nCoV-2019|Hubei|Wuhan/IVDC-HB-05/2019|EPI_ISL_402121|China|Hubei|Wuhan|2019-12-30':6.699999999999999E-5):0.0,('nCoV-2019|Hubei|Wuhan/HBCDC-HB-01/2019|EPI_ISL_402132|China|Hubei|Wuhan|2019-12-30':3.4E-5,('nCoV-2019|Nonthaburi/74/2020|EPI_ISL_403963|Thailand|Nonthaburi||2020-01-13':0.0,('nCoV-2019|Nonthaburi/61/2020|EPI_ISL_403962|Thailand|Nonthaburi||2020-01-08':0.0,('nCoV-2019|WH01|CNS0191792|China|Hubei|Wuhan|2019-12-26':6.699999999999999E-5,('nCoV-2019|WH03|CNS0191794|China|Hubei|Wuhan|2020-01-01':0.0,(('nCoV-2019|Guangdong/20SF028/2020|EPI_ISL_403936|China|Guangdong|Zhuhai|2020-01-17':0.0,'nCoV-2019|Guangdong/20SF040/2020|EPI_ISL_403937|China|Guangdong|Zhuhai|2020-01-18':0.0):3.4E-5,('nCoV-2019|Guangdong/20SF014/2020|EPI_ISL_403934|China|Guangdong|Shenzhen|2020-01-15':3.4E-5,('nCoV-2019|Hubei|Wuhan/IPBCAMS-WH-02/2019|EPI_ISL_403931|China|Hubei|Wuhan|2019-12-30':0.0,((('nCoV-2019|USA/CA1/2020|EPI_ISL_406034|USA|California||2020-01-23':1.6699999999999997E-4,'nCoV-2019|USA/IL1/2020|EPI_ISL_404253|USA|Illinois|Chicago|2020-01-21':0.0):0.0,(('nCoV-2019|USA-WA1/2020|MN985325|USA|Washington|Snohomish|2020-01-19':3.299999999999999E-5,'nCoV-2019|WH04|CNS0191795|China|Hubei|Wuhan|2020-01-05':0.0):0.0,('nCoV-2019|HKU-SZ-002a|MN938384|China|Guangdong|Shenzhen|2020-01-10':0.0,('nCoV-2019|Guangdong/20SF012/2020|EPI_ISL_403932|China|Guangdong|Shenzhen|2020-01-14':0.0,('nCoV-2019|Guangdong/20SF013/2020|EPI_ISL_403933|China|Guangdong|Shenzhen|2020-01-15':0.0,('nCoV-2019|Guangdong/20SF025/2020|EPI_ISL_403935|China|Guangdong|Shenzhen|2020-01-15':0.0,('nCoV-2019|USA/AZ1/2020|EPI_ISL_406223|USA|Arizona|Phoenix|2020-01-22':3.3000000000000016E-5,'nCoV-2019|HKU-SZ-005|EPI_ISL_405839|China|Guangdong|Shenzhen|2020-01-21':6.7E-5):0.0):0.0):0.0):0.0):3.3000000000000016E-5):0.0):6.699999999999999E-5,('nCoV-2019|Hubei|Wuhan/IPBCAMS-WH-03/2019|EPI_ISL_403930|China|Hubei|Wuhan|2019-12-30':3.3E-5,('nCoV-2019|Hubei|Wuhan/IPBCAMS-WH-04/2019|EPI_ISL_403929|China|Hubei|Wuhan|2019-12-30':0.0,('nCoV-2019|Hubei|Wuhan-Hu-1|MN908947|China|Hubei|Wuhan|2019-12-26':0.0,('nCoV-2019|Zhejiang/WZ-02/2020|EPI_ISL_404228|China|Zhejiang||2020-01-17':0.0,('nCoV-2019|Zhejiang/WZ-01/2020|EPI_ISL_404227|China|Zhejiang||2020-01-16':6.699999999999999E-5,('nCoV-2019|Hubei|Wuhan/WIV07/2019|EPI_ISL_402130|China|Hubei|Wuhan|2019-12-30':6.699999999999999E-5,('nCoV-2019|Hubei|Wuhan/WIV06/2019|EPI_ISL_402129|China|Hubei|Wuhan|2019-12-30':0.0,('nCoV-2019|Hubei|Wuhan/WIV05/2019|EPI_ISL_402128|China|Hubei|Wuhan|2019-12-30':6.699999999999999E-5,('nCoV-2019|Hubei|Wuhan/WIV04/2019|EPI_ISL_402124|China|Hubei|Wuhan|2019-12-30':0.0,('nCoV-2019|Hubei|Wuhan/WIV02/2019|EPI_ISL_402127|China|Hubei|Wuhan|2019-12-30':6.699999999999999E-5,('nCoV-2019|USA/CA2/2020|EPI_ISL_406036|USA|California||2020-01-22':3.3000000000000016E-5,'nCoV-2019|Taiwan/2/2020|EPI_ISL_406031|Taiwan|Taiwan|Kaohsiung|2020-01-23':6.7E-5):3.3E-5):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):0.0):5.0E-5);"
 
     // Assumed the last entry is the date. It will take missing data.
     const tree = Tree.parseNewick(newickString,{datePrefix: "|",dateFormat:"%Y-%m-%d"});
-    const treeSVG = document.getElementById('iqtree');
-    const rootToTipSVG = document.getElementById('rootToTip');
+    const figureSvg = document.getElementById('figure');
 
-/// Annotate nodes with meta data
+    /// Annotate nodes with meta data
     tree.externalNodes.forEach(n=>{
         // Annotating nodes based on meta data in name - there are differences among the names so this doesn't work
-        const [name,someLocation,sequenceId,country,province,city,date] = n.name.split('|');
+        //
+        let [name,strain,accession,country,province,city,date] = n.name.split('|');
+        province = province ? province : "-";
+        city = city ? city : "-";
+
         tree.annotateNode(n,{country,province})
+        console.log(name,strain,accession,country,province,city,date);
     });
     tree.orderByNodeDensity();
 
-    const colorScale = d3.scaleOrdinal().domain(tree.annotations.province.values).range(d3.schemeAccent);
-    const margins= {top:10,bottom:60,left:100,right:100};
+    const colorScale = d3.scaleOrdinal().domain(tree.annotations.province.values).range(d3.schemeCategory10);
 
-    const fig = new FigTree(treeSVG,tree)
-        .layout(rectangularLayout)
-        .margins(margins)
+    const fig = new FigTree(figureSvg,tree,rectangularLayout,margins(0),{width,height})
+        // .layout(rectangularLayout)
+        // .margins(margins(0))
             .feature(
             nodes()// can take bauble or function that returns a bauble class  - only want tips
                 .element(d=>{return (d.degree===1?CircleBauble:null)})
@@ -181,7 +208,7 @@
                 .label(d=> {
                     if (d.name) {
                         const metaData = d.name.split("|");
-                    return `${d.annotations.province} - ${metaData[metaData.length - 1]}`
+                    return `${d.annotations.province} - ${formatDate(metaData[metaData.length - 1])}`
                 }
                 })
                 .annotateOnHover("hovered")
@@ -198,9 +225,9 @@
         );
 
 
-    const rootToTipPlot = new FigTree(rootToTipSVG,tree)
-        .layout(rootToTipLayout())
-        .margins(margins)
+    const rootToTipPlot = new FigTree(figureSvg,tree,rootToTipLayout(),margins(1),{width,height})
+        // .layout(rootToTipLayout())
+        // .margins(margins(1))
         .feature(
             nodes()// can take bauble or function that returns a bauble
                 .attr("fill",d=>colorScale(d.annotations.province))
@@ -219,7 +246,7 @@
         .feature(
             axis()
                 .location("bottom")
-                .y(500-margins.bottom-margins.top+5)
+                .y(height-margins(1).top-margins(1).bottom+5)
                 .x(0)
                 .title({text:"Date",
                         yPadding:30})
@@ -229,7 +256,7 @@
         axis()
             .location("left")
             .y(0)
-            .x(0)
+            .x(-5)
             .title({text:"Divergence",
                 xPadding:-90,
                 rotation:-90})
@@ -251,7 +278,7 @@
             enter=>enter
                 .append("text")
                 .attr("class", ".rttp-statistic")
-                .attr("transform", `translate(${margins.left + 20},${margins.top})`)
+                .attr("transform", `translate(${100},${margins(1).top})`)
                 .style("text-anchor", "left")
                 .attr("alignment-baseline", "hanging")
                 .attr("dy", (d,i)=>`${i*1.5}em`)
