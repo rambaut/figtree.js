@@ -8,11 +8,11 @@ import {Branch} from "../baubles/branch";
 import {CartoonBauble} from "../baubles/cartoonbauble";
 import {GeoLayout} from "../layout/classes/geoLayout";
 import {rectangularLayout} from "../layout/rectangularLayout.f";
-import ElementFactory from "../dataWrappers/elementFactory"
-import {branches} from "../dataWrappers/branches";
+import BaubleManager from "../features/baubleManager"
+import {branches} from "../features/branches";
 import {min,max} from "d3-array";
 import p from "../privateConstants.js"
-import  {nodes,nodeBackground} from "../dataWrappers/nodes";
+import  {nodes,nodeBackground} from "../features/nodes";
 import extent from "d3-array/src/extent";
 
 /** @module figtree */
@@ -125,6 +125,7 @@ export class FigTree {
             });
         this.setupSVG();
         this.axes=[];
+        this._features=[];
         // this.setupUpdaters();
         return this;
     }
@@ -181,51 +182,12 @@ export class FigTree {
 
         this.setUpScales(vertices,edges);
 
-        if(this.updateNodes){
-            this.updateNodes(vertices);
+        for(const feature of this._features){
+            feature.update({vertices,edges})
         }
-        if( this.updateBackgroundNodes) {
-            this.updateBackgroundNodes(vertices);
-        }
-        if(this.updateBranches){
-            this.updateBranches(edges);
-        }
-        for(const axis of this.axes){
-            axis.updateAxis();
-        }
-
         return this;
 
     }
-
-    /**
-     * Registers some text to appear in a popup box when the mouse hovers over the selection.
-     *
-     * @param selection
-     * @param text
-     */
-    addToolTip(selection, text) {
-        this.svgSelection.selectAll(selection).on("mouseover",
-            function (selected) {
-                let tooltip = document.getElementById("tooltip");
-                if (typeof text === typeof "") {
-                    tooltip.innerHTML = text;
-                } else {
-                    tooltip.innerHTML = text(selected.node);
-                }
-                tooltip.style.display = "block";
-                tooltip.style.left =event.pageX + 10 + "px";
-                tooltip.style.top = event.pageY + 10 + "px";
-            }
-        );
-        this.svgSelection.selectAll(selection).on("mouseout", function () {
-            let tooltip = document.getElementById("tooltip");
-            tooltip.style.display = "none";
-        });
-        return this;
-
-    }
-
 
     setUpScales(vertices,edges){
             let width,height;
@@ -263,77 +225,7 @@ export class FigTree {
                     .range([height -this._margins.bottom-this._margins.top,0]);
             }
 
-            this.scales = {x:xScale, y:yScale, width, height, projection};
-    }
-
-    updateElementFactory(elementFactory,elementClass,svgLayer){
-        return function(data) {
-
-            // DATA JOIN
-            // Join new data with old elements, if any.
-            const self = this;
-            svgLayer.selectAll(`.${elementClass}`)
-                .data(data, (d) => `${elementClass}_${d.key}`)
-                .join(
-                    enter => enter
-                        .append("g")
-                        .attr("id", (d) => d.key)
-                        .attr("class", (d) => [`${elementClass}`, ...d.classes].join(" "))
-                        .attr("transform", (d) => {
-                            return `translate(${this.scales.x(d.x)}, ${this.scales.y(d.y)})`;
-                        })
-                        .each(function (d) {
-                            const bauble = elementFactory.getElement(d,self.scales);
-                            if (bauble) {
-                                bauble.update(select(this))
-                            }
-                        })
-                        .append("text")
-                        .attr("class", `${elementClass}-label`)
-                        .attr("text-anchor", d => d.textLabel.textAnchor)
-                        .attr("alignment-baseline", d => d.textLabel.alignmentBaseline)
-                        .attr("dx", d => {
-                            if (elementClass === "branch") {
-                                return ((this.scales.x(d.textLabel.dx[0]) - this.scales.x(d.textLabel.dx[1])) / 2)
-                            } else {
-                                return d.textLabel.dx
-                            }
-                        })
-                        .attr("dy", d => d.textLabel.dy)
-                        .text((d) => elementFactory.getLabel(d)),
-                    update => update
-                        .call(update => update.transition()
-                            .duration(this.transitions().transitionDuration)
-                            .ease(this.transitions().transitionEase)
-                            .attr("class", (d) => [`${elementClass}`, ...d.classes].join(" "))
-                            .attr("transform", (d) => {
-                                return `translate(${this.scales.x(d.x)}, ${this.scales.y(d.y)})`;
-                            })
-                            .each(function (d) {
-                                const bauble = elementFactory.getElement(d,self.scales);
-                                if (bauble) {
-                                    bauble.update(select(this))
-                                }
-                            })
-
-                            .select(`.${elementClass}-label`)
-                            .transition()
-                            .duration(this.transitions().transitionDuration)
-                            .ease(this.transitions().transitionEase)
-                            .attr("text-anchor", d => d.textLabel.textAnchor)
-                            .attr("alignment-baseline", d => d.textLabel.alignmentBaseline)
-                            .attr("dx", d => {
-                                if (elementClass === "branch") {
-                                    return ((this.scales.x(d.textLabel.dx[0]) - this.scales.x(d.textLabel.dx[1])) / 2)
-                                } else {
-                                    return d.textLabel.dx
-                                }
-                            })
-                            .attr("dy", d => d.textLabel.dy)
-                            .text((d) => elementFactory.getLabel(d)),
-                        )
-                );
-        }
+        this.scales = {x:xScale, y:yScale, width, height, projection};
     }
 
 
@@ -369,23 +261,9 @@ export class FigTree {
             return this;
         }
     }
-    feature(feature){
-        if(feature.type===p.node){
-            this.vertexFactory=feature.figure(this);
-            this.updateNodes= this.updateElementFactory( this.vertexFactory,"node",this.svgSelection.select(".nodes-layer"));
-        }else if(feature.type === p.branch){
-            this.edgeFactory=feature.figure(this);
-            this.updateBranches= this.updateElementFactory( this.edgeFactory,"branch",this.svgSelection.select(".branches-layer"));
-
-        }else if(feature.type===p.nodeBackground) {
-                this.backgroundNodesFactory = feature.figure(this);
-                this.updateBackgroundNodes = this.updateElementFactory(this.backgroundNodesFactory, "node-background", this.svgSelection.select(".nodes-background-layer"));
-        }else if(feature.type===p.axis){
-            feature.figure(this);
-            feature.createAxis();
-            this.axes=this.axes.concat(feature);
-        }
-
+    feature(f){
+        f.figure(this);
+        this._features = this._features.concat(f);
         this.update();
         return this;
     }

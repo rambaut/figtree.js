@@ -31,6 +31,7 @@ const p= {
     backgroundNodesFactory:Symbol("backgroundNodesFactory"),
     updateBackgroundNodes:Symbol("updateBackgroundNodes"),
     axis:Symbol("axis"),
+    legend:Symbol("legend")
 
 };
 export default p;

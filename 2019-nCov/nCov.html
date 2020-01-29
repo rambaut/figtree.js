@@ -222,6 +222,8 @@
         .feature(
             branches()
                 .hilightOnHover()
+                .reRootOnClick()
+
         );
 
 
@@ -263,15 +265,18 @@
     );
 
     // get the regression stats.
-    const {vertices,edges} = rootToTipLayout()(tree);
-    const regression = edges[0].regression;
-    const stats = ["Slope","X intercept","R^2"];
+
+    const statsKeys = ["Slope","X intercept","R^2"];
+
+    const stats=()=>{
+        const {vertices,edges} = rootToTipLayout()(tree);
+        const regression = edges[0].regression;
 
     rootToTipPlot.svgSelection
         .select(".annotation-layer")
-        .append("g")
-        .attr("class","trendlineStats")
-        .attr("transform","translate(10,50)")
+        // .append("g")
+        // .attr("class","trendlineStats")
+        // .attr("transform","translate(10,50)")
         .selectAll("text")
         .data([d3.format(".3e")(regression.slope),customDateFormat(regression.xIntercept),d3.format(".3")(regression.rSquare)])
         .join(
@@ -282,7 +287,19 @@
                 .style("text-anchor", "left")
                 .attr("alignment-baseline", "hanging")
                 .attr("dy", (d,i)=>`${i*1.5}em`)
-                .text((d,i)=>`${stats[i]} : ${d}`))
+                .text((d,i)=>`${statsKeys[i]} : ${d}`),
+        update=>update
+            .attr("class", ".rttp-statistic")
+            .attr("transform", `translate(${100},${margins(1).top})`)
+            .style("text-anchor", "left")
+            .attr("alignment-baseline", "hanging")
+            .attr("dy", (d,i)=>`${i*1.5}em`)
+            .text((d,i)=>`${statsKeys[i]} : ${d}`))
+
+    };
+    stats();
+
+    tree.subscribeCallback(stats)
 
 </script>
 

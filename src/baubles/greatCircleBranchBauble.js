@@ -19,7 +19,7 @@ export class GreatCircleBranchBauble extends Branch{
      * @param {Object} settings
      * @param {function} [settings.curve=d3.curveNatural] - a d3 curve used to draw the edge
      * @param {function} [settings.edgeFilter=()=>true] - a function that is passed each edge. If it returns true then bauble applies to that vertex.
-     * @param {Object} [settings.attrs={"fill": d => "none", "stroke-width": d => "2", "stroke": d => "black"}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These can be overwritten by css.
+     * @param {Object} [settings._attrs={"fill": d => "none", "stroke-width": d => "2", "stroke": d => "black"}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These can be overwritten by css.
      *  @param {Object} [settings.styles={}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These overwrite css.
      */
     constructor(settings={}) {

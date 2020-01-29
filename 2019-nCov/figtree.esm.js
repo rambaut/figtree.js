@@ -10530,7 +10530,7 @@ function () {
      *
      * @param {Object} settings
      * @param {function} [settings.vertexFilter=()=>true] - a function that is passed each vertex. If it returns true then bauble applies to that vertex.
-     * @param {Object} [settings.attrs={}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These can be overwritten by css.
+     * @param {Object} [settings._attrs={}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These can be overwritten by css.
      *  @param {Object} [settings.styles={}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These overwrite css.
      */
 
@@ -10818,7 +10818,7 @@ function (_Bauble) {
      * @param {function} [settings.curve=d3.curveStepBefore] - a d3 curve used to draw the edge
      * @param {number} [settings.curveRadius=0] - if the curve radius is >0 then two points will be placed this many pixels below and to the right of the step point. This can be used with difference curves to make smooth corners
      * @param {function} [settings.edgeFilter=()=>true] - a function that is passed each edge. If it returns true then bauble applies to that vertex.
-     * @param {Object} [settings.attrs={"fill": d => "none", "stroke-width": d => "2", "stroke": d => "black"}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These can be overwritten by css.
+     * @param {Object} [settings._attrs={"fill": d => "none", "stroke-width": d => "2", "stroke": d => "black"}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These can be overwritten by css.
      *  @param {Object} [settings.styles={}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These overwrite css.
      */
 
@@ -11659,7 +11659,7 @@ function (_ElementFactory) {
       } else {
         return this._curve;
       }
-    } //TODO fix these interactions.
+    } //TODO fix these _interactions.
 
   }, {
     key: "hilightOnHover",
@@ -11728,7 +11728,7 @@ function (_ElementFactory) {
     _this.type = type;
     _this.elementMaker = CircleBauble;
     return _this;
-  } //TODO move onHover to super class and take an attrs object to update;
+  } //TODO move onHover to super class and take an _attrs object to update;
 
 
   createClass(NodeFactory, [{
@@ -13478,7 +13478,7 @@ function (_Branch) {
      * @param {Object} settings
      * @param {function} [settings.curve=d3.curveNatural] - a d3 curve used to draw the edge
      * @param {function} [settings.edgeFilter=()=>true] - a function that is passed each edge. If it returns true then bauble applies to that vertex.
-     * @param {Object} [settings.attrs={"fill": d => "none", "stroke-width": d => "2", "stroke": d => "black"}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These can be overwritten by css.
+     * @param {Object} [settings._attrs={"fill": d => "none", "stroke-width": d => "2", "stroke": d => "black"}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These can be overwritten by css.
      *  @param {Object} [settings.styles={}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These overwrite css.
      */
 

@@ -151,7 +151,7 @@
 <script src ="dist/figtree.umd.js"></script>
 <script type="module">
 
-    import {Tree,rectangularLayout,CircleBauble,FigTree,Branch,EqualAngleLayout,Axis,RootToTipPlot,nodes,nodeBackground,branches,equalAngleLayout}  from "./dist/figtree.esm.js";
+    import {Tree,rectangularLayout,CircleBauble,FigTree,BaubleManager,Branch}  from "./dist/figtree.esm.js";
 
 
     const width = 600,
@@ -175,28 +175,77 @@
 
 
     fig
-        // .layout(rectangularLayout)
-        // .layout(equalAngleLayout)
-        .layout(equalAngleLayout(tree.externalNodes.map(n=>n.id)))
+        .layout(rectangularLayout)
         .feature(
-            nodes()// can take bauble or function that returns a bauble
-                .element(CircleBauble)
-                .attr("fill",d=>d.degree>1?"steelblue":"#c71585")
-                .attr("r",5)
-                .label("name")
-                .hilightOnHover(10)
-                .rotateOnClick()
+           new BaubleManager()
+                .class("node")
+                .data(d=>d["vertices"])
+                .layer("nodes-layer")
+                    .bauble(
+                    new CircleBauble()
+                        .attr("fill",d=>d.degree>1?"steelblue":"#c71585")
+                        .attr("r",5)
+                        .on("mouseenter",(d,i,n)=>{
+                            d3.select(n[i]).attr("r",10);
+                            const parent = d3.select(n[i]).node().parentNode;
+                            d3.select(parent).classed("hovered",true)
+                                .raise();
+                            // move to top
+                        })
+                        .on("mouseleave",(d,i,n)=>{
+                            d3.select(n[i]).attr("r",5);
+                            const parent = d3.select(n[i]).node().parentNode;
+                            d3.select(parent).classed("hovered",false)
+                            // move to top
+                        })
+                        .on("click",(d,i,n)=>{
+                            tree.rotate(tree.getNode(d.id));
+                        })
+                )
         )
         .feature(
-            nodeBackground()
-                .attr("r",7)
+            new BaubleManager()
+                .class("branch")
+                .data(d=>d["edges"])
+                .layer("branches-layer")
+                .bauble(
+                    new Branch()
+                        .on("mouseenter",(d,i,n)=>{
+                            const parent = d3.select(n[i]).node().parentNode;
+
+                            d3.select(parent).classed("hovered",true)
+
+                        })
+                        .on("mouseleave",(d,i,n)=>{
+                            const parent = d3.select(n[i]).node().parentNode;
+
+                            d3.select(parent).classed("hovered",false)
+                        })
+                        .on("click",(d,i,n)=>{
+                            tree.rotate(tree.getNode(d.v1.id));
+                        })
+                )
         )
         .feature(
-            branches()
-                .curve(d3.curveBasis)
-                .hilightOnHover()
-                .reRootOnClick()
+            new BaubleManager()
+                .class("node-background")
+                .data(d=>d["vertices"])
+                .layer("nodes-background-layer")
+                .bauble(
+                    new CircleBauble()
+                        .attr("r",7)
+                )
         )
+        // .feature(
+        //     nodeBackground()
+        //         .attr("r",7)
+        // )
+        // .feature(
+        //     branches()
+        //         .curve(d3.curveBasis)
+        //         .hilightOnHover()
+        //         .reRootOnClick()
+        // )
 
 </script>
 

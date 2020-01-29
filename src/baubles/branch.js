@@ -1,34 +1,25 @@
 import {curveStepBefore, line} from "d3-shape";
 import {mergeDeep} from "../utilities";
 import {Bauble} from "./bauble";
-import {select} from "d3"
+import {mouse, select} from "d3"
+import p from "../privateConstants";
+import {BaubleManager} from "../features/baubleManager";
 /** @module bauble */
 
 export class Branch extends Bauble {
     static DEFAULT_SETTINGS() {
         return {
-            curve: curveStepBefore,
             curveRadius: 0,
             attrs: {"fill":"none","stroke":"black"},
         }
 
-
     }
-    /**
-     * The constructor takes a setting object. The keys of the setting object are determined by the type of bauble.
-     *
-     * @param {Object} settings
-     * @param {function} [settings.curve=d3.curveStepBefore] - a d3 curve used to draw the edge
-     * @param {number} [settings.curveRadius=0] - if the curve radius is >0 then two points will be placed this many pixels below and to the right of the step point. This can be used with difference curves to make smooth corners
-     * @param {function} [settings.edgeFilter=()=>true] - a function that is passed each edge. If it returns true then bauble applies to that vertex.
-     * @param {Object} [settings.attrs={"fill": d => "none", "stroke-width": d => "2", "stroke": d => "black"}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These can be overwritten by css.
-     *  @param {Object} [settings.styles={}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These overwrite css.
-     */
-    constructor(settings) {
-        const options = mergeDeep(Branch.DEFAULT_SETTINGS(), settings)
-        super(options);
-        this._curve=options.curve;
-        this._curveRadius = options.curveRadius;
+
+    constructor() {
+        super();
+        this._curve=curveStepBefore;
+        this._curveRadius = 0;
+        this._attrs= {"fill":"none","stroke":"black"};
     }
 
 
@@ -46,24 +37,24 @@ export class Branch extends Bauble {
             .join(
                 enter => enter
                     .append("path")
-                    .attr("d", (edge,i) => this.branchPath(edge,i))
+                    .attr("d", (v1,i) => this.branchPath(v1,i))
                     .attr("class", "branch-path")
-                    .attrs(this.attrs)
+                    .attrs(this._attrs)
                     .each((d,i,n)=>{
                         const element = select(n[i]);
-                        for( const [key,func] of Object.entries(this.interactions)){
+                        for( const [key,func] of Object.entries(this._interactions)){
                             element.on(key,(d,i,n)=>func(d,i,n))
                         }
                     }),
                 update => update
                     .call(update => update.transition("pathUpdating")
-                        .duration(this._transitions.transitionDuration)
-                        .ease(this._transitions.transitionEase)
+                        .duration(this.transitions().transitionDuration)
+                        .ease(this.transitions().transitionEase)
                         .attr("d", (edge,i) => this.branchPath(edge,i))
-                        .attrs(this.attrs)
+                        .attrs(this._attrs)
                         .each((d,i,n)=>{
                             const element = select(n[i]);
-                            for( const [key,func] of Object.entries(this.interactions)){
+                            for( const [key,func] of Object.entries(this._interactions)){
                                 element.on(key,(d,i,n)=>func(d,i,n))
                             }
                         })
@@ -81,14 +72,14 @@ export class Branch extends Bauble {
             const dontNeedCurve = e.v0.y - e.v1.y === 0 ? 0 : 1;
             const output = this._curveRadius > 0 ?
                 branchLine(
-                    [{x: 0, y: this.scales.y(e.v0.y) - this.scales.y(e.v1.y)},
+                    [{x: 0, y: this.scales().y(e.v0.y) - this.scales().y(e.v1.y)},
                         {x: 0, y: dontNeedCurve * factor * this._curveRadius},
                         {x: 0 + dontNeedCurve * this._curveRadius, y: 0},
-                        {x: this.scales.x(e.v1.x) - this.scales.x(e.v0.x), y: 0}
+                        {x: this.scales().x(e.v1.x) - this.scales().x(e.v0.x), y: 0}
                     ]) :
                 branchLine(
-                    [{x: 0, y: this.scales.y(e.v0.y) - this.scales.y(e.v1.y)},
-                        {x: this.scales.x(e.v1.x ) - this.scales.x(e.v0.x), y: 0}
+                    [{x: 0, y: this.scales().y(e.v0.y) - this.scales().y(e.v1.y)},
+                        {x: this.scales().x(e.v1.x ) - this.scales().x(e.v0.x), y: 0}
                     ]);
             return (output)
 
@@ -113,12 +104,61 @@ export class Branch extends Bauble {
         }
     }
 
+    hilightOnHover(strokeWidth = null) {
+        let oldStrokeWidth;
+        super.on("mouseenter",
+            (d, i,n) => {
+                if(strokeWidth) {
+                    if (!this._attrs["stroke-width"]) {
+                        this._attrs["stroke-width"] = this._attrs["stroke-width"];
+                    }
+                    oldStrokeWidth=this._attrs["stroke-width"];
+                    this.attr("r", strokeWidth);
+                }
+                const parent = select(n[i]).node().parentNode;
+                this.update(select(parent));
+                select(parent).classed("hovered",true)
+                    .raise();
+                if(strokeWidth){
+                    this.attr("r", oldStrokeWidth);
+                }
+            });
+        super.on("mouseleave",
+            (d,i,n) => {
+                const parent = select(n[i]).node().parentNode;
+                select(parent).classed("hovered",false);
+                this.update(select(parent));
+            });
+        return this;
+    }
+
+    reRootOnClick(){
+        super.on("click",
+            (d,i,n)=>{
+
+                const x1 = this.manager().figure().scales.x(d.v1.x),
+                    x2 = this.manager().figure().scales.x(d.v0.x),
+                    y1=this.manager().figure().scales.y(d.v1.y),
+                    y2=this.manager().figure().scales.y(d.v0.y),
+                    [mx,my] = mouse(document.getElementById(this.manager().figure().svgId));
+
+                const proportion = this.curve()==d3.curveStepBefore? Math.abs( (mx - x2) / (x1 - x2)):
+                    this.curveRadius()==0? Math.abs( (mx - x2) / (x1 - x2)):
+                        Math.sqrt(Math.pow(mx-x2,2)+Math.pow(my-y2,2))/Math.sqrt(Math.pow(x1-x2,2)+Math.pow(y1-y2,2)),
+                    tree = this.manager().figure().tree();
+                tree.reroot(tree.getNode(d.id),proportion)
+
+            });
+        return this;
+    }
+
+
 }
 
 /**
  * Generates a line() function that takes an edge and it's index and returns a line for d3 path element. It is called
  * by the figtree class as
- * const branchPath = this.layout.branchPathGenerator(this.scales)
+ * const branchPath = this.layout.branchPathGenerator(this.scales())
  * newBranches.append("path")
  .attr("class", "branch-path")
  .attr("d", (e,i) => branchPath(e,i));
@@ -150,4 +190,15 @@ export function branchPathGenerator({scales,curveRadius,curve}) {
 
     };
     return branchPath;
+}
+
+export function branches(){
+   return new BaubleManager()
+        .class("branch")
+        .data(d=>d["edges"])
+        .layer("branches-layer")
+}
+
+export function branch(){
+   return new Branch();
 }

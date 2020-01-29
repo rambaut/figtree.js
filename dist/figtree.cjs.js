@@ -4123,10 +4123,6 @@ Transition.prototype = transition.prototype = {
   end: transition_end
 };
 
-function linear$1(t) {
-  return +t;
-}
-
 function cubicInOut(t) {
   return ((t *= 2) <= 1 ? t * t * t : (t -= 2) * t * t + 2) / 2;
 }
@@ -5612,11 +5608,11 @@ function linearish(scale) {
   return scale;
 }
 
-function linear$2() {
+function linear$1() {
   var scale = continuous(identity$4, identity$4);
 
   scale.copy = function() {
-    return copy(scale, linear$2());
+    return copy(scale, linear$1());
   };
 
   initRange.apply(scale, arguments);
@@ -6876,11 +6872,6 @@ function dateToDecimal(date) {
   var totalNumberOfDays = leapYear(year) ? 366 : 365;
   return year + day / totalNumberOfDays;
 } //https://stackoverflow.com/questions/14636536/how-to-check-if-a-variable-is-an-integer-in-javascript
-
-function isFunction(funcOrClass) {
-  var propertyNames = Object.getOwnPropertyNames(funcOrClass);
-  return !propertyNames.includes('prototype') || propertyNames.includes('arguments');
-}
 
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
@@ -10513,48 +10504,24 @@ function (_AbstractLayout) {
 var Bauble =
 /*#__PURE__*/
 function () {
-  createClass(Bauble, null, [{
-    key: "DEFAULT_SETTINGS",
-    value: function DEFAULT_SETTINGS() {
-      return {
-        vertexFilter: function vertexFilter() {
-          return true;
-        },
-        attrs: {},
-        styles: {},
-        transitions: {
-          transitionDuration: 500,
-          transitionEase: linear$1
-        },
-        interactions: {}
-      };
-    }
-    /**
-     * The constructor takes a setting object. The keys of the setting object are determined by the type of bauble.
-     *
-     * @param {Object} settings
-     * @param {function} [settings.vertexFilter=()=>true] - a function that is passed each vertex. If it returns true then bauble applies to that vertex.
-     * @param {Object} [settings.attrs={}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These can be overwritten by css.
-     *  @param {Object} [settings.styles={}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These overwrite css.
-     */
-
-  }]);
-
+  /**
+   * The constructor takes a setting object. The keys of the setting object are determined by the type of bauble.
+   *
+   * @param {Object} settings
+   * @param {function} [settings.vertexFilter=()=>true] - a function that is passed each vertex. If it returns true then bauble applies to that vertex.
+   * @param {Object} [settings._attrs={}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These can be overwritten by css.
+   *  @param {Object} [settings.styles={}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These overwrite css.
+   */
   function Bauble() {
-    var settings = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
     classCallCheck(this, Bauble);
 
-    var options = mergeDeep(Bauble.DEFAULT_SETTINGS(), settings);
-    this.attrs = options.attrs;
-    this.interactions = options.interactions;
-    this._transitions = options.transitions;
+    this._attrs = {};
+    this._interactions = {};
   }
   /**
    * A function that appends the bauble to the selection, joins the data, assigns the attributes to the svg objects
    * updates and remove unneeded objects.
    * @param selection
-   * @param border
    */
 
 
@@ -10564,30 +10531,49 @@ function () {
       throw new Error("don't call the base class methods");
     }
   }, {
+    key: "manager",
+    value: function manager() {
+      var _manager = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (_manager === null) {
+        return this._manager;
+      } else {
+        this._manager = _manager;
+        return this;
+      }
+    }
+  }, {
     key: "attr",
     value: function attr(string) {
       var value = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
 
       if (value) {
-        this.attrs[string] = value;
+        this._attrs[string] = value;
+        return this;
       } else {
-        return this.attrs[string];
+        return this._attrs[string];
       }
     }
   }, {
     key: "on",
     value: function on(string, value) {
-      this.interactions[string] = value;
+      this._interactions[string] = value;
+      return this;
     }
   }, {
     key: "transitions",
     value: function transitions() {
       var t = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
-      if (t) {
-        this._transitions = t;
+      if (t === null) {
+        if (this._transitions) {
+          return this._transitions;
+        } else {
+          return this.manager().figure().transitions();
+        }
       } else {
-        return this._transitions;
+        this._transitions = t;
+        return this;
       }
     }
   }, {
@@ -10596,10 +10582,18 @@ function () {
       var _scales = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
       if (_scales) {
-        this.scales = _scales;
+        this._scales = _scales;
       } else {
-        return this.scales;
+        if (this._scales) {
+          return this._scales;
+        } else {
+          return this.manager().figure().scales;
+        }
       }
+    }
+  }, {
+    key: "label",
+    value: function label() {//TODO make this label maker
     }
   }]);
 
@@ -10692,6 +10686,77 @@ selection.prototype.properties = selection_properties;
 transition.prototype.attrs = transition_attrs;
 transition.prototype.styles = transition_styles;
 
+function _superPropBase(object, property) {
+  while (!Object.prototype.hasOwnProperty.call(object, property)) {
+    object = getPrototypeOf(object);
+    if (object === null) break;
+  }
+
+  return object;
+}
+
+var superPropBase = _superPropBase;
+
+var get$2 = createCommonjsModule(function (module) {
+function _get(target, property, receiver) {
+  if (typeof Reflect !== "undefined" && Reflect.get) {
+    module.exports = _get = Reflect.get;
+  } else {
+    module.exports = _get = function _get(target, property, receiver) {
+      var base = superPropBase(target, property);
+      if (!base) return;
+      var desc = Object.getOwnPropertyDescriptor(base, property);
+
+      if (desc.get) {
+        return desc.get.call(receiver);
+      }
+
+      return desc.value;
+    };
+  }
+
+  return _get(target, property, receiver || target);
+}
+
+module.exports = _get;
+});
+
+var p = {
+  addXAxis: Symbol("addXAxis"),
+  addYAxis: Symbol("addYAxis"),
+  updateXAxis: Symbol("updateXAxis"),
+  updateYAxis: Symbol("updateYAxis"),
+  updateAnnotations: Symbol("updateAnnotations"),
+  updateCartoons: Symbol("updateCartoons"),
+  updateBranches: Symbol("updateBranches"),
+  updateNodeBackgrounds: Symbol("updateNodeBackgrounds"),
+  updateNodes: Symbol("updateNodes"),
+  updateBranchStyles: Symbol("updateBranchStyles"),
+  updateNodeStyles: Symbol("updateNodeStyles"),
+  updateNodeBackgroundStyles: Symbol("updateNodeBackgroundStyles"),
+  updateCartoonStyles: Symbol("updateCartoonStyles"),
+  branchPathGenerator: Symbol("branchPathGenerator"),
+  pointToPoint: Symbol("pointToPoint"),
+  setUpScales: Symbol("setUpScales"),
+  svg: Symbol("SVG"),
+  tree: Symbol("tree"),
+  layout: Symbol("layout"),
+  vertices: Symbol("vertices"),
+  edges: Symbol("edges"),
+  baubleMap: Symbol("baubleMap"),
+  branchMap: Symbol("branchMap"),
+  updateVerticesAndEdges: Symbol("updateVerticesAndEdges"),
+  node: Symbol("node"),
+  branch: Symbol("branch"),
+  nodeBackground: Symbol("node background"),
+  vertexFactory: Symbol("vertexFactory"),
+  edgeFactory: Symbol("edgeFactory"),
+  backgroundNodesFactory: Symbol("backgroundNodesFactory"),
+  updateBackgroundNodes: Symbol("updateBackgroundNodes"),
+  axis: Symbol("axis"),
+  legend: Symbol("legend")
+};
+
 /** @module bauble */
 
 /**
@@ -10703,41 +10768,34 @@ var CircleBauble =
 function (_Bauble) {
   inherits(CircleBauble, _Bauble);
 
-  createClass(CircleBauble, null, [{
-    key: "DEFAULT_SETTINGS",
-    value: function DEFAULT_SETTINGS() {
-      return {
-        attrs: {
-          r: 5
-        }
-      };
-    }
-    /**
-     * The constructor.
-     * @param [settings.radius=6] - the radius of the circle
-     */
-
-  }]);
-
+  /**
+   * The constructor.
+   * @param [settings.radius=6] - the radius of the circle
+   */
   function CircleBauble() {
-    var settings = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+    var _this;
 
     classCallCheck(this, CircleBauble);
 
-    return possibleConstructorReturn(this, getPrototypeOf(CircleBauble).call(this, mergeDeep(CircleBauble.DEFAULT_SETTINGS(), settings)));
+    _this = possibleConstructorReturn(this, getPrototypeOf(CircleBauble).call(this));
+    _this._attrs = {
+      "r": 5,
+      "cx": 0,
+      "cy": 0
+    };
+    return _this;
   }
   /**
    * A function that assigns cy,cx,and r attributes to a selection. (cx and cy are set to 0 each r is the settings radius
    * plus the border.
    * @param selection
-   * @param {number} [border=0] - the amount to change the radius of the circle.
    */
 
 
   createClass(CircleBauble, [{
     key: "update",
     value: function update() {
-      var _this = this;
+      var _this2 = this;
 
       var selection = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
@@ -10752,7 +10810,7 @@ function (_Bauble) {
       return this.selection.selectAll("circle").data(function (d) {
         return [d];
       }).join(function (enter) {
-        return enter.append("circle").attr("class", "node-shape").attr("cx", 0).attr("cy", 0).attrs(_this.attrs).each(function (d, i, n) {
+        return enter.append("circle").attr("class", "node-shape").attrs(_this2._attrs).each(function (d, i, n) {
           var element = select(n[i]);
 
           var _loop = function _loop() {
@@ -10765,13 +10823,13 @@ function (_Bauble) {
             });
           };
 
-          for (var _i = 0, _Object$entries = Object.entries(_this.interactions); _i < _Object$entries.length; _i++) {
+          for (var _i = 0, _Object$entries = Object.entries(_this2._interactions); _i < _Object$entries.length; _i++) {
             _loop();
           }
         });
       }, function (update) {
         return update.call(function (update) {
-          return update.transition().duration(_this._transitions.transitionDuration).ease(_this._transitions.transitionEase).attrs(_this.attrs).each(function (d, i, n) {
+          return update.transition().duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attrs(_this2._attrs).each(function (d, i, n) {
             var element = select(n[i]);
 
             var _loop2 = function _loop2() {
@@ -10784,8 +10842,270 @@ function (_Bauble) {
               });
             };
 
-            for (var _i2 = 0, _Object$entries2 = Object.entries(_this.interactions); _i2 < _Object$entries2.length; _i2++) {
+            for (var _i2 = 0, _Object$entries2 = Object.entries(_this2._interactions); _i2 < _Object$entries2.length; _i2++) {
               _loop2();
+            }
+          });
+        });
+      });
+    }
+  }, {
+    key: "hilightOnHover",
+    value: function hilightOnHover() {
+      var _this3 = this;
+
+      var r = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+      var oldR;
+
+      get$2(getPrototypeOf(CircleBauble.prototype), "on", this).call(this, "mouseenter", function (d, i, n) {
+        if (r) {
+          if (!_this3._attrs.r) {
+            _this3._attrs.r = _this3._attrs["r"];
+          }
+
+          oldR = _this3._attrs["r"];
+
+          _this3.attr("r", r);
+        }
+
+        var parent = select(n[i]).node().parentNode;
+
+        _this3.update(select(parent));
+
+        select(parent).classed("hovered", true).raise();
+
+        if (r) {
+          _this3.attr("r", oldR);
+        } // move to top
+
+      });
+
+      get$2(getPrototypeOf(CircleBauble.prototype), "on", this).call(this, "mouseleave", function (d, i, n) {
+        var parent = select(n[i]).node().parentNode;
+        select(parent).classed("hovered", false);
+
+        _this3.update(select(parent));
+      });
+
+      return this;
+    }
+  }, {
+    key: "annotateOnHover",
+    value: function annotateOnHover(key) {
+      var _this4 = this;
+
+      get$2(getPrototypeOf(CircleBauble.prototype), "on", this).call(this, "mouseenter", function (element) {
+        return function (d, i, n) {
+          _this4.manager().figure()[p.tree].annotateNode(_this4.manager().figure()[p.tree].getNode(d.id), defineProperty({}, key, true));
+
+          _this4.manager().figure()[p.tree].treeUpdateCallback();
+
+          var parent = select(n[i]).node().parentNode;
+          select(parent).raise();
+        };
+      });
+
+      get$2(getPrototypeOf(CircleBauble.prototype), "on", this).call(this, "mouseleave", function (element) {
+        return function (d, i, n) {
+          _this4.manager().figure()[p.tree].annotateNode(_this4.manager().figure()[p.tree].getNode(d.id), defineProperty({}, key, false));
+
+          _this4.manager().figure()[p.tree].treeUpdateCallback();
+        };
+      });
+
+      return this;
+    }
+  }, {
+    key: "rotateOnClick",
+    value: function rotateOnClick() {
+      var _this5 = this;
+
+      var recursive = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+
+      get$2(getPrototypeOf(CircleBauble.prototype), "on", this).call(this, "click", function (d, n, i) {
+        var node = _this5.manager().figure()[p.tree].getNode(d.key);
+
+        _this5.manager().figure()[p.tree].rotate(node, recursive);
+      });
+
+      return this;
+    }
+  }]);
+
+  return CircleBauble;
+}(Bauble);
+function circle$1() {
+  return new CircleBauble();
+}
+
+var BaubleManager =
+/*#__PURE__*/
+function () {
+  function BaubleManager() {
+
+    classCallCheck(this, BaubleManager);
+
+    this.type = null;
+    this._baubleHelpers = [];
+
+    this._filter = function () {
+      return true;
+    };
+
+    return this;
+  }
+
+  createClass(BaubleManager, [{
+    key: "layer",
+    value: function layer() {
+      var l = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (l === null) {
+        return this._layer;
+      } else {
+        this._layer = l;
+        return this;
+      }
+    }
+  }, {
+    key: "figure",
+    value: function figure() {
+      var f = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (f === null) {
+        return this._figure;
+      } else {
+        this._figure = f;
+        return this;
+      }
+    }
+  }, {
+    key: "bauble",
+    value: function bauble(b) {
+      b.manager(this);
+      this._baubleHelpers = this._baubleHelpers.concat(b);
+      return this;
+    }
+  }, {
+    key: "filter",
+    value: function filter() {
+      var f = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (f === null) {
+        return this._filter;
+      } else {
+        this._filter = f;
+        return this;
+      }
+    }
+  }, {
+    key: "class",
+    value: function _class() {
+      var c = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (c === null) {
+        return this._class;
+      } else {
+        this._class = c;
+        return this;
+      }
+    }
+  }, {
+    key: "data",
+    value: function data() {
+      var f = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (f === null) {
+        return this._data;
+      } else {
+        this._data = f;
+        return this;
+      }
+    }
+  }, {
+    key: "update",
+    value: function update(data) {
+      var _this = this;
+
+      var usedData = this._data(data).filter(this.filter());
+
+      var self = this;
+
+      if (this._figure === null || this._class === null || this._layer === null || this.data() === null) {
+        console.warn("incomplete bauble manager");
+        return;
+      }
+
+      var svgLayer;
+      svgLayer = this.figure().svgSelection.select(".".concat(this.layer()));
+
+      if (svgLayer.empty()) {
+        svgLayer = this.figure().svgSelection.append("g").attr("class", this.layer());
+      }
+
+      svgLayer.selectAll(".".concat(this["class"]())).data(usedData, function (d) {
+        return "".concat(_this["class"](), "_").concat(d.key);
+      }).join(function (enter) {
+        return enter.append("g").attr("id", function (d) {
+          return d.key;
+        }).attr("class", function (d) {
+          return ["".concat(_this["class"]())].concat(toConsumableArray(d.classes)).join(" ");
+        }).attr("transform", function (d) {
+          return "translate(".concat(_this.figure().scales.x(d.x), ", ").concat(_this.figure().scales.y(d.y), ")");
+        }).each(function (d) {
+          var _iteratorNormalCompletion = true;
+          var _didIteratorError = false;
+          var _iteratorError = undefined;
+
+          try {
+            for (var _iterator = self._baubleHelpers[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+              var bauble = _step.value;
+              bauble.update(select(this));
+            }
+          } catch (err) {
+            _didIteratorError = true;
+            _iteratorError = err;
+          } finally {
+            try {
+              if (!_iteratorNormalCompletion && _iterator["return"] != null) {
+                _iterator["return"]();
+              }
+            } finally {
+              if (_didIteratorError) {
+                throw _iteratorError;
+              }
+            }
+          }
+        });
+      }, function (update) {
+        return update.call(function (update) {
+          return update.transition().duration(_this.figure().transitions().transitionDuration).ease(_this.figure().transitions().transitionEase).attr("class", function (d) {
+            return ["".concat(_this["class"]())].concat(toConsumableArray(d.classes)).join(" ");
+          }).attr("transform", function (d) {
+            return "translate(".concat(_this.figure().scales.x(d.x), ", ").concat(_this.figure().scales.y(d.y), ")");
+          }).each(function (d) {
+            var _iteratorNormalCompletion2 = true;
+            var _didIteratorError2 = false;
+            var _iteratorError2 = undefined;
+
+            try {
+              for (var _iterator2 = self._baubleHelpers[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                var bauble = _step2.value;
+                bauble.update(select(this));
+              }
+            } catch (err) {
+              _didIteratorError2 = true;
+              _iteratorError2 = err;
+            } finally {
+              try {
+                if (!_iteratorNormalCompletion2 && _iterator2["return"] != null) {
+                  _iterator2["return"]();
+                }
+              } finally {
+                if (_didIteratorError2) {
+                  throw _iteratorError2;
+                }
+              }
             }
           });
         });
@@ -10793,8 +11113,8 @@ function (_Bauble) {
     }
   }]);
 
-  return CircleBauble;
-}(Bauble);
+  return BaubleManager;
+}();
 
 /** @module bauble */
 
@@ -10807,7 +11127,6 @@ function (_Bauble) {
     key: "DEFAULT_SETTINGS",
     value: function DEFAULT_SETTINGS() {
       return {
-        curve: stepBefore,
         curveRadius: 0,
         attrs: {
           "fill": "none",
@@ -10815,28 +11134,20 @@ function (_Bauble) {
         }
       };
     }
-    /**
-     * The constructor takes a setting object. The keys of the setting object are determined by the type of bauble.
-     *
-     * @param {Object} settings
-     * @param {function} [settings.curve=d3.curveStepBefore] - a d3 curve used to draw the edge
-     * @param {number} [settings.curveRadius=0] - if the curve radius is >0 then two points will be placed this many pixels below and to the right of the step point. This can be used with difference curves to make smooth corners
-     * @param {function} [settings.edgeFilter=()=>true] - a function that is passed each edge. If it returns true then bauble applies to that vertex.
-     * @param {Object} [settings.attrs={"fill": d => "none", "stroke-width": d => "2", "stroke": d => "black"}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These can be overwritten by css.
-     *  @param {Object} [settings.styles={}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These overwrite css.
-     */
-
   }]);
 
-  function Branch(settings) {
+  function Branch() {
     var _this;
 
     classCallCheck(this, Branch);
 
-    var options = mergeDeep(Branch.DEFAULT_SETTINGS(), settings);
-    _this = possibleConstructorReturn(this, getPrototypeOf(Branch).call(this, options));
-    _this._curve = options.curve;
-    _this._curveRadius = options.curveRadius;
+    _this = possibleConstructorReturn(this, getPrototypeOf(Branch).call(this));
+    _this._curve = stepBefore;
+    _this._curveRadius = 0;
+    _this._attrs = {
+      "fill": "none",
+      "stroke": "black"
+    };
     return _this;
   }
 
@@ -10857,9 +11168,9 @@ function (_Bauble) {
       return this.selection.selectAll("path").data(function (d) {
         return [d];
       }).join(function (enter) {
-        return enter.append("path").attr("d", function (edge, i) {
-          return _this2.branchPath(edge, i);
-        }).attr("class", "branch-path").attrs(_this2.attrs).each(function (d, i, n) {
+        return enter.append("path").attr("d", function (v1, i) {
+          return _this2.branchPath(v1, i);
+        }).attr("class", "branch-path").attrs(_this2._attrs).each(function (d, i, n) {
           var element = select(n[i]);
 
           var _loop = function _loop() {
@@ -10872,15 +11183,15 @@ function (_Bauble) {
             });
           };
 
-          for (var _i = 0, _Object$entries = Object.entries(_this2.interactions); _i < _Object$entries.length; _i++) {
+          for (var _i = 0, _Object$entries = Object.entries(_this2._interactions); _i < _Object$entries.length; _i++) {
             _loop();
           }
         });
       }, function (update) {
         return update.call(function (update) {
-          return update.transition("pathUpdating").duration(_this2._transitions.transitionDuration).ease(_this2._transitions.transitionEase).attr("d", function (edge, i) {
+          return update.transition("pathUpdating").duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attr("d", function (edge, i) {
             return _this2.branchPath(edge, i);
-          }).attrs(_this2.attrs).each(function (d, i, n) {
+          }).attrs(_this2._attrs).each(function (d, i, n) {
             var element = select(n[i]);
 
             var _loop2 = function _loop2() {
@@ -10893,7 +11204,7 @@ function (_Bauble) {
               });
             };
 
-            for (var _i2 = 0, _Object$entries2 = Object.entries(_this2.interactions); _i2 < _Object$entries2.length; _i2++) {
+            for (var _i2 = 0, _Object$entries2 = Object.entries(_this2._interactions); _i2 < _Object$entries2.length; _i2++) {
               _loop2();
             }
           });
@@ -10915,7 +11226,7 @@ function (_Bauble) {
         var dontNeedCurve = e.v0.y - e.v1.y === 0 ? 0 : 1;
         var output = _this3._curveRadius > 0 ? branchLine([{
           x: 0,
-          y: _this3.scales.y(e.v0.y) - _this3.scales.y(e.v1.y)
+          y: _this3.scales().y(e.v0.y) - _this3.scales().y(e.v1.y)
         }, {
           x: 0,
           y: dontNeedCurve * factor * _this3._curveRadius
@@ -10923,13 +11234,13 @@ function (_Bauble) {
           x: 0 + dontNeedCurve * _this3._curveRadius,
           y: 0
         }, {
-          x: _this3.scales.x(e.v1.x) - _this3.scales.x(e.v0.x),
+          x: _this3.scales().x(e.v1.x) - _this3.scales().x(e.v0.x),
           y: 0
         }]) : branchLine([{
           x: 0,
-          y: _this3.scales.y(e.v0.y) - _this3.scales.y(e.v1.y)
+          y: _this3.scales().y(e.v0.y) - _this3.scales().y(e.v1.y)
         }, {
-          x: _this3.scales.x(e.v1.x) - _this3.scales.x(e.v0.x),
+          x: _this3.scales().x(e.v1.x) - _this3.scales().x(e.v0.x),
           y: 0
         }]);
         return output;
@@ -10961,6 +11272,68 @@ function (_Bauble) {
         return this._curveRadius;
       }
     }
+  }, {
+    key: "hilightOnHover",
+    value: function hilightOnHover() {
+      var _this4 = this;
+
+      var strokeWidth = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+      var oldStrokeWidth;
+
+      get$2(getPrototypeOf(Branch.prototype), "on", this).call(this, "mouseenter", function (d, i, n) {
+        if (strokeWidth) {
+          if (!_this4._attrs["stroke-width"]) {
+            _this4._attrs["stroke-width"] = _this4._attrs["stroke-width"];
+          }
+
+          oldStrokeWidth = _this4._attrs["stroke-width"];
+
+          _this4.attr("r", strokeWidth);
+        }
+
+        var parent = select(n[i]).node().parentNode;
+
+        _this4.update(select(parent));
+
+        select(parent).classed("hovered", true).raise();
+
+        if (strokeWidth) {
+          _this4.attr("r", oldStrokeWidth);
+        }
+      });
+
+      get$2(getPrototypeOf(Branch.prototype), "on", this).call(this, "mouseleave", function (d, i, n) {
+        var parent = select(n[i]).node().parentNode;
+        select(parent).classed("hovered", false);
+
+        _this4.update(select(parent));
+      });
+
+      return this;
+    }
+  }, {
+    key: "reRootOnClick",
+    value: function reRootOnClick() {
+      var _this5 = this;
+
+      get$2(getPrototypeOf(Branch.prototype), "on", this).call(this, "click", function (d, i, n) {
+        var x1 = _this5.manager().figure().scales.x(d.v1.x),
+            x2 = _this5.manager().figure().scales.x(d.v0.x),
+            y1 = _this5.manager().figure().scales.y(d.v1.y),
+            y2 = _this5.manager().figure().scales.y(d.v0.y),
+            _mouse = mouse(document.getElementById(_this5.manager().figure().svgId)),
+            _mouse2 = slicedToArray(_mouse, 2),
+            mx = _mouse2[0],
+            my = _mouse2[1];
+
+        var proportion = _this5.curve() == d3.curveStepBefore ? Math.abs((mx - x2) / (x1 - x2)) : _this5.curveRadius() == 0 ? Math.abs((mx - x2) / (x1 - x2)) : Math.sqrt(Math.pow(mx - x2, 2) + Math.pow(my - y2, 2)) / Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2)),
+            tree = _this5.manager().figure().tree();
+
+        tree.reroot(tree.getNode(d.id), proportion);
+      });
+
+      return this;
+    }
   }]);
 
   return Branch;
@@ -10968,7 +11341,7 @@ function (_Bauble) {
 /**
  * Generates a line() function that takes an edge and it's index and returns a line for d3 path element. It is called
  * by the figtree class as
- * const branchPath = this.layout.branchPathGenerator(this.scales)
+ * const branchPath = this.layout.branchPathGenerator(this.scales())
  * newBranches.append("path")
  .attr("class", "branch-path")
  .attr("d", (e,i) => branchPath(e,i));
@@ -11013,6 +11386,14 @@ function branchPathGenerator(_ref) {
   };
 
   return branchPath;
+}
+function branches() {
+  return new BaubleManager()["class"]("branch").data(function (d) {
+    return d["edges"];
+  }).layer("branches-layer");
+}
+function branch() {
+  return new Branch();
 }
 
 function ownKeys$4(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
@@ -11217,41 +11598,6 @@ function (_AbstractLayout) {
   return GeoLayout;
 }(AbstractLayout);
 
-var p = {
-  addXAxis: Symbol("addXAxis"),
-  addYAxis: Symbol("addYAxis"),
-  updateXAxis: Symbol("updateXAxis"),
-  updateYAxis: Symbol("updateYAxis"),
-  updateAnnotations: Symbol("updateAnnotations"),
-  updateCartoons: Symbol("updateCartoons"),
-  updateBranches: Symbol("updateBranches"),
-  updateNodeBackgrounds: Symbol("updateNodeBackgrounds"),
-  updateNodes: Symbol("updateNodes"),
-  updateBranchStyles: Symbol("updateBranchStyles"),
-  updateNodeStyles: Symbol("updateNodeStyles"),
-  updateNodeBackgroundStyles: Symbol("updateNodeBackgroundStyles"),
-  updateCartoonStyles: Symbol("updateCartoonStyles"),
-  branchPathGenerator: Symbol("branchPathGenerator"),
-  pointToPoint: Symbol("pointToPoint"),
-  setUpScales: Symbol("setUpScales"),
-  svg: Symbol("SVG"),
-  tree: Symbol("tree"),
-  layout: Symbol("layout"),
-  vertices: Symbol("vertices"),
-  edges: Symbol("edges"),
-  baubleMap: Symbol("baubleMap"),
-  branchMap: Symbol("branchMap"),
-  updateVerticesAndEdges: Symbol("updateVerticesAndEdges"),
-  node: Symbol("node"),
-  branch: Symbol("branch"),
-  nodeBackground: Symbol("node background"),
-  vertexFactory: Symbol("vertexFactory"),
-  edgeFactory: Symbol("edgeFactory"),
-  backgroundNodesFactory: Symbol("backgroundNodesFactory"),
-  updateBackgroundNodes: Symbol("updateBackgroundNodes"),
-  axis: Symbol("axis")
-};
-
 function getVertexClassesFromNode(node) {
   var classes = [!node.children ? "external-node" : "internal-node"];
   var tree = node.tree;
@@ -11414,417 +11760,15 @@ var layoutFactory$1 = function layoutFactory(makeVertices) {
 
 var rectangularLayout = layoutFactory$1(rectangularVertices);
 
-var ElementFactory =
-/*#__PURE__*/
-function () {
-  function ElementFactory() {
-    classCallCheck(this, ElementFactory);
-
-    this.attrs = {};
-    this.interactions = {};
-    this.elementMaker = null;
-
-    this.labelMaker = function () {
-      return "";
-    };
-
-    this.type = null;
-    return this;
-  }
-
-  createClass(ElementFactory, [{
-    key: "element",
-    value: function element() {
-      var b = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-
-      if (b) {
-        this.elementMaker = b;
-        return this;
-      } else {
-        return this.elementMaker;
-      }
-    }
-  }, {
-    key: "attr",
-    value: function attr(string, f) {
-      if (f) {
-        this.attrs[string] = f;
-        return this;
-      } else {
-        return this.attrs[string];
-      }
-    }
-  }, {
-    key: "getAttrs",
-    value: function getAttrs(d) {
-      var attrs = {};
-
-      for (var _i = 0, _Object$entries = Object.entries(this.attrs); _i < _Object$entries.length; _i++) {
-        var _Object$entries$_i = slicedToArray(_Object$entries[_i], 2),
-            key = _Object$entries$_i[0],
-            f = _Object$entries$_i[1];
-
-        if (f instanceof Function) {
-          if (f(d)) {
-            attrs[key] = f(d);
-          }
-        } else {
-          attrs[key] = f;
-        }
-      }
-
-      return attrs;
-    } //TODO remove scales parameter. Only need it for branches and they  can get it from the figure.
-
-  }, {
-    key: "getElement",
-    value: function getElement(d, scales) {
-      var element = null;
-
-      if (this.elementMaker) {
-        if (!isFunction(this.elementMaker)) {
-          element = new this.elementMaker();
-        } else if (this.elementMaker instanceof Function) {
-          var elementFactory = this.elementMaker(d);
-
-          if (elementFactory) {
-            element = new elementFactory();
-          }
-        }
-      }
-
-      if (element) {
-        element.scales(scales);
-        var attrs = this.getAttrs(d);
-
-        for (var _i2 = 0, _Object$entries2 = Object.entries(attrs); _i2 < _Object$entries2.length; _i2++) {
-          var _Object$entries2$_i = slicedToArray(_Object$entries2[_i2], 2),
-              key = _Object$entries2$_i[0],
-              value = _Object$entries2$_i[1];
-
-          element.attr(key, value);
-        }
-
-        for (var _i3 = 0, _Object$entries3 = Object.entries(this.interactions); _i3 < _Object$entries3.length; _i3++) {
-          var _Object$entries3$_i = slicedToArray(_Object$entries3[_i3], 2),
-              _key = _Object$entries3$_i[0],
-              f = _Object$entries3$_i[1];
-
-          element.on(_key, f(element));
-        }
-
-        element.transitions(this.figure.transitions());
-      } // set up scales in branch instance
-
-
-      return element;
-    }
-  }, {
-    key: "getLabel",
-    value: function getLabel(d) {
-      if (this.labelMaker) {
-        if (this.labelMaker instanceof Function) {
-          if (this.labelMaker(d)) {
-            return this.labelMaker(d);
-          } else {
-            return "";
-          }
-        } else {
-          if (d[this.labelMaker]) {
-            return d[this.labelMaker];
-          } else {
-            return "";
-          }
-        }
-      }
-    }
-  }, {
-    key: "on",
-    value: function on(string) {
-      var f = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-
-      if (f) {
-        this.interactions[string] = f;
-        return this;
-      } else {
-        return this.interactions[string];
-      }
-    }
-  }, {
-    key: "label",
-    value: function label(l) {
-      if (l) {
-        this.labelMaker = l;
-        return this;
-      } else {
-        return this.labelMaker;
-      }
-    }
-  }, {
-    key: "figure",
-    value: function figure() {
-      var f = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-
-      if (f) {
-        this.figure = f;
-        return this;
-      } else {
-        return this.figure;
-      }
-    }
-  }]);
-
-  return ElementFactory;
-}();
-
-function _superPropBase(object, property) {
-  while (!Object.prototype.hasOwnProperty.call(object, property)) {
-    object = getPrototypeOf(object);
-    if (object === null) break;
-  }
-
-  return object;
-}
-
-var superPropBase = _superPropBase;
-
-var get$2 = createCommonjsModule(function (module) {
-function _get(target, property, receiver) {
-  if (typeof Reflect !== "undefined" && Reflect.get) {
-    module.exports = _get = Reflect.get;
-  } else {
-    module.exports = _get = function _get(target, property, receiver) {
-      var base = superPropBase(target, property);
-      if (!base) return;
-      var desc = Object.getOwnPropertyDescriptor(base, property);
-
-      if (desc.get) {
-        return desc.get.call(receiver);
-      }
-
-      return desc.value;
-    };
-  }
-
-  return _get(target, property, receiver || target);
-}
-
-module.exports = _get;
-});
-
-var BranchFactory =
-/*#__PURE__*/
-function (_ElementFactory) {
-  inherits(BranchFactory, _ElementFactory);
-
-  function BranchFactory() {
-    var _this;
-
-    classCallCheck(this, BranchFactory);
-
-    _this = possibleConstructorReturn(this, getPrototypeOf(BranchFactory).call(this));
-    _this.elementMaker = Branch;
-    _this._curveRadius = 0;
-    _this._curve = stepBefore;
-    _this.type = p.branch;
-    return _this;
-  }
-
-  createClass(BranchFactory, [{
-    key: "getElement",
-    value: function getElement(d, scales) {
-      var element = get$2(getPrototypeOf(BranchFactory.prototype), "getElement", this).call(this, d, scales);
-
-      if (this._curveRadius instanceof Function) {
-        element.curveRadius(this._curveRadius(d));
-      } else {
-        element.curveRadius(this._curveRadius);
-      }
-
-      element.curve(this._curve);
-      return element;
-    }
-  }, {
-    key: "curveRadius",
-    value: function curveRadius(f) {
-      if (f) {
-        this._curveRadius = f;
-        return this;
-      } else {
-        return this._curveRadius;
-      }
-    }
-  }, {
-    key: "curve",
-    value: function curve(f) {
-      if (f) {
-        this._curve = f;
-        return this;
-      } else {
-        return this._curve;
-      }
-    } //TODO fix these interactions.
-
-  }, {
-    key: "hilightOnHover",
-    value: function hilightOnHover() {
-      get$2(getPrototypeOf(BranchFactory.prototype), "on", this).call(this, "mouseenter", function (element) {
-        return function (d, i, n) {
-          var parent = select(n[i]).node().parentNode;
-          select(parent).classed("hovered", true);
-        };
-      });
-
-      get$2(getPrototypeOf(BranchFactory.prototype), "on", this).call(this, "mouseleave", function (element) {
-        return function (d, i, n) {
-          var parent = select(n[i]).node().parentNode;
-          select(parent).classed("hovered", false);
-        };
-      });
-
-      return this;
-    }
-  }, {
-    key: "reRootOnClick",
-    value: function reRootOnClick() {
-      var _this2 = this;
-
-      get$2(getPrototypeOf(BranchFactory.prototype), "on", this).call(this, "click", function (branch) {
-        return function (d, i, n) {
-          var x1 = _this2.figure.scales.x(d.v1.x),
-              x2 = _this2.figure.scales.x(d.v0.x),
-              y1 = _this2.figure.scales.y(d.v1.y),
-              y2 = _this2.figure.scales.y(d.v0.y),
-              _mouse = mouse(document.getElementById(_this2.figure.svgId)),
-              _mouse2 = slicedToArray(_mouse, 2),
-              mx = _mouse2[0],
-              my = _mouse2[1];
-
-          var proportion = _this2.curve() == d3.curveStepBefore ? Math.abs((mx - x2) / (x1 - x2)) : _this2.curveRadius() == 0 ? Math.abs((mx - x2) / (x1 - x2)) : Math.sqrt(Math.pow(mx - x2, 2) + Math.pow(my - y2, 2)) / Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2)),
-              tree = _this2.figure.tree();
-
-          tree.reroot(tree.getNode(d.id), proportion);
-        };
-      });
-
-      return this;
-    }
-  }]);
-
-  return BranchFactory;
-}(ElementFactory);
-
-var branches = function branches() {
-  return new BranchFactory();
-};
-
-var NodeFactory =
-/*#__PURE__*/
-function (_ElementFactory) {
-  inherits(NodeFactory, _ElementFactory);
-
-  function NodeFactory(type) {
-    var _this;
-
-    classCallCheck(this, NodeFactory);
-
-    _this = possibleConstructorReturn(this, getPrototypeOf(NodeFactory).call(this));
-    _this.type = type;
-    _this.elementMaker = CircleBauble;
-    return _this;
-  } //TODO move onHover to super class and take an attrs object to update;
-
-
-  createClass(NodeFactory, [{
-    key: "hilightOnHover",
-    value: function hilightOnHover() {
-      var _this2 = this;
-
-      var r = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-
-      get$2(getPrototypeOf(NodeFactory.prototype), "on", this).call(this, "mouseenter", function (element) {
-        return function (d, i, n) {
-          if (r) {
-            if (!_this2.attrs.r) {
-              _this2.attrs.r = element.attr("r");
-            }
-
-            element.attr("r", r);
-            element.update();
-          }
-
-          var parent = select(n[i]).node().parentNode;
-          select(parent).classed("hovered", true).raise(); // move to top
-        };
-      });
-
-      get$2(getPrototypeOf(NodeFactory.prototype), "on", this).call(this, "mouseleave", function (element) {
-        return function (d, i, n) {
-          if (r) {
-            element.attr("r", _this2.attr("r"));
-            element.update();
-          }
-
-          var parent = select(n[i]).node().parentNode;
-          select(parent).classed("hovered", false);
-        };
-      });
-
-      return this;
-    }
-  }, {
-    key: "annotateOnHover",
-    value: function annotateOnHover(key) {
-      var _this3 = this;
-
-      get$2(getPrototypeOf(NodeFactory.prototype), "on", this).call(this, "mouseenter", function (element) {
-        return function (d, i, n) {
-          _this3.figure[p.tree].annotateNode(_this3.figure[p.tree].getNode(d.id), defineProperty({}, key, true));
-
-          _this3.figure[p.tree].treeUpdateCallback();
-
-          var parent = select(n[i]).node().parentNode;
-          select(parent).raise();
-        };
-      });
-
-      get$2(getPrototypeOf(NodeFactory.prototype), "on", this).call(this, "mouseleave", function (element) {
-        return function (d, i, n) {
-          _this3.figure[p.tree].annotateNode(_this3.figure[p.tree].getNode(d.id), defineProperty({}, key, false));
-
-          _this3.figure[p.tree].treeUpdateCallback();
-        };
-      });
-
-      return this;
-    }
-  }, {
-    key: "rotateOnClick",
-    value: function rotateOnClick() {
-      var _this4 = this;
-
-      var recursive = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
-
-      get$2(getPrototypeOf(NodeFactory.prototype), "on", this).call(this, "click", function (element) {
-        return function (d, n, i) {
-          var node = _this4.figure[p.tree].getNode(d.key);
-
-          _this4.figure[p.tree].rotate(node, recursive);
-        };
-      });
-
-      return this;
-    }
-  }]);
-
-  return NodeFactory;
-}(ElementFactory);
-
 var nodes = function nodes() {
-  return new NodeFactory(p.node);
+  return new BaubleManager()["class"]("node").data(function (d) {
+    return d["vertices"];
+  }).layer("nodes-layer");
 };
 var nodeBackground = function nodeBackground() {
-  return new NodeFactory(p.nodeBackground);
+  return new BaubleManager()["class"]("node-background").data(function (d) {
+    return d["vertices"];
+  }).layer("nodes-background-layer");
 };
 
 function ownKeys$7(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
@@ -11850,7 +11794,7 @@ function () {
         xScale: {
           axes: [],
           gap: 10,
-          scale: linear$2,
+          scale: linear$1,
           revisions: {
             origin: null,
             reverseAxis: false,
@@ -11862,7 +11806,7 @@ function () {
         yScale: {
           axes: [],
           gap: 10,
-          scale: linear$2,
+          scale: linear$1,
           revisions: {
             origin: null,
             reverseAxis: false,
@@ -11957,7 +11901,8 @@ function () {
       _this.update();
     });
     this.setupSVG();
-    this.axes = []; // this.setupUpdaters();
+    this.axes = [];
+    this._features = []; // this.setupUpdaters();
 
     return this;
   }
@@ -12019,27 +11964,17 @@ function () {
 
       select("#".concat(this.svgId)).attr("transform", "translate(".concat(this._margins.left, ",").concat(this._margins.top, ")"));
       this.setUpScales(vertices, edges);
-
-      if (this.updateNodes) {
-        this.updateNodes(vertices);
-      }
-
-      if (this.updateBackgroundNodes) {
-        this.updateBackgroundNodes(vertices);
-      }
-
-      if (this.updateBranches) {
-        this.updateBranches(edges);
-      }
-
       var _iteratorNormalCompletion = true;
       var _didIteratorError = false;
       var _iteratorError = undefined;
 
       try {
-        for (var _iterator = this.axes[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-          var axis = _step.value;
-          axis.updateAxis();
+        for (var _iterator = this._features[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+          var feature = _step.value;
+          feature.update({
+            vertices: vertices,
+            edges: edges
+          });
         }
       } catch (err) {
         _didIteratorError = true;
@@ -12056,35 +11991,6 @@ function () {
         }
       }
 
-      return this;
-    }
-    /**
-     * Registers some text to appear in a popup box when the mouse hovers over the selection.
-     *
-     * @param selection
-     * @param text
-     */
-
-  }, {
-    key: "addToolTip",
-    value: function addToolTip(selection, text) {
-      this.svgSelection.selectAll(selection).on("mouseover", function (selected) {
-        var tooltip = document.getElementById("tooltip");
-
-        if (_typeof_1(text) === _typeof_1("")) {
-          tooltip.innerHTML = text;
-        } else {
-          tooltip.innerHTML = text(selected.node);
-        }
-
-        tooltip.style.display = "block";
-        tooltip.style.left = event.pageX + 10 + "px";
-        tooltip.style.top = event.pageY + 10 + "px";
-      });
-      this.svgSelection.selectAll(selection).on("mouseout", function () {
-        var tooltip = document.getElementById("tooltip");
-        tooltip.style.display = "none";
-      });
       return this;
     }
   }, {
@@ -12109,8 +12015,8 @@ function () {
       var projection = null;
 
       if (this.layout instanceof GeoLayout) {
-        xScale = linear$2();
-        yScale = linear$2();
+        xScale = linear$1();
+        yScale = linear$1();
         projection = this.layout.projection;
       } else {
         var xdomain = extent$1(vertices.map(function (d) {
@@ -12135,76 +12041,6 @@ function () {
         height: height,
         projection: projection
       };
-    }
-  }, {
-    key: "updateElementFactory",
-    value: function updateElementFactory(elementFactory, elementClass, svgLayer) {
-      return function (data) {
-        var _this2 = this;
-
-        // DATA JOIN
-        // Join new data with old elements, if any.
-        var self = this;
-        svgLayer.selectAll(".".concat(elementClass)).data(data, function (d) {
-          return "".concat(elementClass, "_").concat(d.key);
-        }).join(function (enter) {
-          return enter.append("g").attr("id", function (d) {
-            return d.key;
-          }).attr("class", function (d) {
-            return ["".concat(elementClass)].concat(toConsumableArray(d.classes)).join(" ");
-          }).attr("transform", function (d) {
-            return "translate(".concat(_this2.scales.x(d.x), ", ").concat(_this2.scales.y(d.y), ")");
-          }).each(function (d) {
-            var bauble = elementFactory.getElement(d, self.scales);
-
-            if (bauble) {
-              bauble.update(select(this));
-            }
-          }).append("text").attr("class", "".concat(elementClass, "-label")).attr("text-anchor", function (d) {
-            return d.textLabel.textAnchor;
-          }).attr("alignment-baseline", function (d) {
-            return d.textLabel.alignmentBaseline;
-          }).attr("dx", function (d) {
-            if (elementClass === "branch") {
-              return (_this2.scales.x(d.textLabel.dx[0]) - _this2.scales.x(d.textLabel.dx[1])) / 2;
-            } else {
-              return d.textLabel.dx;
-            }
-          }).attr("dy", function (d) {
-            return d.textLabel.dy;
-          }).text(function (d) {
-            return elementFactory.getLabel(d);
-          });
-        }, function (update) {
-          return update.call(function (update) {
-            return update.transition().duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attr("class", function (d) {
-              return ["".concat(elementClass)].concat(toConsumableArray(d.classes)).join(" ");
-            }).attr("transform", function (d) {
-              return "translate(".concat(_this2.scales.x(d.x), ", ").concat(_this2.scales.y(d.y), ")");
-            }).each(function (d) {
-              var bauble = elementFactory.getElement(d, self.scales);
-
-              if (bauble) {
-                bauble.update(select(this));
-              }
-            }).select(".".concat(elementClass, "-label")).transition().duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attr("text-anchor", function (d) {
-              return d.textLabel.textAnchor;
-            }).attr("alignment-baseline", function (d) {
-              return d.textLabel.alignmentBaseline;
-            }).attr("dx", function (d) {
-              if (elementClass === "branch") {
-                return (_this2.scales.x(d.textLabel.dx[0]) - _this2.scales.x(d.textLabel.dx[1])) / 2;
-              } else {
-                return d.textLabel.dx;
-              }
-            }).attr("dy", function (d) {
-              return d.textLabel.dy;
-            }).text(function (d) {
-              return elementFactory.getLabel(d);
-            });
-          });
-        });
-      };
     } // setters and getters
 
   }, {
@@ -12222,7 +12058,7 @@ function () {
   }, {
     key: "tree",
     value: function tree() {
-      var _this3 = this;
+      var _this2 = this;
 
       var _tree = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
@@ -12231,7 +12067,7 @@ function () {
       } else {
         this[p.tree] = _tree;
         this[p.tree].subscribeCallback(function () {
-          _this3.update();
+          _this2.update();
         });
         this.update();
         return this;
@@ -12252,24 +12088,9 @@ function () {
     }
   }, {
     key: "feature",
-    value: function feature(_feature) {
-      if (_feature.type === p.node) {
-        this.vertexFactory = _feature.figure(this);
-        this.updateNodes = this.updateElementFactory(this.vertexFactory, "node", this.svgSelection.select(".nodes-layer"));
-      } else if (_feature.type === p.branch) {
-        this.edgeFactory = _feature.figure(this);
-        this.updateBranches = this.updateElementFactory(this.edgeFactory, "branch", this.svgSelection.select(".branches-layer"));
-      } else if (_feature.type === p.nodeBackground) {
-        this.backgroundNodesFactory = _feature.figure(this);
-        this.updateBackgroundNodes = this.updateElementFactory(this.backgroundNodesFactory, "node-background", this.svgSelection.select(".nodes-background-layer"));
-      } else if (_feature.type === p.axis) {
-        _feature.figure(this);
-
-        _feature.createAxis();
-
-        this.axes = this.axes.concat(_feature);
-      }
-
+    value: function feature(f) {
+      f.figure(this);
+      this._features = this._features.concat(f);
       this.update();
       return this;
     }
@@ -13482,7 +13303,7 @@ function (_Branch) {
      * @param {Object} settings
      * @param {function} [settings.curve=d3.curveNatural] - a d3 curve used to draw the edge
      * @param {function} [settings.edgeFilter=()=>true] - a function that is passed each edge. If it returns true then bauble applies to that vertex.
-     * @param {Object} [settings.attrs={"fill": d => "none", "stroke-width": d => "2", "stroke": d => "black"}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These can be overwritten by css.
+     * @param {Object} [settings._attrs={"fill": d => "none", "stroke-width": d => "2", "stroke": d => "black"}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These can be overwritten by css.
      *  @param {Object} [settings.styles={}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These overwrite css.
      */
 
@@ -14114,8 +13935,8 @@ function _objectSpread$e(target) { for (var i = 1; i < arguments.length; i++) { 
 
 var AxisFactory =
 /*#__PURE__*/
-function (_ElementFactory) {
-  inherits(AxisFactory, _ElementFactory);
+function (_BaubleManager) {
+  inherits(AxisFactory, _BaubleManager);
 
   function AxisFactory() {
     var _this;
@@ -14264,7 +14085,7 @@ function (_ElementFactory) {
   }]);
 
   return AxisFactory;
-}(ElementFactory);
+}(BaubleManager);
 
 function getD3Axis$1(location) {
   switch (location.toLowerCase()) {
@@ -14291,6 +14112,7 @@ function axis$1() {
 
 exports.Axis = Axis;
 exports.Bauble = Bauble;
+exports.BaubleManager = BaubleManager;
 exports.Branch = Branch;
 exports.CircleBauble = CircleBauble;
 exports.EqualAngleLayout = EqualAngleLayout;
@@ -14307,7 +14129,9 @@ exports.TransmissionLayout = TransmissionLayout;
 exports.Tree = Tree;
 exports.Type = Type;
 exports.axis = axis$1;
+exports.branch = branch;
 exports.branches = branches;
+exports.circle = circle$1;
 exports.decimalToDate = decimalToDate;
 exports.equalAngleLayout = equalAngleLayout;
 exports.nodeBackground = nodeBackground;

@@ -1,29 +1,16 @@
-import ElementFactory from "./elementFactory";
+import BaubleManager from "./baubleManager";
 import p from "../privateConstants";
-import {Axis} from "../baubles/axes";
 import uuid from "uuid";
-import {mergeDeep} from "../utilities";
-import {axisBottom, axisLeft, axisRight, axisTop} from "d3";
 
-class AxisFactory extends ElementFactory {
+class LegendFactory extends BaubleManager {
     constructor(){
         super();
-        this.type=p.axis;
-        this._tickArguments=[5, "f"];
-        this._title={
-            text:"",
-            xPadding:0,
-            yPadding:0,
-            rotation:0
-        };
-        this._id= `a${uuid.v4()}`;
-        this._location="bottom";
-        this.d3Axis = getD3Axis(this.location())
+        this.type=p.legend;
         this._x=0;
         this._y=0;
 
     }
-    
+
     location(string=null){
         if(!string){
             return this._location
@@ -49,9 +36,9 @@ class AxisFactory extends ElementFactory {
             return this;
         }
     }
-    
 
-    createAxis() {
+
+    create() {
 
         const length = ["top","bottom"].indexOf(this._location)>-1?
             this.figure.scales.width - this.figure._margins.left - this.figure._margins.right:
@@ -104,7 +91,7 @@ class AxisFactory extends ElementFactory {
             this._y=d;
             return this;        }
         else{
-          return this._y;
+            return this._y;
         }
     }
 
@@ -116,7 +103,7 @@ class AxisFactory extends ElementFactory {
             return this._tickFormat;
         }
     }
-    updateAxis() {
+    update() {
 
         const length = ["top","bottom"].indexOf(this._location)>-1?
             this.figure.scales.width - this.figure._margins.left - this.figure._margins.right:

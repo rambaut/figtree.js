@@ -1,10 +1,10 @@
-import ElementFactory from "./elementFactory";
+import {BaubleManager} from "./baubleManager";
 import {isFunction} from "../utilities";
 import {Branch} from "../baubles/branch";
 import {select,curveStepBefore,mouse} from "d3";
 import p from "../privateConstants";
 
-class BranchFactory extends ElementFactory{
+class BranchFactory extends BaubleManager{
     constructor(){
         super();
         this.elementMaker=Branch;
@@ -42,7 +42,7 @@ class BranchFactory extends ElementFactory{
             return this._curve;
         }
     }
-//TODO fix these interactions.
+//TODO fix these _interactions.
     hilightOnHover() {
         super.on("mouseenter",
             (element) => (d, i,n) => {

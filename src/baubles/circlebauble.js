@@ -1,28 +1,24 @@
 import {mergeDeep} from "../utilities";
 import {Bauble} from "./bauble";
 import {select} from "d3";
+import p from "../privateConstants";
 /** @module bauble */
+
 
 /**
  * The CircleBauble class. Each vertex is assigned a circle in the svg.
  */
-export class CircleBauble extends Bauble {
+export class CircleBauble extends Bauble{
 
-
-    static DEFAULT_SETTINGS() {
-        return {attrs: {
-                r: 5,
-            }
-        };
-    }
 
     /**
      * The constructor.
      * @param [settings.radius=6] - the radius of the circle
      */
-    constructor(settings = {}) {
-        super(mergeDeep(CircleBauble.DEFAULT_SETTINGS(), settings));
-
+    constructor()
+    {
+        super();
+        this._attrs={"r":5,"cx":0,"cy":0}
     }
 
 
@@ -30,7 +26,6 @@ export class CircleBauble extends Bauble {
      * A function that assigns cy,cx,and r attributes to a selection. (cx and cy are set to 0 each r is the settings radius
      * plus the border.
      * @param selection
-     * @param {number} [border=0] - the amount to change the radius of the circle.
      */
     update(selection=null) {
         if(selection==null&&!this.selection){
@@ -46,27 +41,85 @@ export class CircleBauble extends Bauble {
                 enter => enter
                     .append("circle")
                     .attr("class","node-shape")
-                    .attr("cx", 0)
-                    .attr("cy", 0)
-                    .attrs(this.attrs)
+                    .attrs(this._attrs)
                     .each((d,i,n)=>{
                         const element = select(n[i]);
-                        for( const [key,func] of Object.entries(this.interactions)){
+                        for( const [key,func] of Object.entries(this._interactions)){
                             element.on(key,(d,i,n)=>func(d,i,n))
                         }
                     }),
                 update => update
                     .call(update => update.transition()
-                        .duration(this._transitions.transitionDuration)
-                        .ease(this._transitions.transitionEase)
-                        .attrs(this.attrs)
+                        .duration(this.transitions().transitionDuration)
+                        .ease(this.transitions().transitionEase)
+                        .attrs(this._attrs)
                         .each((d,i,n)=>{
                             const element = select(n[i]);
-                            for( const [key,func] of Object.entries(this.interactions)){
+                            for( const [key,func] of Object.entries(this._interactions)){
                                 element.on(key,(d,i,n)=>func(d,i,n))
                             }
                         }),
                     )
                 );
     };
+
+    hilightOnHover(r = null) {
+        let oldR;
+        super.on("mouseenter",
+            (d, i,n) => {
+                if(r) {
+                    if (!this._attrs.r) {
+                        this._attrs.r = this._attrs["r"];
+                    }
+                    oldR=this._attrs["r"];
+                    this.attr("r", r);
+                }
+                const parent = select(n[i]).node().parentNode;
+                this.update(select(parent));
+                select(parent).classed("hovered",true)
+                    .raise();
+                if(r){
+                    this.attr("r", oldR);
+
+                }
+
+
+                // move to top
+
+            });
+        super.on("mouseleave",
+            (d,i,n) => {
+                const parent = select(n[i]).node().parentNode;
+                select(parent).classed("hovered",false);
+                this.update(select(parent));
+
+            });
+        return this;
+    }
+    annotateOnHover(key){
+        super.on("mouseenter",
+            (element) => (d, i,n) => {
+                this.manager().figure()[p.tree].annotateNode(this.manager().figure()[p.tree].getNode(d.id),{[key]:true});
+                this.manager().figure()[p.tree].treeUpdateCallback();
+                const parent = select(n[i]).node().parentNode;
+                select(parent).raise();
+            });
+        super.on("mouseleave",
+            (element) => (d,i,n) => {
+                this.manager().figure()[p.tree].annotateNode(this.manager().figure()[p.tree].getNode(d.id),{[key]:false});
+                this.manager().figure()[p.tree].treeUpdateCallback();
+            });
+        return this;
+    }
+    rotateOnClick(recursive=false){
+        super.on("click",(d,n,i)=>{
+            const node = this.manager().figure()[p.tree].getNode(d.key);
+            this.manager().figure()[p.tree].rotate(node,recursive);
+        });
+        return this;
+    }
+}
+
+export function circle(){
+    return new CircleBauble();
 }
