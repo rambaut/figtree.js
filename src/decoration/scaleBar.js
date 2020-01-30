@@ -117,7 +117,7 @@ class ScaleBar extends decoration {
         }
 
         group
-            .append("text")
+            .select("text")
             .attr("transform", `translate(${pos.x+this._title.xPadding}, ${pos.y+this._title.yPadding}) rotate(${this._title.rotation})`)
             .attr("alignment-baseline", "hanging")
             .style("text-anchor", "middle")

@@ -153,7 +153,7 @@
 
     import {Tree,rectangularLayout,CircleBauble,FigTree,BaubleManager,Branch,
         nodes,nodeBackground,circle,branches,branch,tipLabel,internalNodeLabel,label,
-        branchLabel, axis,scaleBar}  from "./dist/figtree.esm.js";
+        branchLabel, axis,scaleBar,legend}  from "./dist/figtree.esm.js";
 
 
     const width = 600,
@@ -174,7 +174,7 @@
     const margins={top:10,bottom:60,left:30,right:60};
 
     const fig = new FigTree(treeSVG,tree,null,margins);
-
+    const colorScale = d3.scaleOrdinal().range(["steelblue","#c71585"]).domain(["Internal node","External node"])
 
     fig
         .layout(rectangularLayout)
@@ -184,15 +184,15 @@
                    circle()
                         .attr("fill",d=>d.degree>1?"steelblue":"#c71585")
                         .attr("r",5)
-                       .hilightOnHover(10)
+                        .hilightOnHover(10)
                         .rotateOnClick()
                 )
             .element(
                 tipLabel(d=>d.name)
             )
-            // .element(
-            //     internalNodeLabel(d=>d.y)
-            // )
+            .element(
+                internalNodeLabel(d=>d.y)
+            )
         )
         .feature(
            branches()
@@ -239,6 +239,12 @@
                 .title({text:"0.3 sub/site",
                     yPadding:3})
         )
+    .feature(
+        legend()
+        .scale(colorScale)
+        .x(0)
+        .y(height-margins.bottom)
+    )
 
 </script>
 

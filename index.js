@@ -23,8 +23,9 @@ import {decimalToDate} from "./src/utilities";
 import{axis} from "./src/decoration/axis"
 import{BaubleManager} from "./src/features/baubleManager"
 import {scaleBar} from "./src/decoration/scaleBar";
+import {legend} from "./src/decoration/legend";
 
 export{Tree,Type,rectangularLayout,RootToTipPlot,RectangularLayout,TransmissionLayout, ExplodedLayout, FigTree,
     Bauble,CircleBauble,RoughCircleBauble,RectangularBauble,Branch,GreatCircleBranchBauble,RoughBranchBauble,
     EqualAngleLayout,GeoLayout,nodes,equalAngleLayout,rootToTipLayout,decimalToDate,axis,circle,BaubleManager,
-    nodeBackground,branch,branches,Label,label,tipLabel,internalNodeLabel,branchLabel,scaleBar};
+    nodeBackground,branch,branches,Label,label,tipLabel,internalNodeLabel,branchLabel,scaleBar,legend};

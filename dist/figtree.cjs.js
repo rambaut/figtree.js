@@ -14356,7 +14356,7 @@ function (_decoration) {
         pos.y = this.scales().y(this._length) / 2;
       }
 
-      group.append("text").attr("transform", "translate(".concat(pos.x + this._title.xPadding, ", ").concat(pos.y + this._title.yPadding, ") rotate(").concat(this._title.rotation, ")")).attr("alignment-baseline", "hanging").style("text-anchor", "middle").text(this._title.text);
+      group.select("text").attr("transform", "translate(".concat(pos.x + this._title.xPadding, ", ").concat(pos.y + this._title.yPadding, ") rotate(").concat(this._title.rotation, ")")).attr("alignment-baseline", "hanging").style("text-anchor", "middle").text(this._title.text);
     }
   }]);
 
@@ -14365,6 +14365,144 @@ function (_decoration) {
 
 function scaleBar() {
   return new ScaleBar();
+}
+
+var Legend =
+/*#__PURE__*/
+function (_decoration) {
+  inherits(Legend, _decoration);
+
+  function Legend() {
+    var _this;
+
+    classCallCheck(this, Legend);
+
+    _this = possibleConstructorReturn(this, getPrototypeOf(Legend).call(this));
+    _this._title = {
+      text: "",
+      xPadding: 0,
+      yPadding: 0,
+      rotation: 0
+    };
+    _this._x = 0;
+    _this._y = 0;
+
+    get$2(getPrototypeOf(Legend.prototype), "layer", assertThisInitialized(_this)).call(assertThisInitialized(_this), "axes-layer");
+
+    return _this;
+  }
+
+  createClass(Legend, [{
+    key: "length",
+    value: function length() {
+      var d = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (!d) {
+        return this._length;
+      } else {
+        this._length = d;
+        return this;
+      }
+    }
+  }, {
+    key: "scale",
+    value: function scale() {
+      var _scale = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (!_scale) {
+        return this._scale;
+      } else {
+        this._scale = _scale;
+        return this;
+      }
+    }
+  }, {
+    key: "location",
+    value: function location() {
+      var string = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (!string) {
+        return this._location;
+      } else {
+        this._location = string;
+        return this;
+      }
+    }
+  }, {
+    key: "create",
+    value: function create() {
+      var _this2 = this;
+
+      var selection = this.figure().svgSelection.select(".".concat(this.layer()));
+      var group = selection.append("g").attr("id", this._id).attr("class", "legend").attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")); //https://www.d3-graph-gallery.com/graph/custom_legend.html#cont1
+      // Add one dot in the legend for each name.
+
+      var size = 20;
+      group.selectAll("rect").data(this.scale().domain()).enter().append("rect").attr("x", 0).attr("y", function (d, i) {
+        return i * (size + 5);
+      }) // 100 is where the first dot appears. 25 is the distance between dots
+      .attr("width", size).attr("height", size).attr("fill", function (d) {
+        return _this2.scale()(d);
+      }); // Add one dot in the legend for each name.
+
+      group.selectAll("text").data(this.scale().domain()).enter().append("text").attr("x", size * 1.2).attr("y", function (d, i) {
+        return i * (size + 5) + size / 2;
+      }) // 100 is where the first dot appears. 25 is the distance between dots
+      .text(function (d) {
+        return d;
+      }).attr("text-anchor", "left").attr("alignment-baseline", "middle");
+    }
+  }, {
+    key: "tickFormat",
+    value: function tickFormat(d) {
+      if (d) {
+        this._tickFormat = d;
+        return this;
+      } else {
+        return this._tickFormat;
+      }
+    }
+  }, {
+    key: "ticks",
+    value: function ticks(d) {
+      if (d) {
+        this._ticks = d;
+        return this;
+      } else {
+        return this._ticks;
+      }
+    }
+  }, {
+    key: "updateCycle",
+    value: function updateCycle() {
+      var _this3 = this;
+
+      var selection = this.figure().svgSelection.select(".".concat(this.layer()));
+      var group = selection.select("g#".concat(this._id)).transition().attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")); //https://www.d3-graph-gallery.com/graph/custom_legend.html#cont1
+      // Add one dot in the legend for each name.
+
+      var size = 20;
+      group.selectAll("rect").transition().attr("x", 0).attr("y", function (d, i) {
+        return i * (size + 5);
+      }) // 100 is where the first dot appears. 25 is the distance between dots
+      .attr("width", size).attr("height", size).attr("fill", function (d) {
+        return _this3.scale()(d);
+      }); // Add one dot in the legend for each name.
+
+      group.selectAll("text").transition().attr("x", size * 1.2).attr("y", function (d, i) {
+        return i * (size + 5) + size / 2;
+      }) // 100 is where the first dot appears. 25 is the distance between dots
+      .text(function (d) {
+        return d;
+      }).attr("text-anchor", "left").attr("alignment-baseline", "middle");
+    }
+  }]);
+
+  return Legend;
+}(decoration);
+
+function legend() {
+  return new Legend();
 }
 
 exports.Bauble = Bauble;
@@ -14394,6 +14532,7 @@ exports.decimalToDate = decimalToDate;
 exports.equalAngleLayout = equalAngleLayout;
 exports.internalNodeLabel = internalNodeLabel;
 exports.label = label;
+exports.legend = legend;
 exports.nodeBackground = nodeBackground;
 exports.nodes = nodes;
 exports.rectangularLayout = rectangularLayout;
