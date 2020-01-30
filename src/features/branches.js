@@ -60,7 +60,6 @@ class BranchFactory extends BaubleManager{
     reRootOnClick(){
         super.on("click",
             (branch)=>(d,i,n)=>{
-
                 const x1 = this.scales().x(d.v1.x),
                  x2 = this.scales().x(d.v0.x),
                     y1=this.scales().y(d.v1.y),
@@ -72,13 +71,14 @@ class BranchFactory extends BaubleManager{
                     Math.sqrt(Math.pow(mx-x2,2)+Math.pow(my-y2,2))/Math.sqrt(Math.pow(x1-x2,2)+Math.pow(y1-y2,2)),
                     tree = this.figure.tree();
                 tree.reroot(tree.getNode(d.id),proportion)
-
-
             });
         return this;
     }
 }
 
 export const branches=()=>{
-    return new BranchFactory
+    return new BranchFactory()
+        .class("branch")
+        .data(d=>d["edges"])
+        .layer("branches-layer")
 };

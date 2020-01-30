@@ -10,6 +10,9 @@ import {GeoLayout} from "../layout/classes/geoLayout";
 import {rectangularLayout} from "../layout/rectangularLayout.f";
 import BaubleManager from "../features/baubleManager"
 import {branches} from "../features/branches";
+import {axis} from "../decoration/axis"
+import {scaleBar} from "../decoration/scaleBar";
+import {legend} from "../decoration/legend";
 import {min,max} from "d3-array";
 import p from "../privateConstants.js"
 import  {nodes,nodeBackground} from "../features/nodes";
@@ -267,14 +270,41 @@ export class FigTree {
         this.update();
         return this;
     }
-
-
-    get xAxis(){
-
+    nodes(){
+        const n=nodes();
+        this.feature(n);
+        return n;
     }
-    get yAxis(){
-
+    branches(){
+        const b=branches();
+        this.feature(b);
+        return b;
     }
+    nodeBackground(){
+        const n=nodeBackground();
+        this.feature(n);
+        return n;
+    }
+
+    axis(){
+        const a = axis();
+        this.feature(a);
+        return a;
+    }
+    scaleBar(){
+        const sb=scaleBar();
+        this.feature(sb);
+        return sb;
+    }
+    legend(){
+        const l = legend();
+        this.feature(l);
+        return l;
+    }
+
+
+
+
 
 }
 
