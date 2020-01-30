@@ -2,6 +2,7 @@ import {curveStepBefore, line} from "d3-shape";
 import {mergeDeep} from "../utilities";
 import {Bauble} from "./bauble";
 import {mouse, select} from "d3"
+import uuid from "uuid"
 import p from "../privateConstants";
 import {BaubleManager} from "../features/baubleManager";
 /** @module bauble */
@@ -47,7 +48,7 @@ export class Branch extends Bauble {
                         }
                     }),
                 update => update
-                    .call(update => update.transition("pathUpdating")
+                    .call(update => update.transition(d=>`u${uuid.v4()}`)
                         .duration(this.transitions().transitionDuration)
                         .ease(this.transitions().transitionEase)
                         .attr("d", (edge,i) => this.branchPath(edge,i))

@@ -153,7 +153,7 @@
 
     import {Tree,rectangularLayout,CircleBauble,FigTree,BaubleManager,Branch,
         nodes,nodeBackground,circle,branches,branch,tipLabel,internalNodeLabel,label,
-        branchLabel, axis}  from "./dist/figtree.esm.js";
+        branchLabel, axis,scaleBar}  from "./dist/figtree.esm.js";
 
 
     const width = 600,
@@ -183,16 +183,16 @@
                 .element(
                    circle()
                         .attr("fill",d=>d.degree>1?"steelblue":"#c71585")
-                        .attr("r",d=>d.annotations.hovered?10:5)
-                        .annotateOnHover("hovered")
+                        .attr("r",5)
+                       .hilightOnHover(10)
                         .rotateOnClick()
                 )
             .element(
                 tipLabel(d=>d.name)
             )
-            .element(
-                internalNodeLabel(d=>d.y)
-            )
+            // .element(
+            //     internalNodeLabel(d=>d.y)
+            // )
         )
         .feature(
            branches()
@@ -201,9 +201,9 @@
                     .hilightOnHover()
                     .reRootOnClick()
                 )
-                .element(
-                    branchLabel(d=>d.v1.length)
-                )
+                // .element(
+                //     branchLabel(d=>d.v1.length)
+                // )
         )
         .feature(
           nodeBackground()
@@ -212,24 +212,33 @@
                         .attr("r",7)
                 )
         )
+        // .feature(
+        //     axis()
+        //         .location("bottom")
+        //         .y(height-margins.top-margins.bottom+5)
+        //         .x(0)
+        //         .title({text:"Divergence",
+        //             yPadding:30})
+        //         .tickFormat(d3.format(".1f"))
+        // )
+        // .feature(
+        //     axis()
+        //         .location("left")
+        //         .y(0)
+        //         .x(-5)
+        //         .title({text:"nothing",
+        //             xPadding:-90,
+        //             rotation:-90})
+        // )
         .feature(
-            axis()
-                .location("bottom")
-                .y(height-margins.top-margins.bottom+5)
-                .x(0)
-                .title({text:"Divergence",
-                    yPadding:30})
-                .tickFormat(d3.format(".1f"))
+            scaleBar()
+                .direction("x")
+                .length(0.3)
+                .x(20)
+                .y(height-margins.top-margins.bottom-20)
+                .title({text:"0.3 sub/site",
+                    yPadding:3})
         )
-        .feature(
-            axis()
-                .location("left")
-                .y(0)
-                .x(-5)
-                .title({text:"nothing",
-                    xPadding:-90,
-                    rotation:-90})
-        );
 
 </script>
 

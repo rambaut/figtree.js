@@ -20,10 +20,11 @@ import {nodes,nodeBackground} from "./src/features/nodes";
 import {Label,label,tipLabel,internalNodeLabel,branchLabel} from "./src/baubles/label";
 import {rootToTipLayout} from "./src/layout/rootToTipLayout";
 import {decimalToDate} from "./src/utilities";
-import{axis} from "./src/shrubbery/axis"
+import{axis} from "./src/decoration/axis"
 import{BaubleManager} from "./src/features/baubleManager"
+import {scaleBar} from "./src/decoration/scaleBar";
 
 export{Tree,Type,rectangularLayout,RootToTipPlot,RectangularLayout,TransmissionLayout, ExplodedLayout, FigTree,
     Bauble,CircleBauble,RoughCircleBauble,RectangularBauble,Branch,GreatCircleBranchBauble,RoughBranchBauble,
     EqualAngleLayout,GeoLayout,nodes,equalAngleLayout,rootToTipLayout,decimalToDate,axis,circle,BaubleManager,
-    nodeBackground,branch,branches,Label,label,tipLabel,internalNodeLabel,branchLabel};
+    nodeBackground,branch,branches,Label,label,tipLabel,internalNodeLabel,branchLabel,scaleBar};

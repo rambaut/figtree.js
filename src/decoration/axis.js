@@ -1,7 +1,7 @@
 import {axisBottom, axisLeft, axisRight, axisTop,format} from "d3";
-import {Shrubbery} from "./shrubbery";
+import {decoration} from "./decoration";
 
-class Axis extends Shrubbery {
+class Axis extends decoration {
     constructor(){
         super();
         this._ticks=5;
@@ -61,16 +61,14 @@ class Axis extends Shrubbery {
 
         selection
             .append("g")
-            .attr("id", `${this._id}-axis-label`)
-            .attr("class", "axis-label")
+            .attr("id", `${this._id}-label`)
+            .attr("class", "label")
             .attr("transform", `translate(${this._x}, ${this._y})`)
             .append("text")
             .attr("transform", `translate(${pos.x+this._title.xPadding}, ${pos.y+this._title.yPadding}) rotate(${this._title.rotation})`)
             .attr("alignment-baseline", "hanging")
             .style("text-anchor", "middle")
             .text(this._title.text);
-
-        return selection;
     };
 
     tickFormat(d){
@@ -94,7 +92,7 @@ class Axis extends Shrubbery {
 
         const {length,axis} = this.updateScales();
 
-        const selection = this.figure().svgSelection.select(`.${this.location()}`);
+        const selection = this.figure().svgSelection.select(`.${this.layer()}`);
 
 
         selection

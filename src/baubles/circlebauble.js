@@ -1,6 +1,7 @@
 import {mergeDeep} from "../utilities";
 import {Bauble} from "./bauble";
 import {select} from "d3";
+import uuid from "uuid"
 import p from "../privateConstants";
 /** @module bauble */
 
@@ -49,7 +50,7 @@ export class CircleBauble extends Bauble{
                         }
                     }),
                 update => update
-                    .call(update => update.transition()
+                    .call(update => update.transition(d=>`u${uuid.v4()}`)
                         .duration(this.transitions().transitionDuration)
                         .ease(this.transitions().transitionEase)
                         .attrs(this._attrs)

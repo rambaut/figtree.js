@@ -10853,7 +10853,9 @@ function (_Bauble) {
         });
       }, function (update) {
         return update.call(function (update) {
-          return update.transition().duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attrs(_this2._attrs).each(function (d, i, n) {
+          return update.transition(function (d) {
+            return "u".concat(uuid_1.v4());
+          }).duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attrs(_this2._attrs).each(function (d, i, n) {
             var element = select(n[i]);
 
             var _loop2 = function _loop2() {
@@ -11209,7 +11211,9 @@ function (_Bauble) {
         });
       }, function (update) {
         return update.call(function (update) {
-          return update.transition("pathUpdating").duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attr("d", function (edge, i) {
+          return update.transition(function (d) {
+            return "u".concat(uuid_1.v4());
+          }).duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attr("d", function (edge, i) {
             return _this2.branchPath(edge, i);
           }).attrs(_this2._attrs).each(function (d, i, n) {
             var element = select(n[i]);
@@ -13945,11 +13949,11 @@ function leastSquares(data) {
 function ownKeys$e(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
 function _objectSpread$e(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$e(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$e(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-var Shrubbery =
+var decoration =
 /*#__PURE__*/
 function () {
-  function Shrubbery() {
-    classCallCheck(this, Shrubbery);
+  function decoration() {
+    classCallCheck(this, decoration);
 
     this._created = false;
     this._title = {
@@ -13961,7 +13965,7 @@ function () {
     this._id = "s".concat(uuid_1.v4());
   }
 
-  createClass(Shrubbery, [{
+  createClass(decoration, [{
     key: "figure",
     value: function figure() {
       var f = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
@@ -14080,13 +14084,13 @@ function () {
     }
   }]);
 
-  return Shrubbery;
+  return decoration;
 }();
 
 var Axis =
 /*#__PURE__*/
-function (_Shrubbery) {
-  inherits(Axis, _Shrubbery);
+function (_decoration) {
+  inherits(Axis, _decoration);
 
   function Axis() {
     var _this;
@@ -14155,8 +14159,7 @@ function (_Shrubbery) {
         pos.y = length / 2;
       }
 
-      selection.append("g").attr("id", "".concat(this._id, "-axis-label")).attr("class", "axis-label").attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")).append("text").attr("transform", "translate(".concat(pos.x + this._title.xPadding, ", ").concat(pos.y + this._title.yPadding, ") rotate(").concat(this._title.rotation, ")")).attr("alignment-baseline", "hanging").style("text-anchor", "middle").text(this._title.text);
-      return selection;
+      selection.append("g").attr("id", "".concat(this._id, "-label")).attr("class", "label").attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")).append("text").attr("transform", "translate(".concat(pos.x + this._title.xPadding, ", ").concat(pos.y + this._title.yPadding, ") rotate(").concat(this._title.rotation, ")")).attr("alignment-baseline", "hanging").style("text-anchor", "middle").text(this._title.text);
     }
   }, {
     key: "tickFormat",
@@ -14185,7 +14188,7 @@ function (_Shrubbery) {
           length = _this$updateScales2.length,
           axis = _this$updateScales2.axis;
 
-      var selection = this.figure().svgSelection.select(".".concat(this.location()));
+      var selection = this.figure().svgSelection.select(".".concat(this.layer()));
       selection.select("g#".concat(this._id)).transition() // .duration()
       .attr("id", this._id).attr("class", "axis").attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")).call(axis);
       var pos = {
@@ -14206,7 +14209,7 @@ function (_Shrubbery) {
   }]);
 
   return Axis;
-}(Shrubbery);
+}(decoration);
 
 function getD3Axis(location) {
   switch (location.toLowerCase()) {
@@ -14231,5 +14234,134 @@ function axis$1() {
   return new Axis();
 }
 
-export { Bauble, BaubleManager, Branch, CircleBauble, EqualAngleLayout, ExplodedLayout, FigTree, GeoLayout, GreatCircleBranchBauble, Label, RectangularBauble, RectangularLayout, RootToTipPlot, RoughBranchBauble, RoughCircleBauble, TransmissionLayout, Tree, Type, axis$1 as axis, branch, branchLabel, branches, circle$1 as circle, decimalToDate, equalAngleLayout, internalNodeLabel, label, nodeBackground, nodes, rectangularLayout, rootToTipLayout, tipLabel };
+var ScaleBar =
+/*#__PURE__*/
+function (_decoration) {
+  inherits(ScaleBar, _decoration);
+
+  function ScaleBar() {
+    var _this;
+
+    classCallCheck(this, ScaleBar);
+
+    _this = possibleConstructorReturn(this, getPrototypeOf(ScaleBar).call(this));
+    _this._title = {
+      text: "",
+      xPadding: 0,
+      yPadding: 0,
+      rotation: 0
+    };
+    _this._length = 1;
+    _this._direction = "x";
+    _this._x = 0;
+    _this._y = 0;
+
+    get$2(getPrototypeOf(ScaleBar.prototype), "layer", assertThisInitialized(_this)).call(assertThisInitialized(_this), "axes-layer");
+
+    return _this;
+  }
+
+  createClass(ScaleBar, [{
+    key: "length",
+    value: function length() {
+      var d = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (!d) {
+        return this._length;
+      } else {
+        this._length = d;
+        return this;
+      }
+    }
+  }, {
+    key: "direction",
+    value: function direction() {
+      var string = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (!string) {
+        return this._direction;
+      } else {
+        this._direction = string;
+        return this;
+      }
+    }
+  }, {
+    key: "location",
+    value: function location() {
+      var string = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (!string) {
+        return this._location;
+      } else {
+        this._location = string;
+        return this;
+      }
+    }
+  }, {
+    key: "create",
+    value: function create() {
+      var selection = this.figure().svgSelection.select(".".concat(this.layer()));
+      var group = selection.append("g").attr("id", this._id).attr("class", "scale-bar").attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")"));
+      group.append("line").attr("x1", 0).attr("y1", 0).attr("x2", this.direction() === "x" ? this.scales().x(this._length) : 0).attr("y2", this.direction() === "y" ? this.scales().y(this._length) : 0).attr("stroke", "black");
+      var pos = {
+        x: 0,
+        y: 0
+      };
+
+      if (this.direction() === "x") {
+        pos.x = this.scales().x(this._length) / 2;
+      } else {
+        pos.y = this.scales().y(this._length) / 2;
+      }
+
+      group.append("text").attr("transform", "translate(".concat(pos.x + this._title.xPadding, ", ").concat(pos.y + this._title.yPadding, ") rotate(").concat(this._title.rotation, ")")).attr("alignment-baseline", "hanging").style("text-anchor", "middle").text(this._title.text);
+    }
+  }, {
+    key: "tickFormat",
+    value: function tickFormat(d) {
+      if (d) {
+        this._tickFormat = d;
+        return this;
+      } else {
+        return this._tickFormat;
+      }
+    }
+  }, {
+    key: "ticks",
+    value: function ticks(d) {
+      if (d) {
+        this._ticks = d;
+        return this;
+      } else {
+        return this._ticks;
+      }
+    }
+  }, {
+    key: "updateCycle",
+    value: function updateCycle() {
+      var selection = this.figure().svgSelection.select(".".concat(this.layer()));
+      var group = selection.select("g#".concat(this._id)).transition().attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")).select("line").attr("x1", 0).attr("y1", 0).attr("x2", this.direction() === "x" ? this.scales().x(this._length) : 0).attr("y2", this.direction() === "y" ? this.scales().y(this._length) : 0).attr("stroke", "black");
+      var pos = {
+        x: 0,
+        y: 0
+      };
+
+      if (this.direction() === "x") {
+        pos.x = this.scales().x(this._length) / 2;
+      } else {
+        pos.y = this.scales().y(this._length) / 2;
+      }
+
+      group.append("text").attr("transform", "translate(".concat(pos.x + this._title.xPadding, ", ").concat(pos.y + this._title.yPadding, ") rotate(").concat(this._title.rotation, ")")).attr("alignment-baseline", "hanging").style("text-anchor", "middle").text(this._title.text);
+    }
+  }]);
+
+  return ScaleBar;
+}(decoration);
+
+function scaleBar() {
+  return new ScaleBar();
+}
+
+export { Bauble, BaubleManager, Branch, CircleBauble, EqualAngleLayout, ExplodedLayout, FigTree, GeoLayout, GreatCircleBranchBauble, Label, RectangularBauble, RectangularLayout, RootToTipPlot, RoughBranchBauble, RoughCircleBauble, TransmissionLayout, Tree, Type, axis$1 as axis, branch, branchLabel, branches, circle$1 as circle, decimalToDate, equalAngleLayout, internalNodeLabel, label, nodeBackground, nodes, rectangularLayout, rootToTipLayout, scaleBar, tipLabel };
 //# sourceMappingURL=figtree.esm.js.map

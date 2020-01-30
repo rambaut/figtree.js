@@ -5,7 +5,7 @@ import uuid from "uuid";
 import {mergeDeep} from "../utilities";
 import {axisBottom, axisLeft, axisRight, axisTop} from "d3";
 
-export class Shrubbery {
+export class decoration {
     constructor() {
         this._created = false;
         this._title={
@@ -15,7 +15,6 @@ export class Shrubbery {
             rotation:0
         };
         this._id= `s${uuid.v4()}`;
-
     }
 
     figure(f = null) {
@@ -43,6 +42,7 @@ export class Shrubbery {
             return this;
         }
     }
+
 
     on(string, value) {
         this._interactions[string] = value;
@@ -82,7 +82,7 @@ export class Shrubbery {
 
     update(selection) {
         if (!this._created) {
-            this.create(selection)
+            this.create(selection);
             this._created = true;
         }
         this.updateCycle();
