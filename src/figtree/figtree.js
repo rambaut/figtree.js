@@ -96,12 +96,12 @@ export class FigTree {
      * @param {function} [settings.yScale.scale=d3.scaleLinear] - A d3 scale for the y dimension
      * @param {Object} settings.vertices - Options specific to the vertices that map to the nodes of the tree
      * @param {number} [settings.vertices.hoverBorder=2] - the number of pixels by which the radius of the vertices will increase by if the highlightNodes option is used and the vertex is hovered
-     * @param {Object[]} [settings.vertices.baubles=[new CircleBauble()]] - An array of baubles for the nodes, each bauble can have it's own settings
-     * @param {Object[]} [settings.vertices.backgroundBaubles=[]] - An array of baubles that will go behind the main bauble of the nodes, each bauble can have it's own settings
+     * @param {Object[]} [settings.vertices.baubles=[new CircleBauble()]] - An array of baubles for the nodes, each element can have it's own settings
+     * @param {Object[]} [settings.vertices.backgroundBaubles=[]] - An array of baubles that will go behind the main element of the nodes, each element can have it's own settings
      * @param {Object}    settings.edges - Options specific to the edges that map to the branches of the tree
-     * @param {Object[]}  [settings.edges.baubles=[new Branch()]] - An array of baubles that form the branches of the tree, each bauble can have it's own settings
+     * @param {Object[]}  [settings.edges.baubles=[new Branch()]] - An array of baubles that form the branches of the tree, each element can have it's own settings
      * @param {Object}    settings.cartoons - Options specific to the cartoons on the tree (triangle clades ect.)
-     * @param {Object[]}  [settings.edges.baubles=[new CartoonBauble()]] - An array of baubles that form the cartoons on the firgure, each bauble can have it's own settings     cartoons:{
+     * @param {Object[]}  [settings.edges.baubles=[new CartoonBauble()]] - An array of baubles that form the cartoons on the firgure, each element can have it's own settings     cartoons:{
      * @param {Object} settings.transition - Options controlling the how the figure changes upon interaction
      * @param {number} [settings.transition.transitionDuration=500] - the number of milliseconds to take when transitioning
      * @param {function} [settings.transitionEase=d3.easeLinear] - the d3 ease function used to interpolate during transitioning

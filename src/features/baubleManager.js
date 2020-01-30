@@ -32,7 +32,7 @@ export  class BaubleManager{
         }
     }
 
-    bauble(b){
+    element(b){
         b.manager(this);
         this._baubleHelpers=this._baubleHelpers.concat(b)
         return this;
@@ -69,7 +69,7 @@ export  class BaubleManager{
         const usedData = this._data(data).filter(this.filter());
         const self=this;
         if(this._figure===null||this._class===null||this._layer===null||this.data()===null){
-            console.warn("incomplete bauble manager");
+            console.warn("incomplete element manager");
             return
         }
         let svgLayer;

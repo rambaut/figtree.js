@@ -151,7 +151,7 @@
 <script src ="dist/figtree.umd.js"></script>
 <script type="module">
 
-    import {Tree,rectangularLayout,CircleBauble,FigTree,BaubleManager,Branch}  from "./dist/figtree.esm.js";
+    import {Tree,rectangularLayout,CircleBauble,FigTree,BaubleManager,Branch,Label}  from "./dist/figtree.esm.js";
 
 
     const width = 600,
@@ -178,10 +178,11 @@
         .layout(rectangularLayout)
         .feature(
            new BaubleManager()
+               .filter(d=>d.degree===1)
                 .class("node")
                 .data(d=>d["vertices"])
                 .layer("nodes-layer")
-                    .bauble(
+               .element(
                     new CircleBauble()
                         .attr("fill",d=>d.degree>1?"steelblue":"#c71585")
                         .attr("r",5)
@@ -202,13 +203,19 @@
                             tree.rotate(tree.getNode(d.id));
                         })
                 )
+                .element(
+                    new Label()
+                        .attr("x",6)
+                        .attr("y",4)
+                        .text(d=>d.name)
+            )
         )
         .feature(
             new BaubleManager()
                 .class("branch")
                 .data(d=>d["edges"])
                 .layer("branches-layer")
-                .bauble(
+                .element(
                     new Branch()
                         .on("mouseenter",(d,i,n)=>{
                             const parent = d3.select(n[i]).node().parentNode;
@@ -229,9 +236,10 @@
         .feature(
             new BaubleManager()
                 .class("node-background")
+                .filter(d=>d.degree===1)
                 .data(d=>d["vertices"])
                 .layer("nodes-background-layer")
-                .bauble(
+                .element(
                     new CircleBauble()
                         .attr("r",7)
                 )

@@ -201,7 +201,7 @@
         // .layout(rectangularLayout)
         // .margins(margins(0))
             .feature(
-            nodes()// can take bauble or function that returns a bauble class  - only want tips
+            nodes()// can take element or function that returns a element class  - only want tips
                 .element(d=>{return (d.degree===1?CircleBauble:null)})
                 .attr("fill",d=>colorScale(d.annotations.province))
                 .attr("r",d=>d.annotations.hovered?10:5)
@@ -231,7 +231,7 @@
         // .layout(rootToTipLayout())
         // .margins(margins(1))
         .feature(
-            nodes()// can take bauble or function that returns a bauble
+            nodes()// can take element or function that returns a element
                 .attr("fill",d=>colorScale(d.annotations.province))
                 .attr("r",d=>d.annotations.hovered?10:5)
                 .annotateOnHover("hovered")

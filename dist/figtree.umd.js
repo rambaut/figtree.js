@@ -10507,21 +10507,26 @@
 	/*#__PURE__*/
 	function () {
 	  /**
-	   * The constructor takes a setting object. The keys of the setting object are determined by the type of bauble.
+	   * The constructor takes a setting object. The keys of the setting object are determined by the type of element.
 	   *
 	   * @param {Object} settings
-	   * @param {function} [settings.vertexFilter=()=>true] - a function that is passed each vertex. If it returns true then bauble applies to that vertex.
+	   * @param {function} [settings.vertexFilter=()=>true] - a function that is passed each vertex. If it returns true then element applies to that vertex.
 	   * @param {Object} [settings._attrs={}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These can be overwritten by css.
 	   *  @param {Object} [settings.styles={}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These overwrite css.
 	   */
 	  function Bauble() {
 	    classCallCheck(this, Bauble);
 
+	    this.id = "n".concat(uuid_1.v4());
 	    this._attrs = {};
 	    this._interactions = {};
+
+	    this._updatePredicate = function () {
+	      return true;
+	    };
 	  }
 	  /**
-	   * A function that appends the bauble to the selection, joins the data, assigns the attributes to the svg objects
+	   * A function that appends the element to the selection, joins the data, assigns the attributes to the svg objects
 	   * updates and remove unneeded objects.
 	   * @param selection
 	   */
@@ -10530,7 +10535,27 @@
 	  createClass(Bauble, [{
 	    key: "update",
 	    value: function update(selection) {
-	      throw new Error("don't call the base class methods");
+	      if (this._updatePredicate(selection)) {
+	        this.updateCycle(selection);
+	      }
+	    }
+	  }, {
+	    key: "updateCycle",
+	    value: function updateCycle() {
+	      throw new Error("Don't call the base class method");
+	    }
+	  }, {
+	    key: "updatePredicate",
+	    value: function updatePredicate(f) {
+	      if (f === null) {
+	        return this._updatePredicate;
+	      } else {
+	        this._updatePredicate = function (selection) {
+	          return f(selection.data()[0]);
+	        };
+
+	        return this;
+	      }
 	    }
 	  }, {
 	    key: "manager",
@@ -10594,8 +10619,9 @@
 	      }
 	    }
 	  }, {
-	    key: "label",
-	    value: function label() {//TODO make this label maker
+	    key: "revealOnHover",
+	    value: function revealOnHover() {
+	      this.updatePredicate(); //TODO put listener on parent only insert this element if the parent is hovered or clicked ect.
 	    }
 	  }]);
 
@@ -10795,8 +10821,8 @@
 
 
 	  createClass(CircleBauble, [{
-	    key: "update",
-	    value: function update() {
+	    key: "updateCycle",
+	    value: function updateCycle() {
 	      var _this2 = this;
 
 	      var selection = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
@@ -10809,10 +10835,12 @@
 	        this.selection = selection;
 	      }
 
-	      return this.selection.selectAll("circle").data(function (d) {
+	      return selection.selectAll(".".concat(this.id)).data(function (d) {
 	        return [d];
+	      }, function (d) {
+	        return _this2.id;
 	      }).join(function (enter) {
-	        return enter.append("circle").attr("class", "node-shape").attrs(_this2._attrs).each(function (d, i, n) {
+	        return enter.append("circle").attr("class", "node-shape ".concat(_this2.id)).attrs(_this2._attrs).each(function (d, i, n) {
 	          var element = select(n[i]);
 
 	          var _loop = function _loop() {
@@ -10896,23 +10924,19 @@
 	    value: function annotateOnHover(key) {
 	      var _this4 = this;
 
-	      get$2(getPrototypeOf(CircleBauble.prototype), "on", this).call(this, "mouseenter", function (element) {
-	        return function (d, i, n) {
-	          _this4.manager().figure()[p.tree].annotateNode(_this4.manager().figure()[p.tree].getNode(d.id), defineProperty({}, key, true));
+	      get$2(getPrototypeOf(CircleBauble.prototype), "on", this).call(this, "mouseenter", function (d, i, n) {
+	        _this4.manager().figure()[p.tree].annotateNode(_this4.manager().figure()[p.tree].getNode(d.id), defineProperty({}, key, true));
 
-	          _this4.manager().figure()[p.tree].treeUpdateCallback();
+	        _this4.manager().figure()[p.tree].treeUpdateCallback();
 
-	          var parent = select(n[i]).node().parentNode;
-	          select(parent).raise();
-	        };
+	        var parent = select(n[i]).node().parentNode;
+	        select(parent).raise();
 	      });
 
-	      get$2(getPrototypeOf(CircleBauble.prototype), "on", this).call(this, "mouseleave", function (element) {
-	        return function (d, i, n) {
-	          _this4.manager().figure()[p.tree].annotateNode(_this4.manager().figure()[p.tree].getNode(d.id), defineProperty({}, key, false));
+	      get$2(getPrototypeOf(CircleBauble.prototype), "on", this).call(this, "mouseleave", function (d, i, n) {
+	        _this4.manager().figure()[p.tree].annotateNode(_this4.manager().figure()[p.tree].getNode(d.id), defineProperty({}, key, false));
 
-	          _this4.manager().figure()[p.tree].treeUpdateCallback();
-	        };
+	        _this4.manager().figure()[p.tree].treeUpdateCallback();
 	      });
 
 	      return this;
@@ -10982,8 +11006,8 @@
 	      }
 	    }
 	  }, {
-	    key: "bauble",
-	    value: function bauble(b) {
+	    key: "element",
+	    value: function element(b) {
 	      b.manager(this);
 	      this._baubleHelpers = this._baubleHelpers.concat(b);
 	      return this;
@@ -11034,7 +11058,7 @@
 	      var self = this;
 
 	      if (this._figure === null || this._class === null || this._layer === null || this.data() === null) {
-	        console.warn("incomplete bauble manager");
+	        console.warn("incomplete element manager");
 	        return;
 	      }
 
@@ -11154,8 +11178,8 @@
 	  }
 
 	  createClass(Branch, [{
-	    key: "update",
-	    value: function update(selection) {
+	    key: "updateCycle",
+	    value: function updateCycle(selection) {
 	      var _this2 = this;
 
 	      this.branchPath = this.branchPathGenerator();
@@ -11167,7 +11191,7 @@
 	      if (selection) {
 	        this.selection = selection;
 	      }
-	      return this.selection.selectAll("path").data(function (d) {
+	      return selection.selectAll("path").data(function (d) {
 	        return [d];
 	      }).join(function (enter) {
 	        return enter.append("path").attr("d", function (v1, i) {
@@ -11640,11 +11664,13 @@
 	    annotations: node.annotations,
 	    key: node.id,
 	    id: node.id,
+	    parent: node.parent ? node.parent.id : null,
 	    degree: node.children ? node.children.length + 1 : 1,
 	    // the number of edges (including stem)
 	    textLabel: {
-	      dx: leftLabel ? "-6" : "12",
-	      dy: leftLabel ? labelBelow ? "-8" : "8" : "0",
+	      labelBelow: labelBelow,
+	      x: leftLabel ? "-6" : "12",
+	      y: leftLabel ? labelBelow ? "-8" : "8" : "0",
 	      alignmentBaseline: leftLabel ? labelBelow ? "bottom" : "hanging" : "middle",
 	      textAnchor: leftLabel ? "end" : "start"
 	    },
@@ -11658,7 +11684,6 @@
 	  return vertices.filter(function (v) {
 	    return v[p.node].parent;
 	  }).map(function (v) {
-	    var labelBelow = v[p.node].parent.children[0] !== v[p.node];
 	    return {
 	      v0: nodeMap.get(v[p.node].parent),
 	      v1: v,
@@ -11668,9 +11693,9 @@
 	      x: nodeMap.get(v[p.node].parent).x,
 	      y: v.y,
 	      textLabel: {
-	        dx: [v.x, nodeMap.get(v[p.node].parent).x],
-	        dy: labelBelow ? +6 : -6,
-	        alignmentBaseline: labelBelow ? "hanging" : "bottom",
+	        x: mean([v.x, nodeMap.get(v[p.node].parent).x]),
+	        y: -6,
+	        alignmentBaseline: "bottom",
 	        textAnchor: "middle"
 	      }
 	    };
@@ -11859,12 +11884,12 @@
 	     * @param {function} [settings.yScale.scale=d3.scaleLinear] - A d3 scale for the y dimension
 	     * @param {Object} settings.vertices - Options specific to the vertices that map to the nodes of the tree
 	     * @param {number} [settings.vertices.hoverBorder=2] - the number of pixels by which the radius of the vertices will increase by if the highlightNodes option is used and the vertex is hovered
-	     * @param {Object[]} [settings.vertices.baubles=[new CircleBauble()]] - An array of baubles for the nodes, each bauble can have it's own settings
-	     * @param {Object[]} [settings.vertices.backgroundBaubles=[]] - An array of baubles that will go behind the main bauble of the nodes, each bauble can have it's own settings
+	     * @param {Object[]} [settings.vertices.baubles=[new CircleBauble()]] - An array of baubles for the nodes, each element can have it's own settings
+	     * @param {Object[]} [settings.vertices.backgroundBaubles=[]] - An array of baubles that will go behind the main element of the nodes, each element can have it's own settings
 	     * @param {Object}    settings.edges - Options specific to the edges that map to the branches of the tree
-	     * @param {Object[]}  [settings.edges.baubles=[new Branch()]] - An array of baubles that form the branches of the tree, each bauble can have it's own settings
+	     * @param {Object[]}  [settings.edges.baubles=[new Branch()]] - An array of baubles that form the branches of the tree, each element can have it's own settings
 	     * @param {Object}    settings.cartoons - Options specific to the cartoons on the tree (triangle clades ect.)
-	     * @param {Object[]}  [settings.edges.baubles=[new CartoonBauble()]] - An array of baubles that form the cartoons on the firgure, each bauble can have it's own settings     cartoons:{
+	     * @param {Object[]}  [settings.edges.baubles=[new CartoonBauble()]] - An array of baubles that form the cartoons on the firgure, each element can have it's own settings     cartoons:{
 	     * @param {Object} settings.transition - Options controlling the how the figure changes upon interaction
 	     * @param {number} [settings.transition.transitionDuration=500] - the number of milliseconds to take when transitioning
 	     * @param {function} [settings.transitionEase=d3.easeLinear] - the d3 ease function used to interpolate during transitioning
@@ -13300,11 +13325,11 @@
 	      };
 	    }
 	    /**
-	     * The constructor takes a setting object. The keys of the setting object are determined by the type of bauble.
+	     * The constructor takes a setting object. The keys of the setting object are determined by the type of element.
 	     *
 	     * @param {Object} settings
 	     * @param {function} [settings.curve=d3.curveNatural] - a d3 curve used to draw the edge
-	     * @param {function} [settings.edgeFilter=()=>true] - a function that is passed each edge. If it returns true then bauble applies to that vertex.
+	     * @param {function} [settings.edgeFilter=()=>true] - a function that is passed each edge. If it returns true then element applies to that vertex.
 	     * @param {Object} [settings._attrs={"fill": d => "none", "stroke-width": d => "2", "stroke": d => "black"}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These can be overwritten by css.
 	     *  @param {Object} [settings.styles={}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These overwrite css.
 	     */
@@ -13804,6 +13829,136 @@
 	  return layoutFactory(equalAngleVertices(tipRank));
 	};
 
+	var Label =
+	/*#__PURE__*/
+	function (_Bauble) {
+	  inherits(Label, _Bauble);
+
+	  function Label() {
+	    var _this;
+
+	    classCallCheck(this, Label);
+
+	    _this = possibleConstructorReturn(this, getPrototypeOf(Label).call(this));
+
+	    _this._text = function () {
+	      return "";
+	    };
+
+	    _this._scaleX = false;
+	    _this._scaleY = false;
+	    return possibleConstructorReturn(_this, assertThisInitialized(_this));
+	  }
+
+	  createClass(Label, [{
+	    key: "updateCycle",
+	    value: function updateCycle(selection) {
+	      var _this2 = this;
+
+	      return selection.selectAll("text").data(function (d) {
+	        return [d];
+	      }, function (d) {
+	        return "label-".concat(d.id);
+	      }).join(function (enter) {
+	        return enter.append("text").attr("class", "label").attrs(_this2._attrs).each(function (d, i, n) {
+	          var element = select(n[i]);
+
+	          var _loop = function _loop() {
+	            var _Object$entries$_i = slicedToArray(_Object$entries[_i], 2),
+	                key = _Object$entries$_i[0],
+	                func = _Object$entries$_i[1];
+
+	            element.on(key, function (d, i, n) {
+	              return func(d, i, n);
+	            });
+	          };
+
+	          for (var _i = 0, _Object$entries = Object.entries(_this2._interactions); _i < _Object$entries.length; _i++) {
+	            _loop();
+	          }
+	        }).text(function (d) {
+	          return _this2._text(d);
+	        });
+	      }, function (update) {
+	        return update.call(function (update) {
+	          return update.transition().duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attrs(_this2._attrs).each(function (d, i, n) {
+	            var element = select(n[i]);
+
+	            var _loop2 = function _loop2() {
+	              var _Object$entries2$_i = slicedToArray(_Object$entries2[_i2], 2),
+	                  key = _Object$entries2$_i[0],
+	                  func = _Object$entries2$_i[1];
+
+	              element.on(key, function (d, i, n) {
+	                return func(d, i, n);
+	              });
+	            };
+
+	            for (var _i2 = 0, _Object$entries2 = Object.entries(_this2._interactions); _i2 < _Object$entries2.length; _i2++) {
+	              _loop2();
+	            }
+	          }).text(function (d) {
+	            return _this2._text(d);
+	          });
+	        });
+	      });
+	    }
+	  }, {
+	    key: "text",
+	    value: function text(f) {
+	      if (f == null) {
+	        return this._text;
+	      } else {
+	        if (f instanceof String || typeof f === "string") {
+	          this._text = function () {
+	            return f;
+	          };
+	        } else {
+	          this._text = f;
+	        }
+
+	        return this;
+	      }
+	    }
+	  }]);
+
+	  return Label;
+	}(Bauble); //((this.scales.x(e.v1.x+this.xScaleOffset) - this.scales.x(e.v0.x+this.xScaleOffset)) / 2))
+
+	function label(text) {
+	  return new Label().attr("x", function (d) {
+	    return d.textLabel.x;
+	  }).attr("y", function (d) {
+	    return d.textLabel.y;
+	  }).attr("alignment-baseline", function (d) {
+	    return d.textLabel.alignmentBaseline;
+	  }).attr("text-anchor", function (d) {
+	    return d.textLabel.textAnchor;
+	  }).text(text);
+	}
+	function tipLabel(text) {
+	  return label(text).updatePredicate(function (d) {
+	    return d.degree === 1;
+	  });
+	}
+	function internalNodeLabel(text) {
+	  return label(text).updatePredicate(function (d) {
+	    return d.degree > 1;
+	  });
+	}
+	function branchLabel(text) {
+	  var l = label(text);
+
+	  var setX = function setX(obj) {
+	    return function (d) {
+	      // console.log((obj.scales().x(d.v1.x)-obj.scales().x(d.v0.x)/2));
+	      return (obj.scales().x(d.v1.x) - obj.scales().x(d.v0.x)) / 2;
+	    };
+	  };
+
+	  return l.attr("x", setX(l));
+	}
+
 	function ownKeys$d(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
 	function _objectSpread$d(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$d(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$d(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
@@ -14122,6 +14277,7 @@
 	exports.FigTree = FigTree;
 	exports.GeoLayout = GeoLayout;
 	exports.GreatCircleBranchBauble = GreatCircleBranchBauble;
+	exports.Label = Label;
 	exports.RectangularBauble = RectangularBauble;
 	exports.RectangularLayout = RectangularLayout;
 	exports.RootToTipPlot = RootToTipPlot;
@@ -14132,14 +14288,18 @@
 	exports.Type = Type;
 	exports.axis = axis$1;
 	exports.branch = branch;
+	exports.branchLabel = branchLabel;
 	exports.branches = branches;
 	exports.circle = circle$1;
 	exports.decimalToDate = decimalToDate;
 	exports.equalAngleLayout = equalAngleLayout;
+	exports.internalNodeLabel = internalNodeLabel;
+	exports.label = label;
 	exports.nodeBackground = nodeBackground;
 	exports.nodes = nodes;
 	exports.rectangularLayout = rectangularLayout;
 	exports.rootToTipLayout = rootToTipLayout;
+	exports.tipLabel = tipLabel;
 
 	Object.defineProperty(exports, '__esModule', { value: true });
 

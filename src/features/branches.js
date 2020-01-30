@@ -61,10 +61,10 @@ class BranchFactory extends BaubleManager{
         super.on("click",
             (branch)=>(d,i,n)=>{
 
-                const x1 = this.figure.scales.x(d.v1.x),
-                 x2 = this.figure.scales.x(d.v0.x),
-                    y1=this.figure.scales.y(d.v1.y),
-                    y2=this.figure.scales.y(d.v0.y),
+                const x1 = this.scales().x(d.v1.x),
+                 x2 = this.scales().x(d.v0.x),
+                    y1=this.scales().y(d.v1.y),
+                    y2=this.scales().y(d.v0.y),
                  [mx,my] = mouse(document.getElementById(this.figure.svgId));
 
                 const proportion = this.curve()==d3.curveStepBefore? Math.abs( (mx - x2) / (x1 - x2)):

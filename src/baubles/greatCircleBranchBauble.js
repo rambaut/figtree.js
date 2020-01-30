@@ -14,11 +14,11 @@ export class GreatCircleBranchBauble extends Branch{
 
     }
     /**
-     * The constructor takes a setting object. The keys of the setting object are determined by the type of bauble.
+     * The constructor takes a setting object. The keys of the setting object are determined by the type of element.
      *
      * @param {Object} settings
      * @param {function} [settings.curve=d3.curveNatural] - a d3 curve used to draw the edge
-     * @param {function} [settings.edgeFilter=()=>true] - a function that is passed each edge. If it returns true then bauble applies to that vertex.
+     * @param {function} [settings.edgeFilter=()=>true] - a function that is passed each edge. If it returns true then element applies to that vertex.
      * @param {Object} [settings._attrs={"fill": d => "none", "stroke-width": d => "2", "stroke": d => "black"}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These can be overwritten by css.
      *  @param {Object} [settings.styles={}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These overwrite css.
      */

@@ -119,7 +119,7 @@
             font-size: 10pt;
         }
 
-        .branch-label.length {
+        .branch .label {
             /*display: none;*/
             font-size: 8pt;
         }
@@ -151,7 +151,8 @@
 <script src ="dist/figtree.umd.js"></script>
 <script type="module">
 
-    import {Tree,rectangularLayout,CircleBauble,FigTree,BaubleManager,Branch,nodes,nodeBackground,circle,branches,branch}  from "./dist/figtree.esm.js";
+    import {Tree,rectangularLayout,CircleBauble,FigTree,BaubleManager,Branch,
+        nodes,nodeBackground,circle,branches,branch,tipLabel,internalNodeLabel,label,branchLabel}  from "./dist/figtree.esm.js";
 
 
     const width = 600,
@@ -178,26 +179,34 @@
         .layout(rectangularLayout)
         .feature(
             nodes()
-                .bauble(
+                .element(
                    circle()
                         .attr("fill",d=>d.degree>1?"steelblue":"#c71585")
-                        .attr("r",5)
-                        .hilightOnHover(10)
+                        .attr("r",d=>d.annotations.hovered?10:5)
+                        .annotateOnHover("hovered")
                         .rotateOnClick()
                 )
-
+            .element(
+                tipLabel(d=>d.name)
+            )
+            .element(
+                internalNodeLabel(d=>d.y)
+            )
         )
         .feature(
            branches()
-                .bauble(
+                .element(
                    branch()
                     .hilightOnHover()
                     .reRootOnClick()
                 )
+                .element(
+                    branchLabel(d=>d.v1.length)
+                )
         )
         .feature(
           nodeBackground()
-                .bauble(
+                .element(
                     circle()
                         .attr("r",7)
                 )

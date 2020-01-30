@@ -10526,10 +10526,10 @@ function () {
       };
     }
     /**
-     * The constructor takes a setting object. The keys of the setting object are determined by the type of bauble.
+     * The constructor takes a setting object. The keys of the setting object are determined by the type of element.
      *
      * @param {Object} settings
-     * @param {function} [settings.vertexFilter=()=>true] - a function that is passed each vertex. If it returns true then bauble applies to that vertex.
+     * @param {function} [settings.vertexFilter=()=>true] - a function that is passed each vertex. If it returns true then element applies to that vertex.
      * @param {Object} [settings._attrs={}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These can be overwritten by css.
      *  @param {Object} [settings.styles={}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These overwrite css.
      */
@@ -10547,7 +10547,7 @@ function () {
     this._transitions = options.transitions;
   }
   /**
-   * A function that appends the bauble to the selection, joins the data, assigns the attributes to the svg objects
+   * A function that appends the element to the selection, joins the data, assigns the attributes to the svg objects
    * updates and remove unneeded objects.
    * @param selection
    * @param border
@@ -10812,12 +10812,12 @@ function (_Bauble) {
       };
     }
     /**
-     * The constructor takes a setting object. The keys of the setting object are determined by the type of bauble.
+     * The constructor takes a setting object. The keys of the setting object are determined by the type of element.
      *
      * @param {Object} settings
      * @param {function} [settings.curve=d3.curveStepBefore] - a d3 curve used to draw the edge
      * @param {number} [settings.curveRadius=0] - if the curve radius is >0 then two points will be placed this many pixels below and to the right of the step point. This can be used with difference curves to make smooth corners
-     * @param {function} [settings.edgeFilter=()=>true] - a function that is passed each edge. If it returns true then bauble applies to that vertex.
+     * @param {function} [settings.edgeFilter=()=>true] - a function that is passed each edge. If it returns true then element applies to that vertex.
      * @param {Object} [settings._attrs={"fill": d => "none", "stroke-width": d => "2", "stroke": d => "black"}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These can be overwritten by css.
      *  @param {Object} [settings.styles={}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These overwrite css.
      */
@@ -11909,12 +11909,12 @@ function () {
      * @param {function} [settings.yScale.scale=d3.scaleLinear] - A d3 scale for the y dimension
      * @param {Object} settings.vertices - Options specific to the vertices that map to the nodes of the tree
      * @param {number} [settings.vertices.hoverBorder=2] - the number of pixels by which the radius of the vertices will increase by if the highlightNodes option is used and the vertex is hovered
-     * @param {Object[]} [settings.vertices.baubles=[new CircleBauble()]] - An array of baubles for the nodes, each bauble can have it's own settings
-     * @param {Object[]} [settings.vertices.backgroundBaubles=[]] - An array of baubles that will go behind the main bauble of the nodes, each bauble can have it's own settings
+     * @param {Object[]} [settings.vertices.baubles=[new CircleBauble()]] - An array of baubles for the nodes, each element can have it's own settings
+     * @param {Object[]} [settings.vertices.backgroundBaubles=[]] - An array of baubles that will go behind the main element of the nodes, each element can have it's own settings
      * @param {Object}    settings.edges - Options specific to the edges that map to the branches of the tree
-     * @param {Object[]}  [settings.edges.baubles=[new Branch()]] - An array of baubles that form the branches of the tree, each bauble can have it's own settings
+     * @param {Object[]}  [settings.edges.baubles=[new Branch()]] - An array of baubles that form the branches of the tree, each element can have it's own settings
      * @param {Object}    settings.cartoons - Options specific to the cartoons on the tree (triangle clades ect.)
-     * @param {Object[]}  [settings.edges.baubles=[new CartoonBauble()]] - An array of baubles that form the cartoons on the firgure, each bauble can have it's own settings     cartoons:{
+     * @param {Object[]}  [settings.edges.baubles=[new CartoonBauble()]] - An array of baubles that form the cartoons on the firgure, each element can have it's own settings     cartoons:{
      * @param {Object} settings.transition - Options controlling the how the figure changes upon interaction
      * @param {number} [settings.transition.transitionDuration=500] - the number of milliseconds to take when transitioning
      * @param {function} [settings.transitionEase=d3.easeLinear] - the d3 ease function used to interpolate during transitioning
@@ -13473,11 +13473,11 @@ function (_Branch) {
       };
     }
     /**
-     * The constructor takes a setting object. The keys of the setting object are determined by the type of bauble.
+     * The constructor takes a setting object. The keys of the setting object are determined by the type of element.
      *
      * @param {Object} settings
      * @param {function} [settings.curve=d3.curveNatural] - a d3 curve used to draw the edge
-     * @param {function} [settings.edgeFilter=()=>true] - a function that is passed each edge. If it returns true then bauble applies to that vertex.
+     * @param {function} [settings.edgeFilter=()=>true] - a function that is passed each edge. If it returns true then element applies to that vertex.
      * @param {Object} [settings._attrs={"fill": d => "none", "stroke-width": d => "2", "stroke": d => "black"}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These can be overwritten by css.
      *  @param {Object} [settings.styles={}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These overwrite css.
      */

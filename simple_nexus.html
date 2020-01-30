@@ -141,7 +141,7 @@
         const fig = new FigTree(treeSVG,tree);
         fig
             .layout(rectangularLayout)
-            .nodes(d=>d.degree===1?CircleBauble:null)// can take bauble or function that returns a bauble
+            .nodes(d=>d.degree===1?CircleBauble:null)// can take element or function that returns a element
                 .attr("fill",d=>d.degree>1?"steelblue":"#c71585")
                 .attr("r",5)
                 .hilightOnHover(10)

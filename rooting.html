@@ -147,7 +147,7 @@
     const unRootedFig = new FigTree(treeSVG,tree)
                             .layout(equalAngleLayout(tree.externalNodes.map(n=>n.id)))
                             .feature(
-                                nodes()// can take bauble or function that returns a bauble
+                                nodes()// can take element or function that returns a element
                                     .element(CircleBauble)
                                     .attr("fill",d=>d.degree>1?"steelblue":"#c71585")
                                     .attr("r",d=>d.annotations.hovered?10:5)
@@ -168,7 +168,7 @@
     const rootToTipPlot = new FigTree(rootToTipSVG,tree)
                                 .layout(rootToTipLayout())
                                 .feature(
-                                    nodes()// can take bauble or function that returns a bauble
+                                    nodes()// can take element or function that returns a element
                                     .element(CircleBauble)
                                     .attr("fill",d=>d.degree>1?"steelblue":"#c71585")
                                     .attr("r",d=>d.annotations.hovered?10:5)

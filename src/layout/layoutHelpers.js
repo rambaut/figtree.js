@@ -41,10 +41,12 @@ export function makeVertexFromNode(node){
         annotations:node.annotations,
         key: node.id,
         id:node.id,
+        parent:node.parent?node.parent.id:null,
         degree: (node.children ? node.children.length + 1 : 1),// the number of edges (including stem)
         textLabel:{
-            dx:leftLabel?"-6":"12",
-            dy:leftLabel?(labelBelow ? "-8": "8" ):"0",
+            labelBelow:labelBelow,
+            x:leftLabel?"-6":"12",
+            y:leftLabel?(labelBelow ? "-8": "8" ):"0",
             alignmentBaseline: leftLabel?(labelBelow ? "bottom": "hanging" ):"middle",
             textAnchor:leftLabel?"end":"start",
         },
@@ -59,7 +61,6 @@ export function makeVertexFromNode(node){
 export function makeEdges(vertices){
     const nodeMap = new Map(vertices.map(v=>[v[p.node],v]));
     return vertices.filter(v=>v[p.node].parent).map(v=>{
-        const labelBelow =v[p.node].parent.children[0] !== v[p.node];
         return {
             v0: nodeMap.get(v[p.node].parent),
             v1: v,
@@ -69,9 +70,9 @@ export function makeEdges(vertices){
             x:nodeMap.get(v[p.node].parent).x,
             y:v.y,
             textLabel:{
-                dx:[v.x,nodeMap.get(v[p.node].parent).x],
-                dy: labelBelow ? +6 : -6,
-                alignmentBaseline: labelBelow ? "hanging" : "bottom",
+                x:mean([v.x,nodeMap.get(v[p.node].parent).x]),
+                y: -6,
+                alignmentBaseline: "bottom",
                 textAnchor:"middle",
             },
         }

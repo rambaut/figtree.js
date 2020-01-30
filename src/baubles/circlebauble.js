@@ -27,20 +27,20 @@ export class CircleBauble extends Bauble{
      * plus the border.
      * @param selection
      */
-    update(selection=null) {
+    updateCycle(selection=null) {
         if(selection==null&&!this.selection){
             return
         }
         if(selection){
             this.selection=selection;
         }
-        return this.selection
-            .selectAll("circle")
-            .data(d => [d])
+        return selection
+            .selectAll(`.${this.id}`)
+            .data(d => [d],d=>this.id)
             .join(
                 enter => enter
                     .append("circle")
-                    .attr("class","node-shape")
+                    .attr("class",`node-shape ${this.id}`)
                     .attrs(this._attrs)
                     .each((d,i,n)=>{
                         const element = select(n[i]);
@@ -98,14 +98,14 @@ export class CircleBauble extends Bauble{
     }
     annotateOnHover(key){
         super.on("mouseenter",
-            (element) => (d, i,n) => {
+             (d, i,n) => {
                 this.manager().figure()[p.tree].annotateNode(this.manager().figure()[p.tree].getNode(d.id),{[key]:true});
                 this.manager().figure()[p.tree].treeUpdateCallback();
                 const parent = select(n[i]).node().parentNode;
                 select(parent).raise();
             });
         super.on("mouseleave",
-            (element) => (d,i,n) => {
+             (d,i,n) => {
                 this.manager().figure()[p.tree].annotateNode(this.manager().figure()[p.tree].getNode(d.id),{[key]:false});
                 this.manager().figure()[p.tree].treeUpdateCallback();
             });
