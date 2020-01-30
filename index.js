@@ -11,7 +11,6 @@ import {RoughCircleBauble} from "./src/baubles/roughcirclebauble";
 import {Branch,branches,branch} from "./src/baubles/branch";
 import {RoughBranchBauble} from "./src/baubles/roughbranchbauble";
 import {EqualAngleLayout} from "./src/layout/classes/equalanglelayout";
-import {Axis} from "./src/baubles/axes";
 import {GeoLayout} from "./src/layout/classes/geoLayout";
 import {GreatCircleBranchBauble} from "./src/baubles/greatCircleBranchBauble";
 import{rectangularLayout} from "./src/layout/rectangularLayout.f";
@@ -21,10 +20,10 @@ import {nodes,nodeBackground} from "./src/features/nodes";
 import {Label,label,tipLabel,internalNodeLabel,branchLabel} from "./src/baubles/label";
 import {rootToTipLayout} from "./src/layout/rootToTipLayout";
 import {decimalToDate} from "./src/utilities";
-import{axis} from "./src/features/axis"
+import{axis} from "./src/shrubbery/axis"
 import{BaubleManager} from "./src/features/baubleManager"
 
 export{Tree,Type,rectangularLayout,RootToTipPlot,RectangularLayout,TransmissionLayout, ExplodedLayout, FigTree,
     Bauble,CircleBauble,RoughCircleBauble,RectangularBauble,Branch,GreatCircleBranchBauble,RoughBranchBauble,
-    Axis,EqualAngleLayout,GeoLayout,nodes,equalAngleLayout,rootToTipLayout,decimalToDate,axis,circle,BaubleManager,
+    EqualAngleLayout,GeoLayout,nodes,equalAngleLayout,rootToTipLayout,decimalToDate,axis,circle,BaubleManager,
     nodeBackground,branch,branches,Label,label,tipLabel,internalNodeLabel,branchLabel};

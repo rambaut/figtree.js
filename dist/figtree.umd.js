@@ -13159,144 +13159,6 @@
 	  return Math.tan((vertex1.y - vertex2.y) / (vertex1.x - vertex2.x));
 	}
 
-	/** @module bauble */
-
-	/**
-	 * The Axes class
-	 *
-	 * This class defines and draws an axis. It can be shared by multiple plots
-	 * to allow the axes to be linked when zoomed or panned.
-	 */
-
-	var Axis =
-	/*#__PURE__*/
-	function () {
-	  createClass(Axis, null, [{
-	    key: "DEFAULT_SETTINGS",
-	    value: function DEFAULT_SETTINGS() {
-	      return {
-	        tickArguments: [5, "f"],
-	        title: {
-	          text: "",
-	          xPadding: 0,
-	          yPadding: 0,
-	          rotation: 0
-	        },
-	        id: "a".concat(uuid_1.v4()),
-	        location: "bottom"
-	      };
-	    }
-	    /**
-	     /**
-	     * The constructor takes a setting object.
-	     *
-	     * @param {Object} settings
-	     * @param {Array} [settings.tickArguments=[5,"f"] - Arguments passed to the d3 tickArgument function for the axis
-	     * @param {Object} [settings.title={
-	                    text:"",
-	                    xPadding:0,
-	                    yPadding:0,
-	                    rotation:0
-	            }] - options pertaining to the axis title
-	     @param {string} settings.title.text - The axis title
-	     @param {number} settings.title.xPadding -number of pixels to move the text in the x direction
-	      @param {number} settings.title.yPadding -number of pixels to move the text in the y direction
-	      @param {string} [settings.location="bottom"] - the direction of the ticks on the axis bottom,top,left,right
-	      */
-
-	  }]);
-
-	  function Axis() {
-
-	    classCallCheck(this, Axis);
-
-	    this.tickArguments = [5, "f"];
-	    this.title = {
-	      text: "",
-	      xPadding: 0,
-	      yPadding: 0,
-	      rotation: 0
-	    };
-	    this.id = "a".concat(uuid_1.v4());
-	    this.location = "bottom";
-	    this.d3Axis = getD3Axis(this.location);
-	  }
-
-	  createClass(Axis, [{
-	    key: "createAxis",
-	    value: function createAxis(_ref) {
-	      var selection = _ref.selection,
-	          x = _ref.x,
-	          y = _ref.y,
-	          length = _ref.length,
-	          scale = _ref.scale;
-	      this.axis = this.d3Axis(scale).tickArguments(this.settings.tickArguments);
-	      this.axisSelectiion = selection.append("g").attr("id", this.settings.id).attr("class", "axis").attr("transform", "translate(".concat(x, ", ").concat(y, ")")).call(this.axis);
-	      var pos = {
-	        x: 0,
-	        y: 0
-	      };
-
-	      if (this.settings.location.toLowerCase() === "bottom" || this.settings.location.toLowerCase() === "top") {
-	        pos.x = length / 2;
-	      } else {
-	        pos.y = length / 2;
-	      }
-
-	      this.axisTitleSelection = selection.append("g").attr("id", "".concat(this.settings.id, "-axis-label")).attr("class", "axis-label").attr("transform", "translate(".concat(x, ", ").concat(y, ")")).append("text").attr("transform", "translate(".concat(pos.x + this.settings.title.xPadding, ", ").concat(pos.y + this.settings.title.yPadding, ") rotate(").concat(this.settings.title.rotation, ")")).attr("alignment-baseline", "hanging").style("text-anchor", "middle").text(this.settings.title.text);
-	      return selection;
-	    }
-	  }, {
-	    key: "updateAxis",
-	    value: function updateAxis(_ref2) {
-	      var selection = _ref2.selection,
-	          x = _ref2.x,
-	          y = _ref2.y,
-	          length = _ref2.length,
-	          scale = _ref2.scale;
-	      // update the scale's domain
-	      this.axis = this.d3Axis(scale).tickArguments(this.settings.tickArguments);
-	      selection.select("g#".concat(this.settings.id)).transition() // .duration()
-	      .attr("transform", "translate(".concat(x, ", ").concat(y, ")")).call(this.axis);
-	      var pos = {
-	        x: 0,
-	        y: 0
-	      };
-
-	      if (this.settings.location.toLowerCase() === "bottom" || this.settings.location.toLowerCase() === "top") {
-	        pos.x = length / 2;
-	      } else {
-	        pos.y = length / 2;
-	      }
-
-	      selection.select("g#".concat(this.settings.id, "-axis-label")).transition() // .duration()
-	      .attr("transform", "translate(".concat(x, ", ").concat(y, ")")).select("text").transition() // .duration()
-	      .attr("transform", "translate(".concat(pos.x + this.settings.title.xPadding, ", ").concat(pos.y + this.settings.title.yPadding, ") rotate(").concat(this.settings.title.rotation, ")")).attr("alignment-baseline", "hanging").style("text-anchor", "middle").text(this.settings.title.text);
-	    }
-	  }]);
-
-	  return Axis;
-	}();
-
-	function getD3Axis(location) {
-	  switch (location.toLowerCase()) {
-	    case "bottom":
-	      return axisBottom;
-
-	    case "left":
-	      return axisLeft;
-
-	    case "top":
-	      return axisTop;
-
-	    case "right":
-	      return axisRight;
-
-	    default:
-	      throw new Error("Unknown location type ".concat(this.location));
-	  }
-	}
-
 	var GreatCircleBranchBauble =
 	/*#__PURE__*/
 	function (_Branch) {
@@ -14089,56 +13951,43 @@
 	function ownKeys$e(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
 	function _objectSpread$e(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$e(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$e(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
-	var AxisFactory =
+	var Shrubbery =
 	/*#__PURE__*/
-	function (_BaubleManager) {
-	  inherits(AxisFactory, _BaubleManager);
+	function () {
+	  function Shrubbery() {
+	    classCallCheck(this, Shrubbery);
 
-	  function AxisFactory() {
-	    var _this;
-
-	    classCallCheck(this, AxisFactory);
-
-	    _this = possibleConstructorReturn(this, getPrototypeOf(AxisFactory).call(this));
-	    _this.type = p.axis;
-	    _this._tickArguments = [5, "f"];
-	    _this._title = {
+	    this._created = false;
+	    this._title = {
 	      text: "",
 	      xPadding: 0,
 	      yPadding: 0,
 	      rotation: 0
 	    };
-	    _this._id = "a".concat(uuid_1.v4());
-	    _this._location = "bottom";
-	    _this.d3Axis = getD3Axis$1(_this.location());
-	    _this._x = 0;
-	    _this._y = 0;
-	    return _this;
+	    this._id = "s".concat(uuid_1.v4());
 	  }
 
-	  createClass(AxisFactory, [{
-	    key: "location",
-	    value: function location() {
-	      var string = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+	  createClass(Shrubbery, [{
+	    key: "figure",
+	    value: function figure() {
+	      var f = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
-	      if (!string) {
-	        return this._location;
+	      if (f === null) {
+	        return this._figure;
 	      } else {
-	        this._location = string;
-	        this.d3Axis = getD3Axis$1(this._location);
+	        this._figure = f;
 	        return this;
 	      }
 	    }
 	  }, {
-	    key: "tickArguments",
-	    value: function tickArguments() {
-	      var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : [];
+	    key: "layer",
+	    value: function layer() {
+	      var l = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
-	      if (options.length !== 2) {
-	        return this._tickArguments;
+	      if (l === null) {
+	        return this._layer;
 	      } else {
-	        this._tickArguments = options;
+	        this._layer = l;
 	        return this;
 	      }
 	    }
@@ -14155,26 +14004,61 @@
 	      }
 	    }
 	  }, {
-	    key: "createAxis",
-	    value: function createAxis() {
-	      var length = ["top", "bottom"].indexOf(this._location) > -1 ? this.figure.scales.width - this.figure._margins.left - this.figure._margins.right : this.figure.scales.height - this.figure._margins.top - this.figure._margins.bottom; //TODO add options to change scales and all that jazz
+	    key: "on",
+	    value: function on(string, value) {
+	      this._interactions[string] = value;
+	      return this;
+	    }
+	  }, {
+	    key: "transitions",
+	    value: function transitions() {
+	      var t = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
-	      var axis = this.d3Axis(["top", "bottom"].indexOf(this._location) > -1 ? this.figure.scales.x : this.figure.scales.y).tickArguments(this._tickArguments);
-	      var selection = this.figure.svgSelection.select(".axes-layer");
-	      selection.append("g").attr("id", this._id).attr("class", "axis").attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")).call(axis);
-	      var pos = {
-	        x: 0,
-	        y: 0
-	      };
-
-	      if (this._location.toLowerCase() === "bottom" || this._location.toLowerCase() === "top") {
-	        pos.x = length / 2;
+	      if (t === null) {
+	        if (this._transitions) {
+	          return this._transitions;
+	        } else {
+	          return this.figure().transitions();
+	        }
 	      } else {
-	        pos.y = length / 2;
+	        this._transitions = t;
+	        return this;
+	      }
+	    }
+	  }, {
+	    key: "scales",
+	    value: function scales() {
+	      var _scales = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+	      if (_scales) {
+	        this._scales = _scales;
+	      } else {
+	        if (this._scales) {
+	          return this._scales;
+	        } else {
+	          return this.figure().scales;
+	        }
+	      }
+	    }
+	  }, {
+	    key: "create",
+	    value: function create(selection) {
+	      throw new Error("Don't call the base class method");
+	    }
+	  }, {
+	    key: "update",
+	    value: function update(selection) {
+	      if (!this._created) {
+	        this.create(selection);
+	        this._created = true;
 	      }
 
-	      selection.append("g").attr("id", "".concat(this._id, "-axis-label")).attr("class", "axis-label").attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")).append("text").attr("transform", "translate(".concat(pos.x + this._title.xPadding, ", ").concat(pos.y + this._title.yPadding, ") rotate(").concat(this._title.rotation, ")")).attr("alignment-baseline", "hanging").style("text-anchor", "middle").text(this._title.text);
-	      return selection;
+	      this.updateCycle();
+	    }
+	  }, {
+	    key: "updateCycle",
+	    value: function updateCycle(selection) {
+	      throw new Error("Don't call the base class method");
 	    }
 	  }, {
 	    key: "x",
@@ -14200,6 +14084,86 @@
 	        return this._y;
 	      }
 	    }
+	  }]);
+
+	  return Shrubbery;
+	}();
+
+	var Axis =
+	/*#__PURE__*/
+	function (_Shrubbery) {
+	  inherits(Axis, _Shrubbery);
+
+	  function Axis() {
+	    var _this;
+
+	    classCallCheck(this, Axis);
+
+	    _this = possibleConstructorReturn(this, getPrototypeOf(Axis).call(this));
+	    _this._ticks = 5;
+	    _this._tickFormat = format(".1f");
+	    _this._title = {
+	      text: "",
+	      xPadding: 0,
+	      yPadding: 0,
+	      rotation: 0
+	    };
+	    _this._location = "bottom";
+	    _this._x = 0;
+	    _this._y = 0;
+
+	    get$2(getPrototypeOf(Axis.prototype), "layer", assertThisInitialized(_this)).call(assertThisInitialized(_this), "axes-layer");
+
+	    return _this;
+	  }
+
+	  createClass(Axis, [{
+	    key: "location",
+	    value: function location() {
+	      var string = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+	      if (!string) {
+	        return this._location;
+	      } else {
+	        this._location = string;
+	        return this;
+	      }
+	    }
+	  }, {
+	    key: "updateScales",
+	    value: function updateScales() {
+	      this.d3Axis = getD3Axis(this._location);
+	      var length = ["top", "bottom"].indexOf(this._location) > -1 ? this.scales().width - this.figure()._margins.left - this.figure()._margins.right : this.scales().height - this.figure()._margins.top - this.figure()._margins.bottom; //TODO add options to change scales and all that jazz
+
+	      var axis = this.d3Axis(["top", "bottom"].indexOf(this._location) > -1 ? this.scales().x : this.scales().y).ticks(this.ticks()).tickFormat(this.tickFormat());
+	      return {
+	        length: length,
+	        axis: axis
+	      };
+	    }
+	  }, {
+	    key: "create",
+	    value: function create() {
+	      var _this$updateScales = this.updateScales(),
+	          length = _this$updateScales.length,
+	          axis = _this$updateScales.axis;
+
+	      var selection = this.figure().svgSelection.select(".".concat(this.layer()));
+	      selection.append("g").attr("id", this._id).attr("class", "axis").attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")).call(axis);
+	      var pos = {
+	        x: 0,
+	        y: 0
+	      };
+
+	      if (this.location().toLowerCase() === "bottom" || this.location().toLowerCase() === "top") {
+	        pos.x = length / 2;
+	      } else {
+	        pos.y = length / 2;
+	      }
+
+	      selection.append("g").attr("id", "".concat(this._id, "-axis-label")).attr("class", "axis-label").attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")).append("text").attr("transform", "translate(".concat(pos.x + this._title.xPadding, ", ").concat(pos.y + this._title.yPadding, ") rotate(").concat(this._title.rotation, ")")).attr("alignment-baseline", "hanging").style("text-anchor", "middle").text(this._title.text);
+	      return selection;
+	    }
 	  }, {
 	    key: "tickFormat",
 	    value: function tickFormat(d) {
@@ -14211,17 +14175,23 @@
 	      }
 	    }
 	  }, {
-	    key: "updateAxis",
-	    value: function updateAxis() {
-	      var length = ["top", "bottom"].indexOf(this._location) > -1 ? this.figure.scales.width - this.figure._margins.left - this.figure._margins.right : this.figure.scales.height - this.figure._margins.top - this.figure._margins.bottom; //TODO add options to change scales and all that jazz
-
-	      var axis = this.d3Axis(["top", "bottom"].indexOf(this._location) > -1 ? this.figure.scales.x : this.figure.scales.y).tickArguments(this._tickArguments);
-
-	      if (this._tickFormat) {
-	        axis.tickFormat(this._tickFormat);
+	    key: "ticks",
+	    value: function ticks(d) {
+	      if (d) {
+	        this._ticks = d;
+	        return this;
+	      } else {
+	        return this._ticks;
 	      }
+	    }
+	  }, {
+	    key: "updateCycle",
+	    value: function updateCycle() {
+	      var _this$updateScales2 = this.updateScales(),
+	          length = _this$updateScales2.length,
+	          axis = _this$updateScales2.axis;
 
-	      var selection = this.figure.svgSelection.select(".axes-layer");
+	      var selection = this.figure().svgSelection.select(".".concat(this.location()));
 	      selection.select("g#".concat(this._id)).transition() // .duration()
 	      .attr("id", this._id).attr("class", "axis").attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")).call(axis);
 	      var pos = {
@@ -14241,10 +14211,10 @@
 	    }
 	  }]);
 
-	  return AxisFactory;
-	}(BaubleManager);
+	  return Axis;
+	}(Shrubbery);
 
-	function getD3Axis$1(location) {
+	function getD3Axis(location) {
 	  switch (location.toLowerCase()) {
 	    case "bottom":
 	      return axisBottom;
@@ -14264,10 +14234,9 @@
 	}
 
 	function axis$1() {
-	  return new AxisFactory();
+	  return new Axis();
 	}
 
-	exports.Axis = Axis;
 	exports.Bauble = Bauble;
 	exports.BaubleManager = BaubleManager;
 	exports.Branch = Branch;

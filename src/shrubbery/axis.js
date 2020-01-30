@@ -1,26 +1,21 @@
-import {BaubleManager} from "./baubleManager";
-import p from "../privateConstants";
-import {Axis} from "../baubles/axes";
-import uuid from "uuid";
-import {mergeDeep} from "../utilities";
-import {axisBottom, axisLeft, axisRight, axisTop} from "d3";
+import {axisBottom, axisLeft, axisRight, axisTop,format} from "d3";
+import {Shrubbery} from "./shrubbery";
 
-class AxisFactory extends BaubleManager {
+class Axis extends Shrubbery {
     constructor(){
         super();
-        this.type=p.axis;
-        this._tickArguments=[5, "f"];
+        this._ticks=5;
+        this._tickFormat=format(".1f");
         this._title={
             text:"",
             xPadding:0,
             yPadding:0,
             rotation:0
         };
-        this._id= `a${uuid.v4()}`;
         this._location="bottom";
-        this.d3Axis = getD3Axis(this.location())
         this._x=0;
         this._y=0;
+        super.layer("axes-layer")
 
     }
     
@@ -29,40 +24,26 @@ class AxisFactory extends BaubleManager {
             return this._location
         }else{
             this._location=string;
-            this.d3Axis = getD3Axis(this._location);
             return this;
         }
     }
-    tickArguments(options=[]){
-        if(options.length!==2){
-            return this._tickArguments;
-        }else{
-            this._tickArguments=options;
-            return this;
-        }
-    }
-    title(options=null){
-        if(!options){
-            return this._title;
-        }else{
-            this._title={...this._title,...options};
-            return this;
-        }
-    }
-    
 
-    createAxis() {
-
+    updateScales(){
+        this.d3Axis = getD3Axis(this._location);
         const length = ["top","bottom"].indexOf(this._location)>-1?
-            this.figure.scales.width - this.figure._margins.left - this.figure._margins.right:
-            this.figure.scales.height -this.figure._margins.top - this.figure._margins.bottom;
+            this.scales().width - this.figure()._margins.left - this.figure()._margins.right:
+            this.scales().height -this.figure()._margins.top - this.figure()._margins.bottom;
+
 
         //TODO add options to change scales and all that jazz
-        const axis = this.d3Axis( (["top","bottom"].indexOf(this._location)>-1?this.figure.scales.x:this.figure.scales.y))
-            .tickArguments(this._tickArguments);
+        const axis = this.d3Axis( (["top","bottom"].indexOf(this._location)>-1?this.scales().x:this.scales().y))
+            .ticks(this.ticks()).tickFormat(this.tickFormat());
+        return {length,axis}
+    }
 
-        const selection = this.figure.svgSelection.select(".axes-layer");
-
+    create() {
+        const {length,axis} = this.updateScales();
+        const selection = this.figure().svgSelection.select(`.${this.layer()}`);
 
         selection
             .append("g")
@@ -72,7 +53,7 @@ class AxisFactory extends BaubleManager {
             .call(axis);
 
         const pos={x:0,y:0};
-        if(this._location.toLowerCase() === "bottom" || this._location.toLowerCase() === "top"){
+        if(this.location().toLowerCase() === "bottom" || this.location().toLowerCase() === "top"){
             pos.x = length/2
         }else{
             pos.y=length/2
@@ -91,22 +72,6 @@ class AxisFactory extends BaubleManager {
 
         return selection;
     };
-    x(d=null){
-        if(d!==null){
-            this._x=d;
-            return this;        }
-        else{
-            return this._x;
-        }
-    }
-    y(d=null){
-        if(d!==null){
-            this._y=d;
-            return this;        }
-        else{
-          return this._y;
-        }
-    }
 
     tickFormat(d){
         if(d){
@@ -116,21 +81,20 @@ class AxisFactory extends BaubleManager {
             return this._tickFormat;
         }
     }
-    updateAxis() {
-
-        const length = ["top","bottom"].indexOf(this._location)>-1?
-            this.figure.scales.width - this.figure._margins.left - this.figure._margins.right:
-            this.figure.scales.height -this.figure._margins.top - this.figure._margins.bottom;
-
-        //TODO add options to change scales and all that jazz
-        const axis = this.d3Axis( (["top","bottom"].indexOf(this._location)>-1?this.figure.scales.x:this.figure.scales.y))
-            .tickArguments(this._tickArguments);
-
-        if(this._tickFormat){
-            axis.tickFormat(this._tickFormat)
+    ticks(d){
+        if(d){
+            this._ticks=d;
+            return this;
+        }else{
+            return this._ticks;
         }
-        const selection = this.figure.svgSelection.select(".axes-layer");
+    }
 
+    updateCycle() {
+
+        const {length,axis} = this.updateScales();
+
+        const selection = this.figure().svgSelection.select(`.${this.location()}`);
 
 
         selection
@@ -183,5 +147,5 @@ function getD3Axis(location) {
 }
 
 export function axis(){
-    return new AxisFactory();
+    return new Axis();
 }

@@ -152,7 +152,8 @@
 <script type="module">
 
     import {Tree,rectangularLayout,CircleBauble,FigTree,BaubleManager,Branch,
-        nodes,nodeBackground,circle,branches,branch,tipLabel,internalNodeLabel,label,branchLabel}  from "./dist/figtree.esm.js";
+        nodes,nodeBackground,circle,branches,branch,tipLabel,internalNodeLabel,label,
+        branchLabel, axis}  from "./dist/figtree.esm.js";
 
 
     const width = 600,
@@ -170,9 +171,9 @@
 
     const tree = Tree.parseNewick(newickString, "probability");
     const treeSVG = document.getElementById('phylogram_1a');
+    const margins={top:10,bottom:60,left:30,right:60};
 
-
-    const fig = new FigTree(treeSVG,tree);
+    const fig = new FigTree(treeSVG,tree,null,margins);
 
 
     fig
@@ -211,16 +212,24 @@
                         .attr("r",7)
                 )
         )
-        // .feature(
-        //     nodeBackground()
-        //         .attr("r",7)
-        // )
-        // .feature(
-        //     branches()
-        //         .curve(d3.curveBasis)
-        //         .hilightOnHover()
-        //         .reRootOnClick()
-        // )
+        .feature(
+            axis()
+                .location("bottom")
+                .y(height-margins.top-margins.bottom+5)
+                .x(0)
+                .title({text:"Divergence",
+                    yPadding:30})
+                .tickFormat(d3.format(".1f"))
+        )
+        .feature(
+            axis()
+                .location("left")
+                .y(0)
+                .x(-5)
+                .title({text:"nothing",
+                    xPadding:-90,
+                    rotation:-90})
+        );
 
 </script>
 

@@ -83,7 +83,6 @@ export class CircleBauble extends Bauble{
 
                 }
 
-
                 // move to top
 
             });

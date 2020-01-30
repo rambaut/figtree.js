@@ -1,4 +1,4 @@
-import BaubleManager from "./baubleManager";
+import BaubleManager from "../features/baubleManager";
 import p from "../privateConstants";
 import uuid from "uuid";
 
