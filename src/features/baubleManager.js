@@ -34,7 +34,7 @@ export  class BaubleManager{
 
     element(b){
         b.manager(this);
-        this._baubleHelpers=this._baubleHelpers.concat(b)
+        this._baubleHelpers=this._baubleHelpers.concat(b);
         return this;
     }
     filter(f=null){

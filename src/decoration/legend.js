@@ -13,13 +13,14 @@ class Legend extends decoration {
         this._x = 0;
         this._y = 0;
         super.layer("axes-layer")
+        this._size=20;
     }
 
-    length(d = null) {
+    size(d = null) {
         if (!d) {
-            return this._length
+            return this._size
         } else {
-            this._length = d;
+            this._size = d;
             return this;
         }
     }
@@ -45,8 +46,6 @@ class Legend extends decoration {
     create() {
 
 
-
-
         const selection = this.figure().svgSelection.select(`.${this.layer()}`);
 
         const group = selection
@@ -56,17 +55,16 @@ class Legend extends decoration {
             .attr("transform", `translate(${this._x}, ${this._y})`);
 //https://www.d3-graph-gallery.com/graph/custom_legend.html#cont1
 // Add one dot in the legend for each name.
-        const size = 20;
         group.selectAll("rect")
             .data(this.scale().domain())
             .enter()
             .append("rect")
             .attr("x", 0)
-            .attr("y", function (d, i) {
-                return i * (size + 5)
+            .attr("y",  (d, i) =>{
+                return i * (this.size() + 5)
             }) // 100 is where the first dot appears. 25 is the distance between dots
-            .attr("width", size)
-            .attr("height", size)
+            .attr("width", this.size())
+            .attr("height", this.size())
             .attr("fill",  (d) =>{
                 return this.scale()(d)
             });
@@ -76,9 +74,9 @@ class Legend extends decoration {
             .data(this.scale().domain())
             .enter()
             .append("text")
-            .attr("x", size * 1.2)
-            .attr("y", function (d, i) {
-                return i * (size + 5) + (size / 2)
+            .attr("x", this.size() * 1.2)
+            .attr("y",  (d, i)=> {
+                return i * (this.size() + 5) + (this.size() / 2)
             }) // 100 is where the first dot appears. 25 is the distance between dots
             .text(function (d) {
                 return d
@@ -86,24 +84,6 @@ class Legend extends decoration {
             .attr("text-anchor", "left")
             .attr("alignment-baseline", "middle");
     };
-
-    tickFormat(d) {
-        if (d) {
-            this._tickFormat = d;
-            return this;
-        } else {
-            return this._tickFormat;
-        }
-    }
-
-    ticks(d) {
-        if (d) {
-            this._ticks = d;
-            return this;
-        } else {
-            return this._ticks;
-        }
-    }
 
     updateCycle() {
 
@@ -115,15 +95,14 @@ class Legend extends decoration {
             .attr("transform", `translate(${this._x}, ${this._y})`);
 //https://www.d3-graph-gallery.com/graph/custom_legend.html#cont1
 // Add one dot in the legend for each name.
-        const size = 20;
         group.selectAll("rect")
             .transition()
             .attr("x", 0)
-            .attr("y", function (d, i) {
-                return i * (size + 5)
+            .attr("y",  (d, i)=> {
+                return i * (this.size() + 5)
             }) // 100 is where the first dot appears. 25 is the distance between dots
-            .attr("width", size)
-            .attr("height", size)
+            .attr("width", this.size())
+            .attr("height", this.size())
             .attr("fill",(d) =>{
                 return this.scale()(d)
             });
@@ -131,9 +110,9 @@ class Legend extends decoration {
 // Add one dot in the legend for each name.
         group.selectAll("text")
             .transition()
-            .attr("x", size * 1.2)
-            .attr("y", function (d, i) {
-                return i * (size + 5) + (size / 2)
+            .attr("x", this.size() * 1.2)
+            .attr("y",  (d, i) =>{
+                return i * (this.size() + 5) + (this.size() / 2)
             }) // 100 is where the first dot appears. 25 is the distance between dots
             .text(function (d) {
                 return d

@@ -270,9 +270,14 @@ export class FigTree {
         this.update();
         return this;
     }
+    addFeature(f){
+        f.figure(this);
+        this._features = this._features.concat(f);
+        return this;
+    }
     nodes(){
         const n=nodes();
-        this.feature(n);
+        this.addFeature(n);
         return n;
     }
     branches(){

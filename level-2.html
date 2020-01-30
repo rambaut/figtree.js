@@ -192,12 +192,12 @@
             .element(
                 internalNodeLabel(d=>d.y)
             );
-        fig.branches()
-            .element(
-                branch()
-                    .hilightOnHover()
-                    .reRootOnClick()
-            )
+    fig.branches()
+        .element(
+            branch()
+                .hilightOnHover()
+                .reRootOnClick()
+        )
             // .element(
             //     branchLabel(d=>d.v1.length)
             // )
@@ -234,6 +234,8 @@
         .scale(colorScale)
         .x(0)
         .y(height-margins.bottom)
+
+
 
 </script>
 

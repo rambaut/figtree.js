@@ -12336,18 +12336,19 @@ function (_decoration) {
 
     get$2(getPrototypeOf(Legend.prototype), "layer", assertThisInitialized(_this)).call(assertThisInitialized(_this), "axes-layer");
 
+    _this._size = 20;
     return _this;
   }
 
   createClass(Legend, [{
-    key: "length",
-    value: function length() {
+    key: "size",
+    value: function size() {
       var d = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
       if (!d) {
-        return this._length;
+        return this._size;
       } else {
-        this._length = d;
+        this._size = d;
         return this;
       }
     }
@@ -12384,40 +12385,19 @@ function (_decoration) {
       var group = selection.append("g").attr("id", this._id).attr("class", "legend").attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")); //https://www.d3-graph-gallery.com/graph/custom_legend.html#cont1
       // Add one dot in the legend for each name.
 
-      var size = 20;
       group.selectAll("rect").data(this.scale().domain()).enter().append("rect").attr("x", 0).attr("y", function (d, i) {
-        return i * (size + 5);
+        return i * (_this2.size() + 5);
       }) // 100 is where the first dot appears. 25 is the distance between dots
-      .attr("width", size).attr("height", size).attr("fill", function (d) {
+      .attr("width", this.size()).attr("height", this.size()).attr("fill", function (d) {
         return _this2.scale()(d);
       }); // Add one dot in the legend for each name.
 
-      group.selectAll("text").data(this.scale().domain()).enter().append("text").attr("x", size * 1.2).attr("y", function (d, i) {
-        return i * (size + 5) + size / 2;
+      group.selectAll("text").data(this.scale().domain()).enter().append("text").attr("x", this.size() * 1.2).attr("y", function (d, i) {
+        return i * (_this2.size() + 5) + _this2.size() / 2;
       }) // 100 is where the first dot appears. 25 is the distance between dots
       .text(function (d) {
         return d;
       }).attr("text-anchor", "left").attr("alignment-baseline", "middle");
-    }
-  }, {
-    key: "tickFormat",
-    value: function tickFormat(d) {
-      if (d) {
-        this._tickFormat = d;
-        return this;
-      } else {
-        return this._tickFormat;
-      }
-    }
-  }, {
-    key: "ticks",
-    value: function ticks(d) {
-      if (d) {
-        this._ticks = d;
-        return this;
-      } else {
-        return this._ticks;
-      }
     }
   }, {
     key: "updateCycle",
@@ -12428,16 +12408,15 @@ function (_decoration) {
       var group = selection.select("g#".concat(this._id)).transition().attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")); //https://www.d3-graph-gallery.com/graph/custom_legend.html#cont1
       // Add one dot in the legend for each name.
 
-      var size = 20;
       group.selectAll("rect").transition().attr("x", 0).attr("y", function (d, i) {
-        return i * (size + 5);
+        return i * (_this3.size() + 5);
       }) // 100 is where the first dot appears. 25 is the distance between dots
-      .attr("width", size).attr("height", size).attr("fill", function (d) {
+      .attr("width", this.size()).attr("height", this.size()).attr("fill", function (d) {
         return _this3.scale()(d);
       }); // Add one dot in the legend for each name.
 
-      group.selectAll("text").transition().attr("x", size * 1.2).attr("y", function (d, i) {
-        return i * (size + 5) + size / 2;
+      group.selectAll("text").transition().attr("x", this.size() * 1.2).attr("y", function (d, i) {
+        return i * (_this3.size() + 5) + _this3.size() / 2;
       }) // 100 is where the first dot appears. 25 is the distance between dots
       .text(function (d) {
         return d;
@@ -12787,11 +12766,18 @@ function () {
       return this;
     }
   }, {
+    key: "addFeature",
+    value: function addFeature(f) {
+      f.figure(this);
+      this._features = this._features.concat(f);
+      return this;
+    }
+  }, {
     key: "nodes",
     value: function nodes$1() {
       var n = nodes();
 
-      this.feature(n);
+      this.addFeature(n);
       return n;
     }
   }, {
