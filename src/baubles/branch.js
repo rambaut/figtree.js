@@ -24,7 +24,7 @@ export class Branch extends Bauble {
     }
 
 
-    updateCycle(selection) {
+    update(selection) {
         this.branchPath =this.branchPathGenerator();
         if(selection==null&&!this.selection){
             return
@@ -33,13 +33,14 @@ export class Branch extends Bauble {
             this.selection=selection;
         }
         const self=this;
-        return selection.selectAll("path")
-            .data(d => [d])
+        return selection
+            .selectAll(`.${this.id}`)
+            .data(d => [d].filter(this.filter()),d=>this.id)
             .join(
                 enter => enter
                     .append("path")
                     .attr("d", (v1,i) => this.branchPath(v1,i))
-                    .attr("class", "branch-path")
+                    .attr("class", `branch-path ${this.id}`)
                     .attrs(this._attrs)
                     .each((d,i,n)=>{
                         const element = select(n[i]);

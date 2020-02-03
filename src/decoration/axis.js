@@ -1,6 +1,9 @@
 import {axisBottom, axisLeft, axisRight, axisTop,format} from "d3";
 import {decoration} from "./decoration";
 
+/**
+ * The axis class
+ */
 class Axis extends decoration {
     constructor(){
         super();
@@ -18,7 +21,12 @@ class Axis extends decoration {
         super.layer("axes-layer")
 
     }
-    
+
+    /**
+     * Get or set the location of the ticks on the axis. "bottom", "top","left",'right"
+     * @param string
+     * @return {string|Axis}
+     */
     location(string=null){
         if(!string){
             return this._location
@@ -71,6 +79,11 @@ class Axis extends decoration {
             .text(this._title.text);
     };
 
+    /**
+     * Get or set the tick format used. This is passed to the d3 Axis.
+     * @param d
+     * @return {Axis|*}
+     */
     tickFormat(d){
         if(d){
             this._tickFormat=d;
@@ -79,6 +92,12 @@ class Axis extends decoration {
             return this._tickFormat;
         }
     }
+
+    /**
+     * Get or set the number of ticks. This is passed to the d3 axis and is a suggestion not a demand.
+     * @param d
+     * @return {Axis|number}
+     */
     ticks(d){
         if(d){
             this._ticks=d;

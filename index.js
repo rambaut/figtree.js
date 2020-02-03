@@ -6,7 +6,7 @@ import {Bauble} from "./src/baubles/bauble.js"
 import {FigTree} from "./src/figtree/figtree.js";
 import {RootToTipPlot} from './src/layout/classes/roottotipplot'
 import {CircleBauble,circle} from "./src/baubles/circlebauble";
-import {RectangularBauble} from "./src/baubles/rectanglebauble";
+import {RectangularBauble,rectangle} from "./src/baubles/rectanglebauble";
 import {RoughCircleBauble} from "./src/baubles/roughcirclebauble";
 import {Branch,branches,branch} from "./src/baubles/branch";
 import {RoughBranchBauble} from "./src/baubles/roughbranchbauble";
@@ -27,5 +27,5 @@ import {legend} from "./src/decoration/legend";
 
 export{Tree,Type,rectangularLayout,RootToTipPlot,RectangularLayout,TransmissionLayout, ExplodedLayout, FigTree,
     Bauble,CircleBauble,RoughCircleBauble,RectangularBauble,Branch,GreatCircleBranchBauble,RoughBranchBauble,
-    EqualAngleLayout,GeoLayout,nodes,equalAngleLayout,rootToTipLayout,decimalToDate,axis,circle,BaubleManager,
+    EqualAngleLayout,GeoLayout,nodes,equalAngleLayout,rootToTipLayout,decimalToDate,axis,circle,rectangle,BaubleManager,
     nodeBackground,branch,branches,Label,label,tipLabel,internalNodeLabel,branchLabel,scaleBar,legend};

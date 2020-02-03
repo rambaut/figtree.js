@@ -1,6 +1,9 @@
 import {select} from "d3";
 import {Bauble} from "./bauble";
 
+/**
+ * Bauble class for labels
+ */
 export class Label extends Bauble{
     constructor() {
         super();
@@ -9,10 +12,10 @@ export class Label extends Bauble{
         this._scaleY=false;
         return this;
     }
-    updateCycle(selection){
+    update(selection){
         return selection
             .selectAll("text")
-            .data(d => [d],d=>`label-${d.id}`)
+            .data(d => [d].filter(this.filter()),d=>`label-${this.id}`)
             .join(
                 enter => enter
                     .append("text")
@@ -58,7 +61,12 @@ export class Label extends Bauble{
 
 
 //((this.scales.x(e.v1.x+this.xScaleOffset) - this.scales.x(e.v0.x+this.xScaleOffset)) / 2))
-
+/**
+ * Helper function for making labels. Sets position and alignment based on
+ * vertex or edge object.
+ * @param text
+ * @return {*}
+ */
 export function label(text){
 
 return new Label()
@@ -70,20 +78,37 @@ return new Label()
 
 
 }
+
+/**
+ * Helper function filters label to just work on tips
+ * @param text - string or function for assigning label (will be passed vertex or edge)
+ * @return {*}
+ */
 export function tipLabel(text){
     return label(text)
-        .updatePredicate(d=>d.degree===1);
+        .filter(d=>d.degree===1);
 }
+/**
+ * Helper function filters label to just work on internal nodes
+ * @param text
+ * @return {*}
+ */
 export function internalNodeLabel(text){
     return label(text)
-        .updatePredicate(d=>d.degree>1);
+        .filter(d=>d.degree>1);
 }
 
+/**
+ * Helper function that puts label in the middle of a curveStepBefore branch
+ * @param text
+ * @return {Bauble|*|null|undefined}
+ */
 export function branchLabel(text){
-    const l = label(text);
-    const setX = obj => d=>{
-        // console.log((obj.scales().x(d.v1.x)-obj.scales().x(d.v0.x)/2));
-        return (obj.scales().x(d.v1.x)-obj.scales().x(d.v0.x))/2
-    };
-    return l.attr("x",setX(l))
+   return label(text)
+        .scaledX(d=>(d.v1.x-d.v0.x)/2);
+    // const setX = obj => d=>{
+    //     // console.log((obj.scales().x(d.v1.x)-obj.scales().x(d.v0.x)/2));
+    //     return (obj.scales().x(d.v1.x)-obj.scales().x(d.v0.x))/2
+    // };
+    // return l.attr("x",setX(l))
 }

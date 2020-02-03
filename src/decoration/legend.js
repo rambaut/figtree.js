@@ -1,6 +1,10 @@
-import {axisBottom, axisLeft, axisRight, axisTop,format} from "d3";
 import {decoration} from "./decoration";
+import {select} from "d3";
+import p from "../privateConstants";
 
+/**
+ * A discrete legend for displaying traits
+ */
 class Legend extends decoration {
     constructor() {
         super();
@@ -14,8 +18,14 @@ class Legend extends decoration {
         this._y = 0;
         super.layer("axes-layer")
         this._size=20;
+        this._scale=null;
     }
 
+    /**
+     * The size of the square used to display the color
+     * @param d
+     * @return {Legend|number}
+     */
     size(d = null) {
         if (!d) {
             return this._size
@@ -25,8 +35,13 @@ class Legend extends decoration {
         }
     }
 
+    /**
+     * get or set the ordinal color scale the legend displays
+     * @param scale
+     * @return {null|Legend}
+     */
     scale(scale = null) {
-        if (!scale) {
+        if (scale===null) {
             return this._scale
         } else {
             this._scale = scale;
@@ -34,18 +49,11 @@ class Legend extends decoration {
         }
     }
 
-    location(string = null) {
-        if (!string) {
-            return this._location
-        } else {
-            this._location = string;
-            return this;
-        }
-    }
-
     create() {
 
-
+        if(this.scale()===null){
+            return;
+        }
         const selection = this.figure().svgSelection.select(`.${this.layer()}`);
 
         const group = selection
@@ -67,7 +75,14 @@ class Legend extends decoration {
             .attr("height", this.size())
             .attr("fill",  (d) =>{
                 return this.scale()(d)
+            })
+            .each((d,i,n)=>{
+                const element = select(n[i]);
+                for( const [key,func] of Object.entries(this._interactions)){
+                    element.on(key,(d,i,n)=>func(d,i,n))
+                }
             });
+
 
 // Add one dot in the legend for each name.
         group.selectAll("text")
@@ -86,7 +101,9 @@ class Legend extends decoration {
     };
 
     updateCycle() {
-
+        if(this.scale()===null){
+            return;
+        }
         const selection = this.figure().svgSelection.select(`.${this.layer()}`);
 
         const group = selection
@@ -105,6 +122,12 @@ class Legend extends decoration {
             .attr("height", this.size())
             .attr("fill",(d) =>{
                 return this.scale()(d)
+            })
+            .each((d,i,n)=>{
+                const element = select(n[i]);
+                for( const [key,func] of Object.entries(this._interactions)){
+                    element.on(key,(d,i,n)=>func(d,i,n))
+                }
             });
 
 // Add one dot in the legend for each name.
@@ -122,8 +145,14 @@ class Legend extends decoration {
 
 
     }
+
+
 }
 
+/**
+ * helper function that returns a new legend instance
+ * @return {Legend}
+ */
 export function legend(){
     return new Legend();
 }

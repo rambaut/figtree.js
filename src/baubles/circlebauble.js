@@ -28,7 +28,7 @@ export class CircleBauble extends Bauble{
      * plus the border.
      * @param selection
      */
-    updateCycle(selection=null) {
+    update(selection=null) {
         if(selection==null&&!this.selection){
             return
         }
@@ -37,7 +37,7 @@ export class CircleBauble extends Bauble{
         }
         return selection
             .selectAll(`.${this.id}`)
-            .data(d => [d],d=>this.id)
+            .data(d => [d].filter(this.filter()),d=>this.id)
             .join(
                 enter => enter
                     .append("circle")
@@ -64,6 +64,11 @@ export class CircleBauble extends Bauble{
                 );
     };
 
+    /**
+     * Helper function to class the node as 'hovered' and update the radius if provided
+     * @param r - optional hover radius
+     * @return {CircleBauble}
+     */
     hilightOnHover(r = null) {
         let oldR;
         super.on("mouseenter",
@@ -96,6 +101,13 @@ export class CircleBauble extends Bauble{
             });
         return this;
     }
+
+    /**
+     * helper method to annotate the underlying tree node as key:true; Useful for linking interactions between figures
+     * that share a tree.
+     * @param key
+     * @return {CircleBauble}
+     */
     annotateOnHover(key){
         super.on("mouseenter",
              (d, i,n) => {
@@ -111,6 +123,12 @@ export class CircleBauble extends Bauble{
             });
         return this;
     }
+
+    /**
+     * Rotate a node on click
+     * @param recursive - optional default -false;
+     * @return {CircleBauble}
+     */
     rotateOnClick(recursive=false){
         super.on("click",(d,n,i)=>{
             const node = this.manager().figure()[p.tree].getNode(d.key);
@@ -120,6 +138,10 @@ export class CircleBauble extends Bauble{
     }
 }
 
+/**
+ * helper function returns a new instance of a circle bauble.
+ * @return {CircleBauble}
+ */
 export function circle(){
     return new CircleBauble();
 }

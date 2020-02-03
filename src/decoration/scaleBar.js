@@ -1,6 +1,8 @@
-import {axisBottom, axisLeft, axisRight, axisTop,format} from "d3";
 import {decoration} from "./decoration";
 
+/**
+ * Scale bar decorator
+ */
 class ScaleBar extends decoration {
     constructor(){
         super();
@@ -16,6 +18,12 @@ class ScaleBar extends decoration {
         this._y=0;
         super.layer("axes-layer")
     }
+
+    /**
+     * Set or get the length of the scale bar in the same units on the branches of the tree
+     * @param d
+     * @return {ScaleBar|number}
+     */
     length(d=null){
         if(!d){
             return this._length
@@ -24,6 +32,13 @@ class ScaleBar extends decoration {
             return this;
         }
     }
+
+    /**
+     * Get or set the direction of the scaleBar "x" or "y". This also determines which scale is used to convert the length
+     * to pixels.
+     * @param string
+     * @return {string|ScaleBar}
+     */
     direction(string=null){
         if(!string){
         return this._direction
@@ -31,15 +46,6 @@ class ScaleBar extends decoration {
         this._direction=string;
         return this;
     }
-    }
-
-    location(string=null){
-        if(!string){
-            return this._location
-        }else{
-            this._location=string;
-            return this;
-        }
     }
 
     create() {
@@ -76,23 +82,6 @@ class ScaleBar extends decoration {
 
     };
 
-    tickFormat(d){
-        if(d){
-            this._tickFormat=d;
-            return this;
-        }else{
-            return this._tickFormat;
-        }
-    }
-    ticks(d){
-        if(d){
-            this._ticks=d;
-            return this;
-        }else{
-            return this._ticks;
-        }
-    }
-
     updateCycle() {
 
         const selection = this.figure().svgSelection.select(`.${this.layer()}`);
@@ -128,6 +117,10 @@ class ScaleBar extends decoration {
 
 }
 
+/**
+ * Helper function that returns a new scalebar instance.
+ * @return {ScaleBar}
+ */
 export function scaleBar(){
     return new ScaleBar();
 }

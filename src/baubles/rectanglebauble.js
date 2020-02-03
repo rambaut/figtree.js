@@ -1,28 +1,22 @@
 import {mergeDeep} from "../utilities";
 import {Bauble} from "./bauble";
+import {select} from "d3";
+import uuid from "uuid";
+import p from "../privateConstants";
 /** @module bauble */
 
 export class RectangularBauble extends Bauble {
 
+    constructor() {
+        super();
+        this._attrs ={
+                height: 16,
+                width: 6,
+                rx: 2,
+                ry:2,
+            };
+        }
 
-    static DEFAULT_SETTINGS() {
-        return {
-            height: 16,
-            width: 6,
-            radius: 2,
-        };
-    }
-
-    /**
-     * The constructor.
-     * @param [settings.height=16] - the height of the rectangle in pixels
-     * @param [settings.width=6] - the width of the rectangle in pixels
-     * @param [settings.radius=2] - the rx and ry of the rectangle. This rounds the corners
-
-     */
-    constructor(settings = {}) {
-        super(mergeDeep(RectangularBauble.DEFAULT_SETTINGS(), settings));
-    }
 
     /**
      * A function that assigns width,height,x,y,rx, and ry attributes to a rect selection.
@@ -30,60 +24,121 @@ export class RectangularBauble extends Bauble {
      * @param border
      * @return {*|null|undefined}
      */
-    update(selection, border = 0) {
-        const w = this.settings.width + border;
-        const h = this.settings.height + border;
+    update(selection){
+    if(selection==null&&!this.selection){
+        return
+    }
+    if(selection){
+        this.selection=selection;
+    }
+        const w = this.attr("width");
+        const h =this.attr("height");
         return selection
-            .selectAll("rect")
-            .data(d => [d])
+            .selectAll(`.${this.id}`)
+            .data(d => [d].filter(this.filter()),d=>this.id)
             .join(
                 enter => enter
                     .append("rect")
+                    .attr("class",`node-shape ${this.id}`)
                     .attr("x", -w / 2)
-                    .attr("width", w)
                     .attr("y", -h / 2)
-                    .attr("height", h)
-                    .attr("rx", this.settings.radius)
-                    .attr("ry", this.settings.radius)
-                    .attr("class","node-shape")
-                    .attrs((vertex) => {
-                        const attributes = this.settings.attrs;
-                        return Object.keys(attributes).reduce((acc, curr) => {
-                            // const vertex = d3.select(n[i].parentNode).datum(); // the vertex data is assigned to the group
-                            return {...acc, [curr]: attributes[curr](vertex)}
-                        }, {})
-                    })
-                    .styles((vertex) => {
-                        const styles = this.settings.styles;
-                        return Object.keys(styles).reduce((acc, curr) => {
-                            // const vertex = d3.select(n[i].parentNode).datum(); // the vertex data is assigned to the group
-                            return {...acc, [curr]: styles[curr](vertex)}
-                        }, {})
+                    .attrs(this._attrs)
+                    .each((d,i,n)=>{
+                        const element = select(n[i]);
+                        for( const [key,func] of Object.entries(this._interactions)){
+                            element.on(key,(d,i,n)=>func(d,i,n))
+                        }
                     }),
                 update => update
-                    .call(update => update.transition()
+                    .call(update =>update.transition(d=>`u${uuid.v4()}`)
+                        .duration(this.transitions().transitionDuration)
+                        .ease(this.transitions().transitionEase)
                         .attr("x", -w / 2)
-                        .attr("width", w)
                         .attr("y", -h / 2)
-                        .attr("height", h)
-                        .attr("rx", this.settings.radius)
-                        .attr("ry", this.settings.radius)
-                        .attrs((vertex) => {
-                            const attributes = this.settings.attrs;
-                            return Object.keys(attributes).reduce((acc, curr) => {
-                                // const vertex = d3.select(n[i].parentNode).datum(); // the vertex data is assigned to the group
-                                return {...acc, [curr]: attributes[curr](vertex)}
-                            }, {})
-                        })
-                        .styles((vertex) => {
-                            const styles = this.settings.styles;
-                            return Object.keys(styles).reduce((acc, curr) => {
-                                // const vertex = d3.select(n[i].parentNode).datum(); // the vertex data is assigned to the group
-                                return {...acc, [curr]: styles[curr](vertex)}
-                            }, {})
+                        .attrs(this._attrs)
+                        .each((d,i,n)=>{
+                            const element = select(n[i]);
+                            for( const [key,func] of Object.entries(this._interactions)){
+                                element.on(key,(d,i,n)=>func(d,i,n))
+                            }
                         })
                     )
             )
 
     };
+
+    /**
+     * Helper function to class the node as 'hovered' and update the radius if provided
+     * @param r - optional hover border
+     * @return {retangleBauble}
+     */
+    hilightOnHover(r = null) {
+        let oldR;
+        super.on("mouseenter",
+            (d, i,n) => {
+                if(r) {
+                    if (!this._attrs.r) {
+                        this._attrs.r = this._attrs["r"];
+                    }
+                    this.attr("width", this.attr("width")+r);
+                    this.attr("height", this.attr("height")+r);
+
+                }
+                const parent = select(n[i]).node().parentNode;
+                this.update(select(parent));
+                select(parent).classed("hovered",true)
+                    .raise();
+
+                this.attr("width", this.attr("width")-r);
+                this.attr("height", this.attr("height")-r);
+                // move to top
+
+            });
+        super.on("mouseleave",
+            (d,i,n) => {
+
+                const parent = select(n[i]).node().parentNode;
+                select(parent).classed("hovered",false);
+                this.update(select(parent));
+
+            });
+        return this;
+    }
+
+    /**
+     * Rotate a node on click
+     * @param recursive - optional default -false;
+     * @return {CircleBauble}
+     */
+    rotateOnClick(recursive=false){
+        super.on("click",(d,n,i)=>{
+            const node = this.manager().figure()[p.tree].getNode(d.key);
+            this.manager().figure()[p.tree].rotate(node,recursive);
+        });
+        return this;
+    }
+    /**
+     * helper method to annotate the underlying tree node as key:true; Useful for linking interactions between figures
+     * that share a tree.
+     * @param key
+     * @return {CircleBauble}
+     */
+    annotateOnHover(key){
+        super.on("mouseenter",
+            (d, i,n) => {
+                this.manager().figure()[p.tree].annotateNode(this.manager().figure()[p.tree].getNode(d.id),{[key]:true});
+                this.manager().figure()[p.tree].treeUpdateCallback();
+                const parent = select(n[i]).node().parentNode;
+                select(parent).raise();
+            });
+        super.on("mouseleave",
+            (d,i,n) => {
+                this.manager().figure()[p.tree].annotateNode(this.manager().figure()[p.tree].getNode(d.id),{[key]:false});
+                this.manager().figure()[p.tree].treeUpdateCallback();
+            });
+        return this;
+    }
+}
+export function rectangle(){
+    return new RectangularBauble();
 }

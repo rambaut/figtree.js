@@ -14,7 +14,6 @@ class NodeFactory extends BaubleManager {
 export const nodes = ()=>{
     return new BaubleManager()
         .class("node")
-        .data(d=>d["vertices"])
         .layer("nodes-layer")
 
 };
@@ -22,7 +21,6 @@ export const nodes = ()=>{
 export const nodeBackground = () =>{
     return new BaubleManager()
         .class("node-background")
-        .data(d=>d["vertices"])
         .layer("nodes-background-layer")
 };
 
