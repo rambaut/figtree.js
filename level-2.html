@@ -181,18 +181,23 @@
         .nodes(
             circle()
                     .filter(d=>d.degree===1)
-                    .attr("fill",d=>d.degree>1?"steelblue":"#c71585")
+                    .attr("fill","#c71585")
                     .attr("r",5)
                     .hilightOnHover(10)
                     .rotateOnClick(),
-            // tipLabel(d=>d.name),
             internalNodeLabel(d=>d.y),
+            tipLabel(d=>d.name),
             rectangle()
                 .filter(d=>d.degree>1)
-                .attr("fill",d=>d.degree>1?"steelblue":"#c71585")
+                .attr("fill","steelblue")
                 .hilightOnHover(5)
                 .rotateOnClick()
 
+        )
+        .nodeBackgrounds(
+            circle()
+                .filter(d=>d.degree===1)
+                .attr("r",7)
         )
         .branches(
                 branch()
@@ -202,11 +207,7 @@
             .branches(
             branchLabel(d=>"label!")
             )
-            .nodeBackgrounds(
-            circle()
-                .filter(d=>d.degree==1)
-                .attr("r",7)
-        )
+
         .feature(
             axis()
                 .location("bottom")

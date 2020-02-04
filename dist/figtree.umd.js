@@ -11224,7 +11224,6 @@
 	     * @param elements
 	     * @return {FigTree}
 	     */
-	    //TODO update this to take a rest so we can pack it all in a comma separated list
 
 	  }, {
 	    key: "nodes",
@@ -11244,28 +11243,44 @@
 	    /**
 	     * Adds an element to the branch update cycle.The element's update method will be called for each branch selection.
 	     * Used to insert the visible elements mapped to the nodes
-	     * @param element
+	     * @param elements
 	     * @return {FigTree}
 	     */
 
 	  }, {
 	    key: "branches",
-	    value: function branches(element) {
-	      this.branchManager.element(element);
+	    value: function branches() {
+	      for (var _len2 = arguments.length, elements = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+	        elements[_key2] = arguments[_key2];
+	      }
+
+	      for (var _i2 = 0, _elements2 = elements; _i2 < _elements2.length; _i2++) {
+	        var element = _elements2[_i2];
+	        this.branchManager.element(element);
+	      }
+
 	      this.update();
 	      return this;
 	    }
 	    /**
 	     * Adds an element to the node background update cycle. The element's update method will be called for each node selection.
 	     * Used to insert the visible elements mapped to the nodes
-	     * @param element
+	     * @param elements
 	     * @return {FigTree}
 	     */
 
 	  }, {
 	    key: "nodeBackgrounds",
-	    value: function nodeBackgrounds(element) {
-	      this.nodeBackgroundManager.element(element);
+	    value: function nodeBackgrounds() {
+	      for (var _len3 = arguments.length, elements = new Array(_len3), _key3 = 0; _key3 < _len3; _key3++) {
+	        elements[_key3] = arguments[_key3];
+	      }
+
+	      for (var _i3 = 0, _elements3 = elements; _i3 < _elements3.length; _i3++) {
+	        var element = _elements3[_i3];
+	        this.nodeBackgroundManager.element(element);
+	      }
+
 	      this.nodeBackgroundManager.update();
 	      return this;
 	    }
@@ -13802,12 +13817,12 @@
 	    value: function update(selection) {
 	      var _this2 = this;
 
-	      return selection.selectAll("text").data(function (d) {
+	      return selection.selectAll(".".concat(this.id)).data(function (d) {
 	        return [d].filter(_this2.filter());
 	      }, function (d) {
 	        return "label-".concat(_this2.id);
 	      }).join(function (enter) {
-	        return enter.append("text").attr("class", "label").attrs(_this2._attrs).each(function (d, i, n) {
+	        return enter.append("text").attr("class", "label ".concat(_this2.id)).attrs(_this2._attrs).each(function (d, i, n) {
 	          var element = select(n[i]);
 
 	          var _loop = function _loop() {

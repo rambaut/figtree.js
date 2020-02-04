@@ -14,12 +14,12 @@ export class Label extends Bauble{
     }
     update(selection){
         return selection
-            .selectAll("text")
+            .selectAll(`.${this.id}`)
             .data(d => [d].filter(this.filter()),d=>`label-${this.id}`)
             .join(
                 enter => enter
                     .append("text")
-                    .attr("class","label")
+                    .attr("class",`label ${this.id}`)
                     .attrs(this._attrs)
                     .each((d,i,n)=>{
                         const element = select(n[i]);

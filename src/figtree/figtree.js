@@ -192,7 +192,6 @@ export class FigTree {
      * @param elements
      * @return {FigTree}
      */
-    //TODO update this to take a rest so we can pack it all in a comma separated list
     nodes(...elements){
         for(const element of elements){
             this.nodeManager.element(element);
@@ -204,23 +203,26 @@ export class FigTree {
     /**
      * Adds an element to the branch update cycle.The element's update method will be called for each branch selection.
      * Used to insert the visible elements mapped to the nodes
-     * @param element
+     * @param elements
      * @return {FigTree}
      */
-    branches(element){
-
-        this.branchManager.element(element);
+    branches(...elements){
+        for(const element of elements){
+            this.branchManager.element(element);
+        }
         this.update();
         return this;
     }
     /**
      * Adds an element to the node background update cycle. The element's update method will be called for each node selection.
      * Used to insert the visible elements mapped to the nodes
-     * @param element
+     * @param elements
      * @return {FigTree}
      */
-    nodeBackgrounds(element){
-        this.nodeBackgroundManager.element(element);
+    nodeBackgrounds(...elements){
+        for(const element of elements){
+            this.nodeBackgroundManager.element(element);
+        }
         this.nodeBackgroundManager.update();
         return this;
     }
