@@ -1,11 +1,11 @@
-import {decoration} from "./decoration";
+import {Decoration} from "./decoration";
 import {select} from "d3";
 import p from "../privateConstants";
 
 /**
  * A discrete legend for displaying traits
  */
-class Legend extends decoration {
+class Legend extends Decoration {
     constructor() {
         super();
         this._title = {

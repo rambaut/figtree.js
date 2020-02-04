@@ -10431,7 +10431,7 @@ function (_AbstractLayout) {
 /**
  * The Bauble class
  *
- * This is a shape or decoration at the node or edge of a tree.
+ * This is a shape or Decoration at the node or edge of a tree.
  */
 
 var Bauble =
@@ -11823,6 +11823,7 @@ function (_Bauble) {
     }
   }, {
     key: "hilightOnHover",
+    //TODO move some of the these to a master class
 
     /**
      * Helper function to class the node as 'hovered' and update the radius if provided
@@ -11913,6 +11914,32 @@ function (_Bauble) {
         var node = _this5.manager().figure()[p.tree].getNode(d.key);
 
         _this5.manager().figure()[p.tree].rotate(node, recursive);
+      });
+
+      return this;
+    }
+    /**
+     * helper method to annotate the underlying tree node as key:true; Useful for linking interactions between figures
+     * that share a tree.
+     * @param key
+     * @return {CircleBauble}
+     */
+
+  }, {
+    key: "annotateOnClick",
+    value: function annotateOnClick(key) {
+      var _this6 = this;
+
+      get$2(getPrototypeOf(CircleBauble.prototype), "on", this).call(this, "click", function (d, i, n) {
+        var node = _this6.manager().figure()[p.tree].getNode(d.id); //TODO helper getters
+
+
+        _this6.manager().figure()[p.tree].annotateNode(node, defineProperty({}, key, !node.annotations[key]));
+
+        _this6.manager().figure()[p.tree].treeUpdateCallback();
+
+        var parent = select(n[i]).node().parentNode;
+        select(parent).raise();
       });
 
       return this;
@@ -12470,7 +12497,7 @@ function (_Bauble) {
             mx = _mouse2[0],
             my = _mouse2[1];
 
-        var proportion = _this5.curve() == d3.curveStepBefore ? Math.abs((mx - x2) / (x1 - x2)) : _this5.curveRadius() == 0 ? Math.abs((mx - x2) / (x1 - x2)) : Math.sqrt(Math.pow(mx - x2, 2) + Math.pow(my - y2, 2)) / Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2)),
+        var proportion = _this5.curve() === d3.curveStepBefore ? Math.abs((mx - x2) / (x1 - x2)) : _this5.curveRadius() === 0 ? Math.abs((mx - x2) / (x1 - x2)) : Math.sqrt(Math.pow(mx - x2, 2) + Math.pow(my - y2, 2)) / Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2)),
             tree = _this5.manager().figure().tree();
 
         tree.reroot(tree.getNode(d.id), proportion);
@@ -13248,6 +13275,9 @@ function makeVertexFromNode(node) {
     key: node.id,
     id: node.id,
     parent: node.parent ? node.parent.id : null,
+    children: node.children ? node.children.map(function (child) {
+      return child.id;
+    }) : null,
     degree: node.children ? node.children.length + 1 : 1,
     // the number of edges (including stem)
     textLabel: {
@@ -13374,6 +13404,12 @@ var _marked =
 /*#__PURE__*/
 regenerator.mark(pseudoRerootPreorder);
 
+function getRelatives(node) {
+  return [node.parent && node.parent].concat(node.children && node.children).filter(function (n) {
+    return n;
+  });
+}
+
 function pseudoRerootPreorder(node) {
   var visited,
       traverse,
@@ -13481,297 +13517,167 @@ function pseudoRerootPreorder(node) {
   }, _marked);
 }
 
-var equalAngleVertices = function equalAngleVertices() {
-  var tipRank = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-  return function (tree) {
+function equalAngleVertices() {
+  var startNode = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+  var tipRank;
+
+  if (startNode) {
+    tipRank = toConsumableArray(pseudoRerootPreorder(startNode, [])).filter(function (n) {
+      return !n.children;
+    });
+  }
+
+  return function layout(tree) {
     var _marked2 =
-    /*#__PURE__*/
-    regenerator.mark(traverseFromTip),
-        _marked3 =
     /*#__PURE__*/
     regenerator.mark(traverse);
 
-    var startNode = tipRank ? tree.getExternalNode(tipRank[0]) : tree.externalNodes[0];
+    startNode = startNode ? startNode : tree.rootNode;
+    var numberOfTips = tree.externalNodes.length;
+    var rPerTip = 2 * Math.PI / numberOfTips;
 
-    function traverseFromTip(node) {
+    function traverse(node, start) {
       var visited,
-          traverse,
-          _args4 = arguments;
-      return regenerator.wrap(function traverseFromTip$(_context4) {
-        while (1) {
-          switch (_context4.prev = _context4.next) {
-            case 0:
-              visited = _args4.length > 1 && _args4[1] !== undefined ? _args4[1] : [];
-              traverse =
-              /*#__PURE__*/
-              regenerator.mark(function traverse(node) {
-                var relatives, pseudoChildren, _iteratorNormalCompletion2, _didIteratorError2, _iteratorError2, _iterator2, _step2, child;
-
-                return regenerator.wrap(function traverse$(_context3) {
-                  while (1) {
-                    switch (_context3.prev = _context3.next) {
-                      case 0:
-                        visited.push(node);
-                        _context3.next = 3;
-                        return node;
-
-                      case 3:
-                        relatives = [node.parent && node.parent].concat(node.children && node.children).filter(function (n) {
-                          return n;
-                        }); // to remove null
-
-                        pseudoChildren = relatives.filter(function (n) {
-                          return !visited.includes(n);
-                        });
-
-                        if (!pseudoChildren) {
-                          _context3.next = 32;
-                          break;
-                        }
-
-                        if (tipRank) {
-                          pseudoChildren = pseudoChildren.sort(function (a, b) {
-                            var aRank = min$1(toConsumableArray(pseudoRerootPreorder(a, [node])).filter(function (n) {
-                              return !n.children;
-                            }).map(function (n) {
-                              return n.id;
-                            }).map(function (n) {
-                              return tipRank.indexOf(n);
-                            }));
-                            var bRank = min$1(toConsumableArray(pseudoRerootPreorder(b, [node])).filter(function (n) {
-                              return !n.children;
-                            }).map(function (n) {
-                              return n.id;
-                            }).map(function (n) {
-                              return tipRank.indexOf(n);
-                            }));
-                            return bRank - aRank;
-                          });
-                        }
-
-                        _iteratorNormalCompletion2 = true;
-                        _didIteratorError2 = false;
-                        _iteratorError2 = undefined;
-                        _context3.prev = 10;
-                        _iterator2 = pseudoChildren[Symbol.iterator]();
-
-                      case 12:
-                        if (_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done) {
-                          _context3.next = 18;
-                          break;
-                        }
-
-                        child = _step2.value;
-                        return _context3.delegateYield(traverse(child), "t0", 15);
-
-                      case 15:
-                        _iteratorNormalCompletion2 = true;
-                        _context3.next = 12;
-                        break;
-
-                      case 18:
-                        _context3.next = 24;
-                        break;
-
-                      case 20:
-                        _context3.prev = 20;
-                        _context3.t1 = _context3["catch"](10);
-                        _didIteratorError2 = true;
-                        _iteratorError2 = _context3.t1;
-
-                      case 24:
-                        _context3.prev = 24;
-                        _context3.prev = 25;
-
-                        if (!_iteratorNormalCompletion2 && _iterator2["return"] != null) {
-                          _iterator2["return"]();
-                        }
-
-                      case 27:
-                        _context3.prev = 27;
-
-                        if (!_didIteratorError2) {
-                          _context3.next = 30;
-                          break;
-                        }
-
-                        throw _iteratorError2;
-
-                      case 30:
-                        return _context3.finish(27);
-
-                      case 31:
-                        return _context3.finish(24);
-
-                      case 32:
-                      case "end":
-                        return _context3.stop();
-                    }
-                  }
-                }, traverse, null, [[10, 20, 24, 32], [25,, 27, 31]]);
-              });
-              return _context4.delegateYield(traverse(node), "t0", 3);
-
-            case 3:
-            case "end":
-              return _context4.stop();
-          }
-        }
-      }, _marked2);
-    }
-
-    var nodeOrder = toConsumableArray(traverseFromTip(startNode, [], tipRank));
-
-    function getPseudoChildren(node) {
-      var relatives = [node.parent && node.parent].concat(node.children && node.children).filter(function (n) {
-        return n;
-      }); // to remove null
-      // the parent will come before the node in question in the preoder traversal
-
-      var pseudoChildren = nodeOrder.slice(nodeOrder.indexOf(node), nodeOrder.length).filter(function (n) {
-        return relatives.includes(n);
-      });
-      return pseudoChildren.length > 0 ? pseudoChildren : null;
-    }
-
-    var totalTips = tree.externalNodes.length;
-
-    function traverse(node) {
-      var dataFromParent,
+          parentVertex,
           vertex,
-          angle,
-          length,
-          allocatedRadians,
-          parentY,
-          parentX,
-          children,
-          totalRadians,
-          _iteratorNormalCompletion3,
-          _didIteratorError3,
-          _iteratorError3,
-          _iterator3,
-          _step3,
-          child,
-          tips,
-          r,
-          _allocatedRadians,
-          _angle,
-          _length,
-          _args5 = arguments;
+          relatives,
+          _iteratorNormalCompletion2,
+          _didIteratorError2,
+          _iteratorError2,
+          _iterator2,
+          _step2,
+          relative,
+          _vertex,
+          allocation,
+          _args3 = arguments;
 
-      return regenerator.wrap(function traverse$(_context5) {
+      return regenerator.wrap(function traverse$(_context3) {
         while (1) {
-          switch (_context5.prev = _context5.next) {
+          switch (_context3.prev = _context3.next) {
             case 0:
-              dataFromParent = _args5.length > 1 && _args5[1] !== undefined ? _args5[1] : null;
+              visited = _args3.length > 2 && _args3[2] !== undefined ? _args3[2] : [];
+              parentVertex = _args3.length > 3 && _args3[3] !== undefined ? _args3[3] : {
+                x: 0,
+                y: 0
+              };
+
+              if (!(node === startNode)) {
+                _context3.next = 8;
+                break;
+              }
+
               vertex = makeVertexFromNode(node);
-
-              if (dataFromParent) {
-                angle = dataFromParent.angle, length = dataFromParent.length, allocatedRadians = dataFromParent.allocatedRadians, parentY = dataFromParent.parentY, parentX = dataFromParent.parentX;
-                vertex.y = Math.cos(angle) * length + parentY;
-                vertex.x = Math.sin(angle) * length + parentX;
-                vertex.allocatedRadians = allocatedRadians;
-              } else {
-                vertex.y = 0;
-                vertex.x = 0;
-                vertex.allocatedRadians = [0, 2 * Math.PI];
-              }
-
-              children = getPseudoChildren(node);
-
-              if (!children) {
-                _context5.next = 37;
-                break;
-              }
-
-              totalRadians = vertex.allocatedRadians[0];
-              _iteratorNormalCompletion3 = true;
-              _didIteratorError3 = false;
-              _iteratorError3 = undefined;
-              _context5.prev = 9;
-              _iterator3 = children[Symbol.iterator]();
-
-            case 11:
-              if (_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done) {
-                _context5.next = 23;
-                break;
-              }
-
-              child = _step3.value;
-              tips = toConsumableArray(traverseFromTip(child, [node])).filter(function (n) {
-                return !n.children;
-              }).length;
-              r = 2 * Math.PI * tips / totalTips;
-              _allocatedRadians = [totalRadians, totalRadians + r];
-              _angle = totalRadians + r / 2;
-              _length = Math.abs(child.length);
-              return _context5.delegateYield(traverse(child, {
-                angle: _angle,
-                length: _length,
-                allocatedRadians: _allocatedRadians,
-                parentY: vertex.y,
-                parentX: vertex.x
-              }), "t0", 19);
-
-            case 19:
-              totalRadians += r;
-
-            case 20:
-              _iteratorNormalCompletion3 = true;
-              _context5.next = 11;
-              break;
-
-            case 23:
-              _context5.next = 29;
-              break;
-
-            case 25:
-              _context5.prev = 25;
-              _context5.t1 = _context5["catch"](9);
-              _didIteratorError3 = true;
-              _iteratorError3 = _context5.t1;
-
-            case 29:
-              _context5.prev = 29;
-              _context5.prev = 30;
-
-              if (!_iteratorNormalCompletion3 && _iterator3["return"] != null) {
-                _iterator3["return"]();
-              }
-
-            case 32:
-              _context5.prev = 32;
-
-              if (!_didIteratorError3) {
-                _context5.next = 35;
-                break;
-              }
-
-              throw _iteratorError3;
-
-            case 35:
-              return _context5.finish(32);
-
-            case 36:
-              return _context5.finish(29);
-
-            case 37:
-              _context5.next = 39;
+              vertex.x = 0;
+              vertex.y = 0;
+              _context3.next = 8;
               return vertex;
 
+            case 8:
+              relatives = getRelatives(node).filter(function (n) {
+                return !visited.includes(n);
+              }); // Node order is not really want we want we need to see past the interal nodes to the tips
+
+              if (tipRank.length > 0) {
+                relatives = relatives.sort(function (a, b) {
+                  var aRank = min$1(toConsumableArray(pseudoRerootPreorder(a, [node])).filter(function (n) {
+                    return !n.children;
+                  }).map(function (n) {
+                    return tipRank.indexOf(n);
+                  }));
+                  var bRank = min$1(toConsumableArray(pseudoRerootPreorder(b, [node])).filter(function (n) {
+                    return !n.children;
+                  }).map(function (n) {
+                    return tipRank.indexOf(n);
+                  }));
+                  return bRank - aRank;
+                });
+              }
+
+              if (node === tree.getExternalNode("Beni-18FHV090_DRC_2018-07-28").parent) {
+                console.log(relatives);
+              }
+
+              _iteratorNormalCompletion2 = true;
+              _didIteratorError2 = false;
+              _iteratorError2 = undefined;
+              _context3.prev = 14;
+              _iterator2 = relatives[Symbol.iterator]();
+
+            case 16:
+              if (_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done) {
+                _context3.next = 30;
+                break;
+              }
+
+              relative = _step2.value;
+              _vertex = makeVertexFromNode(relative);
+              allocation = toConsumableArray(pseudoRerootPreorder(relative, [].concat(toConsumableArray(visited), toConsumableArray(relatives)))).filter(function (n) {
+                return !n.children;
+              }).length * rPerTip;
+              _vertex.angle = (start + (start + allocation)) / 2;
+              _vertex.x = Math.sin(_vertex.angle) * Math.abs(node.height - relative.height) + parentVertex.x;
+              _vertex.y = Math.cos(_vertex.angle) * Math.abs(node.height - relative.height) + parentVertex.y;
+              _context3.next = 25;
+              return _vertex;
+
+            case 25:
+              return _context3.delegateYield(traverse(relative, start, [node].concat(toConsumableArray(relatives)), _vertex), "t0", 26);
+
+            case 26:
+              start += allocation;
+
+            case 27:
+              _iteratorNormalCompletion2 = true;
+              _context3.next = 16;
+              break;
+
+            case 30:
+              _context3.next = 36;
+              break;
+
+            case 32:
+              _context3.prev = 32;
+              _context3.t1 = _context3["catch"](14);
+              _didIteratorError2 = true;
+              _iteratorError2 = _context3.t1;
+
+            case 36:
+              _context3.prev = 36;
+              _context3.prev = 37;
+
+              if (!_iteratorNormalCompletion2 && _iterator2["return"] != null) {
+                _iterator2["return"]();
+              }
+
             case 39:
+              _context3.prev = 39;
+
+              if (!_didIteratorError2) {
+                _context3.next = 42;
+                break;
+              }
+
+              throw _iteratorError2;
+
+            case 42:
+              return _context3.finish(39);
+
+            case 43:
+              return _context3.finish(36);
+
+            case 44:
             case "end":
-              return _context5.stop();
+              return _context3.stop();
           }
         }
-      }, _marked3, null, [[9, 25, 29, 37], [30,, 32, 36]]);
+      }, _marked2, null, [[14, 32, 36, 44], [37,, 39, 43]]);
     }
 
-    return toConsumableArray(traverse(startNode));
+    return toConsumableArray(traverse(startNode, 0));
   };
-};
-var equalAngleLayout = function equalAngleLayout(tipRank) {
-  return layoutFactory(equalAngleVertices(tipRank));
+}
+var equalAngleLayout = function equalAngleLayout(startingNode) {
+  return layoutFactory(equalAngleVertices(startingNode));
 };
 
 var nodes = function nodes() {
@@ -13988,23 +13894,25 @@ var makeTrendlineEdge = function makeTrendlineEdge(predicate) {
       x: x2,
       y: y2
     };
-    return [{
-      v0: startPoint,
-      v1: endPoint,
-      key: "trendline",
-      id: "trendline",
-      classes: ["trendline"],
-      x: startPoint.x,
-      y: endPoint.y,
-      textLabel: {
-        // TODO update this for regression labeling
-        dx: [endPoint.x, startPoint.x],
-        dy: -6,
-        alignmentBaseline: "hanging",
-        textAnchor: "middle"
-      },
+    return {
+      edges: [{
+        v0: startPoint,
+        v1: endPoint,
+        key: "trendline",
+        id: "trendline",
+        classes: ["trendline"],
+        x: startPoint.x,
+        y: endPoint.y,
+        textLabel: {
+          // TODO update this for regression labeling
+          dx: [endPoint.x, startPoint.x],
+          dy: -6,
+          alignmentBaseline: "hanging",
+          textAnchor: "middle"
+        }
+      }],
       regression: regression
-    }];
+    };
   };
 };
 
@@ -14014,10 +13922,15 @@ var rootToTipLayout = function rootToTipLayout() {
   };
   return function (tree) {
     var vertices = rootToTipVertices(tree);
-    var edges = makeTrendlineEdge(predicate)(vertices);
+
+    var _makeTrendlineEdge = makeTrendlineEdge(predicate)(vertices),
+        edges = _makeTrendlineEdge.edges,
+        regression = _makeTrendlineEdge.regression;
+
     return {
       vertices: vertices,
-      edges: edges
+      edges: edges,
+      regression: regression
     };
   };
 };
@@ -14068,14 +13981,14 @@ function ownKeys$c(object, enumerableOnly) { var keys = Object.keys(object); if 
 
 function _objectSpread$c(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$c(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$c(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 /**
- * The base decoration class.
+ * The base Decoration class.
  */
 
-var decoration =
+var Decoration =
 /*#__PURE__*/
 function () {
-  function decoration() {
-    classCallCheck(this, decoration);
+  function Decoration() {
+    classCallCheck(this, Decoration);
 
     this._created = false;
     this._title = {
@@ -14094,7 +14007,7 @@ function () {
    */
 
 
-  createClass(decoration, [{
+  createClass(Decoration, [{
     key: "figure",
     value: function figure() {
       var f = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
@@ -14125,9 +14038,9 @@ function () {
       }
     }
     /**{
-     * Getter, setter for decoration title. The options are below and are passed to the d3 text element.
+     * Getter, setter for Decoration title. The options are below and are passed to the d3 text element.
      * @param options
-     * @return {decoration|{rotation: number, text: string, xPadding: number, yPadding: number}}
+     * @return {Decoration|{rotation: number, text: string, xPadding: number, yPadding: number}}
      */
 
   }, {
@@ -14146,7 +14059,7 @@ function () {
      * Set a call back to be fired when the event listener is triggered.
      * @param eventListener - a string that defines the event listener
      * @param value -  call back that will be passed d,i,n
-     * @return {decoration}
+     * @return {Decoration}
      */
 
   }, {
@@ -14239,7 +14152,7 @@ function () {
     /**
      * get or set the x position for the decorations
      * @param d
-     * @return {*|decoration}
+     * @return {*|Decoration}
      */
 
   }, {
@@ -14257,7 +14170,7 @@ function () {
     /**
      * get or set the y position for the decorations
      * @param d
-     * @return {*|decoration}
+     * @return {*|Decoration}
      */
 
   }, {
@@ -14274,7 +14187,7 @@ function () {
     }
   }]);
 
-  return decoration;
+  return Decoration;
 }();
 
 /**
@@ -14283,8 +14196,8 @@ function () {
 
 var Axis =
 /*#__PURE__*/
-function (_decoration) {
-  inherits(Axis, _decoration);
+function (_Decoration) {
+  inherits(Axis, _Decoration);
 
   function Axis() {
     var _this;
@@ -14421,7 +14334,7 @@ function (_decoration) {
   }]);
 
   return Axis;
-}(decoration);
+}(Decoration);
 
 function getD3Axis(location) {
   switch (location.toLowerCase()) {
@@ -14452,8 +14365,8 @@ function axis$1() {
 
 var ScaleBar =
 /*#__PURE__*/
-function (_decoration) {
-  inherits(ScaleBar, _decoration);
+function (_Decoration) {
+  inherits(ScaleBar, _Decoration);
 
   function ScaleBar() {
     var _this;
@@ -14554,7 +14467,7 @@ function (_decoration) {
   }]);
 
   return ScaleBar;
-}(decoration);
+}(Decoration);
 /**
  * Helper function that returns a new scalebar instance.
  * @return {ScaleBar}
@@ -14571,8 +14484,8 @@ function scaleBar() {
 
 var Legend =
 /*#__PURE__*/
-function (_decoration) {
-  inherits(Legend, _decoration);
+function (_Decoration) {
+  inherits(Legend, _Decoration);
 
   function Legend() {
     var _this;
@@ -14721,7 +14634,7 @@ function (_decoration) {
   }]);
 
   return Legend;
-}(decoration);
+}(Decoration);
 /**
  * helper function that returns a new legend instance
  * @return {Legend}
@@ -14732,5 +14645,5 @@ function legend() {
   return new Legend();
 }
 
-export { Bauble, BaubleManager, Branch, CircleBauble, EqualAngleLayout, ExplodedLayout, FigTree, GeoLayout, GreatCircleBranchBauble, Label, RectangularBauble, RectangularLayout, RootToTipPlot, RoughBranchBauble, RoughCircleBauble, TransmissionLayout, Tree, Type, axis$1 as axis, branch, branchLabel, branches, circle$1 as circle, decimalToDate, equalAngleLayout, internalNodeLabel, label, legend, nodeBackground, nodes, rectangle, rectangularLayout, rootToTipLayout, scaleBar, tipLabel };
+export { Bauble, BaubleManager, Branch, CircleBauble, Decoration, EqualAngleLayout, ExplodedLayout, FigTree, GeoLayout, GreatCircleBranchBauble, Label, RectangularBauble, RectangularLayout, RootToTipPlot, RoughBranchBauble, RoughCircleBauble, TransmissionLayout, Tree, Type, axis$1 as axis, branch, branchLabel, branches, circle$1 as circle, decimalToDate, equalAngleLayout, internalNodeLabel, label, legend, nodeBackground, nodes, rectangle, rectangularLayout, rootToTipLayout, scaleBar, tipLabel };
 //# sourceMappingURL=figtree.esm.js.map

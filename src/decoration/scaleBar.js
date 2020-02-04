@@ -1,9 +1,9 @@
-import {decoration} from "./decoration";
+import {Decoration} from "./decoration";
 
 /**
  * Scale bar decorator
  */
-class ScaleBar extends decoration {
+class ScaleBar extends Decoration {
     constructor(){
         super();
         this._title={

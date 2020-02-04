@@ -9,7 +9,7 @@ import uuid from "uuid";
 /**
  * The Bauble class
  *
- * This is a shape or decoration at the node or edge of a tree.
+ * This is a shape or Decoration at the node or edge of a tree.
  */
 export class Bauble {
     constructor() {

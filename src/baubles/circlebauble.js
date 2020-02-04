@@ -63,7 +63,7 @@ export class CircleBauble extends Bauble{
                     )
                 );
     };
-
+//TODO move some of the these to a master class
     /**
      * Helper function to class the node as 'hovered' and update the radius if provided
      * @param r - optional hover radius
@@ -134,6 +134,24 @@ export class CircleBauble extends Bauble{
             const node = this.manager().figure()[p.tree].getNode(d.key);
             this.manager().figure()[p.tree].rotate(node,recursive);
         });
+        return this;
+    }
+
+    /**
+     * helper method to annotate the underlying tree node as key:true; Useful for linking interactions between figures
+     * that share a tree.
+     * @param key
+     * @return {CircleBauble}
+     */
+    annotateOnClick(key){
+        super.on("click",
+            (d, i,n) => {
+            const node = this.manager().figure()[p.tree].getNode(d.id) //TODO helper getters
+                this.manager().figure()[p.tree].annotateNode(node,{[key]:!node.annotations[key]});
+                this.manager().figure()[p.tree].treeUpdateCallback();
+                const parent = select(n[i]).node().parentNode;
+                select(parent).raise();
+            });
         return this;
     }
 }

@@ -144,8 +144,8 @@ export class Branch extends Bauble {
                     y2=this.manager().figure().scales.y(d.v0.y),
                     [mx,my] = mouse(document.getElementById(this.manager().figure().svgId));
 
-                const proportion = this.curve()==d3.curveStepBefore? Math.abs( (mx - x2) / (x1 - x2)):
-                    this.curveRadius()==0? Math.abs( (mx - x2) / (x1 - x2)):
+                const proportion = this.curve()===d3.curveStepBefore? Math.abs( (mx - x2) / (x1 - x2)):
+                    this.curveRadius()===0? Math.abs( (mx - x2) / (x1 - x2)):
                         Math.sqrt(Math.pow(mx-x2,2)+Math.pow(my-y2,2))/Math.sqrt(Math.pow(x1-x2,2)+Math.pow(y1-y2,2)),
                     tree = this.manager().figure().tree();
                 tree.reroot(tree.getNode(d.id),proportion)
@@ -153,8 +153,6 @@ export class Branch extends Bauble {
             });
         return this;
     }
-
-
 }
 
 /**

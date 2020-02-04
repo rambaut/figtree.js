@@ -42,6 +42,7 @@ export function makeVertexFromNode(node){
         key: node.id,
         id:node.id,
         parent:node.parent?node.parent.id:null,
+        children:node.children?node.children.map(child=>child.id):null,
         degree: (node.children ? node.children.length + 1 : 1),// the number of edges (including stem)
         textLabel:{
             labelBelow:labelBelow,

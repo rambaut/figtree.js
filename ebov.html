@@ -25,27 +25,22 @@
             /*stroke-width: 1;*/
         }
 
-        .internal-node .node-shape {
-            fill: #29c5ef;
-            /*stroke: rgb(255, 255, 255);*/
-            /*stroke-width: 1;*/
-        }
         .internal-node.hovered .node-shape {
             stroke: rgb(0,0,0);
         }
 
-        .root-true .node-shape {
+        .root .node-shape {
             fill: #e31e58;
             /*stroke: rgb(255, 255, 255);*/
             /*stroke-width: 1;*/
         }
 
-        .hover-true .node-shape{
+        .hovered .node-shape{
             stroke: rgb(0, 0, 0);
             stroke-width: 1;
         }
 
-        .excluded-true .node-shape{
+        .excluded  .node-shape{
             fill: #edb23b;
         }
 
@@ -56,17 +51,20 @@
         }
 
 
-        .node-label {
+        .label {
             font-family: "helvetica-neue",  "helvetica",  "sans-serif";
             font-size: 10pt;
             font-weight: 300;
         }
+        #root-to-tip .node .label{
+            display:none
+        }
 
-        #unrooted .node-label{
+        #unrooted .label{
             display:none;
         }
 
-        #unrooted .hover-true .node-label{
+        #unrooted .hovered .label{
             display:inline;
         }
 
@@ -88,36 +86,15 @@
             font-weight: bold;
         }
 
-        .node-label.support {
-            font-size: 10pt;
-        }
-
-        .branch-label.length {
-            /*display: none;*/
-            font-size: 8pt;
-        }
         .original-root .node-shape{
             fill: #e31e58;
             opacity: 0.4;
         }
 
-        #tooltip {
-            background: #F6EECA;
-            border: 1px solid #005C68;
-            color: #005C68;
-            border-radius: 5px;
-            padding: 5px;
-            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
-            font-size: 12pt;
-            font-weight: 300;
-        }
     </style>
 </head>
 
 <body>
-<div id="tooltip" display="none" style="position: absolute; display: none;"></div>
-
-<div>
     <!--
     <div>
     Click on a node to include/exclude it from the regression. Click on a branch to reroot the tree at that position.
@@ -130,28 +107,97 @@
 </div>
 
 <script type="module">
-    import {Tree,RectangularLayout,CircleBauble,FigTree,BranchBauble,EqualAngleLayout,Axis,RootToTipPlot} from "./dist/figtree.esm.js";
+    import {Tree,FigTree,rectangularLayout,rootToTipLayout,circle,tipLabel,branch,equalAngleLayout,axis,Decoration,decimalToDate} from "./dist/figtree.esm.js";
 
-    const rootAnnotation=(figtreeObject)=>()=>{
-        const root =figtreeObject.layout.tree.root;
-        const rootVertex = figtreeObject.layout.nodeMap.get(root);
-
-        const rootBauble =new CircleBauble();
-        figtreeObject.svgSelection
-            .select(".annotation-layer")
-            .selectAll(".original-root")
-            .data([rootVertex])
-            .join(
-                enter=>enter
-                    .append("g")
-                    .attr("class",'original-root')
-                    .attr("transform", (v) => {
-                        return `translate(${figtreeObject.scales.x(v.x+figtreeObject.xScaleOffset)}, ${figtreeObject.scales.y(v.y)})`;
-                    })
-                    .each(function(v){
-                        rootBauble.updateShapes(d3.select(this))
-                    }));
+    /**
+     * A custom date format that converts a decimal year float into "%Y-%m-%d" format
+     * @param d
+     * @return {string}
+     */
+    const customDateFormat =(f)=> (d) => {
+        const dateFormat = d3.timeFormat(f);
+        return `${dateFormat(decimalToDate(d))}`;
     };
+
+    const formatDate = (d)=>{
+        const parse=d3.timeParse("%Y-%m-%d");
+        const format=d3.timeFormat("%b-%d");
+        return format(parse(d));
+    };
+
+    class StaticNode extends Decoration{
+        constructor(){
+            super();
+            super.layer("annotation-layer")
+        }
+
+        create(){
+            const selection = this.figure().svgSelection.select(`.${this.layer()}`);
+
+        selection.selectAll(".original-root")
+                    .append("g")
+                    .attr("class", "original-root")
+                    .attr("transform", `translate(${this._x}, ${this._y})`)
+                    .append("circle")
+                    .attr("r",5)
+                    .attr("class", "node-shape")
+        }
+
+        updateCycle(selection) {
+        }
+    }
+
+    class RootToTipAnnotation extends Decoration{
+        constructor(){
+            super();
+            super.layer("annotation-layer")
+        }
+
+        create(){
+            const {regression} = rootToTipLayout((v)=>!v.annotations.excluded)(tree);
+            const statsKeys = ["Slope","X intercept","R^2"];
+            const selection = this.figure().svgSelection.select(`.${this.layer()}`);
+            const data =[d3.format(".3e")(regression.slope),customDateFormat("%Y-%b-%d")(regression.xIntercept),d3.format(".3")(regression.rSquare)];
+             selection
+                // .append("g")
+                // .attr("class","trendlineStats")
+                // .attr("transform","translate(10,50)")
+                .selectAll(".rttp-statistic")
+                .data(statsKeys)
+                .join(
+                    enter=>enter
+                        .append("text")
+                        .attr("class", "rttp-statistic")
+                        .attr("transform", `translate(${50},${this.figure().margins().top})`)
+                        .style("text-anchor", "left")
+                        .attr("alignment-baseline", "hanging")
+                        .attr("dy", (d,i)=>`${i*1.5}em`)
+                        .text((d,i)=>`${d} : ${data[i]}`),
+                    update => update
+                        .call(update => update.transition()
+                            .attr("class", "rttp-statistic")
+                        .attr("transform", `translate(${50},${this.figure().margins().top})`)
+                        .style("text-anchor", "left")
+                        .attr("alignment-baseline", "hanging")
+                        .attr("dy", (d,i)=>`${i*1.5}em`)
+                        .text((d,i)=>`${d} : ${data[i]}`))
+                )
+
+        }
+
+        updateCycle(selection) {
+            this.create()
+        }
+    }
+
+
+    function staticNode(){
+        return new StaticNode();
+    }
+
+    function rootToTipStats(){
+        return new RootToTipAnnotation();
+    }
 
 
     const timeTreeString =
@@ -160,53 +206,12 @@
     const tree = Tree.parseNewick(timeTreeString, {datePrefix: "_",dateFormat: "%Y-%m-%d"});
     tree.annotateNode(tree.root,{root:true});
 
-    const rttText = figtreeObject=>()=> {
-
-        const regression = figtreeObject.layout.regression;
-        const stats = ["Slope","X intercept","R^2"];
-        figtreeObject.svgSelection
-            .select(".annotation-layer")
-            .selectAll("text")
-            .data([d3.format(".3e")(regression.slope),d3.format(".1f")(regression.xIntercept),d3.format(".3")(regression.rSquare)])
-            .join(
-                enter=>enter
-                    .append("text")
-                    .attr("class", ".rttp-statistic")
-                    .attr("transform", `translate(${figtreeObject.margins.left + 20},${figtreeObject.margins.top})`)
-                    .style("text-anchor", "left")
-                    .attr("alignment-baseline", "hanging")
-                    .attr("dy", (d,i)=>`${i*1.5}em`)
-                    .text((d,i)=>`${stats[i]} : ${d}`),
-                update=>update
-                    .attr("transform", `translate(${figtreeObject.margins.left + 20},${figtreeObject.margins.top})`)
-                    .style("text-anchor", "left")
-                    .attr("alignment-baseline", "hanging")
-                    .attr("dy", (d,i)=>`${i*1.5}em`)
-                    .text((d,i)=>`${stats[i]} : ${d}`)
-            );
-    };
-    // settings for the figures
-    const transitions={
-        transitionDuration: 500};
-const selectedNodes = ["BIK009-Bikoro_DRC_2018-05-10","Lomela-Lokolia16_DRC_2014-08-20","Beni-18FHV090_DRC_2018-07-28","Muembe1_DRC_2017-05"];
+    const selectedNodes = ["BIK009-Bikoro_DRC_2018-05-10","Lomela-Lokolia16_DRC_2014-08-20","Beni-18FHV090_DRC_2018-07-28","Muembe1_DRC_2017-05"];
     tree.externalNodes.filter(n=> selectedNodes.includes(n.name))
         .forEach(node=>{
             tree.annotateNode(node,{excluded:!node.annotations.excluded});
     });
 
-    const annotateHover=(tree)=>(d,i,n)=>{
-        tree.annotateNode(d.node,{hover:!d.node.annotations.hover});
-        tree.treeUpdateCallback()
-    };
-
-    const annotateSelect=(tree)=>(d,i,n)=>{
-        tree.annotateNode(d.node,{excluded:!d.node.annotations.excluded});
-        tree.treeUpdateCallback();
-    };
-
-    const regularBauble = new CircleBauble({radius:5,transitions:transitions,vertexFilter:(v)=>(!v.node.children||v.node===tree.rootNode)&& !v.node.annotations.hover});
-    const hoveredBauble =  new CircleBauble({radius:8,transitions:transitions,vertexFilter:(v)=>(!v.node.children||v.node===tree.rootNode)&&v.node.annotations.hover});
-    const backgroundBauble = new CircleBauble({radius:6,transitions:transitions,vertexFilter:(v)=>(!v.node.children||v.node===tree.rootNode)});
     const margins = { top: 10, bottom: 60, left: 10, right: 150};
 
     //svgs
@@ -215,79 +220,115 @@ const selectedNodes = ["BIK009-Bikoro_DRC_2018-05-10","Lomela-Lokolia16_DRC_2014
     const rootToTipSVG = document.getElementById('root-to-tip');
 
     // layouts
-    const layout = new RectangularLayout(tree,
-        {externalNodeLabelAnnotationName:"name"});
-    const equalAngleLayout = new EqualAngleLayout(tree,
-        {externalNodeLabelAnnotationName:"name",
-            startingNode:tree.getExternalNode("Muembe1_DRC_2017-05")
-        });
 
-    const rttpLayout = new RootToTipPlot(tree,
-        {externalNodeLabelAnnotationName:null,
-            regressionFilter:(v)=>!v.node.annotations.excluded});
+
+
+    const unrootedLayout = equalAngleLayout(tree.getExternalNode("Yambuku-Mayinga_DRC_1976-10-01").parent,true);
+
+    const rttpLayout = rootToTipLayout((v)=>!v.annotations.excluded);
+
     //Figures
-    const rootedFigTree = new FigTree(rootedSVG, layout,margins,{
-        transition: transitions,
-        edges: {baubles: [new BranchBauble({curve:d3.curveStepBefore,transitions: transitions})]},
-        xScale:{axes:[new Axis({title:{text:"Divergence",yPadding: 25},tickArguments: [5,".3"]})],
-            revisions:{reverseAxis:true,
-                origin: ()=>tree.root.height}},
-        vertices:{baubles:[regularBauble,hoveredBauble],backgroundBaubles: [backgroundBauble]}
-    });
-
-    rootedFigTree.draw()
-        .onHoverNode({
-            action: {
-                enter: annotateHover(tree),
-                exit: annotateHover(tree)
-            }
-        })
-        .onClickExternalNode(annotateSelect(tree));
-
-
-
-    const unRootedFigtree = new FigTree(treeSVG, equalAngleLayout,margins,
-        {
-            transition: transitions,
-            edges: {baubles: [new BranchBauble({curve:d3.curveNatural,transitions: transitions})]},
-            vertices:{baubles:[regularBauble,hoveredBauble],backgroundBaubles: [backgroundBauble]}
-
-        });
-
-    unRootedFigtree
-        .draw()
-        .onHoverNode({
-            action: {
-                enter: annotateHover(tree),
-                exit: annotateHover(tree)
-            }
-        })
-        .onClickExternalNode(annotateSelect(tree))
-        .hilightBranches()
-        .onClickBranch({action:equalAngleLayout.reroot(),proportionMethod:"euclidean"})
-        .addAnnotation(rootAnnotation(unRootedFigtree));
+    const rootedFigTree = new FigTree(rootedSVG, margins,tree)
+                                .layout(rectangularLayout)
+                                .nodes(
+                                        circle()
+                                            .filter(d=>!d.children|| d.id===tree.root.id)
+                                            .attr("r",d=>d.annotations.hovered?8:5)
+                                            .annotateOnClick("excluded")
+                                            .annotateOnHover("hovered"),
+                                    tipLabel(d=>d.name)
+                                )
+                                .nodeBackgrounds(
+                                    circle()
+                                        .filter(d=>!d.children|| d.id===tree.root.id)
+                                        .attr("r",d=>d.annotations.hovered?9:6),
+                                )
+                                .branches(
+                                    branch()
+                                )
+                                .feature(
+                                    axis()
+                                        .location("bottom")
+                                        .y(400-margins.top-margins.bottom+5)
+                                        .x(0)
+                                        .title({text:"Divergence",
+                                            yPadding:30})
+                                        .tickFormat(d3.format(".2f"))
+                                        .ticks(4)
+                                );
 
 
-    const rootToTipPlot = new FigTree(rootToTipSVG, rttpLayout,{top:10,bottom:60,left:50,right:100},
-        {
-            xScale:{axes:[new Axis({title:{text:"Time",yPadding: 25},tickArguments:[4,"f"]})]},
-            yScale:{axes:[new Axis({title:{text:"Divergence",xPadding: -65,rotation:-90},location:"left"})]},
-            edges:{
-                baubles: [
-                    new BranchBauble({curve:d3.curveNatural}),
-                ]},
-            vertices:{baubles:[regularBauble,hoveredBauble],backgroundBaubles: [backgroundBauble]}
-        });
 
-    rootToTipPlot.draw()
-        .onHoverNode({
-            action: {
-                enter: annotateHover(tree),
-                exit: annotateHover(tree)
-            }
-        })
-        .onClickExternalNode(annotateSelect(tree))
-        .addAnnotation(rttText(rootToTipPlot))
+
+    const {vertices} = unrootedLayout(tree);
+    const rootVertex = vertices.find(v=>v.parent===null);
+    const unRootedFigtree = new FigTree(treeSVG,margins,tree)
+                            .layout(unrootedLayout)
+                            .nodes(
+                                circle()
+                                    .filter(d=>!d.children|| d.id===tree.root.id)
+                                    .attr("r",d=>d.annotations.hovered?8:5)
+                                    .annotateOnClick("excluded")
+                                    .annotateOnHover("hovered"),
+                                tipLabel(d=>d.name)
+                            )
+                            .nodeBackgrounds(
+                                circle()
+                                    .filter(d=>!d.children|| d.id===tree.root.id)
+                                    .attr("r",d=>d.annotations.hovered?9:6),
+                            )
+                            .branches(
+                                branch()
+                                    .curve(d3.curveNatural)
+                                    .hilightOnHover()
+                                    .reRootOnClick()
+                            )
+
+
+
+
+    const rootToTipPlot = new FigTree(rootToTipSVG, {top:10,bottom:60,left:50,right:100},tree)
+                                .layout(rttpLayout)
+                                .nodes(
+                                    circle()
+                                        // .filter(d=>!d.children|| d.id===tree.root.id)
+                                        .attr("r",d=>d.annotations.hovered?8:5)
+                                        .annotateOnClick("excluded")
+                                        .annotateOnHover("hovered"),
+                                    tipLabel(d=>d.name)
+                                )
+                                .nodeBackgrounds(
+                                    circle()
+                                        .attr("r",d=>d.annotations.hovered?9:6),
+                                )
+                                .branches(
+                                    branch()
+                                        .curve(d3.curveBasis)
+                                        .hilightOnHover()
+                                )
+                                .feature(
+                                    axis()
+                                        .location("bottom")
+                                        .y(400-margins.top-margins.bottom+5)
+                                        .x(0)
+                                        .title({text:"Date",
+                                            yPadding:30})
+                                        .tickFormat(customDateFormat("%Y"))
+                                )
+                                .feature(
+                                    axis()
+                                        .location("left")
+                                        .y(0)
+                                        .x(-5)
+                                        .title({text:"Divergence",
+                                            xPadding:-80,
+                                            rotation:-90})
+                                        .tickFormat(d3.format(".3f"))
+                                        .ticks(4)
+                                )
+                                .feature(
+                                    rootToTipStats()
+                                )
 
 </script>
 

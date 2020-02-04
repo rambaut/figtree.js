@@ -32,7 +32,7 @@ const makeTrendlineEdge=predicate=>(vertices)=>{
     const startPoint = {key:"startPoint",x:x1,y:y1};
     const endPoint = {key:"endPoint",x:x2,y:y2};
 
-    return [{
+    return {edges:[{
         v0: startPoint,
         v1: endPoint,
         key: "trendline",
@@ -46,15 +46,14 @@ const makeTrendlineEdge=predicate=>(vertices)=>{
             alignmentBaseline: "hanging",
             textAnchor:"middle",
         },
-        regression:regression,
-    }]
+    }],regression:regression}
 };
 
 
 export const rootToTipLayout = (predicate =()=>true) => tree =>{
     const vertices = rootToTipVertices(tree);
-    const edges = makeTrendlineEdge(predicate)(vertices);
-    return {vertices,edges};
+    const {edges,regression} = makeTrendlineEdge(predicate)(vertices);
+    return {vertices,edges,regression};
 };
 /**
  * returns slope, intercept and r-square of the line

@@ -1,10 +1,10 @@
 import {axisBottom, axisLeft, axisRight, axisTop,format} from "d3";
-import {decoration} from "./decoration";
+import {Decoration} from "./decoration";
 
 /**
  * The axis class
  */
-class Axis extends decoration {
+class Axis extends Decoration {
     constructor(){
         super();
         this._ticks=5;

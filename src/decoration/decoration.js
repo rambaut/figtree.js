@@ -1,11 +1,11 @@
 import uuid from "uuid";
 
 /**
- * The base decoration class.
+ * The base Decoration class.
  */
 
 
-export class decoration {
+export class Decoration {
     constructor() {
         this._created = false;
         this._title={
@@ -45,9 +45,9 @@ export class decoration {
     }
 
     /**{
-     * Getter, setter for decoration title. The options are below and are passed to the d3 text element.
+     * Getter, setter for Decoration title. The options are below and are passed to the d3 text element.
      * @param options
-     * @return {decoration|{rotation: number, text: string, xPadding: number, yPadding: number}}
+     * @return {Decoration|{rotation: number, text: string, xPadding: number, yPadding: number}}
      */
     title(options = null) {
         if (!options) {
@@ -62,7 +62,7 @@ export class decoration {
      * Set a call back to be fired when the event listener is triggered.
      * @param eventListener - a string that defines the event listener
      * @param value -  call back that will be passed d,i,n
-     * @return {decoration}
+     * @return {Decoration}
      */
     on(string, value) {
         this._interactions[string] = value;
@@ -136,7 +136,7 @@ export class decoration {
     /**
      * get or set the x position for the decorations
      * @param d
-     * @return {*|decoration}
+     * @return {*|Decoration}
      */
     x(d = null) {
         if (d !== null) {
@@ -149,7 +149,7 @@ export class decoration {
     /**
      * get or set the y position for the decorations
      * @param d
-     * @return {*|decoration}
+     * @return {*|Decoration}
      */
     y(d = null) {
         if (d !== null) {

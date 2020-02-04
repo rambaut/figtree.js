@@ -1,6 +1,9 @@
 import {mean, min} from "d3-array";
 import {layoutFactory, makeVertexFromNode} from "./layoutHelpers";
 
+//TODO doesn't layout nodes properly or hold position
+
+function getRelatives(node){return [(node.parent&&node.parent)].concat((node.children&&node.children)).filter(n=>n)};// to remove null
 
 
 function * pseudoRerootPreorder(node, visited=[]) {
@@ -20,80 +23,60 @@ function * pseudoRerootPreorder(node, visited=[]) {
 }
 
 
+export function equalAngleVertices(startNode=null){
 
-export const equalAngleVertices=(tipRank=null)=>tree=>{
-    const startNode=tipRank?tree.getExternalNode(tipRank[0]):tree.externalNodes[0];
 
-    function * traverseFromTip(node,visited=[],) {
-        const traverse = function* (node) {
-            visited.push(node);
-            yield node;
-            const relatives = [(node.parent && node.parent)].concat((node.children && node.children)).filter(n => n);// to remove null
-            let pseudoChildren = relatives.filter(n => !visited.includes(n));
-            if (pseudoChildren) {
-                if (tipRank) {
-                    pseudoChildren = pseudoChildren.sort((a, b) => {
-
-                        const aRank = min([...pseudoRerootPreorder(a, [node])].filter(n => !n.children).map(n=>n.id).map(n => tipRank.indexOf(n)));
-                        const bRank = min([...pseudoRerootPreorder(b, [node])].filter(n => !n.children).map(n=>n.id).map(n =>tipRank.indexOf(n)));
-                        return bRank - aRank
-                    })
-                }
-                for (const child of pseudoChildren) {
-                    yield* traverse(child);
-                }
-
-            }
-        };
-        yield* traverse(node);
+    let tipRank;
+    if(startNode){
+        tipRank=[...pseudoRerootPreorder(startNode,[])].filter(n=>!n.children)
     }
+    return function layout(tree){
+
+        startNode =startNode?startNode:tree.rootNode;
+
+        const numberOfTips= tree.externalNodes.length;
+        const rPerTip = 2*Math.PI/numberOfTips;
 
 
-    const nodeOrder = [...traverseFromTip(startNode, [],tipRank)];
-    function getPseudoChildren(node) {
-         const relatives = [(node.parent && node.parent)].concat((node.children && node.children)).filter(n => n);// to remove null
-            // the parent will come before the node in question in the preoder traversal
-            const pseudoChildren = nodeOrder.slice(nodeOrder.indexOf(node), nodeOrder.length).filter(n => relatives.includes(n))
-            return (pseudoChildren.length > 0 ? pseudoChildren : null)
+        function *traverse(node,start,visited=[],parentVertex={x:0,y:0}){
+
+            // for children pass start and end
+            // set angle as middle
+            // call children passing start and end
+            if(node===startNode){
+                const vertex = makeVertexFromNode(node);
+                vertex.x =0;
+                vertex.y =0;
+                yield vertex;
+            }
+            let relatives = getRelatives(node).filter(n=>!visited.includes(n));
+            // Node order is not really want we want we need to see past the interal nodes to the tips
+            if(tipRank.length>0){
+                relatives = relatives.sort((a,b)=>{
+
+                    const aRank = min( [...pseudoRerootPreorder(a,[node])].filter(n=>!n.children).map(n=>tipRank.indexOf(n)));
+                    const bRank = min ([...pseudoRerootPreorder(b,[node])].filter(n=>!n.children).map(n=>tipRank.indexOf(n)));
+                    return bRank-aRank
+                })
+            }
+            if(node===tree.getExternalNode("Beni-18FHV090_DRC_2018-07-28").parent){
+                console.log(relatives)
+            }
+            for(const relative of relatives){
+                const vertex = makeVertexFromNode(relative);
+                const allocation =[...pseudoRerootPreorder(relative,[...visited,...relatives])].filter(n=>!n.children).length*rPerTip;
+                vertex.angle = (start+(start+allocation))/2;
+                vertex.x = Math.sin(vertex.angle)* Math.abs(node.height-relative.height)+parentVertex.x;
+                vertex.y = Math.cos(vertex.angle)* Math.abs(node.height-relative.height)+parentVertex.y;
+                yield vertex;
+                yield *traverse(relative,start,[node,...relatives],vertex);
+                start+=allocation;
+            }
         }
 
-        const totalTips = tree.externalNodes.length;
-
-
-        function* traverse(node, dataFromParent = null) {
-            const vertex = makeVertexFromNode(node);
-
-            if (dataFromParent) {
-                const {angle, length, allocatedRadians, parentY, parentX} = dataFromParent;
-                vertex.y = Math.cos(angle) * length + parentY;
-                vertex.x = Math.sin(angle) * length + parentX;
-                vertex.allocatedRadians = allocatedRadians;
-
-            } else {
-                vertex.y = 0;
-                vertex.x = 0;
-                vertex.allocatedRadians = [0, 2 * Math.PI];
-            }
-            const children = getPseudoChildren(node);
-            if (children) {
-                let totalRadians = vertex.allocatedRadians[0];
-                for (const child of children) {
-                    const tips = [...traverseFromTip(child, [node])].filter(n => !n.children).length;
-                    const r = 2 * Math.PI * tips / totalTips;
-                    const allocatedRadians = [totalRadians, totalRadians + r];
-                    const angle = totalRadians + r / 2;
-                    const length = Math.abs(child.length);
-                    yield* traverse(child, {angle, length, allocatedRadians, parentY: vertex.y, parentX: vertex.x})
-                    totalRadians += r;
-
-                }
-            }
-            yield vertex;
-        }
-
-
-        return [...traverse(startNode)];
+        return [...traverse(startNode,0)];
+    }
 }
 
 
-export const equalAngleLayout=(tipRank) => layoutFactory(equalAngleVertices(tipRank));
+export const equalAngleLayout=(startingNode) => layoutFactory(equalAngleVertices(startingNode));
