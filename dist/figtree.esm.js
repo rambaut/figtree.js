@@ -13593,19 +13593,15 @@ function equalAngleVertices() {
                 });
               }
 
-              if (node === tree.getExternalNode("Beni-18FHV090_DRC_2018-07-28").parent) {
-                console.log(relatives);
-              }
-
               _iteratorNormalCompletion2 = true;
               _didIteratorError2 = false;
               _iteratorError2 = undefined;
-              _context3.prev = 14;
+              _context3.prev = 13;
               _iterator2 = relatives[Symbol.iterator]();
 
-            case 16:
+            case 15:
               if (_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done) {
-                _context3.next = 30;
+                _context3.next = 29;
                 break;
               }
 
@@ -13617,65 +13613,73 @@ function equalAngleVertices() {
               _vertex.angle = (start + (start + allocation)) / 2;
               _vertex.x = Math.sin(_vertex.angle) * Math.abs(node.height - relative.height) + parentVertex.x;
               _vertex.y = Math.cos(_vertex.angle) * Math.abs(node.height - relative.height) + parentVertex.y;
-              _context3.next = 25;
+              _context3.next = 24;
               return _vertex;
 
-            case 25:
-              return _context3.delegateYield(traverse(relative, start, [node].concat(toConsumableArray(relatives)), _vertex), "t0", 26);
+            case 24:
+              return _context3.delegateYield(traverse(relative, start, [node].concat(toConsumableArray(relatives)), _vertex), "t0", 25);
 
-            case 26:
+            case 25:
               start += allocation;
 
-            case 27:
+            case 26:
               _iteratorNormalCompletion2 = true;
-              _context3.next = 16;
+              _context3.next = 15;
               break;
 
-            case 30:
-              _context3.next = 36;
+            case 29:
+              _context3.next = 35;
               break;
 
-            case 32:
-              _context3.prev = 32;
-              _context3.t1 = _context3["catch"](14);
+            case 31:
+              _context3.prev = 31;
+              _context3.t1 = _context3["catch"](13);
               _didIteratorError2 = true;
               _iteratorError2 = _context3.t1;
 
-            case 36:
+            case 35:
+              _context3.prev = 35;
               _context3.prev = 36;
-              _context3.prev = 37;
 
               if (!_iteratorNormalCompletion2 && _iterator2["return"] != null) {
                 _iterator2["return"]();
               }
 
-            case 39:
-              _context3.prev = 39;
+            case 38:
+              _context3.prev = 38;
 
               if (!_didIteratorError2) {
-                _context3.next = 42;
+                _context3.next = 41;
                 break;
               }
 
               throw _iteratorError2;
 
+            case 41:
+              return _context3.finish(38);
+
             case 42:
-              return _context3.finish(39);
+              return _context3.finish(35);
 
             case 43:
-              return _context3.finish(36);
-
-            case 44:
             case "end":
               return _context3.stop();
           }
         }
-      }, _marked2, null, [[14, 32, 36, 44], [37,, 39, 43]]);
+      }, _marked2, null, [[13, 31, 35, 43], [36,, 38, 42]]);
     }
 
     return toConsumableArray(traverse(startNode, 0));
   };
 }
+/**
+ * The equal angle layout. This function returns a layout function. It take and optional internal node, which if provided acts
+ * as the starting node and fixes the order nodes are visited. This means the tree not update. The root position will
+ * still change in response to rerooting.
+ * @param startingNode optional
+ * @return {function(*=): {vertices: *, edges: *}}
+ */
+
 var equalAngleLayout = function equalAngleLayout(startingNode) {
   return layoutFactory(equalAngleVertices(startingNode));
 };

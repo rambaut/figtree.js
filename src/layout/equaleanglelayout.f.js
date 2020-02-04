@@ -59,9 +59,6 @@ export function equalAngleVertices(startNode=null){
                     return bRank-aRank
                 })
             }
-            if(node===tree.getExternalNode("Beni-18FHV090_DRC_2018-07-28").parent){
-                console.log(relatives)
-            }
             for(const relative of relatives){
                 const vertex = makeVertexFromNode(relative);
                 const allocation =[...pseudoRerootPreorder(relative,[...visited,...relatives])].filter(n=>!n.children).length*rPerTip;
@@ -78,5 +75,11 @@ export function equalAngleVertices(startNode=null){
     }
 }
 
-
+/**
+ * The equal angle layout. This function returns a layout function. It take and optional internal node, which if provided acts
+ * as the starting node and fixes the order nodes are visited. This means the tree not update. The root position will
+ * still change in response to rerooting.
+ * @param startingNode optional
+ * @return {function(*=): {vertices: *, edges: *}}
+ */
 export const equalAngleLayout=(startingNode) => layoutFactory(equalAngleVertices(startingNode));

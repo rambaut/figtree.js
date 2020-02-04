@@ -12,7 +12,7 @@
             font-weight: 300;
         }
 
-        .branch {
+        .branch .branch-path {
             fill: none;
             stroke: #541753;
             stroke-width: 2px;
@@ -20,7 +20,7 @@
             stroke-linejoin: round;
         }
 
-        .branch.hovered {
+        .branch.hovered .branch-path{
             stroke-width: 4px;
         }
 
@@ -58,23 +58,12 @@
             /*stroke-width: 1;*/
         }
 
-        .node-background {
+        .node-background .node-shape {
             fill: rgb(255, 255, 255);
             /*stroke: rgb(255, 255, 255);*/
             /*stroke-width: 1;*/
         }
 
-        .node-label {
-            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
-            font-size: 14pt;
-            font-weight: 300;
-        }
-
-        .trend-line {
-            stroke: rgb(0,0,0);
-            stroke-width: 2px;
-            stroke-linecap: round;
-        }
 
         .axis text {
             font-family: "helvetica-neue",  "helvetica",  "sans-serif";
@@ -86,15 +75,6 @@
             font-family: "helvetica-neue",  "helvetica",  "sans-serif";
             font-size: 12pt;
             font-weight: bold;
-        }
-
-        .node-label.support {
-            font-size: 10pt;
-        }
-
-        .branch-label.length {
-            display: none;
-            font-size: 8pt;
         }
 
         #tooltip {
@@ -123,9 +103,9 @@
         font-size: 6pt;
         display: none;
     }
-    #tree-3-svg .internal-node {
-        display: none;
-    }
+    /*#tree-3-svg .internal-node {*/
+    /*    display: none;*/
+    /*}*/
     #tree-3-svg .node-background {
         fill: #541753;
     }
@@ -138,7 +118,69 @@
 </style>
 
 <script type="module">
-    import { Tree,RectangularLayout,CircleBauble,FigTree,RootToTipPlot , Axis,BranchBauble} from "./dist/figtree.esm.js";
+    import {Tree,FigTree,rectangularLayout,rootToTipLayout,circle,tipLabel,branch,equalAngleLayout,axis,Decoration,decimalToDate} from "./dist/figtree.esm.js";
+    /**
+     * A custom date format that converts a decimal year float into "%Y-%m-%d" format
+     * @param d
+     * @return {string}
+     */
+    const customDateFormat =(f)=> (d) => {
+        const dateFormat = d3.timeFormat(f);
+        return `${dateFormat(decimalToDate(d))}`;
+    };
+
+    const formatDate = (d)=>{
+        const parse=d3.timeParse("%Y-%m-%d");
+        const format=d3.timeFormat("%b-%d");
+        return format(parse(d));
+    };
+    class RootToTipAnnotation extends Decoration {
+        constructor() {
+            super();
+            super.layer("annotation-layer")
+        }
+
+        create() {
+            const {regression} = rootToTipLayout((v) => !v.annotations.excluded)(tree);
+            const statsKeys = ["Slope", "X intercept", "R^2"];
+            const selection = this.figure().svgSelection.select(`.${this.layer()}`);
+            const data = [d3.format(".3e")(regression.slope), customDateFormat("%Y-%b-%d")(regression.xIntercept), d3.format(".3")(regression.rSquare)];
+            selection
+                // .append("g")
+                // .attr("class","trendlineStats")
+                // .attr("transform","translate(10,50)")
+                .selectAll(".rttp-statistic")
+                .data(statsKeys)
+                .join(
+                    enter => enter
+                        .append("text")
+                        .attr("class", "rttp-statistic")
+                        .attr("transform", `translate(${50},${this.figure().margins().top})`)
+                        .style("text-anchor", "left")
+                        .attr("alignment-baseline", "hanging")
+                        .attr("dy", (d, i) => `${i * 1.5}em`)
+                        .text((d, i) => `${d} : ${data[i]}`),
+                    update => update
+                        .call(update => update.transition()
+                            .attr("class", "rttp-statistic")
+                            .attr("transform", `translate(${50},${this.figure().margins().top})`)
+                            .style("text-anchor", "left")
+                            .attr("alignment-baseline", "hanging")
+                            .attr("dy", (d, i) => `${i * 1.5}em`)
+                            .text((d, i) => `${d} : ${data[i]}`))
+                )
+
+        }
+        updateCycle(selection) {
+            this.create()
+        }
+    }
+    function rootToTipStats(){
+        return new RootToTipAnnotation();
+    }
+
+
+
 
 
     const timeTreeString =
@@ -146,35 +188,82 @@
 
     const tree = Tree.parseNewick(timeTreeString, {datePrefix: "_"});
     const treeSVG = document.getElementById('tree-3-svg');
-    const layout = new RectangularLayout(tree);
-    const figTree = new FigTree(treeSVG, layout, { top: 10, bottom: 60, left: 10, right: 150},
-        {
-            vertices:{baubles:[ new CircleBauble({radius:1})],backgroundBaubles:[new CircleBauble({radius:2})]},
-            xScale:{axes:[new Axis({title:{text:"Divergence",yPadding: 25}})],
-                revisions:{reverseAxis:true,
-                    origin: ()=>tree.root.height}},
-        });
+    const margins = { top: 10, bottom: 60, left: 100, right: 50};
 
-    figTree.draw();
-    tree.order(tree.rootNode, false);
+    console.log(rectangularLayout(tree))
 
-    const rttpLayout = new RootToTipPlot(tree);
-    const rootToTipPlot = new FigTree(document.getElementById('rrt-3-svg'),
-        rttpLayout,
-        { top: 10, bottom: 60, left: 100, right: 50},
-        {vertices: {
-                baubles: [
-                    new CircleBauble(),
-                ],
-            },
-            xScale:{axes:[new Axis({title:{text:"Time",yPadding: 25,tickArguments:[2,"f"]}})]},
-            yScale:{axes:[new Axis({title:{text:"Divergence",xPadding: -60,rotation:-90},location:"left"})]},
-            edges:{
-                baubles: [
-                    new BranchBauble({curve:d3.curveNatural}),
-                ]}
-        });
-    rootToTipPlot.draw();
+    const figTree = new FigTree(treeSVG, margins, tree)
+                            .layout(rectangularLayout)
+                            .nodes(
+                                circle()
+                                    .filter(d=>!d.children)
+                                    .attr("r",d=>d.annotations.hovered?4:2)
+                                    .annotateOnClick("excluded")
+                                    .annotateOnHover("hovered"),
+                            )
+                            .nodeBackgrounds(
+                                circle()
+                                    .filter(d=>!d.children)
+                                    .attr("r",d=>d.annotations.hovered?5:4),
+                            )
+                            .branches(
+                                branch()
+                            )
+                            .feature(
+                                axis()
+                                    .location("bottom")
+                                    .y(600-margins.top-margins.bottom+5)
+                                    .x(0)
+                                    .title({text:"Divergence",
+                                        yPadding:30})
+                                    .tickFormat(d3.format(".2f"))
+                                    .ticks(4)
+                            );
+    // tree.order(tree.rootNode, false);
+    const rttpLayout = rootToTipLayout((v)=>!v.annotations.excluded);
+    const rootToTipPlot = new FigTree(document.getElementById('rrt-3-svg'), margins,tree)
+        .layout(rttpLayout)
+        .nodes(
+            circle()
+                .filter(d=>!d.children)
+                .attr("r",d=>d.annotations.hovered?2:1)
+                .annotateOnClick("excluded")
+                .annotateOnHover("hovered"),
+        )
+        .nodeBackgrounds(
+            circle()
+                .filter(d=>!d.children)
+                .attr("r",d=>d.annotations.hovered?3:2),
+        )
+        .branches(
+            branch()
+                .curve(d3.curveBasis)
+                .hilightOnHover()
+        )
+        .feature(
+            axis()
+                .location("bottom")
+                .y(600-margins.top-margins.bottom+5)
+                .x(0)
+                .title({text:"Date",
+                    yPadding:30})
+                .tickFormat(customDateFormat("%Y"))
+        )
+        .feature(
+            axis()
+                .location("left")
+                .y(0)
+                .x(-5)
+                .title({text:"Divergence",
+                    xPadding:-80,
+                    rotation:-90})
+                .tickFormat(d3.format(".3f"))
+                .ticks(4)
+        )
+        .feature(
+            rootToTipStats()
+        )
+
 
 </script>
 
