@@ -132,7 +132,7 @@
 </div>
 <!-- <script src ="dist/figtree.js"></script> -->
 <script type="module">
-    import {Tree,CircleBauble,FigTree,nodes,nodeBackground,branches,equalAngleLayout,rootToTipLayout}  from "./dist/figtree.esm.js";
+    import {Tree,FigTree,circle,axis,tipLabel,equalAngleLayout,rootToTipLayout,branch}  from "./dist/figtree.esm.js";
 
     const timeTreeString =
         '((((virusA_1975.5:20.0,virusB_1966:10.0):10.0,virusC_1986:40.0):15.0,(virusD_1969:35.0,virusE_1955.5:20.0):5.0):25.0,(virusF_2002:55.0,virusG_1965:15.0):40.0);';
@@ -143,55 +143,65 @@
 
     const treeSVG = document.getElementById('phylogram_1a');
     const rootToTipSVG =document.getElementById('phylogram_1b');
+    const margins = { top: 10, bottom: 60, left: 100, right: 50};
 
-    const unRootedFig = new FigTree(treeSVG,tree)
-                            .layout(equalAngleLayout(tree.externalNodes.map(n=>n.id)))
-                            .feature(
-                                nodes()// can take element or function that returns a element
-                                    .element(CircleBauble)
+    const unRootedFig = new FigTree(treeSVG,margins,tree)
+                            .layout(equalAngleLayout(tree.internalNodes[5]))
+                            .nodes(
+                                    circle()
                                     .attr("fill",d=>d.degree>1?"steelblue":"#c71585")
                                     .attr("r",d=>d.annotations.hovered?10:5)
-                                    .label("name")
-                                    .rotateOnClick()
+                                    .rotateOnClick(),
+                                tipLabel(d=>d.name)
                             )
-                            .feature(
-                                nodeBackground()
+                            .nodeBackgrounds(
+                                circle()
                                     .attr("r",7)
                             )
-                            .feature(
-                                branches()
+                            .branches(
+                                branch()
                                     .curve(d3.curveBasis)
                                     .hilightOnHover()
-                                    .reRootOnClick()
+                                    .reRootOnClick("euclidean")
                             );
 
-    const rootToTipPlot = new FigTree(rootToTipSVG,tree)
+    const rootToTipPlot = new FigTree(rootToTipSVG,margins,tree)
                                 .layout(rootToTipLayout())
-                                .feature(
-                                    nodes()// can take element or function that returns a element
-                                    .element(CircleBauble)
-                                    .attr("fill",d=>d.degree>1?"steelblue":"#c71585")
-                                    .attr("r",d=>d.annotations.hovered?10:5)
-                                    .on("mouseenter",element=>(d,i,n)=>{
-                                        tree.annotateNode(tree.getExternalNode(d.name),{hovered:true});
-                                        tree.treeUpdateCallback();
-                                    })
-                                        .on("mouseout",element=>(d,i,n)=>{
-                                            tree.annotateNode(tree.getExternalNode(d.name),{hovered:false});
-                                            tree.treeUpdateCallback();
-                                        })
+                                .nodes(
+                                    circle()
+                                        .filter(d=>!d.children)
+                                        .attr("r",d=>d.annotations.hovered?10:5)
+                                        .annotateOnHover("hovered"),
                                 )
-
-                                .feature(
-                                    nodeBackground()
+                                .nodeBackgrounds(
+                                    circle()
                                         .attr("r",7)
                                 )
-                                .feature(
-                                        branches()
+                                .branches(
+                                    branch()
                                             .curve(d3.curveBasis)
                                             .hilightOnHover()
-                                    );
+                                    )
+                                .feature(
+                                    axis()
+                                        .location("bottom")
+                                        .y(500-margins.top-margins.bottom+5)
+                                        .x(0)
+                                        .title({text:"Date",
+                                            yPadding:30})
 
+                                )
+                                .feature(
+                                    axis()
+                                        .location("left")
+                                        .y(0)
+                                        .x(-5)
+                                        .title({text:"Divergence",
+                                            xPadding:-80,
+                                            rotation:-90})
+                                        .tickFormat(d3.format(".3f"))
+                                        .ticks(4)
+                                )
 
 
 </script>

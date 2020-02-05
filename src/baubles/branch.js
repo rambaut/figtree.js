@@ -134,7 +134,12 @@ export class Branch extends Bauble {
         return this;
     }
 
-    reRootOnClick(){
+    /**
+     * Helper function to reroot tree at the clicked position.
+     * @param distance - how should the distance along the branch be calculated (x - just x distance, euclidean - euclidean)
+     * @return {Branch}
+     */
+    reRootOnClick(distance ="x"){
         super.on("click",
             (d,i,n)=>{
 
@@ -144,10 +149,14 @@ export class Branch extends Bauble {
                     y2=this.manager().figure().scales.y(d.v0.y),
                     [mx,my] = mouse(document.getElementById(this.manager().figure().svgId));
 
-                const proportion = this.curve()===d3.curveStepBefore? Math.abs( (mx - x2) / (x1 - x2)):
-                    this.curveRadius()===0? Math.abs( (mx - x2) / (x1 - x2)):
-                        Math.sqrt(Math.pow(mx-x2,2)+Math.pow(my-y2,2))/Math.sqrt(Math.pow(x1-x2,2)+Math.pow(y1-y2,2)),
-                    tree = this.manager().figure().tree();
+                const proportion = distance.toLocaleLowerCase()==="x"? Math.abs( (mx - x2) / (x1 - x2)):distance.toLocaleLowerCase()==="euclidean"?
+                        Math.sqrt(Math.pow(mx-x2,2)+Math.pow(my-y2,2))/Math.sqrt(Math.pow(x1-x2,2)+Math.pow(y1-y2,2)):
+                        null;
+                if(!proportion){
+                    throw new Error(`Error in reroot on click distance ${distance} is not recognize. Please use x or euclidean`)
+                }
+
+                const tree = this.manager().figure().tree();
                 tree.reroot(tree.getNode(d.id),proportion)
 
             });

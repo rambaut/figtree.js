@@ -12488,10 +12488,18 @@
 
 	      return this;
 	    }
+	    /**
+	     * Helper function to reroot tree at the clicked position.
+	     * @param distance - how should the distance along the branch be calculated (x - just x distance, euclidean - euclidean)
+	     * @return {Branch}
+	     */
+
 	  }, {
 	    key: "reRootOnClick",
 	    value: function reRootOnClick() {
 	      var _this5 = this;
+
+	      var distance = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "x";
 
 	      get$2(getPrototypeOf(Branch.prototype), "on", this).call(this, "click", function (d, i, n) {
 	        var x1 = _this5.manager().figure().scales.x(d.v1.x),
@@ -12503,8 +12511,13 @@
 	            mx = _mouse2[0],
 	            my = _mouse2[1];
 
-	        var proportion = _this5.curve() === d3.curveStepBefore ? Math.abs((mx - x2) / (x1 - x2)) : _this5.curveRadius() === 0 ? Math.abs((mx - x2) / (x1 - x2)) : Math.sqrt(Math.pow(mx - x2, 2) + Math.pow(my - y2, 2)) / Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2)),
-	            tree = _this5.manager().figure().tree();
+	        var proportion = distance.toLocaleLowerCase() === "x" ? Math.abs((mx - x2) / (x1 - x2)) : distance.toLocaleLowerCase() === "euclidean" ? Math.sqrt(Math.pow(mx - x2, 2) + Math.pow(my - y2, 2)) / Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2)) : null;
+
+	        if (!proportion) {
+	          throw new Error("Error in reroot on click distance ".concat(distance, " is not recognize. Please use x or euclidean"));
+	        }
+
+	        var tree = _this5.manager().figure().tree();
 
 	        tree.reroot(tree.getNode(d.id), proportion);
 	      });
@@ -14282,7 +14295,7 @@
 	        pos.y = length / 2;
 	      }
 
-	      selection.append("g").attr("id", "".concat(this._id, "-label")).attr("class", "label").attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")).append("text").attr("transform", "translate(".concat(pos.x + this._title.xPadding, ", ").concat(pos.y + this._title.yPadding, ") rotate(").concat(this._title.rotation, ")")).attr("alignment-baseline", "hanging").style("text-anchor", "middle").text(this._title.text);
+	      selection.append("g").attr("id", "".concat(this._id, "-label")).attr("class", "axis-label").attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")).append("text").attr("transform", "translate(".concat(pos.x + this._title.xPadding, ", ").concat(pos.y + this._title.yPadding, ") rotate(").concat(this._title.rotation, ")")).attr("alignment-baseline", "hanging").style("text-anchor", "middle").text(this._title.text);
 	    }
 	  }, {
 	    key: "tickFormat",

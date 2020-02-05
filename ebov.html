@@ -51,11 +51,12 @@
         }
 
 
-        .label {
+        .node .label {
             font-family: "helvetica-neue",  "helvetica",  "sans-serif";
-            font-size: 10pt;
+            font-size: 7pt;
             font-weight: 300;
         }
+
         #root-to-tip .node .label{
             display:none
         }
@@ -76,14 +77,14 @@
 
         .axis text {
             font-family: "helvetica-neue",  "helvetica",  "sans-serif";
-            font-size: 12pt;
+            font-size: 10pt;
             font-weight: 300;
         }
 
         .axis-label text {
             font-family: "helvetica-neue",  "helvetica",  "sans-serif";
-            font-size: 12pt;
-            font-weight: bold;
+            font-size: 11pt;
+            font-weight: 400;
         }
 
         .original-root .node-shape{
@@ -100,9 +101,9 @@
     Click on a node to include/exclude it from the regression. Click on a branch to reroot the tree at that position.
     </div>
     -->
-    <svg id="unrooted"  width="450" height="400"></svg>
-    <svg id="rooted"  width="400" height="400"></svg>
-    <svg id="root-to-tip"  width="400" height="400"></svg>
+    <svg id="unrooted"  width="500" height="400"></svg>
+    <svg id="rooted"  width="500" height="400"></svg>
+    <svg id="root-to-tip"  width="500" height="400"></svg>
 
 </div>
 
@@ -212,7 +213,7 @@
             tree.annotateNode(node,{excluded:!node.annotations.excluded});
     });
 
-    const margins = { top: 10, bottom: 60, left: 10, right: 150};
+    const margins = { top: 10, bottom: 60, left: 20, right: 180};
 
     //svgs
     const treeSVG = document.getElementById('unrooted');
@@ -281,7 +282,7 @@
                                 branch()
                                     .curve(d3.curveNatural)
                                     .hilightOnHover()
-                                    .reRootOnClick()
+                                    .reRootOnClick("euclidean")
                             )
 
 
@@ -321,7 +322,7 @@
                                         .y(0)
                                         .x(-5)
                                         .title({text:"Divergence",
-                                            xPadding:-80,
+                                            xPadding:-40,
                                             rotation:-90})
                                         .tickFormat(d3.format(".3f"))
                                         .ticks(4)

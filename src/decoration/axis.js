@@ -70,7 +70,7 @@ class Axis extends Decoration {
         selection
             .append("g")
             .attr("id", `${this._id}-label`)
-            .attr("class", "label")
+            .attr("class", "axis-label")
             .attr("transform", `translate(${this._x}, ${this._y})`)
             .append("text")
             .attr("transform", `translate(${pos.x+this._title.xPadding}, ${pos.y+this._title.yPadding}) rotate(${this._title.rotation})`)
