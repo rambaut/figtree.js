@@ -14236,6 +14236,8 @@ function (_Decoration) {
 
     get$2(getPrototypeOf(Axis.prototype), "layer", assertThisInitialized(_this)).call(assertThisInitialized(_this), "axes-layer");
 
+    _this._reverse = false;
+    _this._origin = null;
     return _this;
   }
   /**
@@ -14258,12 +14260,44 @@ function (_Decoration) {
       }
     }
   }, {
+    key: "origin",
+    value: function origin() {
+      var x = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (x === null) {
+        return this._origin;
+      } else {
+        this._origin = x;
+        return this;
+      }
+    }
+  }, {
+    key: "reverse",
+    value: function reverse() {
+      this._reverse = !this._reverse;
+      return this;
+    }
+  }, {
     key: "updateScales",
     value: function updateScales() {
-      this.d3Axis = getD3Axis(this._location);
-      var length = ["top", "bottom"].indexOf(this._location) > -1 ? this.scales().width - this.figure()._margins.left - this.figure()._margins.right : this.scales().height - this.figure()._margins.top - this.figure()._margins.bottom; //TODO add options to change scales and all that jazz
+      var _this2 = this;
 
-      var axis = this.d3Axis(["top", "bottom"].indexOf(this._location) > -1 ? this.scales().x : this.scales().y).ticks(this.ticks()).tickFormat(this.tickFormat());
+      this.d3Axis = getD3Axis(this._location);
+      var length = ["top", "bottom"].indexOf(this._location) > -1 ? this.scales().width - this.figure()._margins.left - this.figure()._margins.right : this.scales().height - this.figure()._margins.top - this.figure()._margins.bottom;
+      var scale = (["top", "bottom"].indexOf(this._location) > -1 ? this.scales().x : this.scales().y).copy();
+
+      if (this.origin() !== null) {
+        scale.domain(scale.domain().reverse().map(function (d, i) {
+          return i === 0 ? _this2.origin() - d : _this2.origin();
+        }));
+      }
+
+      if (this._reverse) {
+        scale.domain(scale.domain().reverse());
+      } //TODO add options to change scales and all that jazz
+
+
+      var axis = this.d3Axis(scale).ticks(this.ticks()).tickFormat(this.tickFormat());
       return {
         length: length,
         axis: axis
