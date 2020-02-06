@@ -1,5 +1,3 @@
-var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
-
 function createCommonjsModule(fn, module) {
 	return module = { exports: {} }, fn(module, module.exports), module.exports;
 }
@@ -1121,44 +1119,6 @@ function number(x) {
   return x === null ? NaN : +x;
 }
 
-function extent(values, valueof) {
-  var n = values.length,
-      i = -1,
-      value,
-      min,
-      max;
-
-  if (valueof == null) {
-    while (++i < n) { // Find the first comparable value.
-      if ((value = values[i]) != null && value >= value) {
-        min = max = value;
-        while (++i < n) { // Compare the remaining values.
-          if ((value = values[i]) != null) {
-            if (min > value) min = value;
-            if (max < value) max = value;
-          }
-        }
-      }
-    }
-  }
-
-  else {
-    while (++i < n) { // Find the first comparable value.
-      if ((value = valueof(values[i], i, values)) != null && value >= value) {
-        min = max = value;
-        while (++i < n) { // Compare the remaining values.
-          if ((value = valueof(values[i], i, values)) != null) {
-            if (min > value) min = value;
-            if (max < value) max = value;
-          }
-        }
-      }
-    }
-  }
-
-  return [min, max];
-}
-
 function max(values, valueof) {
   var n = values.length,
       i = -1,
@@ -2195,7 +2155,7 @@ function selection_datum(value) {
 
 var filterEvents = {};
 
-var event = null;
+var event$1 = null;
 
 if (typeof document !== "undefined") {
   var element = document.documentElement;
@@ -2216,12 +2176,12 @@ function filterContextListener(listener, index, group) {
 
 function contextListener(listener, index, group) {
   return function(event1) {
-    var event0 = event; // Events can be reentrant (e.g., focus).
-    event = event1;
+    var event0 = event$1; // Events can be reentrant (e.g., focus).
+    event$1 = event1;
     try {
       listener.call(this, this.__data__, index, group);
     } finally {
-      event = event0;
+      event$1 = event0;
     }
   };
 }
@@ -2376,7 +2336,7 @@ function select(selector) {
 }
 
 function sourceEvent() {
-  var current = event, source;
+  var current = event$1, source;
   while (source = current.sourceEvent) current = source;
   return current;
 }
@@ -4801,492 +4761,6 @@ function precisionRound(step, max) {
   return Math.max(0, exponent(max) - exponent(step)) + 1;
 }
 
-// Adds floating point numbers with twice the normal precision.
-// Reference: J. R. Shewchuk, Adaptive Precision Floating-Point Arithmetic and
-// Fast Robust Geometric Predicates, Discrete & Computational Geometry 18(3)
-// 305–363 (1997).
-// Code adapted from GeographicLib by Charles F. F. Karney,
-// http://geographiclib.sourceforge.net/
-
-function adder() {
-  return new Adder;
-}
-
-function Adder() {
-  this.reset();
-}
-
-Adder.prototype = {
-  constructor: Adder,
-  reset: function() {
-    this.s = // rounded value
-    this.t = 0; // exact error
-  },
-  add: function(y) {
-    add(temp, y, this.t);
-    add(this, temp.s, this.s);
-    if (this.s) this.t += temp.t;
-    else this.s = temp.t;
-  },
-  valueOf: function() {
-    return this.s;
-  }
-};
-
-var temp = new Adder;
-
-function add(adder, a, b) {
-  var x = adder.s = a + b,
-      bv = x - a,
-      av = x - bv;
-  adder.t = (a - av) + (b - bv);
-}
-
-var pi$1 = Math.PI;
-var tau$1 = pi$1 * 2;
-
-var abs = Math.abs;
-var sqrt = Math.sqrt;
-
-function noop$1() {}
-
-function streamGeometry(geometry, stream) {
-  if (geometry && streamGeometryType.hasOwnProperty(geometry.type)) {
-    streamGeometryType[geometry.type](geometry, stream);
-  }
-}
-
-var streamObjectType = {
-  Feature: function(object, stream) {
-    streamGeometry(object.geometry, stream);
-  },
-  FeatureCollection: function(object, stream) {
-    var features = object.features, i = -1, n = features.length;
-    while (++i < n) streamGeometry(features[i].geometry, stream);
-  }
-};
-
-var streamGeometryType = {
-  Sphere: function(object, stream) {
-    stream.sphere();
-  },
-  Point: function(object, stream) {
-    object = object.coordinates;
-    stream.point(object[0], object[1], object[2]);
-  },
-  MultiPoint: function(object, stream) {
-    var coordinates = object.coordinates, i = -1, n = coordinates.length;
-    while (++i < n) object = coordinates[i], stream.point(object[0], object[1], object[2]);
-  },
-  LineString: function(object, stream) {
-    streamLine(object.coordinates, stream, 0);
-  },
-  MultiLineString: function(object, stream) {
-    var coordinates = object.coordinates, i = -1, n = coordinates.length;
-    while (++i < n) streamLine(coordinates[i], stream, 0);
-  },
-  Polygon: function(object, stream) {
-    streamPolygon(object.coordinates, stream);
-  },
-  MultiPolygon: function(object, stream) {
-    var coordinates = object.coordinates, i = -1, n = coordinates.length;
-    while (++i < n) streamPolygon(coordinates[i], stream);
-  },
-  GeometryCollection: function(object, stream) {
-    var geometries = object.geometries, i = -1, n = geometries.length;
-    while (++i < n) streamGeometry(geometries[i], stream);
-  }
-};
-
-function streamLine(coordinates, stream, closed) {
-  var i = -1, n = coordinates.length - closed, coordinate;
-  stream.lineStart();
-  while (++i < n) coordinate = coordinates[i], stream.point(coordinate[0], coordinate[1], coordinate[2]);
-  stream.lineEnd();
-}
-
-function streamPolygon(coordinates, stream) {
-  var i = -1, n = coordinates.length;
-  stream.polygonStart();
-  while (++i < n) streamLine(coordinates[i], stream, 1);
-  stream.polygonEnd();
-}
-
-function geoStream(object, stream) {
-  if (object && streamObjectType.hasOwnProperty(object.type)) {
-    streamObjectType[object.type](object, stream);
-  } else {
-    streamGeometry(object, stream);
-  }
-}
-
-function identity$3(x) {
-  return x;
-}
-
-var areaSum = adder(),
-    areaRingSum = adder(),
-    x00,
-    y00,
-    x0,
-    y0;
-
-var areaStream = {
-  point: noop$1,
-  lineStart: noop$1,
-  lineEnd: noop$1,
-  polygonStart: function() {
-    areaStream.lineStart = areaRingStart;
-    areaStream.lineEnd = areaRingEnd;
-  },
-  polygonEnd: function() {
-    areaStream.lineStart = areaStream.lineEnd = areaStream.point = noop$1;
-    areaSum.add(abs(areaRingSum));
-    areaRingSum.reset();
-  },
-  result: function() {
-    var area = areaSum / 2;
-    areaSum.reset();
-    return area;
-  }
-};
-
-function areaRingStart() {
-  areaStream.point = areaPointFirst;
-}
-
-function areaPointFirst(x, y) {
-  areaStream.point = areaPoint;
-  x00 = x0 = x, y00 = y0 = y;
-}
-
-function areaPoint(x, y) {
-  areaRingSum.add(y0 * x - x0 * y);
-  x0 = x, y0 = y;
-}
-
-function areaRingEnd() {
-  areaPoint(x00, y00);
-}
-
-var x0$1 = Infinity,
-    y0$1 = x0$1,
-    x1 = -x0$1,
-    y1 = x1;
-
-var boundsStream = {
-  point: boundsPoint,
-  lineStart: noop$1,
-  lineEnd: noop$1,
-  polygonStart: noop$1,
-  polygonEnd: noop$1,
-  result: function() {
-    var bounds = [[x0$1, y0$1], [x1, y1]];
-    x1 = y1 = -(y0$1 = x0$1 = Infinity);
-    return bounds;
-  }
-};
-
-function boundsPoint(x, y) {
-  if (x < x0$1) x0$1 = x;
-  if (x > x1) x1 = x;
-  if (y < y0$1) y0$1 = y;
-  if (y > y1) y1 = y;
-}
-
-// TODO Enforce positive area for exterior, negative area for interior?
-
-var X0 = 0,
-    Y0 = 0,
-    Z0 = 0,
-    X1 = 0,
-    Y1 = 0,
-    Z1 = 0,
-    X2 = 0,
-    Y2 = 0,
-    Z2 = 0,
-    x00$1,
-    y00$1,
-    x0$2,
-    y0$2;
-
-var centroidStream = {
-  point: centroidPoint,
-  lineStart: centroidLineStart,
-  lineEnd: centroidLineEnd,
-  polygonStart: function() {
-    centroidStream.lineStart = centroidRingStart;
-    centroidStream.lineEnd = centroidRingEnd;
-  },
-  polygonEnd: function() {
-    centroidStream.point = centroidPoint;
-    centroidStream.lineStart = centroidLineStart;
-    centroidStream.lineEnd = centroidLineEnd;
-  },
-  result: function() {
-    var centroid = Z2 ? [X2 / Z2, Y2 / Z2]
-        : Z1 ? [X1 / Z1, Y1 / Z1]
-        : Z0 ? [X0 / Z0, Y0 / Z0]
-        : [NaN, NaN];
-    X0 = Y0 = Z0 =
-    X1 = Y1 = Z1 =
-    X2 = Y2 = Z2 = 0;
-    return centroid;
-  }
-};
-
-function centroidPoint(x, y) {
-  X0 += x;
-  Y0 += y;
-  ++Z0;
-}
-
-function centroidLineStart() {
-  centroidStream.point = centroidPointFirstLine;
-}
-
-function centroidPointFirstLine(x, y) {
-  centroidStream.point = centroidPointLine;
-  centroidPoint(x0$2 = x, y0$2 = y);
-}
-
-function centroidPointLine(x, y) {
-  var dx = x - x0$2, dy = y - y0$2, z = sqrt(dx * dx + dy * dy);
-  X1 += z * (x0$2 + x) / 2;
-  Y1 += z * (y0$2 + y) / 2;
-  Z1 += z;
-  centroidPoint(x0$2 = x, y0$2 = y);
-}
-
-function centroidLineEnd() {
-  centroidStream.point = centroidPoint;
-}
-
-function centroidRingStart() {
-  centroidStream.point = centroidPointFirstRing;
-}
-
-function centroidRingEnd() {
-  centroidPointRing(x00$1, y00$1);
-}
-
-function centroidPointFirstRing(x, y) {
-  centroidStream.point = centroidPointRing;
-  centroidPoint(x00$1 = x0$2 = x, y00$1 = y0$2 = y);
-}
-
-function centroidPointRing(x, y) {
-  var dx = x - x0$2,
-      dy = y - y0$2,
-      z = sqrt(dx * dx + dy * dy);
-
-  X1 += z * (x0$2 + x) / 2;
-  Y1 += z * (y0$2 + y) / 2;
-  Z1 += z;
-
-  z = y0$2 * x - x0$2 * y;
-  X2 += z * (x0$2 + x);
-  Y2 += z * (y0$2 + y);
-  Z2 += z * 3;
-  centroidPoint(x0$2 = x, y0$2 = y);
-}
-
-function PathContext(context) {
-  this._context = context;
-}
-
-PathContext.prototype = {
-  _radius: 4.5,
-  pointRadius: function(_) {
-    return this._radius = _, this;
-  },
-  polygonStart: function() {
-    this._line = 0;
-  },
-  polygonEnd: function() {
-    this._line = NaN;
-  },
-  lineStart: function() {
-    this._point = 0;
-  },
-  lineEnd: function() {
-    if (this._line === 0) this._context.closePath();
-    this._point = NaN;
-  },
-  point: function(x, y) {
-    switch (this._point) {
-      case 0: {
-        this._context.moveTo(x, y);
-        this._point = 1;
-        break;
-      }
-      case 1: {
-        this._context.lineTo(x, y);
-        break;
-      }
-      default: {
-        this._context.moveTo(x + this._radius, y);
-        this._context.arc(x, y, this._radius, 0, tau$1);
-        break;
-      }
-    }
-  },
-  result: noop$1
-};
-
-var lengthSum = adder(),
-    lengthRing,
-    x00$2,
-    y00$2,
-    x0$3,
-    y0$3;
-
-var lengthStream = {
-  point: noop$1,
-  lineStart: function() {
-    lengthStream.point = lengthPointFirst;
-  },
-  lineEnd: function() {
-    if (lengthRing) lengthPoint(x00$2, y00$2);
-    lengthStream.point = noop$1;
-  },
-  polygonStart: function() {
-    lengthRing = true;
-  },
-  polygonEnd: function() {
-    lengthRing = null;
-  },
-  result: function() {
-    var length = +lengthSum;
-    lengthSum.reset();
-    return length;
-  }
-};
-
-function lengthPointFirst(x, y) {
-  lengthStream.point = lengthPoint;
-  x00$2 = x0$3 = x, y00$2 = y0$3 = y;
-}
-
-function lengthPoint(x, y) {
-  x0$3 -= x, y0$3 -= y;
-  lengthSum.add(sqrt(x0$3 * x0$3 + y0$3 * y0$3));
-  x0$3 = x, y0$3 = y;
-}
-
-function PathString() {
-  this._string = [];
-}
-
-PathString.prototype = {
-  _radius: 4.5,
-  _circle: circle(4.5),
-  pointRadius: function(_) {
-    if ((_ = +_) !== this._radius) this._radius = _, this._circle = null;
-    return this;
-  },
-  polygonStart: function() {
-    this._line = 0;
-  },
-  polygonEnd: function() {
-    this._line = NaN;
-  },
-  lineStart: function() {
-    this._point = 0;
-  },
-  lineEnd: function() {
-    if (this._line === 0) this._string.push("Z");
-    this._point = NaN;
-  },
-  point: function(x, y) {
-    switch (this._point) {
-      case 0: {
-        this._string.push("M", x, ",", y);
-        this._point = 1;
-        break;
-      }
-      case 1: {
-        this._string.push("L", x, ",", y);
-        break;
-      }
-      default: {
-        if (this._circle == null) this._circle = circle(this._radius);
-        this._string.push("M", x, ",", y, this._circle);
-        break;
-      }
-    }
-  },
-  result: function() {
-    if (this._string.length) {
-      var result = this._string.join("");
-      this._string = [];
-      return result;
-    } else {
-      return null;
-    }
-  }
-};
-
-function circle(radius) {
-  return "m0," + radius
-      + "a" + radius + "," + radius + " 0 1,1 0," + -2 * radius
-      + "a" + radius + "," + radius + " 0 1,1 0," + 2 * radius
-      + "z";
-}
-
-function geoPath(projection, context) {
-  var pointRadius = 4.5,
-      projectionStream,
-      contextStream;
-
-  function path(object) {
-    if (object) {
-      if (typeof pointRadius === "function") contextStream.pointRadius(+pointRadius.apply(this, arguments));
-      geoStream(object, projectionStream(contextStream));
-    }
-    return contextStream.result();
-  }
-
-  path.area = function(object) {
-    geoStream(object, projectionStream(areaStream));
-    return areaStream.result();
-  };
-
-  path.measure = function(object) {
-    geoStream(object, projectionStream(lengthStream));
-    return lengthStream.result();
-  };
-
-  path.bounds = function(object) {
-    geoStream(object, projectionStream(boundsStream));
-    return boundsStream.result();
-  };
-
-  path.centroid = function(object) {
-    geoStream(object, projectionStream(centroidStream));
-    return centroidStream.result();
-  };
-
-  path.projection = function(_) {
-    return arguments.length ? (projectionStream = _ == null ? (projection = null, identity$3) : (projection = _).stream, path) : projection;
-  };
-
-  path.context = function(_) {
-    if (!arguments.length) return context;
-    contextStream = _ == null ? (context = null, new PathString) : new PathContext(context = _);
-    if (typeof pointRadius !== "function") contextStream.pointRadius(pointRadius);
-    return path;
-  };
-
-  path.pointRadius = function(_) {
-    if (!arguments.length) return pointRadius;
-    pointRadius = typeof _ === "function" ? _ : (contextStream.pointRadius(+_), +_);
-    return path;
-  };
-
-  return path.projection(projection).context(context);
-}
-
 function ascending$4(a, b) {
   return a < b ? -1 : a > b ? 1 : a >= b ? 0 : NaN;
 }
@@ -5404,7 +4878,7 @@ function number$2(x) {
 
 var unit = [0, 1];
 
-function identity$4(x) {
+function identity$3(x) {
   return x;
 }
 
@@ -5468,7 +4942,7 @@ function transformer() {
       transform,
       untransform,
       unknown,
-      clamp = identity$4,
+      clamp = identity$3,
       piecewise,
       output,
       input;
@@ -5488,7 +4962,7 @@ function transformer() {
   };
 
   scale.domain = function(_) {
-    return arguments.length ? (domain = map$2.call(_, number$2), clamp === identity$4 || (clamp = clamper(domain)), rescale()) : domain.slice();
+    return arguments.length ? (domain = map$2.call(_, number$2), clamp === identity$3 || (clamp = clamper(domain)), rescale()) : domain.slice();
   };
 
   scale.range = function(_) {
@@ -5500,7 +4974,7 @@ function transformer() {
   };
 
   scale.clamp = function(_) {
-    return arguments.length ? (clamp = _ ? clamper(domain) : identity$4, scale) : clamp !== identity$4;
+    return arguments.length ? (clamp = _ ? clamper(domain) : identity$3, scale) : clamp !== identity$3;
   };
 
   scale.interpolate = function(_) {
@@ -5605,7 +5079,7 @@ function linearish(scale) {
 }
 
 function linear$1() {
-  var scale = continuous(identity$4, identity$4);
+  var scale = continuous(identity$3, identity$3);
 
   scale.copy = function() {
     return copy(scale, linear$1());
@@ -6567,72 +6041,6 @@ function line() {
   return line;
 }
 
-function Natural(context) {
-  this._context = context;
-}
-
-Natural.prototype = {
-  areaStart: function() {
-    this._line = 0;
-  },
-  areaEnd: function() {
-    this._line = NaN;
-  },
-  lineStart: function() {
-    this._x = [];
-    this._y = [];
-  },
-  lineEnd: function() {
-    var x = this._x,
-        y = this._y,
-        n = x.length;
-
-    if (n) {
-      this._line ? this._context.lineTo(x[0], y[0]) : this._context.moveTo(x[0], y[0]);
-      if (n === 2) {
-        this._context.lineTo(x[1], y[1]);
-      } else {
-        var px = controlPoints(x),
-            py = controlPoints(y);
-        for (var i0 = 0, i1 = 1; i1 < n; ++i0, ++i1) {
-          this._context.bezierCurveTo(px[0][i0], py[0][i0], px[1][i0], py[1][i0], x[i1], y[i1]);
-        }
-      }
-    }
-
-    if (this._line || (this._line !== 0 && n === 1)) this._context.closePath();
-    this._line = 1 - this._line;
-    this._x = this._y = null;
-  },
-  point: function(x, y) {
-    this._x.push(+x);
-    this._y.push(+y);
-  }
-};
-
-// See https://www.particleincell.com/2012/bezier-splines/ for derivation.
-function controlPoints(x) {
-  var i,
-      n = x.length - 1,
-      m,
-      a = new Array(n),
-      b = new Array(n),
-      r = new Array(n);
-  a[0] = 0, b[0] = 2, r[0] = x[0] + 2 * x[1];
-  for (i = 1; i < n - 1; ++i) a[i] = 1, b[i] = 4, r[i] = 4 * x[i] + 2 * x[i + 1];
-  a[n - 1] = 2, b[n - 1] = 7, r[n - 1] = 8 * x[n - 1] + x[n];
-  for (i = 1; i < n; ++i) m = a[i] / b[i - 1], b[i] -= m, r[i] -= m * r[i - 1];
-  a[n - 1] = r[n - 1] / b[n - 1];
-  for (i = n - 2; i >= 0; --i) a[i] = (r[i] - a[i + 1]) / b[i];
-  b[n - 1] = (x[n] + a[n - 1]) / 2;
-  for (i = 0; i < n - 1; ++i) b[i] = 2 * x[i + 1] - a[i + 1];
-  return [a, b];
-}
-
-function curveNatural(context) {
-  return new Natural(context);
-}
-
 function Step(context, t) {
   this._context = context;
   this._t = t;
@@ -6679,7 +6087,7 @@ function stepBefore(context) {
   return new Step(context, 0);
 }
 
-function extent$1(values, valueof) {
+function extent(values, valueof) {
   let min;
   let max;
   if (valueof === undefined) {
@@ -8926,6 +8334,295 @@ function () {
   return Node;
 }();
 
+/**
+ * The Bauble class
+ *
+ * This is a shape or Decoration at the node or edge of a tree.
+ */
+
+var Bauble =
+/*#__PURE__*/
+function () {
+  function Bauble() {
+    classCallCheck(this, Bauble);
+
+    this.id = "n".concat(uuid_1.v4());
+    this._attrs = {};
+    this._interactions = {};
+
+    this._filter = function () {
+      return true;
+    };
+  }
+  /**
+   * A function that appends the element to the selection, joins the data, assigns the attributes to the svg objects
+   * updates and remove unneeded objects.
+   * @param selection
+   */
+
+
+  createClass(Bauble, [{
+    key: "update",
+    value: function update(selection) {
+      throw new Error("Don't call the base class method");
+    }
+    /**
+     * Getter or setter of bauble filter. The filter is function that will be passed the vertex or edge.It should return
+     * true or false
+     * @param f
+     * @return {(function(): boolean)|Bauble}
+     */
+
+  }, {
+    key: "filter",
+    value: function filter() {
+      var f = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (f === null) {
+        return this._filter;
+      } else {
+        this._filter = f;
+        return this;
+      }
+    }
+    /**
+     * Get or set the bauble manager that handles these elements. this is called by the manager when the element
+     * is added.
+     * @param manager
+     * @return {Bauble|*}
+     */
+
+  }, {
+    key: "manager",
+    value: function manager() {
+      var _manager = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (_manager === null) {
+        return this._manager;
+      } else {
+        this._manager = _manager;
+        return this;
+      }
+    }
+    /**
+     * Get or set attributes that will style the elements.
+     * @param string
+     * @param value - a string, number, or function that will be passed to d3 selection.
+     * @return {Bauble|*}
+     */
+
+  }, {
+    key: "attr",
+    value: function attr(string) {
+      var value = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+
+      if (value) {
+        this._attrs[string] = value;
+        return this;
+      } else {
+        return this._attrs[string];
+      }
+    }
+    /**
+     * Set a call back to be fired when the event listener is triggered.
+     * @param eventListener - a string that defines the event listener
+     * @param value -  call back that will be passed d,i,n
+     * @return {Bauble}
+     */
+
+  }, {
+    key: "on",
+    value: function on(eventListener, value) {
+      this._interactions[eventListener] = value;
+      return this;
+    }
+    /**
+     * Get or set the transition duration and ease. Defualts to the figtree instance.
+     * @param t - optional object {tranmsissionDuration: transmissionEase:}
+     * @return {Bauble|BaubleManager|*|Bauble}
+     */
+
+  }, {
+    key: "transitions",
+    value: function transitions() {
+      var t = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (t === null) {
+        if (this._transitions) {
+          return this._transitions;
+        } else {
+          return this.manager().figure().transitions();
+        }
+      } else {
+        this._transitions = t;
+        return this;
+      }
+    }
+    /**
+     * Get or set the scales used in the element defaults to the figtree instance.
+     * @param scales
+     * @return {Bauble.scales|*}
+     */
+
+  }, {
+    key: "scales",
+    value: function scales() {
+      var _scales = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (_scales) {
+        this._scales = _scales;
+      } else {
+        if (this._scales) {
+          return this._scales;
+        } else {
+          return this.manager().figure().scales;
+        }
+      }
+    }
+    /**
+     * sets the x position based on the scale
+     * @param unscaledValue - number or function that is passed the data
+     */
+
+  }, {
+    key: "scaledX",
+    value: function scaledX(unscaledValue) {
+      var _this = this;
+
+      var n = parseFloat(unscaledValue);
+
+      if (n) {
+        this.attr("x", function (d) {
+          return _this.scales().x(unscaledValue);
+        });
+      } else {
+        this.attr("x", function (d) {
+          return _this.scales().x(unscaledValue(d));
+        });
+      }
+
+      return this;
+    }
+    /**
+     * sets the y position based on the scale
+     * @param unscaledValue - number or function that is passed the data
+     */
+
+  }, {
+    key: "scaledY",
+    value: function scaledY(unscaledValue) {
+      var _this2 = this;
+
+      var n = parseFloat(unscaledValue);
+
+      if (n) {
+        this.attr("y", function (d) {
+          return _this2.scales().y(unscaledValue);
+        });
+      } else {
+        this.attr("y", function (d) {
+          return _this2.scales().y(unscaledValue(d));
+        });
+      }
+
+      return this;
+    } // revealOnHover(){
+    //
+    //     this.filter()
+    //     //TODO put listener on parent only insert this element if the parent is hovered or clicked ect.
+    // }
+
+  }]);
+
+  return Bauble;
+}();
+
+function attrsFunction(selection, map) {
+  return selection.each(function() {
+    var x = map.apply(this, arguments), s = select(this);
+    for (var name in x) s.attr(name, x[name]);
+  });
+}
+
+function attrsObject(selection, map) {
+  for (var name in map) selection.attr(name, map[name]);
+  return selection;
+}
+
+function selection_attrs(map) {
+  return (typeof map === "function" ? attrsFunction : attrsObject)(this, map);
+}
+
+function stylesFunction(selection, map, priority) {
+  return selection.each(function() {
+    var x = map.apply(this, arguments), s = select(this);
+    for (var name in x) s.style(name, x[name], priority);
+  });
+}
+
+function stylesObject(selection, map, priority) {
+  for (var name in map) selection.style(name, map[name], priority);
+  return selection;
+}
+
+function selection_styles(map, priority) {
+  return (typeof map === "function" ? stylesFunction : stylesObject)(this, map, priority == null ? "" : priority);
+}
+
+function propertiesFunction(selection, map) {
+  return selection.each(function() {
+    var x = map.apply(this, arguments), s = select(this);
+    for (var name in x) s.property(name, x[name]);
+  });
+}
+
+function propertiesObject(selection, map) {
+  for (var name in map) selection.property(name, map[name]);
+  return selection;
+}
+
+function selection_properties(map) {
+  return (typeof map === "function" ? propertiesFunction : propertiesObject)(this, map);
+}
+
+function attrsFunction$1(transition, map) {
+  return transition.each(function() {
+    var x = map.apply(this, arguments), t = select(this).transition(transition);
+    for (var name in x) t.attr(name, x[name]);
+  });
+}
+
+function attrsObject$1(transition, map) {
+  for (var name in map) transition.attr(name, map[name]);
+  return transition;
+}
+
+function transition_attrs(map) {
+  return (typeof map === "function" ? attrsFunction$1 : attrsObject$1)(this, map);
+}
+
+function stylesFunction$1(transition, map, priority) {
+  return transition.each(function() {
+    var x = map.apply(this, arguments), t = select(this).transition(transition);
+    for (var name in x) t.style(name, x[name], priority);
+  });
+}
+
+function stylesObject$1(transition, map, priority) {
+  for (var name in map) transition.style(name, map[name], priority);
+  return transition;
+}
+
+function transition_styles(map, priority) {
+  return (typeof map === "function" ? stylesFunction$1 : stylesObject$1)(this, map, priority == null ? "" : priority);
+}
+
+selection.prototype.attrs = selection_attrs;
+selection.prototype.styles = selection_styles;
+selection.prototype.properties = selection_properties;
+transition.prototype.attrs = transition_attrs;
+transition.prototype.styles = transition_styles;
+
 function _assertThisInitialized(self) {
   if (self === void 0) {
     throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
@@ -9380,7 +9077,7 @@ function () {
     }
     /**
      * A getter function that updates the layout if needed, determines the most ancestral cartoons, hides the appropriate vertices
-     * and then returns a array of  cartoon objects defined as {vertices[{x:,y}...{x:,y:}], classes:[string,...],id:string,node:NODE:starting node }
+     * and then returns a array of  cartoon objects defined as {vertices[{x:,y}...{x:,y:}], deprecatedClasses:[string,...],id:string,node:NODE:starting node }
      * @return {[]}
      */
 
@@ -9774,7 +9471,7 @@ function (_layoutInterface) {
           _this10._vertices.push(_vertex);
 
           _this10._nodeMap.set(n, _vertex);
-        } //update classes as needed.
+        } //update deprecatedClasses as needed.
 
 
         var vertex = _this10._nodeMap.get(n);
@@ -9993,7 +9690,7 @@ function (_layoutInterface) {
         this.layout();
       }
 
-      return extent$1(this._vertices, function (d) {
+      return extent(this._vertices, function (d) {
         return d.y;
       });
     }
@@ -10110,616 +9807,10 @@ function (_layoutInterface) {
 
   return AbstractLayout;
 }(layoutInterface);
-/**
- * This is a helper function that updates a vertices y position by a specified amount. The function is meant to open a gap
- * in the tree around vertices that are moved. A side effect of the function is
- * that vertices not listed are moved up (if they are above the selected vertices and the vertices are moved up) and
- * down if they are below the selected vertices and the vertices are moved down. It is meant to be called with this
- * referring to the layout. Remember that the top of plot has y position 0. So positive numbers move the vertices to
- * positions lower on the screen.
- * @param delta
- * @param vertices
- */
-
-
-function updateVerticesY(delta) {
-  for (var _len2 = arguments.length, vertices = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
-    vertices[_key2 - 1] = arguments[_key2];
-  }
-
-  if (delta > 0) {
-    this._vertices.filter(function (v) {
-      return v.y > max(vertices, function (v) {
-        return v.y;
-      });
-    }).forEach(function (v) {
-      return v.y += 2 * delta;
-    });
-  } else if (delta < 0) {
-    this._vertices.filter(function (v) {
-      return v.y < min(vertices, function (v) {
-        return v.y;
-      });
-    }).forEach(function (v) {
-      return v.y += 2 * delta;
-    });
-  }
-
-  vertices.forEach(function (v) {
-    return v.y += delta;
-  });
-}
-
-/**
- * The rectangular layout class
- *
- */
-
-var RectangularLayout =
-/*#__PURE__*/
-function (_AbstractLayout) {
-  inherits(RectangularLayout, _AbstractLayout);
-
-  /**
-   * The constructor.
-   * @param tree
-   * @param settings
-   */
-  function RectangularLayout(tree) {
-    var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
-    classCallCheck(this, RectangularLayout);
-
-    return possibleConstructorReturn(this, getPrototypeOf(RectangularLayout).call(this, tree, settings));
-  }
-
-  createClass(RectangularLayout, [{
-    key: "_getTreeNodes",
-    value: function _getTreeNodes() {
-      return toConsumableArray(this.tree.postorder());
-    }
-  }, {
-    key: "setYPosition",
-    value: function setYPosition(vertex, currentY) {
-      var includedInVertical = !vertex.node.children;
-
-      if (!includedInVertical) {
-        var vertexChildren = this.getChildVertices(vertex);
-        vertex.y = mean(vertexChildren, function (child) {
-          return child.y;
-        });
-      } else {
-        currentY += 1;
-        vertex.y = currentY;
-      }
-
-      return currentY;
-    }
-  }]);
-
-  return RectangularLayout;
-}(AbstractLayout);
 
 function ownKeys$2(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
 function _objectSpread$2(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$2(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$2(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-/**
- * The TransmissionLayout class
- * up orders the tree in increasing node density and puts transmission up
- * down orders tree in decreasing node density and puts the transmissions down
- *
- */
-
-var TransmissionLayout =
-/*#__PURE__*/
-function (_AbstractLayout) {
-  inherits(TransmissionLayout, _AbstractLayout);
-
-  createClass(TransmissionLayout, null, [{
-    key: "DEFAULT_SETTINGS",
-    value: function DEFAULT_SETTINGS() {
-      return {
-        groupingAnnotation: "host",
-        direction: "up",
-        groupGap: 5
-      };
-    }
-  }]);
-
-  /**
-   * The constructor.
-   * @param tree
-   * @param settings
-   */
-  function TransmissionLayout(tree) {
-    var _this;
-
-    var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
-    classCallCheck(this, TransmissionLayout);
-
-    // Rotate the tree so that jumps are always on top/bottom depending on settings
-    // defined here so we can use the groupingAnnotation key
-    _this = possibleConstructorReturn(this, getPrototypeOf(TransmissionLayout).call(this, tree, _objectSpread$2({}, TransmissionLayout.DEFAULT_SETTINGS(), {}, settings)));
-
-    _this.extendLayout(transmissionMiddleWare);
-
-    return _this;
-  }
-
-  createClass(TransmissionLayout, [{
-    key: "setYPosition",
-    value: function setYPosition(vertex, currentY) {
-      var includedInVertical = !vertex.node.children;
-
-      if (!includedInVertical) {
-        var vertexChildren = this.getChildVertices(vertex);
-        vertex.y = mean(vertexChildren, function (child) {
-          return child.y;
-        });
-      } else {
-        currentY += 1;
-        vertex.y = currentY;
-      }
-
-      return currentY;
-    }
-  }, {
-    key: "_getTreeNodes",
-    value: function _getTreeNodes() {
-      // this.tree._order(orderTreeNodes.bind(this));
-      return toConsumableArray(this.tree.postorder());
-    }
-  }]);
-
-  return TransmissionLayout;
-}(AbstractLayout);
-
-function transmissionMiddleWare(context) {
-  // If direction is up start at bottom if direction is down start at top
-  var sorting = function sorting(a, b) {
-    return -1;
-  };
-
-  var gap = context.settings.groupGap;
-
-  if (context.settings.direction.toLowerCase() === "up") {
-    sorting = function sorting(a, b) {
-      return a.y - b.y;
-    };
-
-    gap *= -1;
-  } else if (context.settings.direction.toLowerCase() === "down") {
-    sorting = function sorting(a, b) {
-      return b.y - a.y;
-    };
-  }
-
-  context._vertices.sort(sorting).forEach(function (vertex) {
-    //We don't touch the root
-    if (vertex.node.parent) {
-      //Is there a state change
-      if (vertex.node.annotations[context.settings.groupingAnnotation] !== vertex.node.parent.annotations[context.settings.groupingAnnotation]) {
-        //Get descendent vertices
-        var vertices = toConsumableArray(context.tree.postorder(vertex.node)).map(function (n) {
-          return context._nodeMap.get(n);
-        });
-
-        updateVerticesY.call.apply(updateVerticesY, [context, gap].concat(toConsumableArray(vertices)));
-      }
-    }
-  });
-
-  context._verticalRange = extent(context._vertices, function (v) {
-    return v.y;
-  });
-}
-
-function ownKeys$3(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread$3(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$3(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$3(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-/**
- * The TransmissionLayout class
- * Only works for 'up' directions
- *
- */
-
-var ExplodedLayout =
-/*#__PURE__*/
-function (_AbstractLayout) {
-  inherits(ExplodedLayout, _AbstractLayout);
-
-  createClass(ExplodedLayout, null, [{
-    key: "DEFAULT_SETTINGS",
-    value: function DEFAULT_SETTINGS() {
-      return {
-        groupingAnnotation: "host",
-        direction: "up",
-        interGroupGap: 10,
-        intraGroupGap: 5,
-        groupOrdering: function groupOrdering(a, b) {
-          return a < b ? -1 : 1;
-        }
-      };
-    }
-  }]);
-
-  /**
-   * The constructor.
-   * @param tree
-   * @param settings
-   */
-  function ExplodedLayout(tree) {
-    var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
-    classCallCheck(this, ExplodedLayout);
-
-    return possibleConstructorReturn(this, getPrototypeOf(ExplodedLayout).call(this, tree, _objectSpread$3({}, ExplodedLayout.DEFAULT_SETTINGS(), {}, settings)));
-  }
-
-  createClass(ExplodedLayout, [{
-    key: "_getTreeNodes",
-    value: function _getTreeNodes() {
-      var _this = this;
-
-      // order first by grouping annotation and then by postorder
-      var postOrderNodes = toConsumableArray(this.tree.postorder()); // sort by location and then by post order order but we want all import/export banches to be last
-
-
-      return toConsumableArray(this.tree.postorder()).sort(function (a, b) {
-        var aGroup = a.annotations[_this.settings.groupingAnnotation];
-        var bGroup = b.annotations[_this.settings.groupingAnnotation];
-
-        if (aGroup === bGroup) {
-          return postOrderNodes.indexOf(a) - postOrderNodes.indexOf(b);
-        } else {
-          return _this.settings.groupOrdering(aGroup, bGroup);
-        }
-      });
-    }
-  }, {
-    key: "setYPosition",
-    value: function setYPosition(vertex, currentY) {
-      // check if there are children that that are in the same group and set position to mean
-      // if do something else
-      if (currentY === this.setInitialY()) {
-        this._currentGroup = vertex.node.annotations[this.settings.groupingAnnotation];
-      } // First if this isn't tip like
-
-
-      if (vertex.node.children && (vertex.node.children.length > 1 || vertex.node.annotations[this.settings.groupingAnnotation] !== vertex.node.parent.annotations[this.settings.groupingAnnotation])) {
-        var vertexChildren = this.getChildVertices(vertex);
-        vertex.y = mean(vertexChildren, function (child) {
-          return child.y;
-        });
-
-        if (vertex.node.parent) {
-          if (vertex.node.annotations[this.settings.groupingAnnotation] !== vertex.node.parent.annotations[this.settings.groupingAnnotation]) {
-            this._newIntraGroupNext = true;
-          }
-        }
-      } else {
-        //It's a tip or tip-like
-        if (vertex.node.annotations[this.settings.groupingAnnotation] !== this._currentGroup) {
-          //This the the first time in the new group
-          currentY += this.settings.interGroupGap; //Reset this flag
-
-          this._newIntraGroupNext = false;
-        } else if (this._newIntraGroupNext) {
-          //It's a tip in a new circulation
-          currentY += this.settings.intraGroupGap;
-          this._newIntraGroupNext = false;
-        } else {
-          //Just the same ciruclation
-          currentY += 1;
-        }
-
-        this._currentGroup = vertex.node.annotations[this.settings.groupingAnnotation];
-        vertex.y = currentY;
-      }
-
-      return currentY;
-    }
-  }]);
-
-  return ExplodedLayout;
-}(AbstractLayout);
-/*
- * Private methods, called by the class using the <function>.call(this) function.
- */
-
-/**
- * The Bauble class
- *
- * This is a shape or Decoration at the node or edge of a tree.
- */
-
-var Bauble =
-/*#__PURE__*/
-function () {
-  function Bauble() {
-    classCallCheck(this, Bauble);
-
-    this.id = "n".concat(uuid_1.v4());
-    this._attrs = {};
-    this._interactions = {};
-
-    this._filter = function () {
-      return true;
-    };
-  }
-  /**
-   * A function that appends the element to the selection, joins the data, assigns the attributes to the svg objects
-   * updates and remove unneeded objects.
-   * @param selection
-   */
-
-
-  createClass(Bauble, [{
-    key: "update",
-    value: function update(selection) {
-      throw new Error("Don't call the base class method");
-    }
-    /**
-     * Getter or setter of bauble filter. The filter is function that will be passed the vertex or edge.It should return
-     * true or false
-     * @param f
-     * @return {(function(): boolean)|Bauble}
-     */
-
-  }, {
-    key: "filter",
-    value: function filter() {
-      var f = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-
-      if (f === null) {
-        return this._filter;
-      } else {
-        this._filter = f;
-        return this;
-      }
-    }
-    /**
-     * Get or set the bauble manager that handles these elements. this is called by the manager when the element
-     * is added.
-     * @param manager
-     * @return {Bauble|*}
-     */
-
-  }, {
-    key: "manager",
-    value: function manager() {
-      var _manager = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-
-      if (_manager === null) {
-        return this._manager;
-      } else {
-        this._manager = _manager;
-        return this;
-      }
-    }
-    /**
-     * Get or set attributes that will style the elements.
-     * @param string
-     * @param value - a string, number, or function that will be passed to d3 selection.
-     * @return {Bauble|*}
-     */
-
-  }, {
-    key: "attr",
-    value: function attr(string) {
-      var value = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-
-      if (value) {
-        this._attrs[string] = value;
-        return this;
-      } else {
-        return this._attrs[string];
-      }
-    }
-    /**
-     * Set a call back to be fired when the event listener is triggered.
-     * @param eventListener - a string that defines the event listener
-     * @param value -  call back that will be passed d,i,n
-     * @return {Bauble}
-     */
-
-  }, {
-    key: "on",
-    value: function on(eventListener, value) {
-      this._interactions[eventListener] = value;
-      return this;
-    }
-    /**
-     * Get or set the transition duration and ease. Defualts to the figtree instance.
-     * @param t - optional object {tranmsissionDuration: transmissionEase:}
-     * @return {Bauble|BaubleManager|*|Bauble}
-     */
-
-  }, {
-    key: "transitions",
-    value: function transitions() {
-      var t = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-
-      if (t === null) {
-        if (this._transitions) {
-          return this._transitions;
-        } else {
-          return this.manager().figure().transitions();
-        }
-      } else {
-        this._transitions = t;
-        return this;
-      }
-    }
-    /**
-     * Get or set the scales used in the element defaults to the figtree instance.
-     * @param scales
-     * @return {Bauble.scales|*}
-     */
-
-  }, {
-    key: "scales",
-    value: function scales() {
-      var _scales = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-
-      if (_scales) {
-        this._scales = _scales;
-      } else {
-        if (this._scales) {
-          return this._scales;
-        } else {
-          return this.manager().figure().scales;
-        }
-      }
-    }
-    /**
-     * sets the x position based on the scale
-     * @param unscaledValue - number or function that is passed the data
-     */
-
-  }, {
-    key: "scaledX",
-    value: function scaledX(unscaledValue) {
-      var _this = this;
-
-      var n = parseFloat(unscaledValue);
-
-      if (n) {
-        this.attr("x", function (d) {
-          return _this.scales().x(unscaledValue);
-        });
-      } else {
-        this.attr("x", function (d) {
-          return _this.scales().x(unscaledValue(d));
-        });
-      }
-
-      return this;
-    }
-    /**
-     * sets the y position based on the scale
-     * @param unscaledValue - number or function that is passed the data
-     */
-
-  }, {
-    key: "scaledY",
-    value: function scaledY(unscaledValue) {
-      var _this2 = this;
-
-      var n = parseFloat(unscaledValue);
-
-      if (n) {
-        this.attr("y", function (d) {
-          return _this2.scales().y(unscaledValue);
-        });
-      } else {
-        this.attr("y", function (d) {
-          return _this2.scales().y(unscaledValue(d));
-        });
-      }
-
-      return this;
-    } // revealOnHover(){
-    //
-    //     this.filter()
-    //     //TODO put listener on parent only insert this element if the parent is hovered or clicked ect.
-    // }
-
-  }]);
-
-  return Bauble;
-}();
-
-function attrsFunction(selection, map) {
-  return selection.each(function() {
-    var x = map.apply(this, arguments), s = select(this);
-    for (var name in x) s.attr(name, x[name]);
-  });
-}
-
-function attrsObject(selection, map) {
-  for (var name in map) selection.attr(name, map[name]);
-  return selection;
-}
-
-function selection_attrs(map) {
-  return (typeof map === "function" ? attrsFunction : attrsObject)(this, map);
-}
-
-function stylesFunction(selection, map, priority) {
-  return selection.each(function() {
-    var x = map.apply(this, arguments), s = select(this);
-    for (var name in x) s.style(name, x[name], priority);
-  });
-}
-
-function stylesObject(selection, map, priority) {
-  for (var name in map) selection.style(name, map[name], priority);
-  return selection;
-}
-
-function selection_styles(map, priority) {
-  return (typeof map === "function" ? stylesFunction : stylesObject)(this, map, priority == null ? "" : priority);
-}
-
-function propertiesFunction(selection, map) {
-  return selection.each(function() {
-    var x = map.apply(this, arguments), s = select(this);
-    for (var name in x) s.property(name, x[name]);
-  });
-}
-
-function propertiesObject(selection, map) {
-  for (var name in map) selection.property(name, map[name]);
-  return selection;
-}
-
-function selection_properties(map) {
-  return (typeof map === "function" ? propertiesFunction : propertiesObject)(this, map);
-}
-
-function attrsFunction$1(transition, map) {
-  return transition.each(function() {
-    var x = map.apply(this, arguments), t = select(this).transition(transition);
-    for (var name in x) t.attr(name, x[name]);
-  });
-}
-
-function attrsObject$1(transition, map) {
-  for (var name in map) transition.attr(name, map[name]);
-  return transition;
-}
-
-function transition_attrs(map) {
-  return (typeof map === "function" ? attrsFunction$1 : attrsObject$1)(this, map);
-}
-
-function stylesFunction$1(transition, map, priority) {
-  return transition.each(function() {
-    var x = map.apply(this, arguments), t = select(this).transition(transition);
-    for (var name in x) t.style(name, x[name], priority);
-  });
-}
-
-function stylesObject$1(transition, map, priority) {
-  for (var name in map) transition.style(name, map[name], priority);
-  return transition;
-}
-
-function transition_styles(map, priority) {
-  return (typeof map === "function" ? stylesFunction$1 : stylesObject$1)(this, map, priority == null ? "" : priority);
-}
-
-selection.prototype.attrs = selection_attrs;
-selection.prototype.styles = selection_styles;
-selection.prototype.properties = selection_properties;
-transition.prototype.attrs = transition_attrs;
-transition.prototype.styles = transition_styles;
-
-function ownKeys$4(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread$4(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$4(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$4(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 var GeoLayout =
 /*#__PURE__*/
 function (_AbstractLayout) {
@@ -10741,7 +9832,7 @@ function (_AbstractLayout) {
 
     classCallCheck(this, GeoLayout);
 
-    _this = possibleConstructorReturn(this, getPrototypeOf(GeoLayout).call(this, tree, _objectSpread$4({}, GeoLayout.DEFAULT_SETTINGS(), {}, settings)));
+    _this = possibleConstructorReturn(this, getPrototypeOf(GeoLayout).call(this, tree, _objectSpread$2({}, GeoLayout.DEFAULT_SETTINGS(), {}, settings)));
     _this.projection = projection;
     return _this;
   }
@@ -10998,9 +10089,9 @@ var p = {
   legend: Symbol("legend")
 };
 
-function ownKeys$5(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+function ownKeys$3(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
-function _objectSpread$5(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$5(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$5(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+function _objectSpread$3(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$3(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$3(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 /** @module figtree */
 
 /**
@@ -11108,7 +10199,7 @@ function () {
       var t = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
       if (t) {
-        this._transitions = _objectSpread$5({}, this._transitions, {}, t);
+        this._transitions = _objectSpread$3({}, this._transitions, {}, t);
       } else {
         return this._transitions;
       }
@@ -11119,7 +10210,7 @@ function () {
       var m = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
       if (m !== null) {
-        this._margins = _objectSpread$5({}, this._margins, {}, m);
+        this._margins = _objectSpread$3({}, this._margins, {}, m);
         return this;
       } else {
         return this._margins;
@@ -11304,13 +10395,13 @@ function () {
         yScale = linear$1();
         projection = this.layout.projection;
       } else {
-        var xdomain = extent$1(vertices.map(function (d) {
+        var xdomain = extent(vertices.map(function (d) {
           return d.x;
         }).concat(edges.reduce(function (acc, e) {
           return acc.concat([e.v1.x, e.v0.x]);
         }, []))); // almost always the same except when the trendline is added as an edge without vertices
 
-        var ydomain = extent$1(vertices.map(function (d) {
+        var ydomain = extent(vertices.map(function (d) {
           return d.y;
         }).concat(edges.reduce(function (acc, e) {
           return acc.concat([e.v1.y, e.v0.y]);
@@ -11326,6 +10417,35 @@ function () {
         height: height,
         projection: projection
       };
+    }
+    /**
+     * Registers some text to appear in a popup box when the mouse hovers over the selection.
+     *
+     * @param selection
+     * @param text
+     */
+
+  }, {
+    key: "addToolTip",
+    value: function addToolTip(selection, text) {
+      this.svgSelection.selectAll(selection).on("mouseover", function (selected) {
+        var tooltip = document.getElementById("tooltip");
+
+        if (_typeof_1(text) === _typeof_1("")) {
+          tooltip.innerHTML = text;
+        } else {
+          tooltip.innerHTML = text(selected.node);
+        }
+
+        tooltip.style.display = "block";
+        tooltip.style.left = event.pageX + 10 + "px";
+        tooltip.style.top = event.pageY + 10 + "px";
+      });
+      this.svgSelection.selectAll(selection).on("mouseout", function () {
+        var tooltip = document.getElementById("tooltip");
+        tooltip.style.display = "none";
+      });
+      return this;
     } // setters and getters
 
     /**
@@ -11424,271 +10544,6 @@ function () {
 
   return FigTree;
 }();
-
-function ownKeys$6(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread$6(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$6(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$6(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-/**
- * The RootToTipPlot class
- */
-
-var RootToTipPlot =
-/*#__PURE__*/
-function (_AbstractLayout) {
-  inherits(RootToTipPlot, _AbstractLayout);
-
-  /**
-   * The constructor.
-   * @param tree
-   * @param settings
-   */
-  function RootToTipPlot(tree) {
-    var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
-    classCallCheck(this, RootToTipPlot);
-
-    return possibleConstructorReturn(this, getPrototypeOf(RootToTipPlot).call(this, tree, _objectSpread$6({
-      externalNodeLabelAnnotationName: null,
-      regressionFilter: function regressionFilter() {
-        return true;
-      }
-    }, settings)));
-  }
-
-  createClass(RootToTipPlot, [{
-    key: "layout",
-    value: function layout() {
-      var _this = this;
-
-      var treeNodes = this._getTreeNodes();
-
-      this[makeVerticesFromNodes](treeNodes); // console.log(this._vertices)
-      // update the node locations (vertices)
-
-      treeNodes.forEach(function (n) {
-        var v = _this._nodeMap.get(n);
-
-        _this.setYPosition(v, null);
-
-        _this.setXPosition(v, null);
-      });
-
-      var usedVertices = this._vertices.filter(this.settings.regressionFilter);
-
-      this.regression = this.leastSquares(usedVertices); //TODO rerooting doesn't update line?!!
-
-      var x1 = min(this._vertices, function (d) {
-        return d.x;
-      });
-      var x2 = max(this._vertices, function (d) {
-        return d.x;
-      });
-      var y1 = 0.0;
-      var y2 = max(usedVertices, function (d) {
-        return d.y;
-      });
-
-      if (usedVertices.filter(function (v) {
-        return v.visibility === VertexStyle$1.INCLUDED;
-      }).length > 1 && this.regression.slope > 0.0) {
-        x1 = this.regression.xIntercept;
-        y2 = this.regression.y(x2);
-      } else if (usedVertices.filter(function (v) {
-        return v.visibility === VertexStyle$1.INCLUDED;
-      }).length > 1 && this.regression.slope < 0.0) {
-        x2 = this.regression.xIntercept;
-        y1 = this.regression.y(x1);
-        y2 = 0;
-      }
-
-      var startPoint = {
-        key: "startPoint",
-        visibility: VertexStyle$1.HIDDEN,
-        x: x1,
-        y: y1
-      };
-      var endPoint = {
-        key: "endPoint",
-        visibility: VertexStyle$1.HIDDEN,
-        x: x2,
-        y: y2
-      };
-
-      this._vertices.push(startPoint);
-
-      this._nodeMap.set("startPoint", startPoint);
-
-      this._vertices.push(endPoint);
-
-      this._nodeMap.set("endPoint", endPoint);
-
-      this._edges = [{
-        v0: startPoint,
-        v1: endPoint,
-        key: "line",
-        classes: []
-      }];
-      this.layoutKnown = true;
-    }
-  }, {
-    key: "_getTreeNodes",
-    value: function _getTreeNodes() {
-      return this.tree.externalNodes;
-    }
-  }, {
-    key: "setInitialY",
-    value: function setInitialY() {
-      return 0;
-    }
-  }, {
-    key: "setInitialX",
-    value: function setInitialX() {
-      return 0;
-    }
-  }, {
-    key: "setXPosition",
-    value: function setXPosition(vertex, currentX) {
-      vertex.x = vertex.node.annotations.date;
-      return 0;
-    }
-  }, {
-    key: "setYPosition",
-    value: function setYPosition(vertex, currentY) {
-      vertex.y = this.tree.rootToTipLength(vertex.node);
-      return vertex.y;
-    }
-  }, {
-    key: "leastSquares",
-
-    /**
-     * returns slope, intercept and r-square of the line
-     * @param data
-     * @returns {{slope: number, xIntercept: number, yIntercept: number, rSquare: number, y: (function(*): number)}}
-     */
-    value: function leastSquares(data) {
-      var xBar = data.reduce(function (a, b) {
-        return a + b.x;
-      }, 0.0) / data.length;
-      var yBar = data.reduce(function (a, b) {
-        return a + b.y;
-      }, 0.0) / data.length;
-      var ssXX = data.map(function (d) {
-        return Math.pow(d.x - xBar, 2);
-      }).reduce(function (a, b) {
-        return a + b;
-      }, 0.0);
-      var ssYY = data.map(function (d) {
-        return Math.pow(d.y - yBar, 2);
-      }).reduce(function (a, b) {
-        return a + b;
-      }, 0.0);
-      var ssXY = data.map(function (d) {
-        return (d.x - xBar) * (d.y - yBar);
-      }).reduce(function (a, b) {
-        return a + b;
-      }, 0.0);
-      var slope = ssXY / ssXX;
-      var yIntercept = yBar - xBar * slope;
-      var xIntercept = -(yIntercept / slope);
-      var rSquare = Math.pow(ssXY, 2) / (ssXX * ssYY);
-      return {
-        slope: slope,
-        xIntercept: xIntercept,
-        yIntercept: yIntercept,
-        rSquare: rSquare,
-        y: function y(x) {
-          return x * slope + yIntercept;
-        }
-      };
-    }
-  }, {
-    key: "linkWithTree",
-    value: function linkWithTree(treeSVG) {
-      var self = this;
-
-      var mouseover = function mouseover(d) {
-        select(self.svg).select("#".concat(d.node.id)).select(".node-shape").attr("r", self.settings.hoverNodeRadius);
-        select(treeSVG).select("#".concat(d.node.id)).select(".node-shape").attr("r", self.settings.hoverNodeRadius);
-      };
-
-      var mouseout = function mouseout(d) {
-        select(self.svg).select("#".concat(d.node.id)).select(".node-shape").attr("r", self.settings.nodeRadius);
-        select(treeSVG).select("#".concat(d.node.id)).select(".node-shape").attr("r", self.settings.nodeRadius);
-      };
-
-      var clicked = function clicked(d) {
-        // toggle isSelected
-        var tip = d;
-
-        if (d.node) {
-          tip = d.node;
-        }
-
-        tip.isSelected = !tip.isSelected;
-        var node1 = select(self.svg).select("#".concat(tip.id)).select(".node-shape");
-        var node2 = select(treeSVG).select("#".concat(tip.id)).select(".node-shape");
-
-        if (tip.isSelected) {
-          node1.attr("class", "node-shape selected");
-          node2.attr("class", "node-shape selected");
-        } else {
-          node1.attr("class", "node-shape unselected");
-          node2.attr("class", "node-shape unselected");
-        }
-
-        self.update();
-      };
-
-      var tips = select(this.svg).selectAll(".external-node").selectAll(".node-shape");
-      tips.on("mouseover", mouseover);
-      tips.on("mouseout", mouseout);
-      tips.on("click", clicked);
-      var points = select(treeSVG).selectAll(".node-shape");
-      points.on("mouseover", mouseover);
-      points.on("mouseout", mouseout);
-      points.on("click", clicked);
-    }
-  }, {
-    key: "horizontalDomain",
-    get: function get() {
-      if (!this.layoutKnown) {
-        this.layout();
-      }
-
-      var xPositions = [].concat(toConsumableArray(this._vertices.map(function (d) {
-        return d.x;
-      })), [min(this._vertices.map(function (d) {
-        return d.x;
-      }))]);
-      return [min(xPositions), max(xPositions)];
-    }
-  }, {
-    key: "verticalDomain",
-    get: function get() {
-      if (!this.layoutKnown) {
-        this.layout();
-      }
-
-      var yPositions = [].concat(toConsumableArray(this._vertices.map(function (d) {
-        return d.y;
-      })), [min(this._vertices.map(function (d) {
-        return d.y;
-      }))]);
-      return [max(yPositions), min(yPositions)];
-    }
-  }, {
-    key: "edges",
-    get: function get() {
-      if (!this.layoutKnown) {
-        this.layout();
-      }
-
-      return this._edges;
-    }
-  }]);
-
-  return RootToTipPlot;
-}(AbstractLayout);
 
 function _superPropBase(object, property) {
   while (!Object.prototype.hasOwnProperty.call(object, property)) {
@@ -11953,7 +10808,7 @@ function (_Bauble) {
  * @return {CircleBauble}
  */
 
-function circle$1() {
+function circle() {
   return new CircleBauble();
 }
 
@@ -12149,139 +11004,6 @@ function (_Bauble) {
 function rectangle() {
   return new RectangularBauble();
 }
-
-var rough_umd = createCommonjsModule(function (module, exports) {
-!function(t,e){module.exports=e();}(commonjsGlobal,function(){const t="undefined"!=typeof self;class e{constructor(t,e){this.defaultOptions={maxRandomnessOffset:2,roughness:1,bowing:1,stroke:"#000",strokeWidth:1,curveTightness:0,curveStepCount:9,fillStyle:"hachure",fillWeight:-1,hachureAngle:-41,hachureGap:-1,dashOffset:-1,dashGap:-1,zigzagOffset:-1},this.config=t||{},this.surface=e,this.config.options&&(this.defaultOptions=this._options(this.config.options));}_options(t){return t?Object.assign({},this.defaultOptions,t):this.defaultOptions}_drawable(t,e,s){return {shape:t,sets:e||[],options:s||this.defaultOptions}}getCanvasSize(){const t=t=>t&&"object"==typeof t&&t.baseVal&&t.baseVal.value?t.baseVal.value:t||100;return this.surface?[t(this.surface.width),t(this.surface.height)]:[100,100]}computePolygonSize(t){if(t.length){let e=t[0][0],s=t[0][0],i=t[0][1],h=t[0][1];for(let n=1;n<t.length;n++)e=Math.min(e,t[n][0]),s=Math.max(s,t[n][0]),i=Math.min(i,t[n][1]),h=Math.max(h,t[n][1]);return [s-e,h-i]}return [0,0]}polygonPath(t){let e="";if(t.length){e=`M${t[0][0]},${t[0][1]}`;for(let s=1;s<t.length;s++)e=`${e} L${t[s][0]},${t[s][1]}`;}return e}computePathSize(e){let s=[0,0];if(t&&self.document)try{const t="http://www.w3.org/2000/svg",i=self.document.createElementNS(t,"svg");i.setAttribute("width","0"),i.setAttribute("height","0");const h=self.document.createElementNS(t,"path");h.setAttribute("d",e),i.appendChild(h),self.document.body.appendChild(i);const n=h.getBBox();n&&(s[0]=n.width||0,s[1]=n.height||0),self.document.body.removeChild(i);}catch(t){}const i=this.getCanvasSize();return s[0]*s[1]||(s=i),s}toPaths(t){const e=t.sets||[],s=t.options||this.defaultOptions,i=[];for(const t of e){let e=null;switch(t.type){case"path":e={d:this.opsToPath(t),stroke:s.stroke,strokeWidth:s.strokeWidth,fill:"none"};break;case"fillPath":e={d:this.opsToPath(t),stroke:"none",strokeWidth:0,fill:s.fill||"none"};break;case"fillSketch":e=this.fillSketch(t,s);break;case"path2Dfill":e={d:t.path||"",stroke:"none",strokeWidth:0,fill:s.fill||"none"};break;case"path2Dpattern":{const i=t.size,h={x:0,y:0,width:1,height:1,viewBox:`0 0 ${Math.round(i[0])} ${Math.round(i[1])}`,patternUnits:"objectBoundingBox",path:this.fillSketch(t,s)};e={d:t.path,stroke:"none",strokeWidth:0,pattern:h};break}}e&&i.push(e);}return i}fillSketch(t,e){let s=e.fillWeight;return s<0&&(s=e.strokeWidth/2),{d:this.opsToPath(t),stroke:e.fill||"none",strokeWidth:s,fill:"none"}}opsToPath(t){let e="";for(const s of t.ops){const t=s.data;switch(s.op){case"move":e+=`M${t[0]} ${t[1]} `;break;case"bcurveTo":e+=`C${t[0]} ${t[1]}, ${t[2]} ${t[3]}, ${t[4]} ${t[5]} `;break;case"qcurveTo":e+=`Q${t[0]} ${t[1]}, ${t[2]} ${t[3]} `;break;case"lineTo":e+=`L${t[0]} ${t[1]} `;}}return e.trim()}}function s(t,e){return t.type===e}const i={A:7,a:7,C:6,c:6,H:1,h:1,L:2,l:2,M:2,m:2,Q:4,q:4,S:4,s:4,T:4,t:2,V:1,v:1,Z:0,z:0};class h{constructor(t){this.COMMAND=0,this.NUMBER=1,this.EOD=2,this.segments=[],this.parseData(t),this.processPoints();}tokenize(t){const e=new Array;for(;""!==t;)if(t.match(/^([ \t\r\n,]+)/))t=t.substr(RegExp.$1.length);else if(t.match(/^([aAcChHlLmMqQsStTvVzZ])/))e[e.length]={type:this.COMMAND,text:RegExp.$1},t=t.substr(RegExp.$1.length);else{if(!t.match(/^(([-+]?[0-9]+(\.[0-9]*)?|[-+]?\.[0-9]+)([eE][-+]?[0-9]+)?)/))return console.error("Unrecognized segment command: "+t),[];e[e.length]={type:this.NUMBER,text:`${parseFloat(RegExp.$1)}`},t=t.substr(RegExp.$1.length);}return e[e.length]={type:this.EOD,text:""},e}parseData(t){const e=this.tokenize(t);let h=0,n=e[h],a="BOD";for(this.segments=new Array;!s(n,this.EOD);){let o;const r=new Array;if("BOD"===a){if("M"!==n.text&&"m"!==n.text)return void this.parseData("M0,0"+t);h++,o=i[n.text],a=n.text;}else s(n,this.NUMBER)?o=i[a]:(h++,o=i[n.text],a=n.text);if(h+o<e.length){for(let t=h;t<h+o;t++){const i=e[t];if(!s(i,this.NUMBER))return void console.error("Parameter type is not a number: "+a+","+i.text);r[r.length]=+i.text;}if("number"!=typeof i[a])return void console.error("Unsupported segment type: "+a);{const t={key:a,data:r};this.segments.push(t),n=e[h+=o],"M"===a&&(a="L"),"m"===a&&(a="l");}}else console.error("Path data ended before all parameters were found");}}get closed(){if(void 0===this._closed){this._closed=!1;for(const t of this.segments)"z"===t.key.toLowerCase()&&(this._closed=!0);}return this._closed}processPoints(){let t=null,e=[0,0];for(let s=0;s<this.segments.length;s++){const i=this.segments[s];switch(i.key){case"M":case"L":case"T":i.point=[i.data[0],i.data[1]];break;case"m":case"l":case"t":i.point=[i.data[0]+e[0],i.data[1]+e[1]];break;case"H":i.point=[i.data[0],e[1]];break;case"h":i.point=[i.data[0]+e[0],e[1]];break;case"V":i.point=[e[0],i.data[0]];break;case"v":i.point=[e[0],i.data[0]+e[1]];break;case"z":case"Z":t&&(i.point=[t[0],t[1]]);break;case"C":i.point=[i.data[4],i.data[5]];break;case"c":i.point=[i.data[4]+e[0],i.data[5]+e[1]];break;case"S":i.point=[i.data[2],i.data[3]];break;case"s":i.point=[i.data[2]+e[0],i.data[3]+e[1]];break;case"Q":i.point=[i.data[2],i.data[3]];break;case"q":i.point=[i.data[2]+e[0],i.data[3]+e[1]];break;case"A":i.point=[i.data[5],i.data[6]];break;case"a":i.point=[i.data[5]+e[0],i.data[6]+e[1]];}"m"!==i.key&&"M"!==i.key||(t=null),i.point&&(e=i.point,t||(t=i.point)),"z"!==i.key&&"Z"!==i.key||(t=null);}}}class n{constructor(t){this._position=[0,0],this._first=null,this.bezierReflectionPoint=null,this.quadReflectionPoint=null,this.parsed=new h(t);}get segments(){return this.parsed.segments}get closed(){return this.parsed.closed}get linearPoints(){if(!this._linearPoints){const t=[];let e=[];for(const s of this.parsed.segments){const i=s.key.toLowerCase();("m"!==i&&"z"!==i||(e.length&&(t.push(e),e=[]),"z"!==i))&&(s.point&&e.push(s.point));}e.length&&(t.push(e),e=[]),this._linearPoints=t;}return this._linearPoints}get first(){return this._first}set first(t){this._first=t;}setPosition(t,e){this._position=[t,e],this._first||(this._first=[t,e]);}get position(){return this._position}get x(){return this._position[0]}get y(){return this._position[1]}}class a{constructor(t,e,s,i,h,n){if(this._segIndex=0,this._numSegs=0,this._rx=0,this._ry=0,this._sinPhi=0,this._cosPhi=0,this._C=[0,0],this._theta=0,this._delta=0,this._T=0,this._from=t,t[0]===e[0]&&t[1]===e[1])return;const a=Math.PI/180;this._rx=Math.abs(s[0]),this._ry=Math.abs(s[1]),this._sinPhi=Math.sin(i*a),this._cosPhi=Math.cos(i*a);const o=this._cosPhi*(t[0]-e[0])/2+this._sinPhi*(t[1]-e[1])/2,r=-this._sinPhi*(t[0]-e[0])/2+this._cosPhi*(t[1]-e[1])/2;let l=0;const c=this._rx*this._rx*this._ry*this._ry-this._rx*this._rx*r*r-this._ry*this._ry*o*o;if(c<0){const t=Math.sqrt(1-c/(this._rx*this._rx*this._ry*this._ry));this._rx=this._rx*t,this._ry=this._ry*t,l=0;}else l=(h===n?-1:1)*Math.sqrt(c/(this._rx*this._rx*r*r+this._ry*this._ry*o*o));const p=l*this._rx*r/this._ry,u=-l*this._ry*o/this._rx;this._C=[0,0],this._C[0]=this._cosPhi*p-this._sinPhi*u+(t[0]+e[0])/2,this._C[1]=this._sinPhi*p+this._cosPhi*u+(t[1]+e[1])/2,this._theta=this.calculateVectorAngle(1,0,(o-p)/this._rx,(r-u)/this._ry);let f=this.calculateVectorAngle((o-p)/this._rx,(r-u)/this._ry,(-o-p)/this._rx,(-r-u)/this._ry);!n&&f>0?f-=2*Math.PI:n&&f<0&&(f+=2*Math.PI),this._numSegs=Math.ceil(Math.abs(f/(Math.PI/2))),this._delta=f/this._numSegs,this._T=8/3*Math.sin(this._delta/4)*Math.sin(this._delta/4)/Math.sin(this._delta/2);}getNextSegment(){if(this._segIndex===this._numSegs)return null;const t=Math.cos(this._theta),e=Math.sin(this._theta),s=this._theta+this._delta,i=Math.cos(s),h=Math.sin(s),n=[this._cosPhi*this._rx*i-this._sinPhi*this._ry*h+this._C[0],this._sinPhi*this._rx*i+this._cosPhi*this._ry*h+this._C[1]],a=[this._from[0]+this._T*(-this._cosPhi*this._rx*e-this._sinPhi*this._ry*t),this._from[1]+this._T*(-this._sinPhi*this._rx*e+this._cosPhi*this._ry*t)],o=[n[0]+this._T*(this._cosPhi*this._rx*h+this._sinPhi*this._ry*i),n[1]+this._T*(this._sinPhi*this._rx*h-this._cosPhi*this._ry*i)];return this._theta=s,this._from=[n[0],n[1]],this._segIndex++,{cp1:a,cp2:o,to:n}}calculateVectorAngle(t,e,s,i){const h=Math.atan2(e,t),n=Math.atan2(i,s);return n>=h?n-h:2*Math.PI-(h-n)}}class o{constructor(t,e){this.sets=t,this.closed=e;}fit(t){const e=[];for(const s of this.sets){const i=s.length;let h=Math.floor(t*i);if(h<5){if(i<=5)continue;h=5;}e.push(this.reduce(s,h));}let s="";for(const t of e){for(let e=0;e<t.length;e++){const i=t[e];s+=0===e?"M"+i[0]+","+i[1]:"L"+i[0]+","+i[1];}this.closed&&(s+="z ");}return s}distance(t,e){return Math.sqrt(Math.pow(t[0]-e[0],2)+Math.pow(t[1]-e[1],2))}reduce(t,e){if(t.length<=e)return t;const s=t.slice(0);for(;s.length>e;){let t=-1,e=-1;for(let i=1;i<s.length-1;i++){const h=this.distance(s[i-1],s[i]),n=this.distance(s[i],s[i+1]),a=this.distance(s[i-1],s[i+1]),o=(h+n+a)/2,r=Math.sqrt(o*(o-h)*(o-n)*(o-a));(t<0||r<t)&&(t=r,e=i);}if(!(e>0))break;s.splice(e,1);}return s}}class r{constructor(t,e){this.xi=Number.MAX_VALUE,this.yi=Number.MAX_VALUE,this.px1=t[0],this.py1=t[1],this.px2=e[0],this.py2=e[1],this.a=this.py2-this.py1,this.b=this.px1-this.px2,this.c=this.px2*this.py1-this.px1*this.py2,this._undefined=0===this.a&&0===this.b&&0===this.c;}isUndefined(){return this._undefined}intersects(t){if(this.isUndefined()||t.isUndefined())return !1;let e=Number.MAX_VALUE,s=Number.MAX_VALUE,i=0,h=0;const n=this.a,a=this.b,o=this.c;return Math.abs(a)>1e-5&&(e=-n/a,i=-o/a),Math.abs(t.b)>1e-5&&(s=-t.a/t.b,h=-t.c/t.b),e===Number.MAX_VALUE?s===Number.MAX_VALUE?-o/n==-t.c/t.a&&(this.py1>=Math.min(t.py1,t.py2)&&this.py1<=Math.max(t.py1,t.py2)?(this.xi=this.px1,this.yi=this.py1,!0):this.py2>=Math.min(t.py1,t.py2)&&this.py2<=Math.max(t.py1,t.py2)&&(this.xi=this.px2,this.yi=this.py2,!0)):(this.xi=this.px1,this.yi=s*this.xi+h,!((this.py1-this.yi)*(this.yi-this.py2)<-1e-5||(t.py1-this.yi)*(this.yi-t.py2)<-1e-5)&&(!(Math.abs(t.a)<1e-5)||!((t.px1-this.xi)*(this.xi-t.px2)<-1e-5))):s===Number.MAX_VALUE?(this.xi=t.px1,this.yi=e*this.xi+i,!((t.py1-this.yi)*(this.yi-t.py2)<-1e-5||(this.py1-this.yi)*(this.yi-this.py2)<-1e-5)&&(!(Math.abs(n)<1e-5)||!((this.px1-this.xi)*(this.xi-this.px2)<-1e-5))):e===s?i===h&&(this.px1>=Math.min(t.px1,t.px2)&&this.px1<=Math.max(t.py1,t.py2)?(this.xi=this.px1,this.yi=this.py1,!0):this.px2>=Math.min(t.px1,t.px2)&&this.px2<=Math.max(t.px1,t.px2)&&(this.xi=this.px2,this.yi=this.py2,!0)):(this.xi=(h-i)/(e-s),this.yi=e*this.xi+i,!((this.px1-this.xi)*(this.xi-this.px2)<-1e-5||(t.px1-this.xi)*(this.xi-t.px2)<-1e-5))}}function l(t,e){const s=t[1][1]-t[0][1],i=t[0][0]-t[1][0],h=s*t[0][0]+i*t[0][1],n=e[1][1]-e[0][1],a=e[0][0]-e[1][0],o=n*e[0][0]+a*e[0][1],r=s*a-n*i;return r?[Math.round((a*h-i*o)/r),Math.round((s*o-n*h)/r)]:null}class c{constructor(t,e,s,i,h,n,a,o){this.deltaX=0,this.hGap=0,this.top=t,this.bottom=e,this.left=s,this.right=i,this.gap=h,this.sinAngle=n,this.tanAngle=o,Math.abs(n)<1e-4?this.pos=s+h:Math.abs(n)>.9999?this.pos=t+h:(this.deltaX=(e-t)*Math.abs(o),this.pos=s-Math.abs(this.deltaX),this.hGap=Math.abs(h/a),this.sLeft=new r([s,e],[s,t]),this.sRight=new r([i,e],[i,t]));}nextLine(){if(Math.abs(this.sinAngle)<1e-4){if(this.pos<this.right){const t=[this.pos,this.top,this.pos,this.bottom];return this.pos+=this.gap,t}}else if(Math.abs(this.sinAngle)>.9999){if(this.pos<this.bottom){const t=[this.left,this.pos,this.right,this.pos];return this.pos+=this.gap,t}}else{let t=this.pos-this.deltaX/2,e=this.pos+this.deltaX/2,s=this.bottom,i=this.top;if(this.pos<this.right+this.deltaX){for(;t<this.left&&e<this.left||t>this.right&&e>this.right;)if(this.pos+=this.hGap,t=this.pos-this.deltaX/2,e=this.pos+this.deltaX/2,this.pos>this.right+this.deltaX)return null;const h=new r([t,s],[e,i]);this.sLeft&&h.intersects(this.sLeft)&&(t=h.xi,s=h.yi),this.sRight&&h.intersects(this.sRight)&&(e=h.xi,i=h.yi),this.tanAngle>0&&(t=this.right-(t-this.left),e=this.right-(e-this.left));const n=[t,s,e,i];return this.pos+=this.hGap,n}}return null}}function p(t){const e=t[0],s=t[1];return Math.sqrt(Math.pow(e[0]-s[0],2)+Math.pow(e[1]-s[1],2))}function u(t,e){const s=[],i=new r([t[0],t[1]],[t[2],t[3]]);for(let t=0;t<e.length;t++){const h=new r(e[t],e[(t+1)%e.length]);i.intersects(h)&&s.push([i.xi,i.yi]);}return s}function f(t,e,s,i,h,n,a){return [-s*n-i*h+s+n*t+h*e,a*(s*h-i*n)+i+-a*h*t+a*n*e]}function d(t,e){const s=[];if(t&&t.length){let i=t[0][0],h=t[0][0],n=t[0][1],a=t[0][1];for(let e=1;e<t.length;e++)i=Math.min(i,t[e][0]),h=Math.max(h,t[e][0]),n=Math.min(n,t[e][1]),a=Math.max(a,t[e][1]);const o=e.hachureAngle;let r=e.hachureGap;r<0&&(r=4*e.strokeWidth),r=Math.max(r,.1);const l=o%180*(Math.PI/180),p=Math.cos(l),f=Math.sin(l),d=Math.tan(l),g=new c(n-1,a+1,i-1,h+1,r,f,p,d);let y;for(;null!=(y=g.nextLine());){const e=u(y,t);for(let t=0;t<e.length;t++)if(t<e.length-1){const i=e[t],h=e[t+1];s.push([i,h]);}}}return s}function g(t,e,s,i,h,n){const a=[];let o=Math.abs(i/2),r=Math.abs(h/2);o+=t.randOffset(.05*o,n),r+=t.randOffset(.05*r,n);const l=n.hachureAngle;let c=n.hachureGap;c<=0&&(c=4*n.strokeWidth);let p=n.fillWeight;p<0&&(p=n.strokeWidth/2);const u=l%180*(Math.PI/180),d=Math.tan(u),g=r/o,y=Math.sqrt(g*d*g*d+1),M=g*d/y,x=1/y,_=c/(o*r/Math.sqrt(r*x*(r*x)+o*M*(o*M))/o);let m=Math.sqrt(o*o-(e-o+_)*(e-o+_));for(let t=e-o+_;t<e+o;t+=_){const i=f(t,s-(m=Math.sqrt(o*o-(e-t)*(e-t))),e,s,M,x,g),h=f(t,s+m,e,s,M,x,g);a.push([i,h]);}return a}class y{constructor(t){this.helper=t;}fillPolygon(t,e){return this._fillPolygon(t,e)}fillEllipse(t,e,s,i,h){return this._fillEllipse(t,e,s,i,h)}fillArc(t,e,s,i,h,n,a){return null}_fillPolygon(t,e,s=!1){const i=d(t,e);return {type:"fillSketch",ops:this.renderLines(i,e,s)}}_fillEllipse(t,e,s,i,h,n=!1){const a=g(this.helper,t,e,s,i,h);return {type:"fillSketch",ops:this.renderLines(a,h,n)}}renderLines(t,e,s){let i=[],h=null;for(const n of t)i=i.concat(this.helper.doubleLineOps(n[0][0],n[0][1],n[1][0],n[1][1],e)),s&&h&&(i=i.concat(this.helper.doubleLineOps(h[0],h[1],n[0][0],n[0][1],e))),h=n[1];return i}}class M extends y{fillPolygon(t,e){return this._fillPolygon(t,e,!0)}fillEllipse(t,e,s,i,h){return this._fillEllipse(t,e,s,i,h,!0)}}class x extends y{fillPolygon(t,e){const s=this._fillPolygon(t,e),i=Object.assign({},e,{hachureAngle:e.hachureAngle+90}),h=this._fillPolygon(t,i);return s.ops=s.ops.concat(h.ops),s}fillEllipse(t,e,s,i,h){const n=this._fillEllipse(t,e,s,i,h),a=Object.assign({},h,{hachureAngle:h.hachureAngle+90}),o=this._fillEllipse(t,e,s,i,a);return n.ops=n.ops.concat(o.ops),n}}class _{constructor(t){this.helper=t;}fillPolygon(t,e){const s=d(t,e=Object.assign({},e,{curveStepCount:4,hachureAngle:0}));return this.dotsOnLines(s,e)}fillEllipse(t,e,s,i,h){h=Object.assign({},h,{curveStepCount:4,hachureAngle:0});const n=g(this.helper,t,e,s,i,h);return this.dotsOnLines(n,h)}fillArc(t,e,s,i,h,n,a){return null}dotsOnLines(t,e){let s=[],i=e.hachureGap;i<0&&(i=4*e.strokeWidth),i=Math.max(i,.1);let h=e.fillWeight;h<0&&(h=e.strokeWidth/2);for(const n of t){const t=p(n)/i,a=Math.ceil(t)-1,o=Math.atan((n[1][1]-n[0][1])/(n[1][0]-n[0][0]));for(let t=0;t<a;t++){const a=i*(t+1),r=a*Math.sin(o),l=a*Math.cos(o),c=[n[0][0]-l,n[0][1]+r],p=this.helper.randOffsetWithRange(c[0]-i/4,c[0]+i/4,e),u=this.helper.randOffsetWithRange(c[1]-i/4,c[1]+i/4,e),f=this.helper.ellipse(p,u,h,h,e);s=s.concat(f.ops);}}return {type:"fillSketch",ops:s}}}class m{constructor(t){this.helper=t;}fillPolygon(t,e){const s=[Number.MAX_SAFE_INTEGER,Number.MIN_SAFE_INTEGER],i=[Number.MAX_SAFE_INTEGER,Number.MIN_SAFE_INTEGER];t.forEach(t=>{s[0]=Math.min(s[0],t[0]),s[1]=Math.max(s[1],t[0]),i[0]=Math.min(i[0],t[1]),i[1]=Math.max(i[1],t[1]);});const h=function(t){let e=0,s=0,i=0;for(let s=0;s<t.length;s++){const i=t[s],h=s===t.length-1?t[0]:t[s+1];e+=i[0]*h[1]-h[0]*i[1];}e/=2;for(let e=0;e<t.length;e++){const h=t[e],n=e===t.length-1?t[0]:t[e+1];s+=(h[0]+n[0])*(h[0]*n[1]-n[0]*h[1]),i+=(h[1]+n[1])*(h[0]*n[1]-n[0]*h[1]);}return [s/(6*e),i/(6*e)]}(t),n=Math.max(Math.sqrt(Math.pow(h[0]-s[0],2)+Math.pow(h[1]-i[0],2)),Math.sqrt(Math.pow(h[0]-s[1],2)+Math.pow(h[1]-i[1],2))),a=e.hachureGap>0?e.hachureGap:4*e.strokeWidth,o=[];if(t.length>2)for(let e=0;e<t.length;e++)e===t.length-1?o.push([t[e],t[0]]):o.push([t[e],t[e+1]]);let r=[];const c=Math.max(1,Math.PI*n/a);for(let t=0;t<c;t++){const e=t*Math.PI/c,a=[h,[h[0]+n*Math.cos(e),h[1]+n*Math.sin(e)]];o.forEach(t=>{const e=l(t,a);e&&e[0]>=s[0]&&e[0]<=s[1]&&e[1]>=i[0]&&e[1]<=i[1]&&r.push(e);});}r=this.removeDuplocatePoints(r);const p=this.createLinesFromCenter(h,r);return {type:"fillSketch",ops:this.drawLines(p,e)}}fillEllipse(t,e,s,i,h){return this.fillArcSegment(t,e,s,i,0,2*Math.PI,h)}fillArc(t,e,s,i,h,n,a){return this.fillArcSegment(t,e,s,i,h,n,a)}fillArcSegment(t,e,s,i,h,n,a){const o=[t,e],r=s/2,l=i/2,c=Math.max(s/2,i/2);let p=a.hachureGap;p<0&&(p=4*a.strokeWidth);const u=Math.max(1,Math.abs(n-h)*c/p);let f=[];for(let t=0;t<u;t++){const e=t*((n-h)/u)+h,s=c*Math.cos(e),i=c*Math.sin(e),a=Math.sqrt(r*r*i*i+l*l*s*s),p=r*l*s/a,d=r*l*i/a;f.push([o[0]+p,o[1]+d]);}f=this.removeDuplocatePoints(f);const d=this.createLinesFromCenter(o,f);return {type:"fillSketch",ops:this.drawLines(d,a)}}drawLines(t,e){let s=[];return t.forEach(t=>{const i=t[0],h=t[1];s=s.concat(this.helper.doubleLineOps(i[0],i[1],h[0],h[1],e));}),s}createLinesFromCenter(t,e){return e.map(e=>[t,e])}removeDuplocatePoints(t){const e=new Set;return t.filter(t=>{const s=t.join(",");return !e.has(s)&&(e.add(s),!0)})}}class b{constructor(t){this.helper=t;}fillPolygon(t,e){const s=d(t,e);return {type:"fillSketch",ops:this.dashedLine(s,e)}}fillEllipse(t,e,s,i,h){const n=g(this.helper,t,e,s,i,h);return {type:"fillSketch",ops:this.dashedLine(n,h)}}fillArc(t,e,s,i,h,n,a){return null}dashedLine(t,e){const s=e.dashOffset<0?e.hachureGap<0?4*e.strokeWidth:e.hachureGap:e.dashOffset,i=e.dashGap<0?e.hachureGap<0?4*e.strokeWidth:e.hachureGap:e.dashGap;let h=[];return t.forEach(t=>{const n=p(t),a=Math.floor(n/(s+i)),o=(n+i-a*(s+i))/2;let r=t[0],l=t[1];r[0]>l[0]&&(r=t[1],l=t[0]);const c=Math.atan((l[1]-r[1])/(l[0]-r[0]));for(let t=0;t<a;t++){const n=t*(s+i),a=n+s,l=[r[0]+n*Math.cos(c)+o*Math.cos(c),r[1]+n*Math.sin(c)+o*Math.sin(c)],p=[r[0]+a*Math.cos(c)+o*Math.cos(c),r[1]+a*Math.sin(c)+o*Math.sin(c)];h=h.concat(this.helper.doubleLineOps(l[0],l[1],p[0],p[1],e));}}),h}}class w{constructor(t){this.helper=t;}fillPolygon(t,e){const s=e.hachureGap<0?4*e.strokeWidth:e.hachureGap,i=e.zigzagOffset<0?s:e.zigzagOffset,h=d(t,e=Object.assign({},e,{hachureGap:s+i}));return {type:"fillSketch",ops:this.zigzagLines(h,i,e)}}fillEllipse(t,e,s,i,h){const n=h.hachureGap<0?4*h.strokeWidth:h.hachureGap,a=h.zigzagOffset<0?n:h.zigzagOffset;h=Object.assign({},h,{hachureGap:n+a});const o=g(this.helper,t,e,s,i,h);return {type:"fillSketch",ops:this.zigzagLines(o,a,h)}}fillArc(t,e,s,i,h,n,a){return null}zigzagLines(t,e,s){let i=[];return t.forEach(t=>{const h=p(t),n=Math.round(h/(2*e));let a=t[0],o=t[1];a[0]>o[0]&&(a=t[1],o=t[0]);const r=Math.atan((o[1]-a[1])/(o[0]-a[0]));for(let t=0;t<n;t++){const h=2*t*e,n=2*(t+1)*e,o=Math.sqrt(2*Math.pow(e,2)),l=[a[0]+h*Math.cos(r),a[1]+h*Math.sin(r)],c=[a[0]+n*Math.cos(r),a[1]+n*Math.sin(r)],p=[l[0]+o*Math.cos(r+Math.PI/4),l[1]+o*Math.sin(r+Math.PI/4)];i=(i=i.concat(this.helper.doubleLineOps(l[0],l[1],p[0],p[1],s))).concat(this.helper.doubleLineOps(p[0],p[1],c[0],c[1],s));}}),i}}const k={};function P(t,e){let s=t.fillStyle||"hachure";if(!k[s])switch(s){case"zigzag":k[s]||(k[s]=new M(e));break;case"cross-hatch":k[s]||(k[s]=new x(e));break;case"dots":k[s]||(k[s]=new _(e));break;case"starburst":k[s]||(k[s]=new m(e));break;case"dashed":k[s]||(k[s]=new b(e));break;case"zigzag-line":k[s]||(k[s]=new w(e));break;case"hachure":default:k[s="hachure"]||(k[s]=new y(e));}return k[s]}const v={randOffset:function(t,e){return W(t,e)},randOffsetWithRange:function(t,e,s){return N(t,e,s)},ellipse:T,doubleLineOps:function(t,e,s,i,h){return R(t,e,s,i,h)}};function S(t,e,s,i,h){return {type:"path",ops:R(t,e,s,i,h)}}function A(t,e,s){const i=(t||[]).length;if(i>2){let h=[];for(let e=0;e<i-1;e++)h=h.concat(R(t[e][0],t[e][1],t[e+1][0],t[e+1][1],s));return e&&(h=h.concat(R(t[i-1][0],t[i-1][1],t[0][0],t[0][1],s))),{type:"path",ops:h}}return 2===i?S(t[0][0],t[0][1],t[1][0],t[1][1],s):{type:"path",ops:[]}}function E(t,e,s,i,h){return function(t,e){return A(t,!0,e)}([[t,e],[t+s,e],[t+s,e+i],[t,e+i]],h)}function O(t,e){const s=D(t,1*(1+.2*e.roughness),e),i=D(t,1.5*(1+.22*e.roughness),e);return {type:"path",ops:s.concat(i)}}function T(t,e,s,i,h){const n=2*Math.PI/h.curveStepCount;let a=Math.abs(s/2),o=Math.abs(i/2);const r=$(n,t,e,a+=W(.05*a,h),o+=W(.05*o,h),1,n*N(.1,N(.4,1,h),h),h),l=$(n,t,e,a,o,1.5,0,h);return {type:"path",ops:r.concat(l)}}function C(t,e,s,i,h,n,a,o,r){const l=t,c=e;let p=Math.abs(s/2),u=Math.abs(i/2);p+=W(.01*p,r),u+=W(.01*u,r);let f=h,d=n;for(;f<0;)f+=2*Math.PI,d+=2*Math.PI;d-f>2*Math.PI&&(f=0,d=2*Math.PI);const g=2*Math.PI/r.curveStepCount,y=Math.min(g/2,(d-f)/2),M=G(y,l,c,p,u,f,d,1,r),x=G(y,l,c,p,u,f,d,1.5,r);let _=M.concat(x);return a&&(o?_=(_=_.concat(R(l,c,l+p*Math.cos(f),c+u*Math.sin(f),r))).concat(R(l,c,l+p*Math.cos(d),c+u*Math.sin(d),r)):(_.push({op:"lineTo",data:[l,c]}),_.push({op:"lineTo",data:[l+p*Math.cos(f),c+u*Math.sin(f)]}))),{type:"path",ops:_}}function z(t,e){const s=[];if(t.length){const i=e.maxRandomnessOffset||0,h=t.length;if(h>2){s.push({op:"move",data:[t[0][0]+W(i,e),t[0][1]+W(i,e)]});for(let n=1;n<h;n++)s.push({op:"lineTo",data:[t[n][0]+W(i,e),t[n][1]+W(i,e)]});}}return {type:"fillPath",ops:s}}function L(t,e){return P(e,v).fillPolygon(t,e)}function N(t,e,s){return s.roughness*(Math.random()*(e-t)+t)}function W(t,e){return N(-t,t,e)}function R(t,e,s,i,h){const n=I(t,e,s,i,h,!0,!1),a=I(t,e,s,i,h,!0,!0);return n.concat(a)}function I(t,e,s,i,h,n,a){const o=Math.pow(t-s,2)+Math.pow(e-i,2);let r=h.maxRandomnessOffset||0;r*r*100>o&&(r=Math.sqrt(o)/10);const l=r/2,c=.2+.2*Math.random();let p=h.bowing*h.maxRandomnessOffset*(i-e)/200,u=h.bowing*h.maxRandomnessOffset*(t-s)/200;p=W(p,h),u=W(u,h);const f=[],d=()=>W(l,h),g=()=>W(r,h);return n&&(a?f.push({op:"move",data:[t+d(),e+d()]}):f.push({op:"move",data:[t+W(r,h),e+W(r,h)]})),a?f.push({op:"bcurveTo",data:[p+t+(s-t)*c+d(),u+e+(i-e)*c+d(),p+t+2*(s-t)*c+d(),u+e+2*(i-e)*c+d(),s+d(),i+d()]}):f.push({op:"bcurveTo",data:[p+t+(s-t)*c+g(),u+e+(i-e)*c+g(),p+t+2*(s-t)*c+g(),u+e+2*(i-e)*c+g(),s+g(),i+g()]}),f}function D(t,e,s){const i=[];i.push([t[0][0]+W(e,s),t[0][1]+W(e,s)]),i.push([t[0][0]+W(e,s),t[0][1]+W(e,s)]);for(let h=1;h<t.length;h++)i.push([t[h][0]+W(e,s),t[h][1]+W(e,s)]),h===t.length-1&&i.push([t[h][0]+W(e,s),t[h][1]+W(e,s)]);return q(i,null,s)}function q(t,e,s){const i=t.length;let h=[];if(i>3){const n=[],a=1-s.curveTightness;h.push({op:"move",data:[t[1][0],t[1][1]]});for(let e=1;e+2<i;e++){const s=t[e];n[0]=[s[0],s[1]],n[1]=[s[0]+(a*t[e+1][0]-a*t[e-1][0])/6,s[1]+(a*t[e+1][1]-a*t[e-1][1])/6],n[2]=[t[e+1][0]+(a*t[e][0]-a*t[e+2][0])/6,t[e+1][1]+(a*t[e][1]-a*t[e+2][1])/6],n[3]=[t[e+1][0],t[e+1][1]],h.push({op:"bcurveTo",data:[n[1][0],n[1][1],n[2][0],n[2][1],n[3][0],n[3][1]]});}if(e&&2===e.length){const t=s.maxRandomnessOffset;h.push({op:"lineTo",data:[e[0]+W(t,s),e[1]+W(t,s)]});}}else 3===i?(h.push({op:"move",data:[t[1][0],t[1][1]]}),h.push({op:"bcurveTo",data:[t[1][0],t[1][1],t[2][0],t[2][1],t[2][0],t[2][1]]})):2===i&&(h=h.concat(R(t[0][0],t[0][1],t[1][0],t[1][1],s)));return h}function $(t,e,s,i,h,n,a,o){const r=W(.5,o)-Math.PI/2,l=[];l.push([W(n,o)+e+.9*i*Math.cos(r-t),W(n,o)+s+.9*h*Math.sin(r-t)]);for(let a=r;a<2*Math.PI+r-.01;a+=t)l.push([W(n,o)+e+i*Math.cos(a),W(n,o)+s+h*Math.sin(a)]);return l.push([W(n,o)+e+i*Math.cos(r+2*Math.PI+.5*a),W(n,o)+s+h*Math.sin(r+2*Math.PI+.5*a)]),l.push([W(n,o)+e+.98*i*Math.cos(r+a),W(n,o)+s+.98*h*Math.sin(r+a)]),l.push([W(n,o)+e+.9*i*Math.cos(r+.5*a),W(n,o)+s+.9*h*Math.sin(r+.5*a)]),q(l,null,o)}function G(t,e,s,i,h,n,a,o,r){const l=n+W(.1,r),c=[];c.push([W(o,r)+e+.9*i*Math.cos(l-t),W(o,r)+s+.9*h*Math.sin(l-t)]);for(let n=l;n<=a;n+=t)c.push([W(o,r)+e+i*Math.cos(n),W(o,r)+s+h*Math.sin(n)]);return c.push([e+i*Math.cos(a),s+h*Math.sin(a)]),c.push([e+i*Math.cos(a),s+h*Math.sin(a)]),q(c,null,r)}function B(t,e,s,i,h,n,a,o){const r=[],l=[o.maxRandomnessOffset||1,(o.maxRandomnessOffset||1)+.5];let c=[0,0];for(let p=0;p<2;p++)0===p?r.push({op:"move",data:[a.x,a.y]}):r.push({op:"move",data:[a.x+W(l[0],o),a.y+W(l[0],o)]}),c=[h+W(l[p],o),n+W(l[p],o)],r.push({op:"bcurveTo",data:[t+W(l[p],o),e+W(l[p],o),s+W(l[p],o),i+W(l[p],o),c[0],c[1]]});return a.setPosition(c[0],c[1]),r}function X(t,e,s,i){let h=[];switch(e.key){case"M":case"m":{const s="m"===e.key;if(e.data.length>=2){let n=+e.data[0],a=+e.data[1];s&&(n+=t.x,a+=t.y);const o=1*(i.maxRandomnessOffset||0);n+=W(o,i),a+=W(o,i),t.setPosition(n,a),h.push({op:"move",data:[n,a]});}break}case"L":case"l":{const s="l"===e.key;if(e.data.length>=2){let n=+e.data[0],a=+e.data[1];s&&(n+=t.x,a+=t.y),h=h.concat(R(t.x,t.y,n,a,i)),t.setPosition(n,a);}break}case"H":case"h":{const s="h"===e.key;if(e.data.length){let n=+e.data[0];s&&(n+=t.x),h=h.concat(R(t.x,t.y,n,t.y,i)),t.setPosition(n,t.y);}break}case"V":case"v":{const s="v"===e.key;if(e.data.length){let n=+e.data[0];s&&(n+=t.y),h=h.concat(R(t.x,t.y,t.x,n,i)),t.setPosition(t.x,n);}break}case"Z":case"z":t.first&&(h=h.concat(R(t.x,t.y,t.first[0],t.first[1],i)),t.setPosition(t.first[0],t.first[1]),t.first=null);break;case"C":case"c":{const s="c"===e.key;if(e.data.length>=6){let n=+e.data[0],a=+e.data[1],o=+e.data[2],r=+e.data[3],l=+e.data[4],c=+e.data[5];s&&(n+=t.x,o+=t.x,l+=t.x,a+=t.y,r+=t.y,c+=t.y);const p=B(n,a,o,r,l,c,t,i);h=h.concat(p),t.bezierReflectionPoint=[l+(l-o),c+(c-r)];}break}case"S":case"s":{const n="s"===e.key;if(e.data.length>=4){let a=+e.data[0],o=+e.data[1],r=+e.data[2],l=+e.data[3];n&&(a+=t.x,r+=t.x,o+=t.y,l+=t.y);let c=a,p=o;const u=s?s.key:"";let f=null;"c"!==u&&"C"!==u&&"s"!==u&&"S"!==u||(f=t.bezierReflectionPoint),f&&(c=f[0],p=f[1]);const d=B(c,p,a,o,r,l,t,i);h=h.concat(d),t.bezierReflectionPoint=[r+(r-a),l+(l-o)];}break}case"Q":case"q":{const s="q"===e.key;if(e.data.length>=4){let n=+e.data[0],a=+e.data[1],o=+e.data[2],r=+e.data[3];s&&(n+=t.x,o+=t.x,a+=t.y,r+=t.y);const l=1*(1+.2*i.roughness),c=1.5*(1+.22*i.roughness);h.push({op:"move",data:[t.x+W(l,i),t.y+W(l,i)]});let p=[o+W(l,i),r+W(l,i)];h.push({op:"qcurveTo",data:[n+W(l,i),a+W(l,i),p[0],p[1]]}),h.push({op:"move",data:[t.x+W(c,i),t.y+W(c,i)]}),p=[o+W(c,i),r+W(c,i)],h.push({op:"qcurveTo",data:[n+W(c,i),a+W(c,i),p[0],p[1]]}),t.setPosition(p[0],p[1]),t.quadReflectionPoint=[o+(o-n),r+(r-a)];}break}case"T":case"t":{const n="t"===e.key;if(e.data.length>=2){let a=+e.data[0],o=+e.data[1];n&&(a+=t.x,o+=t.y);let r=a,l=o;const c=s?s.key:"";let p=null;"q"!==c&&"Q"!==c&&"t"!==c&&"T"!==c||(p=t.quadReflectionPoint),p&&(r=p[0],l=p[1]);const u=1*(1+.2*i.roughness),f=1.5*(1+.22*i.roughness);h.push({op:"move",data:[t.x+W(u,i),t.y+W(u,i)]});let d=[a+W(u,i),o+W(u,i)];h.push({op:"qcurveTo",data:[r+W(u,i),l+W(u,i),d[0],d[1]]}),h.push({op:"move",data:[t.x+W(f,i),t.y+W(f,i)]}),d=[a+W(f,i),o+W(f,i)],h.push({op:"qcurveTo",data:[r+W(f,i),l+W(f,i),d[0],d[1]]}),t.setPosition(d[0],d[1]),t.quadReflectionPoint=[a+(a-r),o+(o-l)];}break}case"A":case"a":{const s="a"===e.key;if(e.data.length>=7){const n=+e.data[0],o=+e.data[1],r=+e.data[2],l=+e.data[3],c=+e.data[4];let p=+e.data[5],u=+e.data[6];if(s&&(p+=t.x,u+=t.y),p===t.x&&u===t.y)break;if(0===n||0===o)h=h.concat(R(t.x,t.y,p,u,i)),t.setPosition(p,u);else for(let e=0;e<1;e++){const e=new a([t.x,t.y],[p,u],[n,o],r,!!l,!!c);let s=e.getNextSegment();for(;s;){const n=B(s.cp1[0],s.cp1[1],s.cp2[0],s.cp2[1],s.to[0],s.to[1],t,i);h=h.concat(n),s=e.getNextSegment();}}}break}}return h}class U extends e{line(t,e,s,i,h){const n=this._options(h);return this._drawable("line",[S(t,e,s,i,n)],n)}rectangle(t,e,s,i,h){const n=this._options(h),a=[];if(n.fill){const h=[[t,e],[t+s,e],[t+s,e+i],[t,e+i]];"solid"===n.fillStyle?a.push(z(h,n)):a.push(L(h,n));}return a.push(E(t,e,s,i,n)),this._drawable("rectangle",a,n)}ellipse(t,e,s,i,h){const n=this._options(h),a=[];if(n.fill)if("solid"===n.fillStyle){const h=T(t,e,s,i,n);h.type="fillPath",a.push(h);}else a.push(function(t,e,s,i,h){return P(h,v).fillEllipse(t,e,s,i,h)}(t,e,s,i,n));return a.push(T(t,e,s,i,n)),this._drawable("ellipse",a,n)}circle(t,e,s,i){const h=this.ellipse(t,e,s,s,i);return h.shape="circle",h}linearPath(t,e){const s=this._options(e);return this._drawable("linearPath",[A(t,!1,s)],s)}arc(t,e,s,i,h,n,a=!1,o){const r=this._options(o),l=[];if(a&&r.fill)if("solid"===r.fillStyle){const a=C(t,e,s,i,h,n,!0,!1,r);a.type="fillPath",l.push(a);}else l.push(function(t,e,s,i,h,n,a){const o=P(a,v).fillArc(t,e,s,i,h,n,a);if(o)return o;const r=t,l=e;let c=Math.abs(s/2),p=Math.abs(i/2);c+=W(.01*c,a),p+=W(.01*p,a);let u=h,f=n;for(;u<0;)u+=2*Math.PI,f+=2*Math.PI;f-u>2*Math.PI&&(u=0,f=2*Math.PI);const d=(f-u)/a.curveStepCount,g=[];for(let t=u;t<=f;t+=d)g.push([r+c*Math.cos(t),l+p*Math.sin(t)]);return g.push([r+c*Math.cos(f),l+p*Math.sin(f)]),g.push([r,l]),L(g,a)}(t,e,s,i,h,n,r));return l.push(C(t,e,s,i,h,n,a,!0,r)),this._drawable("arc",l,r)}curve(t,e){const s=this._options(e);return this._drawable("curve",[O(t,s)],s)}polygon(t,e){const s=this._options(e),i=[];if(s.fill)if("solid"===s.fillStyle)i.push(z(t,s));else{const e=this.computePolygonSize(t),h=L([[0,0],[e[0],0],[e[0],e[1]],[0,e[1]]],s);h.type="path2Dpattern",h.size=e,h.path=this.polygonPath(t),i.push(h);}return i.push(A(t,!0,s)),this._drawable("polygon",i,s)}path(t,e){const s=this._options(e),i=[];if(!t)return this._drawable("path",i,s);if(s.fill)if("solid"===s.fillStyle){const e={type:"path2Dfill",path:t,ops:[]};i.push(e);}else{const e=this.computePathSize(t),h=L([[0,0],[e[0],0],[e[0],e[1]],[0,e[1]]],s);h.type="path2Dpattern",h.size=e,h.path=t,i.push(h);}return i.push(function(t,e){t=(t||"").replace(/\n/g," ").replace(/(-\s)/g,"-").replace("/(ss)/g"," ");let s=new n(t);if(e.simplification){const t=new o(s.linearPoints,s.closed).fit(e.simplification);s=new n(t);}let i=[];const h=s.segments||[];for(let t=0;t<h.length;t++){const n=X(s,h[t],t>0?h[t-1]:null,e);n&&n.length&&(i=i.concat(n));}return {type:"path",ops:i}}(t,s)),this._drawable("path",i,s)}}const V="undefined"!=typeof document;class j{constructor(t){this.canvas=t,this.ctx=this.canvas.getContext("2d");}draw(t){const e=t.sets||[],s=t.options||this.getDefaultOptions(),i=this.ctx;for(const t of e)switch(t.type){case"path":i.save(),i.strokeStyle=s.stroke,i.lineWidth=s.strokeWidth,this._drawToContext(i,t),i.restore();break;case"fillPath":i.save(),i.fillStyle=s.fill||"",this._drawToContext(i,t),i.restore();break;case"fillSketch":this.fillSketch(i,t,s);break;case"path2Dfill":{this.ctx.save(),this.ctx.fillStyle=s.fill||"";const e=new Path2D(t.path);this.ctx.fill(e),this.ctx.restore();break}case"path2Dpattern":{const e=this.canvas.ownerDocument||V&&document;if(e){const i=t.size,h=e.createElement("canvas"),n=h.getContext("2d"),a=this.computeBBox(t.path);a&&(a.width||a.height)?(h.width=this.canvas.width,h.height=this.canvas.height,n.translate(a.x||0,a.y||0)):(h.width=i[0],h.height=i[1]),this.fillSketch(n,t,s),this.ctx.save(),this.ctx.fillStyle=this.ctx.createPattern(h,"repeat");const o=new Path2D(t.path);this.ctx.fill(o),this.ctx.restore();}else console.error("Cannot render path2Dpattern. No defs/document defined.");break}}}computeBBox(t){if(V)try{const e="http://www.w3.org/2000/svg",s=document.createElementNS(e,"svg");s.setAttribute("width","0"),s.setAttribute("height","0");const i=self.document.createElementNS(e,"path");i.setAttribute("d",t),s.appendChild(i),document.body.appendChild(s);const h=i.getBBox();return document.body.removeChild(s),h}catch(t){}return null}fillSketch(t,e,s){let i=s.fillWeight;i<0&&(i=s.strokeWidth/2),t.save(),t.strokeStyle=s.fill||"",t.lineWidth=i,this._drawToContext(t,e),t.restore();}_drawToContext(t,e){t.beginPath();for(const s of e.ops){const e=s.data;switch(s.op){case"move":t.moveTo(e[0],e[1]);break;case"bcurveTo":t.bezierCurveTo(e[0],e[1],e[2],e[3],e[4],e[5]);break;case"qcurveTo":t.quadraticCurveTo(e[0],e[1],e[2],e[3]);break;case"lineTo":t.lineTo(e[0],e[1]);}}"fillPath"===e.type?t.fill():t.stroke();}}class F extends j{constructor(t,e){super(t),this.gen=new U(e||null,this.canvas);}get generator(){return this.gen}getDefaultOptions(){return this.gen.defaultOptions}line(t,e,s,i,h){const n=this.gen.line(t,e,s,i,h);return this.draw(n),n}rectangle(t,e,s,i,h){const n=this.gen.rectangle(t,e,s,i,h);return this.draw(n),n}ellipse(t,e,s,i,h){const n=this.gen.ellipse(t,e,s,i,h);return this.draw(n),n}circle(t,e,s,i){const h=this.gen.circle(t,e,s,i);return this.draw(h),h}linearPath(t,e){const s=this.gen.linearPath(t,e);return this.draw(s),s}polygon(t,e){const s=this.gen.polygon(t,e);return this.draw(s),s}arc(t,e,s,i,h,n,a=!1,o){const r=this.gen.arc(t,e,s,i,h,n,a,o);return this.draw(r),r}curve(t,e){const s=this.gen.curve(t,e);return this.draw(s),s}path(t,e){const s=this.gen.path(t,e);return this.draw(s),s}}const Q="undefined"!=typeof document;class Z{constructor(t){this.svg=t;}get defs(){const t=this.svg.ownerDocument||Q&&document;if(t&&!this._defs){const e=t.createElementNS("http://www.w3.org/2000/svg","defs");this.svg.firstChild?this.svg.insertBefore(e,this.svg.firstChild):this.svg.appendChild(e),this._defs=e;}return this._defs||null}draw(t){const e=t.sets||[],s=t.options||this.getDefaultOptions(),i=this.svg.ownerDocument||window.document,h=i.createElementNS("http://www.w3.org/2000/svg","g");for(const t of e){let e=null;switch(t.type){case"path":(e=i.createElementNS("http://www.w3.org/2000/svg","path")).setAttribute("d",this.opsToPath(t)),e.style.stroke=s.stroke,e.style.strokeWidth=s.strokeWidth+"",e.style.fill="none";break;case"fillPath":(e=i.createElementNS("http://www.w3.org/2000/svg","path")).setAttribute("d",this.opsToPath(t)),e.style.stroke="none",e.style.strokeWidth="0",e.style.fill=s.fill||null;break;case"fillSketch":e=this.fillSketch(i,t,s);break;case"path2Dfill":(e=i.createElementNS("http://www.w3.org/2000/svg","path")).setAttribute("d",t.path||""),e.style.stroke="none",e.style.strokeWidth="0",e.style.fill=s.fill||null;break;case"path2Dpattern":if(this.defs){const h=t.size,n=i.createElementNS("http://www.w3.org/2000/svg","pattern"),a=`rough-${Math.floor(Math.random()*(Number.MAX_SAFE_INTEGER||999999))}`;n.setAttribute("id",a),n.setAttribute("x","0"),n.setAttribute("y","0"),n.setAttribute("width","1"),n.setAttribute("height","1"),n.setAttribute("height","1"),n.setAttribute("viewBox",`0 0 ${Math.round(h[0])} ${Math.round(h[1])}`),n.setAttribute("patternUnits","objectBoundingBox");const o=this.fillSketch(i,t,s);n.appendChild(o),this.defs.appendChild(n),(e=i.createElementNS("http://www.w3.org/2000/svg","path")).setAttribute("d",t.path||""),e.style.stroke="none",e.style.strokeWidth="0",e.style.fill=`url(#${a})`;}else console.error("Cannot render path2Dpattern. No defs/document defined.");}e&&h.appendChild(e);}return h}fillSketch(t,e,s){let i=s.fillWeight;i<0&&(i=s.strokeWidth/2);const h=t.createElementNS("http://www.w3.org/2000/svg","path");return h.setAttribute("d",this.opsToPath(e)),h.style.stroke=s.fill||null,h.style.strokeWidth=i+"",h.style.fill="none",h}}class H extends Z{constructor(t,e){super(t),this.gen=new U(e||null,this.svg);}get generator(){return this.gen}getDefaultOptions(){return this.gen.defaultOptions}opsToPath(t){return this.gen.opsToPath(t)}line(t,e,s,i,h){const n=this.gen.line(t,e,s,i,h);return this.draw(n)}rectangle(t,e,s,i,h){const n=this.gen.rectangle(t,e,s,i,h);return this.draw(n)}ellipse(t,e,s,i,h){const n=this.gen.ellipse(t,e,s,i,h);return this.draw(n)}circle(t,e,s,i){const h=this.gen.circle(t,e,s,i);return this.draw(h)}linearPath(t,e){const s=this.gen.linearPath(t,e);return this.draw(s)}polygon(t,e){const s=this.gen.polygon(t,e);return this.draw(s)}arc(t,e,s,i,h,n,a=!1,o){const r=this.gen.arc(t,e,s,i,h,n,a,o);return this.draw(r)}curve(t,e){const s=this.gen.curve(t,e);return this.draw(s)}path(t,e){const s=this.gen.path(t,e);return this.draw(s)}}return {canvas:(t,e)=>new F(t,e),svg:(t,e)=>new H(t,e),generator:(t,e)=>new U(t,e)}});
-});
-
-function ownKeys$7(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread$7(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$7(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$7(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-/** @module bauble */
-
-/**
- * The CircleBauble class. Each vertex is assigned a circle in the svg.
- */
-
-var RoughCircleBauble =
-/*#__PURE__*/
-function (_Bauble) {
-  inherits(RoughCircleBauble, _Bauble);
-
-  createClass(RoughCircleBauble, null, [{
-    key: "DEFAULT_SETTINGS",
-
-    /**
-     * The default settings for the circleBauble
-     * The default is 6;
-     * @return {{radius: number}}
-     * @constructor
-     */
-    value: function DEFAULT_SETTINGS() {
-      return {
-        radius: 6,
-        fill: "red",
-        attrs: {
-          roughFill: {
-            stroke: function stroke() {
-              return "black";
-            },
-            fill: function fill() {
-              return "none";
-            }
-          },
-          roughStroke: {
-            "stroke-width": function strokeWidth() {
-              return 0.5;
-            },
-            stroke: function stroke() {
-              return "black";
-            },
-            fill: function fill() {
-              return "none";
-            }
-          }
-        },
-        styles: {
-          roughFill: {},
-          roughStroke: {}
-        }
-      };
-    }
-    /**
-     * The constructor.
-     */
-
-  }]);
-
-  function RoughCircleBauble() {
-    var settings = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
-    classCallCheck(this, RoughCircleBauble);
-
-    return possibleConstructorReturn(this, getPrototypeOf(RoughCircleBauble).call(this, mergeDeep(RoughCircleBauble.DEFAULT_SETTINGS(), settings)));
-  }
-  /**
-   * A function to append the circles to the svg.
-   * @param selection
-   * @return {Bundle|MagicString|*|void}
-   */
-
-
-  createClass(RoughCircleBauble, [{
-    key: "update",
-    value: function update(selection) {
-      var _this = this;
-
-      var border = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-
-      var newPaths = toConsumableArray(roughFactory.circle(0, 0, this.settings.radius + border, this.settings).childNodes).map(function (d) {
-        return d.getAttribute("d");
-      }).reverse(); // this puts the "stroke" before the fill so if there is no fill we just never hit it below
-
-
-      var pathNames = ["roughStroke", "roughFill"];
-      return selection.selectAll("path").data(function (d) {
-        return [d, d].slice(0, newPaths.length);
-      }).join(function (enter) {
-        return enter.append("path").attr("d", function (d, i) {
-          return newPaths[i];
-        }).attr("class", function (d, i) {
-          return "".concat(pathNames[i], " node-shape rough");
-        }).attrs(function (vertex, i) {
-          var attributes = _this.settings.attrs[pathNames[i]];
-          return Object.keys(attributes).reduce(function (acc, curr) {
-            return _objectSpread$7({}, acc, defineProperty({}, curr, attributes[curr](vertex)));
-          }, {});
-        }).styles(function (vertex, i, n) {
-          var styles = _this.settings.styles[pathNames[i]];
-          return Object.keys(styles).reduce(function (acc, curr) {
-            return _objectSpread$7({}, acc, defineProperty({}, curr, styles[curr](vertex)));
-          }, {});
-        });
-      }, function (update) {
-        return update.call(function (update) {
-          return update.transition().attr("d", function (d, i) {
-            return newPaths[i];
-          }).attrs(function (vertex, i) {
-            var attributes = _this.settings.attrs[pathNames[i]];
-            return Object.keys(attributes).reduce(function (acc, curr) {
-              return _objectSpread$7({}, acc, defineProperty({}, curr, attributes[curr](vertex)));
-            }, {});
-          }).styles(function (vertex, i) {
-            var styles = _this.settings.styles[pathNames[i]];
-            return Object.keys(styles).reduce(function (acc, curr) {
-              return _objectSpread$7({}, acc, defineProperty({}, curr, styles[curr](vertex)));
-            }, {});
-          });
-        });
-      });
-    }
-  }]);
-
-  return RoughCircleBauble;
-}(Bauble);
-var roughFactory = rough_umd.svg(document.createElement("svg"));
 
 /** @module bauble */
 
@@ -12522,55 +11244,6 @@ function (_Bauble) {
 
   return Branch;
 }(Bauble);
-/**
- * Generates a line() function that takes an edge and it's index and returns a line for d3 path element. It is called
- * by the figtree class as
- * const branchPath = this.layout.branchPathGenerator(this.scales())
- * newBranches.append("path")
- .attr("class", "branch-path")
- .attr("d", (e,i) => branchPath(e,i));
- * @param scales
- * @param branchCurve
- * @return {function(*, *)}
- */
-
-function branchPathGenerator(_ref) {
-  var scales = _ref.scales,
-      curveRadius = _ref.curveRadius,
-      curve = _ref.curve;
-
-  var branchPath = function branchPath(e, i) {
-    var branchLine = line().x(function (v) {
-      return v.x;
-    }).y(function (v) {
-      return v.y;
-    }).curve(curve);
-    var factor = e.v0.y - e.v1.y > 0 ? 1 : -1;
-    var dontNeedCurve = e.v0.y - e.v1.y === 0 ? 0 : 1;
-    var output = curveRadius > 0 ? branchLine([{
-      x: 0,
-      y: scales.y(e.v0.y) - scales.y(e.v1.y)
-    }, {
-      x: 0,
-      y: dontNeedCurve * factor * curveRadius
-    }, {
-      x: 0 + dontNeedCurve * curveRadius,
-      y: 0
-    }, {
-      x: scales.x(e.v1.x + scales.xOffset) - scales.x(e.v0.x + scales.xOffset),
-      y: 0
-    }]) : branchLine([{
-      x: 0,
-      y: scales.y(e.v0.y) - scales.y(e.v1.y)
-    }, {
-      x: scales.x(e.v1.x + scales.xOffset) - scales.x(e.v0.x + scales.xOffset),
-      y: 0
-    }]);
-    return output;
-  };
-
-  return branchPath;
-}
 function branches() {
   return new BaubleManager()["class"]("branch").data(function (d) {
     return d["edges"];
@@ -12579,673 +11252,6 @@ function branches() {
 function branch() {
   return new Branch();
 }
-
-function ownKeys$8(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread$8(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$8(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$8(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-/** @module bauble */
-
-var RoughBranchBauble =
-/*#__PURE__*/
-function (_Bauble) {
-  inherits(RoughBranchBauble, _Bauble);
-
-  createClass(RoughBranchBauble, null, [{
-    key: "DEFAULT_SETTINGS",
-    value: function DEFAULT_SETTINGS() {
-      return {
-        curve: stepBefore,
-        curveRadius: 0,
-        attrs: {
-          // roughFill: {stroke: () => "none", fill: () => "none"},
-          "stroke-width": function strokeWidth() {
-            return 0.5;
-          },
-          stroke: function stroke() {
-            return "black";
-          },
-          fill: function fill() {
-            return "none";
-          }
-        },
-        styles: {},
-        vertexFilter: null,
-        edgeFilter: function edgeFilter() {
-          return true;
-        },
-        roughness: 20
-      };
-    }
-  }]);
-
-  function RoughBranchBauble(settings) {
-    classCallCheck(this, RoughBranchBauble);
-
-    return possibleConstructorReturn(this, getPrototypeOf(RoughBranchBauble).call(this, mergeDeep(RoughBranchBauble.DEFAULT_SETTINGS(), settings)));
-  }
-
-  createClass(RoughBranchBauble, [{
-    key: "setup",
-    value: function setup() {
-      var _this = this;
-
-      var scales = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-      scales = mergeDeep({
-        x: null,
-        y: null,
-        xOffset: 0,
-        yOffset: 0
-      }, scales);
-      var basicPathGenerator = branchPathGenerator({
-        scales: scales,
-        curve: this.settings.curve,
-        curveRadius: this.settings.curveRadius
-      });
-
-      this.branchPath = function (edge) {
-        var basicPath = basicPathGenerator(edge);
-        return toConsumableArray(roughFactory.path(basicPath, _this.settings).childNodes).map(function (d) {
-          return d.getAttribute("d");
-        })[0];
-      };
-    }
-  }, {
-    key: "update",
-    value: function update(selection) {
-      var _this2 = this;
-
-      return selection.selectAll("path").data(function (d) {
-        return [d];
-      }).join(function (enter) {
-        return enter.append("path").attr("d", function (edge) {
-          return _this2.branchPath(edge);
-        }).attr("class", "branch-path").attrs(function (edge) {
-          var attributes = _this2.settings.attrs;
-          return Object.keys(attributes).reduce(function (acc, curr) {
-            // const vertex = d3.select(n[i].parentNode).datum(); // the vertex data is assigned to the group
-            return _objectSpread$8({}, acc, defineProperty({}, curr, attributes[curr](edge)));
-          }, {});
-        }).styles(function (edge) {
-          var styles = _this2.settings.styles;
-          return Object.keys(styles).reduce(function (acc, curr) {
-            // const vertex = d3.select(n[i].parentNode).datum(); // the vertex data is assigned to the group
-            return _objectSpread$8({}, acc, defineProperty({}, curr, styles[curr](edge)));
-          }, {});
-        });
-      }, function (update) {
-        return update.call(function (update) {
-          return update.transition().attr("d", function (edge) {
-            return _this2.branchPath(edge);
-          }).attrs(function (edge) {
-            var attributes = _this2.settings.attrs;
-            return Object.keys(attributes).reduce(function (acc, curr) {
-              // const vertex = d3.select(n[i].parentNode).datum(); // the vertex data is assigned to the group
-              return _objectSpread$8({}, acc, defineProperty({}, curr, attributes[curr](edge)));
-            }, {});
-          }).styles(function (edge) {
-            var styles = _this2.settings.styles;
-            return Object.keys(styles).reduce(function (acc, curr) {
-              // const vertex = d3.select(n[i].parentNode).datum(); // the vertex data is assigned to the group
-              return _objectSpread$8({}, acc, defineProperty({}, curr, styles[curr](edge)));
-            }, {});
-          });
-        });
-      });
-    }
-  }, {
-    key: "edgeFilter",
-    get: function get() {
-      return this.settings.edgeFilter;
-    }
-  }]);
-
-  return RoughBranchBauble;
-}(Bauble);
-
-function ownKeys$9(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread$9(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$9(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$9(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-/** @module layout */
-
-var EqualAngleLayout =
-/*#__PURE__*/
-function (_AbstractLayout) {
-  inherits(EqualAngleLayout, _AbstractLayout);
-
-  /**
-   * The constructor.
-   * @param tree
-   * @param settings
-   */
-  function EqualAngleLayout(tree) {
-    var _this;
-
-    var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-
-    classCallCheck(this, EqualAngleLayout);
-
-    _this = possibleConstructorReturn(this, getPrototypeOf(EqualAngleLayout).call(this, tree, _objectSpread$9({
-      fixedOrder: true
-    }, settings))); // an ordering of the nodes so we can maintain the layout
-
-    if (_this.settings.fixedOrder) {
-      _this.tipRank = toConsumableArray(_this.traverseFromTip(_this.settings.startingNode ? _this.settings.startingNode : _this.tree.externalNodes[0])).filter(function (n) {
-        return !n.children;
-      });
-    }
-
-    return _this;
-  }
-
-  createClass(EqualAngleLayout, [{
-    key: "_getTreeNodes",
-    value: function _getTreeNodes() {
-      this.startingNode = this.settings.startingNode ? this.settings.startingNode : this.tree.externalNodes[0];
-      this.nodeOrder = toConsumableArray(this.traverseFromTip(this.startingNode));
-      return this.nodeOrder;
-    }
-  }, {
-    key: "setYPosition",
-    value: function setYPosition(vertex, currentY) {
-      var _this2 = this;
-
-      var node = vertex.node;
-
-      if (vertex.node === this.startingNode) {
-        vertex.y = 0;
-        vertex.angle = 0;
-        vertex.allocatedRadians = [0, 2 * Math.PI];
-      } else {
-        // set y off of allocated angle
-        var pseudoParent = this.getPseudoParent(node);
-        var pseudoLength = Math.abs(pseudoParent.height - node.height);
-        var deltaY = Math.sin(vertex.angle) * pseudoLength;
-        vertex.y = this._nodeMap.get(pseudoParent).y + deltaY;
-      } //setup angles for children
-
-
-      var pseudoChildren = this.getPseudoChildren(node);
-
-      if (pseudoChildren) {
-        // const subtrees = [...node.children, (node.parent&& node.parent)].filter(s=>s);
-        var totalTips = this.tree.externalNodes.length;
-        var totalRadians = vertex.allocatedRadians[0];
-        pseudoChildren.forEach(function (child) {
-          var tips = toConsumableArray(_this2.traverseFromTip(child, [node])).filter(function (n) {
-            return !n.children;
-          }).length;
-
-          var r = 2 * Math.PI * tips / totalTips;
-          var angle = totalRadians + r / 2;
-          var allocatedRadians = [totalRadians, totalRadians + r];
-          totalRadians += r; // if (s !== node.parent) {
-
-          var subtreeVertex = _this2._nodeMap.get(child);
-
-          subtreeVertex.angle = angle;
-          subtreeVertex.allocatedRadians = allocatedRadians; // }
-        });
-      }
-
-      return 0;
-    }
-  }, {
-    key: "setXPosition",
-    value: function setXPosition(vertex, currentX) {
-      var node = vertex.node;
-
-      if (vertex.node === this.startingNode) {
-        vertex.x = 0;
-      } else {
-        // set y off of allocated angle
-        var pseudoParent = this.getPseudoParent(node);
-        var pseudoLength = Math.abs(pseudoParent.height - node.height);
-        var deltaX = Math.cos(vertex.angle) * pseudoLength;
-        vertex.x = this._nodeMap.get(pseudoParent).x + deltaX;
-      }
-    }
-  }, {
-    key: "setInitialX",
-    value: function setInitialX() {
-      return 0;
-    }
-  }, {
-    key: "setInitialY",
-    value: function setInitialY() {
-      return 0;
-    }
-  }, {
-    key: "traverseFromTip",
-    value:
-    /*#__PURE__*/
-    regenerator.mark(function traverseFromTip(node) {
-      var visited,
-          self,
-          traverse,
-          _args2 = arguments;
-      return regenerator.wrap(function traverseFromTip$(_context2) {
-        while (1) {
-          switch (_context2.prev = _context2.next) {
-            case 0:
-              visited = _args2.length > 1 && _args2[1] !== undefined ? _args2[1] : [];
-              self = this;
-              traverse =
-              /*#__PURE__*/
-              regenerator.mark(function traverse(node) {
-                var relatives, pseudoChildren, _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, child;
-
-                return regenerator.wrap(function traverse$(_context) {
-                  while (1) {
-                    switch (_context.prev = _context.next) {
-                      case 0:
-                        visited.push(node);
-                        _context.next = 3;
-                        return node;
-
-                      case 3:
-                        relatives = [node.parent && node.parent].concat(node.children && node.children).filter(function (n) {
-                          return n;
-                        }); // to remove null
-
-                        pseudoChildren = relatives.filter(function (n) {
-                          return !visited.includes(n);
-                        });
-
-                        if (!pseudoChildren) {
-                          _context.next = 32;
-                          break;
-                        }
-
-                        if (self.tipRank) {
-                          pseudoChildren = pseudoChildren.sort(function (a, b) {
-                            var aRank = min(toConsumableArray(self.pseudoRerootPreorder(a, [node])).filter(function (n) {
-                              return !n.children;
-                            }).map(function (n) {
-                              return self.tipRank.indexOf(n);
-                            }));
-                            var bRank = min(toConsumableArray(self.pseudoRerootPreorder(b, [node])).filter(function (n) {
-                              return !n.children;
-                            }).map(function (n) {
-                              return self.tipRank.indexOf(n);
-                            }));
-                            return bRank - aRank;
-                          });
-                        }
-
-                        _iteratorNormalCompletion = true;
-                        _didIteratorError = false;
-                        _iteratorError = undefined;
-                        _context.prev = 10;
-                        _iterator = pseudoChildren[Symbol.iterator]();
-
-                      case 12:
-                        if (_iteratorNormalCompletion = (_step = _iterator.next()).done) {
-                          _context.next = 18;
-                          break;
-                        }
-
-                        child = _step.value;
-                        return _context.delegateYield(traverse(child), "t0", 15);
-
-                      case 15:
-                        _iteratorNormalCompletion = true;
-                        _context.next = 12;
-                        break;
-
-                      case 18:
-                        _context.next = 24;
-                        break;
-
-                      case 20:
-                        _context.prev = 20;
-                        _context.t1 = _context["catch"](10);
-                        _didIteratorError = true;
-                        _iteratorError = _context.t1;
-
-                      case 24:
-                        _context.prev = 24;
-                        _context.prev = 25;
-
-                        if (!_iteratorNormalCompletion && _iterator["return"] != null) {
-                          _iterator["return"]();
-                        }
-
-                      case 27:
-                        _context.prev = 27;
-
-                        if (!_didIteratorError) {
-                          _context.next = 30;
-                          break;
-                        }
-
-                        throw _iteratorError;
-
-                      case 30:
-                        return _context.finish(27);
-
-                      case 31:
-                        return _context.finish(24);
-
-                      case 32:
-                      case "end":
-                        return _context.stop();
-                    }
-                  }
-                }, traverse, null, [[10, 20, 24, 32], [25,, 27, 31]]);
-              });
-              return _context2.delegateYield(traverse(node), "t0", 4);
-
-            case 4:
-            case "end":
-              return _context2.stop();
-          }
-        }
-      }, traverseFromTip, this);
-    })
-  }, {
-    key: "pseudoRerootPreorder",
-    value:
-    /*#__PURE__*/
-    regenerator.mark(function pseudoRerootPreorder(node) {
-      var visited,
-          traverse,
-          _args4 = arguments;
-      return regenerator.wrap(function pseudoRerootPreorder$(_context4) {
-        while (1) {
-          switch (_context4.prev = _context4.next) {
-            case 0:
-              visited = _args4.length > 1 && _args4[1] !== undefined ? _args4[1] : [];
-              traverse =
-              /*#__PURE__*/
-              regenerator.mark(function traverse(node) {
-                var relatives, pseudoChildren, _iteratorNormalCompletion2, _didIteratorError2, _iteratorError2, _iterator2, _step2, child;
-
-                return regenerator.wrap(function traverse$(_context3) {
-                  while (1) {
-                    switch (_context3.prev = _context3.next) {
-                      case 0:
-                        visited.push(node);
-                        _context3.next = 3;
-                        return node;
-
-                      case 3:
-                        relatives = [node.parent && node.parent].concat(node.children && node.children).filter(function (n) {
-                          return n;
-                        }); // to remove null
-
-                        pseudoChildren = relatives.filter(function (n) {
-                          return !visited.includes(n);
-                        });
-
-                        if (!pseudoChildren) {
-                          _context3.next = 31;
-                          break;
-                        }
-
-                        _iteratorNormalCompletion2 = true;
-                        _didIteratorError2 = false;
-                        _iteratorError2 = undefined;
-                        _context3.prev = 9;
-                        _iterator2 = pseudoChildren[Symbol.iterator]();
-
-                      case 11:
-                        if (_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done) {
-                          _context3.next = 17;
-                          break;
-                        }
-
-                        child = _step2.value;
-                        return _context3.delegateYield(traverse(child), "t0", 14);
-
-                      case 14:
-                        _iteratorNormalCompletion2 = true;
-                        _context3.next = 11;
-                        break;
-
-                      case 17:
-                        _context3.next = 23;
-                        break;
-
-                      case 19:
-                        _context3.prev = 19;
-                        _context3.t1 = _context3["catch"](9);
-                        _didIteratorError2 = true;
-                        _iteratorError2 = _context3.t1;
-
-                      case 23:
-                        _context3.prev = 23;
-                        _context3.prev = 24;
-
-                        if (!_iteratorNormalCompletion2 && _iterator2["return"] != null) {
-                          _iterator2["return"]();
-                        }
-
-                      case 26:
-                        _context3.prev = 26;
-
-                        if (!_didIteratorError2) {
-                          _context3.next = 29;
-                          break;
-                        }
-
-                        throw _iteratorError2;
-
-                      case 29:
-                        return _context3.finish(26);
-
-                      case 30:
-                        return _context3.finish(23);
-
-                      case 31:
-                      case "end":
-                        return _context3.stop();
-                    }
-                  }
-                }, traverse, null, [[9, 19, 23, 31], [24,, 26, 30]]);
-              });
-              return _context4.delegateYield(traverse(node), "t0", 4);
-
-            case 4:
-            case "end":
-              return _context4.stop();
-          }
-        }
-      }, pseudoRerootPreorder, this);
-    })
-  }, {
-    key: "getPseudoParent",
-    value: function getPseudoParent(node) {
-      var relatives = [node.parent && node.parent].concat(node.children && node.children).filter(function (n) {
-        return n;
-      }); // to remove null
-      // the parent will come before the node in question in the preoder traversal
-
-      var pseudoParent = this.nodeOrder.slice(0, this.nodeOrder.indexOf(node)).find(function (n) {
-        return relatives.includes(n);
-      });
-      return pseudoParent;
-    }
-  }, {
-    key: "getPseudoChildren",
-    value: function getPseudoChildren(node) {
-      var relatives = [node.parent && node.parent].concat(node.children && node.children).filter(function (n) {
-        return n;
-      }); // to remove null
-      // the parent will come before the node in question in the preoder traversal
-
-      var pseudoChildren = this.nodeOrder.slice(this.nodeOrder.indexOf(node), this.nodeOrder.length).filter(function (n) {
-        return relatives.includes(n);
-      });
-      return pseudoChildren.length > 0 ? pseudoChildren : null;
-    }
-  }, {
-    key: "equalDaylight",
-    value: function equalDaylight(node) {
-      var _this3 = this;
-
-      // get the subtrees down each subtree
-      var relatives = [node.parent && node.parent].concat(node.children && node.children).filter(function (n) {
-        return n;
-      }); // to remove null
-
-      var nodeVertex = this._nodeMap.get(node);
-
-      var nodesOfInterest = relatives.map(function (relative) {
-        var tips = [].concat(toConsumableArray(_this3.traverseFromTip(relative)), [[node]]).filter(function (n) {
-          return !n.children;
-        }).sort(function (a, b) {
-          return getAngle(nodeVertex, _this3._nodeMap.get(a));
-        });
-        return {
-          rightMost: tips[0],
-          leftMost: tips[tips.length - 1]
-        };
-      }); // get Angles
-      // adjust subtree angles
-      // Rest the x,y in the layout.
-    }
-  }]);
-
-  return EqualAngleLayout;
-}(AbstractLayout);
-/**
- * A function that gets the angle between vertices linked by the hypotenuse of a right triangle
- * @param vertex1
- * @param vertex2
- * @return {number}
- */
-
-function getAngle(vertex1, vertex2) {
-  return Math.tan((vertex1.y - vertex2.y) / (vertex1.x - vertex2.x));
-}
-
-var GreatCircleBranchBauble =
-/*#__PURE__*/
-function (_Branch) {
-  inherits(GreatCircleBranchBauble, _Branch);
-
-  createClass(GreatCircleBranchBauble, null, [{
-    key: "DEFAULT_SETTINGS",
-    value: function DEFAULT_SETTINGS() {
-      return {
-        curve: curveNatural,
-        attrs: {
-          "fill": function fill(d) {
-            return "none";
-          },
-          "stroke-width": function strokeWidth(d) {
-            return "2";
-          },
-          "stroke": function stroke(d) {
-            return "black";
-          }
-        },
-        vertexFilter: null,
-        edgeFilter: function edgeFilter() {
-          return true;
-        }
-      };
-    }
-    /**
-     * The constructor takes a setting object. The keys of the setting object are determined by the type of element.
-     *
-     * @param {Object} settings
-     * @param {function} [settings.curve=d3.curveNatural] - a d3 curve used to draw the edge
-     * @param {function} [settings.edgeFilter=()=>true] - a function that is passed each edge. If it returns true then element applies to that vertex.
-     * @param {Object} [settings._attrs={"fill": d => "none", "stroke-width": d => "2", "stroke": d => "black"}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These can be overwritten by css.
-     *  @param {Object} [settings.styles={}] - styling attributes. The keys should be the attribute string (stroke,fill ect) and entries are function that are called on each vertex. These overwrite css.
-     */
-
-  }]);
-
-  function GreatCircleBranchBauble() {
-    var settings = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
-    classCallCheck(this, GreatCircleBranchBauble);
-
-    return possibleConstructorReturn(this, getPrototypeOf(GreatCircleBranchBauble).call(this, mergeDeep(GreatCircleBranchBauble.DEFAULT_SETTINGS(), settings)));
-  } //TODO
-
-
-  createClass(GreatCircleBranchBauble, [{
-    key: "branchPathGenerator",
-    value: function branchPathGenerator(_ref) {
-      var scales = _ref.scales,
-          curveRadius = _ref.curveRadius,
-          curve = _ref.curve;
-
-      var _geoPath = geoPath(scales.projection);
-
-      var branchPath = function branchPath(e, i) {
-        // get og line
-        var geoLine = {
-          "type": "LineString",
-          "coordinates": [[e.v0.x, e.v0.y], [e.v1.x, e.v1.y]]
-        };
-        console.log(_geoPath(geoLine));
-        console.log(transformedLine(_geoPath(geoLine)));
-        return transformedLine(_geoPath(geoLine));
-      };
-
-      return branchPath;
-    }
-  }]);
-
-  return GreatCircleBranchBauble;
-}(Branch); //TODO fix this hack that only takes M and L
-
-var transformedLine = function transformedLine(string) {
-  var parsedString = string.split(/\s*('[^']+'|"[^"]+"|M|L|,)\s*/);
-  var currentValues = [0, 0];
-  var startingPoint = [];
-  var newString = [];
-  var currentPos = 0;
-  var _iteratorNormalCompletion = true;
-  var _didIteratorError = false;
-  var _iteratorError = undefined;
-
-  try {
-    for (var _iterator = parsedString.filter(function (t) {
-      return t.length > 0;
-    })[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-      var token = _step.value;
-
-      if (token === "M" || token === "L" || token === ",") {
-        newString.push(token.toLowerCase());
-      } else {
-        var number = parseFloat(token);
-
-        if (currentValues[currentPos] === 0) {
-          newString.push(0);
-          startingPoint.push(number);
-          currentValues[currentPos] = number;
-          currentPos = Math.abs(currentPos - 1);
-        } else {
-          newString.push(number - currentValues[currentPos]);
-          currentValues[currentPos] = number;
-          currentPos = Math.abs(currentPos - 1);
-        }
-      }
-    } // now fix to handel how the branch is transformed
-
-  } catch (err) {
-    _didIteratorError = true;
-    _iteratorError = err;
-  } finally {
-    try {
-      if (!_iteratorNormalCompletion && _iterator["return"] != null) {
-        _iterator["return"]();
-      }
-    } finally {
-      if (_didIteratorError) {
-        throw _iteratorError;
-      }
-    }
-  }
-
-  newString[3] = startingPoint[1] - currentValues[1];
-  return newString.join("");
-};
 
 function getVertexClassesFromNode(node) {
   var classes = [!node.children ? "external-node" : "internal-node"];
@@ -13338,9 +11344,9 @@ var layoutFactory = function layoutFactory(makeVertices) {
   };
 };
 
-function ownKeys$a(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+function ownKeys$4(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
-function _objectSpread$a(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$a(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$a(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+function _objectSpread$4(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$4(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$4(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 function rectangularVertices(tree) {
   var currentY = 0;
   var vertices = [];
@@ -13376,7 +11382,7 @@ function rectangularVertices(tree) {
 
       siblingPositions.push(mean(myChildrenPositions));
 
-      var vertex = _objectSpread$a({}, makeVertexFromNode(node), {
+      var vertex = _objectSpread$4({}, makeVertexFromNode(node), {
         y: mean(myChildrenPositions),
         x: node.divergence
       });
@@ -13386,7 +11392,7 @@ function rectangularVertices(tree) {
       currentY += 1;
       siblingPositions.push(currentY);
 
-      var _vertex = _objectSpread$a({}, makeVertexFromNode(node), {
+      var _vertex = _objectSpread$4({}, makeVertexFromNode(node), {
         y: currentY,
         x: node.divergence
       });
@@ -13860,9 +11866,9 @@ function branchLabel(text) {
   // return l.attr("x",setX(l))
 }
 
-function ownKeys$b(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+function ownKeys$5(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
-function _objectSpread$b(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$b(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$b(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+function _objectSpread$5(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$5(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$5(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 var rootToTipVertices = function rootToTipVertices(tree) {
   if (!tree.annotations.date) {
     console.warn("tree must be annotated with dates to use the root to tip layout");
@@ -13870,7 +11876,7 @@ var rootToTipVertices = function rootToTipVertices(tree) {
   }
 
   return tree.externalNodes.map(function (n) {
-    return _objectSpread$b({}, makeVertexFromNode(n), {
+    return _objectSpread$5({}, makeVertexFromNode(n), {
       x: n.annotations.date,
       y: n.divergence
     });
@@ -13994,9 +12000,9 @@ function leastSquares(data) {
   };
 }
 
-function ownKeys$c(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+function ownKeys$6(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
-function _objectSpread$c(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$c(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$c(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+function _objectSpread$6(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$6(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$6(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 /**
  * The base Decoration class.
  */
@@ -14068,7 +12074,7 @@ function () {
       if (!options) {
         return this._title;
       } else {
-        this._title = _objectSpread$c({}, this._title, {}, options);
+        this._title = _objectSpread$6({}, this._title, {}, options);
         return this;
       }
     }
@@ -14696,5 +12702,5 @@ function legend() {
   return new Legend();
 }
 
-export { Bauble, BaubleManager, Branch, CircleBauble, Decoration, EqualAngleLayout, ExplodedLayout, FigTree, GeoLayout, GreatCircleBranchBauble, Label, RectangularBauble, RectangularLayout, RootToTipPlot, RoughBranchBauble, RoughCircleBauble, TransmissionLayout, Tree, Type, axis$1 as axis, branch, branchLabel, branches, circle$1 as circle, decimalToDate, equalAngleLayout, internalNodeLabel, label, legend, nodeBackground, nodes, rectangle, rectangularLayout, rootToTipLayout, scaleBar, tipLabel };
+export { Bauble, BaubleManager, Branch, CircleBauble, Decoration, FigTree, RectangularBauble, Tree, Type, axis$1 as axis, branch, branchLabel, branches, circle, decimalToDate, equalAngleLayout, internalNodeLabel, label, legend, nodeBackground, nodes, rectangle, rectangularLayout, rootToTipLayout, scaleBar, tipLabel };
 //# sourceMappingURL=figtree.esm.js.map

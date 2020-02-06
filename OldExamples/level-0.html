@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>FigTree Demo</title>
-     <script src="js/d3.js" charset="utf-8"></script>
+     <script src="../js/d3.js" charset="utf-8"></script>
     <!--<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>-->
     <style>
         text {
@@ -119,7 +119,7 @@
             font-size: 10pt;
         }
 
-        .branch .label {
+        .branch-label.length {
             /*display: none;*/
             font-size: 8pt;
         }
@@ -148,12 +148,10 @@
 <!--    &lt;!&ndash;<button id="rectangular_button">Draw rectangular</button>&ndash;&gt;-->
 <!--    &lt;!&ndash;<button id="triangular_button">Draw triangular</button>&ndash;&gt;-->
 <!--</div>-->
-<script src ="dist/figtree.umd.js"></script>
+<script src ="../dist/figtree.umd.js"></script>
 <script type="module">
 
-    import {Tree,rectangularLayout,CircleBauble,FigTree,BaubleManager,Branch,
-        nodes,nodeBackground,circle,branches,branch,tipLabel,internalNodeLabel,label,
-        branchLabel, axis,scaleBar,legend}  from "./dist/figtree.esm.js";
+    import {Tree,rectangularLayout,CircleBauble,FigTree,BaubleManager,Branch,Label}  from "..";
 
 
     const width = 600,
@@ -171,80 +169,91 @@
 
     const tree = Tree.parseNewick(newickString, "probability");
     const treeSVG = document.getElementById('phylogram_1a');
-    const margins={top:10,bottom:60,left:30,right:60};
 
-    const fig = new FigTree(treeSVG,tree,null,margins);
-    const colorScale = d3.scaleOrdinal().range(["steelblue","#c71585"]).domain(["Internal node","External node"])
+
+    const fig = new FigTree(treeSVG,tree);
+
 
     fig
         .layout(rectangularLayout)
         .feature(
-            nodes()
-                .element(
-                   circle()
+           new BaubleManager()
+               .filter(d=>d.degree===1)
+                .class("node")
+                .data(d=>d["vertices"])
+                .layer("nodes-layer")
+               .element(
+                    new CircleBauble()
                         .attr("fill",d=>d.degree>1?"steelblue":"#c71585")
                         .attr("r",5)
-                        .hilightOnHover(10)
-                        .rotateOnClick()
+                        .on("mouseenter",(d,i,n)=>{
+                            d3.select(n[i]).attr("r",10);
+                            const parent = d3.select(n[i]).node().parentNode;
+                            d3.select(parent).classed("hovered",true)
+                                .raise();
+                            // move to top
+                        })
+                        .on("mouseleave",(d,i,n)=>{
+                            d3.select(n[i]).attr("r",5);
+                            const parent = d3.select(n[i]).node().parentNode;
+                            d3.select(parent).classed("hovered",false)
+                            // move to top
+                        })
+                        .on("click",(d,i,n)=>{
+                            tree.rotate(tree.getNode(d.id));
+                        })
                 )
-            .element(
-                tipLabel(d=>d.name)
-            )
-            .element(
-                internalNodeLabel(d=>d.y)
+                .element(
+                    new Label()
+                        .attr("x",6)
+                        .attr("y",4)
+                        .text(d=>d.name)
             )
         )
         .feature(
-           branches()
+            new BaubleManager()
+                .class("branch")
+                .data(d=>d["edges"])
+                .layer("branches-layer")
                 .element(
-                   branch()
-                    .hilightOnHover()
-                    .reRootOnClick()
+                    new Branch()
+                        .on("mouseenter",(d,i,n)=>{
+                            const parent = d3.select(n[i]).node().parentNode;
+
+                            d3.select(parent).classed("hovered",true)
+
+                        })
+                        .on("mouseleave",(d,i,n)=>{
+                            const parent = d3.select(n[i]).node().parentNode;
+
+                            d3.select(parent).classed("hovered",false)
+                        })
+                        .on("click",(d,i,n)=>{
+                            tree.rotate(tree.getNode(d.v1.id));
+                        })
                 )
-                // .element(
-                //     branchLabel(d=>d.v1.length)
-                // )
         )
         .feature(
-          nodeBackground()
+            new BaubleManager()
+                .class("node-background")
+                .filter(d=>d.degree===1)
+                .data(d=>d["vertices"])
+                .layer("nodes-background-layer")
                 .element(
-                    circle()
+                    new CircleBauble()
                         .attr("r",7)
                 )
         )
         // .feature(
-        //     axis()
-        //         .location("bottom")
-        //         .y(height-margins.top-margins.bottom+5)
-        //         .x(0)
-        //         .title({text:"Divergence",
-        //             yPadding:30})
-        //         .tickFormat(d3.format(".1f"))
+        //     nodeBackground()
+        //         .attr("r",7)
         // )
         // .feature(
-        //     axis()
-        //         .location("left")
-        //         .y(0)
-        //         .x(-5)
-        //         .title({text:"nothing",
-        //             xPadding:-90,
-        //             rotation:-90})
+        //     branches()
+        //         .curve(d3.curveBasis)
+        //         .hilightOnHover()
+        //         .reRootOnClick()
         // )
-        .feature(
-            scaleBar()
-                .direction("x")
-                .length(0.3)
-                .x(20)
-                .y(height-margins.top-margins.bottom-20)
-                .title({text:"0.3 sub/site",
-                    yPadding:3})
-        )
-    .feature(
-        legend()
-        .scale(colorScale)
-        .x(0)
-        .y(height-margins.bottom)
-    )
 
 </script>
 

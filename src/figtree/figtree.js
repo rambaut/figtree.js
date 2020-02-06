@@ -3,7 +3,7 @@ import {select,easeCubic,scaleLinear} from "d3";
 import uuid from "uuid";
 import { mergeDeep} from "../utilities";
 import 'd3-selection-multi';
-import {GeoLayout} from "../layout/classes/geoLayout";
+import {GeoLayout} from "../layout/deprecatedClasses/geoLayout";
 import {BaubleManager} from "../features/baubleManager"
 import p from "../privateConstants.js"
 import extent from "d3-array/src/extent";
@@ -264,6 +264,36 @@ export class FigTree {
             }
 
         this.scales = {x:xScale, y:yScale, width, height, projection};
+    }
+
+
+
+    /**
+     * Registers some text to appear in a popup box when the mouse hovers over the selection.
+     *
+     * @param selection
+     * @param text
+     */
+    addToolTip(selection, text) {
+        this.svgSelection.selectAll(selection).on("mouseover",
+            function (selected) {
+                let tooltip = document.getElementById("tooltip");
+                if (typeof text === typeof "") {
+                    tooltip.innerHTML = text;
+                } else {
+                    tooltip.innerHTML = text(selected.node);
+                }
+                tooltip.style.display = "block";
+                tooltip.style.left =event.pageX + 10 + "px";
+                tooltip.style.top = event.pageY + 10 + "px";
+            }
+        );
+        this.svgSelection.selectAll(selection).on("mouseout", function () {
+            let tooltip = document.getElementById("tooltip");
+            tooltip.style.display = "none";
+        });
+        return this;
+
     }
 
 

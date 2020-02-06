@@ -190,7 +190,6 @@
     const treeSVG = document.getElementById('tree-3-svg');
     const margins = { top: 10, bottom: 60, left: 100, right: 50};
 
-    console.log(rectangularLayout(tree))
 
     const figTree = new FigTree(treeSVG, margins, tree)
                             .layout(rectangularLayout)

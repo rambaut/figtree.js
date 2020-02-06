@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
-    <script src="js/d3.js"></script>
-    <script src="js/d3-selection-multi.min.js"/>
-    <script src="js/d3-geo.js"></script>
-    <script src="js/d3-geo-polygon.js"></script>
-    <script src="js/d3-geo-projection.js"></script>
-    <script src="js/topojson.js"></script>
+    <script src="../js/d3.js"></script>
+    <script src="../js/d3-selection-multi.min.js"/>
+    <script src="../js/d3-geo.js"></script>
+    <script src="../js/d3-geo-polygon.js"></script>
+    <script src="../js/d3-geo-projection.js"></script>
+    <script src="../js/topojson.js"></script>
 
 </head>
 <div id="tooltip" display="none" style="position: absolute; display: none;"></div>
@@ -20,7 +20,7 @@
 </div>
 <script type="module">
 
-    import {Tree,GeoLayout,CircleBauble,FigTree,GreatCircleBranchBauble}  from "./dist/figtree.esm.js";
+    import {Tree,GeoLayout,CircleBauble,FigTree,GreatCircleBranchBauble}  from "..";
 
 
     const gotGeoData = fetch("./data/world-110m.json").then(res=>res.json()).then( world =>{

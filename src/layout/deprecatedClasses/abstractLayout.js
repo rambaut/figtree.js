@@ -382,7 +382,7 @@ export class  AbstractLayout extends layoutInterface {
                 this._vertices.push(vertex);
                 this._nodeMap.set(n, vertex);
             }
-            //update classes as needed.
+            //update deprecatedClasses as needed.
             const vertex = this._nodeMap.get(n);
                 this[setVertexClassesFromNode](vertex);
                 this[setVertexLabels](vertex);

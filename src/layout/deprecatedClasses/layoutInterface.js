@@ -237,7 +237,7 @@ export class layoutInterface {
 
     /**
      * A getter function that updates the layout if needed, determines the most ancestral cartoons, hides the appropriate vertices
-     * and then returns a array of  cartoon objects defined as {vertices[{x:,y}...{x:,y:}], classes:[string,...],id:string,node:NODE:starting node }
+     * and then returns a array of  cartoon objects defined as {vertices[{x:,y}...{x:,y:}], deprecatedClasses:[string,...],id:string,node:NODE:starting node }
      * @return {[]}
      */
     get cartoons() {
