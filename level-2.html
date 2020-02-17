@@ -149,6 +149,7 @@
 <!--    &lt;!&ndash;<button id="triangular_button">Draw triangular</button>&ndash;&gt;-->
 <!--</div>-->
 <script src ="dist/figtree.umd.js"></script>
+<button id="reset-button">reset</button>
 <script type="module">
 
     import {Tree,rectangularLayout,CircleBauble,FigTree,BaubleManager,Branch,
@@ -170,6 +171,9 @@
         '((((((virus1:0.1,virus2:0.12)0.95:0.08,(virus3:0.011,virus4:0.0087)1.0:0.15)0.65:0.03,virus5:0.21)1.0:0.2,(virus6:0.45,virus7:0.4)0.51:0.02)1.0:0.1,virus8:0.4)1.0:0.1,(virus9:0.04,virus10:0.03)1.0:0.6);';
 
     const tree = Tree.parseNewick(newickString, "probability");
+
+
+
     const treeSVG = document.getElementById('phylogram_1a');
     const margins={top:10,bottom:60,left:30,right:60};
 
@@ -202,7 +206,12 @@
         .branches(
                 branch()
                     .hilightOnHover()
-                    .reRootOnClick()
+                    // .reRootOnClick()
+                    .on("click",(d,n,i)=>{
+                        const subtree= new Tree(fig.tree().getNode(d.v1.id).toJS());
+                        fig.tree(subtree)
+                    })
+
             )
             .branches(
             branchLabel(d=>"label!")
@@ -232,6 +241,11 @@
                 .x(0)
                 .y(height-margins.bottom)
         );
+    document.getElementById('reset-button').onclick = function() {
+        // reset to the original tree
+        fig.tree(tree)
+    };
+
 
 
 
