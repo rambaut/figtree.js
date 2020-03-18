@@ -3,9 +3,8 @@ import {mergeDeep} from "../utilities";
 import {Bauble} from "./bauble";
 import {mouse, select} from "d3"
 import uuid from "uuid"
-import p from "../privateConstants";
+import p from "../_privateConstants";
 import {BaubleManager} from "../features/baubleManager";
-/** @module bauble */
 
 export class Branch extends Bauble {
     static DEFAULT_SETTINGS() {
@@ -201,13 +200,17 @@ export function branchPathGenerator({scales,curveRadius,curve}) {
     return branchPath;
 }
 
+
 export function branches(){
    return new BaubleManager()
         .class("branch")
         .data(d=>d["edges"])
         .layer("branches-layer")
 }
-
+/**
+ * branch is a helper function that returns a new branch instance.
+ * @returns {BaubleManager|*}
+ */
 export function branch(){
    return new Branch();
 }

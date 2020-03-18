@@ -95,6 +95,11 @@ export class Tree {
         }
         return [...this.preorder()];
     };
+
+    /**
+     * get array of node list
+     * @returns {*}
+     */
     get nodeList(){
         if(this.nodesUpdated){
             setUpArraysAndMaps.call(this);
@@ -394,6 +399,12 @@ export class Tree {
         return this;
     }
 
+    /**
+     * Get the last common ancestor of two nodes.
+     * @param node1
+     * @param node2
+     * @returns {IterableIterator<*>}
+     */
     lastCommonAncestor(node1, node2) {
 
         const path1 = [...Tree.pathToRoot(node1)];
@@ -405,6 +416,12 @@ export class Tree {
       
     }
 
+    /**
+     * Get the path length between two nodes
+     * @param node1
+     * @param node2
+     * @returns {number}
+     */
     pathLength(node1, node2) {
 
         let sum = 0;
@@ -1236,7 +1253,22 @@ function setUpArraysAndMaps() {
     this._tipMap = new Map(this.externalNodes.map((tip) => [tip.name, tip]));
 }
 
-
+/**
+ * The node class. This wraps a node in a tree and notifies the tree when
+ * the node updates. It can be treated almost exactly like an object. It just has
+ * helper setters and getters to handel changes, and a few extra methods.
+ * {
+            height:undefined,
+            divergence:undefined,
+            length:undefined,
+            name:null,
+            annotations:{},
+            parent:undefined,
+            children:null,
+            label:undefined,
+            id:`node-${uuid.v4()}`
+        }
+ */
 
 class Node{
 
@@ -1257,6 +1289,8 @@ class Node{
 
 
     }
+
+
     constructor(nodeData ={}){
         const data = {...Node.DEFAULT_NODE(),...nodeData};
 

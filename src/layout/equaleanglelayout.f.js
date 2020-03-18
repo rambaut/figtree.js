@@ -1,7 +1,7 @@
+
 import {mean, min} from "d3-array";
 import {layoutFactory, makeVertexFromNode} from "./layoutHelpers";
 
-//TODO doesn't layout nodes properly or hold position
 
 function getRelatives(node){return [(node.parent&&node.parent)].concat((node.children&&node.children)).filter(n=>n)};// to remove null
 

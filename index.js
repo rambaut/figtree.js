@@ -10,7 +10,7 @@ import {Branch,branches,branch} from "./src/baubles/branch";
 // import {GreatCircleBranchBauble} from "./src/baubles/greatCircleBranchBauble";
 import{rectangularLayout} from "./src/layout/rectangularLayout.f";
 import{equalAngleLayout} from "./src/layout/equaleanglelayout.f";
-import {nodes,nodeBackground} from "./src/features/nodes";
+import {nodes,nodeBackground} from "./src/features/_nodes";
 import {Label,label,tipLabel,internalNodeLabel,branchLabel} from "./src/baubles/label";
 import {rootToTipLayout} from "./src/layout/rootToTipLayout";
 import {decimalToDate} from "./src/utilities";

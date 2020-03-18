@@ -64,7 +64,7 @@ export class Label extends Bauble{
 /**
  * Helper function for making labels. Sets position and alignment based on
  * vertex or edge object.
- * @param text
+ * @param text - text to be displayed
  * @return {*}
  */
 export function label(text){

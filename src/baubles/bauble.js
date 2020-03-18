@@ -1,9 +1,6 @@
 "use strict";
 
 /** @module bauble */
-import {mergeDeep} from "../utilities";
-import {easeLinear} from "d3"
-import set from "@babel/runtime/helpers/esm/set";
 import uuid from "uuid";
 
 /**
@@ -34,7 +31,7 @@ export class Bauble {
      * Getter or setter of bauble filter. The filter is function that will be passed the vertex or edge.It should return
      * true or false
      * @param f
-     * @return {(function(): boolean)|Bauble}
+     * @return {*|Bauble}
      */
     filter(f=null){
         if(f===null){
@@ -89,8 +86,8 @@ export class Bauble {
 
     /**
      * Get or set the transition duration and ease. Defualts to the figtree instance.
-     * @param t - optional object {tranmsissionDuration: transmissionEase:}
-     * @return {Bauble|BaubleManager|*|Bauble}
+     * @param t - {Object} [t={tranmsissionDuration: transmissionEase:}]
+     * @return {Bauble|*}
      */
     transitions(t=null){
         if(t===null){

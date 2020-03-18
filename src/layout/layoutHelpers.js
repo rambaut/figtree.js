@@ -1,6 +1,6 @@
 import {mean} from "d3";
 import {Type} from "../tree";
-import p from "../privateConstants.js";
+import p from "../_privateConstants.js";
 
 function getVertexClassesFromNode(node){
     let classes = [(!node.children ? "external-node" : "internal-node")];
@@ -27,6 +27,38 @@ function getVertexClassesFromNode(node){
 }
 
 // TODO update this to handel location for other layouts that aren't left to right
+/**
+ * Makes a vertex from a node in a tree.
+ * anatomy of a vertex
+ * {
+        name:node.name,
+        length:node.length,
+        height:node.height,
+        divergence:node.divergence,
+        level:node.level,
+        label:node.label,
+        annotations:node.annotations,
+        key: node.id,
+        id:node.id,
+        parent:node.parent?node.parent.id:null,
+        children:node.children?node.children.map(child=>child.id):null,
+        degree: (node.children ? node.children.length + 1 : 1),// the number of edges (including stem)
+        textLabel:{
+            labelBelow:labelBelow,
+            x:leftLabel?"-6":"12",
+            y:leftLabel?(labelBelow ? "-8": "8" ):"0",
+            alignmentBaseline: leftLabel?(labelBelow ? "bottom": "hanging" ):"middle",
+            textAnchor:leftLabel?"end":"start",
+        },
+
+
+        classes: getVertexClassesFromNode(node),
+        [p.node]:node,
+    };
+ *
+ * @param node
+* @returns vertex
+ */
 export function makeVertexFromNode(node){
     const leftLabel= !!node.children;
     const labelBelow= (!!node.children && (!node.parent || node.parent.children[0] !== node));
@@ -58,7 +90,26 @@ export function makeVertexFromNode(node){
     };
 }
 
-
+/**
+ * Makes edges from an array of vertices.
+ *
+ * Edge {
+            v0: parent vertex,
+            v1: target vertex,
+            key: vertex.key,
+            id:vertex.id,
+            classes:vertex.classes,
+            x:x position,
+            y:y.position,
+            textLabel:{ label postions
+                x:,
+                y: -6,
+                alignmentBaseline: "bottom",
+                textAnchor:"middle",
+            },
+ * @param vertices
+ * @returns {*}
+ */
 export function makeEdges(vertices){
     const nodeMap = new Map(vertices.map(v=>[v[p.node],v]));
     return vertices.filter(v=>v[p.node].parent).map(v=>{

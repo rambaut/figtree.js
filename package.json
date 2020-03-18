@@ -39,7 +39,7 @@
     "webpack-dev-server": "^3.9.0"
   },
   "scripts": {
-    "docs": "sphinx-build -b html docs documentation",
+    "docs": "jsdoc -r src/*",
     "build-webpack": "webpack",
     "start:dev": "webpack-dev-server",
     "build": "rollup -c",

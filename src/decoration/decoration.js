@@ -1,7 +1,8 @@
 import uuid from "uuid";
 
 /**
- * The base Decoration class.
+ * The base Decoration class. Decorations are elements in the figure that can update but don't map directly
+ * to nodes and branches.
  */
 
 
@@ -71,7 +72,7 @@ export class Decoration {
 
     /**
      * Get or set the transition duration and ease. Defualts to the figtree instance.
-     * @param t - optional object {tranmsissionDuration: transmissionEase:}
+     * @param t - {Object} [t={tranmsissionDuration: transmissionEase:}]
      * @return {Bauble|BaubleManager|*|Bauble}
      */
     transitions(t = null) {

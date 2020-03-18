@@ -3,9 +3,9 @@ import {select,easeCubic,scaleLinear} from "d3";
 import uuid from "uuid";
 import { mergeDeep} from "../utilities";
 import 'd3-selection-multi';
-import {GeoLayout} from "../layout/deprecatedClasses/geoLayout";
+import {GeoLayout} from "../layout/_deprecatedClasses/geoLayout";
 import {BaubleManager} from "../features/baubleManager"
-import p from "../privateConstants.js"
+import p from "../_privateConstants.js"
 import extent from "d3-array/src/extent";
 
 /** @module figtree */
@@ -16,7 +16,7 @@ import extent from "d3-array/src/extent";
  *
  * A class that takes a tree and draws it into the the given SVG root element. Has a range of methods
  * for adding interactivity to the tree (e.g., mouse-over labels, rotating nodes and rerooting on branches).
- * The tree is updated with animated transitions.
+ * The figure updates with animated transitions when the tree is updated.
  */
 export class FigTree {
 
@@ -45,28 +45,12 @@ export class FigTree {
     }
 
     /**
-     * The constructor.
-     * @param {svg} svg -  the html svg that will hold the figure - required
-     * @param {Object} margins -  the space within the svg along the border that will not be used to draw the tree. Axis will be placed in this space. Optional in constructor.
-     * @param {number} margins.top - the distance from the top
-     * @param {number} margins.bottom - the distance from the bottom
-     * @param {number} margins.left - the distance from the left
-     * @param {number} margins.right - the distance from the right
-     * @param {tree} tree - the tree. optional in the constructor
-     * @param {Object} [settings={}] - Settings for the figure. Settings provided in part will not affect defaults not explicitly mentioned
-     * @param {Object} settings.xScale - Settings specific for the x scale of the figure
-     * @param {function} [settings.xScale.scale=d3.scaleLinear] - A d3 scale for the x dimension
-     * @param {Object} settings.xScale.revisions - Any updates or revisions to be made to the x scale set by the layout
-     * @param {number} [settings.xScale.revisions.origin=null] - An optional value for specifying the right most edge of the plot.
-     * @param {boolean} [settings.xScale.revisions.reverseAxis=false] - Should the x axis decrease from right to left? (default false => number increase from height 0 as we move right to left)
-     * @param {number} [settings.xScale.revisions.branchScale=1] - Factor to scale the branchlengths by
-     * @param {number} [settings.xScale.revisions.offset=0] - Space to add between the origin and right-most vertex
-     * @param {number} [settings.xScale.revisions.hedge = 0] - Space to add between the left edge of the plot and the left most vertex.
-     * @param {Object} settings.yScale - Settings specific for the y scale of the figure
-     * @param {function} [settings.yScale.scale=d3.scaleLinear] - A d3 scale for the y dimension
-     * @param {number} width - an option to specify the width of the svg. This will be used in making the scales. If not provided the width is taken from the svg
-     * @param {number} height - an option to specify the height of the svg. This will be used in making the scales. If not provided the height is taken from the svg
-
+     * The constructor. All parameters are optional can be set with setters after construction.
+     * @param {DOM.node} [svg=null] - the svg that will hold the figure.
+     * @param margins {Object} [margins={top:10,bottom:60,left:30,right:60}]  The margins around the tree figure. Axis will go in these spaces if applicable
+     * @param tree {Tree} [null] - the tree
+     * @param settings {Object} [settings={width:null,height:null}] sets the size for drawing the figure. If not provided, the size of the svg will be used.
+     * @returns {FigTree}
      */
     constructor(svg=null, margins={top:10,bottom:60,left:30,right:60},tree=null, settings = {}) {
         // this[p.layout] = layout;
@@ -82,7 +66,7 @@ export class FigTree {
         this[p.tree].subscribeCallback( () => {
                 this.update();
             });
-        this.setupSVG();
+        setupSVG.call(this);
         this.axes=[];
         this._features=[];
 
@@ -105,6 +89,12 @@ export class FigTree {
         return this;
     }
 
+    /**
+     * Setter/getter for transition setting.
+     * @param t {Object} [t={transitionEase,transitionDuration:} - sets the transition ease and duration (in milliseconds) and returns the figtree instance
+     * if nothing is provided it returns the current settings.
+     * @returns {{transitionEase: cubicInOut, transitionDuration: number}|*}
+     */
     transitions(t=null){
         if(t){
             this._transitions={...this._transitions,...t};
@@ -112,6 +102,13 @@ export class FigTree {
             return this._transitions;
         }
     }
+
+    /**
+     * Setter/getter for updating the margins.
+     * @param m {Object} [margins={top:10,bottom:60,left:30,right:60}] -any provided object will be merged with the current settings.
+     * If nothing is provided returns current margins.
+     * @returns {*}
+     */
     margins(m=null){
         if(m!==null){
             this._margins = {...this._margins,...m}
@@ -120,35 +117,12 @@ export class FigTree {
             return this._margins
         }
     }
+
+
+
     /**
-     * An instance method that makes place the svg object in the page. Without calling this method the figure will not be drawn
-     * @return {FigTree}
-     */
-    setupSVG(){
-
-        this.svgId = `g-${uuid.v4()}`;
-        select(this[p.svg]).select(`#${this.svgId}`).remove();
-
-        // add a group which will contain the new tree
-        select(this[p.svg]).append("g")
-            .attr("id",this.svgId)
-            .attr("transform",`translate(${this._margins.left},${this._margins.top})`);
-
-        //to selecting every time
-        this.svgSelection = select(this[p.svg]).select(`#${this.svgId}`);
-        this.svgSelection.append("g").attr("class","annotation-layer");
-        this.svgSelection.append("g").attr("class", "axes-layer");
-        this.svgSelection.append("g").attr("class", "cartoon-layer");
-
-        this.svgSelection.append("g").attr("class", "branches-layer");
-        this.svgSelection.append("g").attr("class", "node-backgrounds-layer");
-        this.svgSelection.append("g").attr("class", "nodes-layer");
-
-
-
-    }
-    /**
-     * Updates the figure when the tree has changed
+     * Updates the figure when the tree has changed.  You can call this to force an update.
+     * Returns the figure.
      */
     update() {
         const {vertices,edges} = this[p.layout](this[p.tree]);
@@ -156,10 +130,10 @@ export class FigTree {
         select(`#${this.svgId}`)
             .attr("transform",`translate(${this._margins.left},${this._margins.top})`);
 
-        this.setUpScales(vertices,edges);
+        setUpScales.call(this,vertices,edges);
 
-        this.updateNodePositions(vertices);
-        this.updateBranchPositions(edges);
+        updateNodePositions.call(this,vertices);
+        updateBranchPositions.call(this,edges);
 
         for(const feature of this._features){
             feature.update({vertices,edges})
@@ -168,23 +142,7 @@ export class FigTree {
 
     }
 
-    /**
-     * A helper function that sets the positions of the node and nodebackground groups in the svg and then calls update
-     * functions of the node and node background elements.
-     * @param vertices
-     */
-    updateNodePositions(vertices) {
-       this.nodeManager.update(vertices);
-        this.nodeBackgroundManager.update(vertices);
-    }
 
-    /**
-     * A helper function that sets the postions of the branch groups and calls the update functions of the branch elements.
-     * @param edges
-     */
-    updateBranchPositions(edges){
-        this.branchManager.update(edges)
-    }
 
     /**
      * Adds an element to the node update cycle. The element's update method will be called for each node selection.
@@ -227,52 +185,12 @@ export class FigTree {
         return this;
     }
 
-    setUpScales(vertices,edges){
-            let width,height;
-            if(Object.keys(this.settings).indexOf("width")>-1){
-                width =this.settings.width;
-            }else{
-                width = this[p.svg].getBoundingClientRect().width;
-            }
-            if(Object.keys(this.settings).indexOf("height")>-1){
-                height =this.settings.height;
-            }else{
-                height = this[p.svg].getBoundingClientRect().height;
-            }
-
-            // create the scales
-            let xScale,yScale;
-            let projection=null;
-
-            if(this.layout instanceof GeoLayout){
-                xScale = scaleLinear();
-                yScale = scaleLinear();
-                projection = this.layout.projection;
-            }
-            else{
-                const xdomain = extent(vertices.map(d=>d.x).concat(edges.reduce((acc,e)=> acc.concat([e.v1.x,e.v0.x]),[])));
-                // almost always the same except when the trendline is added as an edge without vertices
-                const ydomain =  extent(vertices.map(d=>d.y).concat(edges.reduce((acc,e)=>acc.concat([e.v1.y,e.v0.y]),[])));
-
-                xScale = this.settings.xScale.scale()
-                    .domain(xdomain)
-                    .range([0, width - this._margins.right-this._margins.left]);
-
-                yScale = this.settings.yScale.scale()
-                    .domain(ydomain)
-                    .range([height -this._margins.bottom-this._margins.top,0]);
-            }
-
-        this.scales = {x:xScale, y:yScale, width, height, projection};
-    }
-
-
 
     /**
      * Registers some text to appear in a popup box when the mouse hovers over the selection.
      *
-     * @param selection
-     * @param text
+     * @param selection -  {string} - passed to the d3 select. Adds an event listener to this selection to trigger the tooltip
+     * @param text - {string} - text to display in the tooltip.
      */
     addToolTip(selection, text) {
         this.svgSelection.selectAll(selection).on("mouseover",
@@ -374,4 +292,81 @@ export class FigTree {
     //     this.feature(l);
     //     return l;
     // }
+}
+
+function setupSVG(){
+
+    this.svgId = `g-${uuid.v4()}`;
+    select(this[p.svg]).select(`#${this.svgId}`).remove();
+
+    // add a group which will contain the new tree
+    select(this[p.svg]).append("g")
+        .attr("id",this.svgId)
+        .attr("transform",`translate(${this._margins.left},${this._margins.top})`);
+
+    //to selecting every time
+    this.svgSelection = select(this[p.svg]).select(`#${this.svgId}`);
+    this.svgSelection.append("g").attr("class","annotation-layer");
+    this.svgSelection.append("g").attr("class", "axes-layer");
+    this.svgSelection.append("g").attr("class", "cartoon-layer");
+
+    this.svgSelection.append("g").attr("class", "branches-layer");
+    this.svgSelection.append("g").attr("class", "node-backgrounds-layer");
+    this.svgSelection.append("g").attr("class", "nodes-layer");
+
+}
+/**
+ * A helper function that sets the positions of the node and nodebackground groups in the svg and then calls update
+ * functions of the node and node background elements.
+ * @param vertices
+ */
+function updateNodePositions(vertices) {
+    this.nodeManager.update(vertices);
+    this.nodeBackgroundManager.update(vertices);
+}
+
+/**
+ * A helper function that sets the postions of the branch groups and calls the update functions of the branch elements.
+ * @param edges
+ */
+function updateBranchPositions(edges){
+    this.branchManager.update(edges)
+}
+function setUpScales(vertices,edges){
+    let width,height;
+    if(Object.keys(this.settings).indexOf("width")>-1){
+        width =this.settings.width;
+    }else{
+        width = this[p.svg].getBoundingClientRect().width;
+    }
+    if(Object.keys(this.settings).indexOf("height")>-1){
+        height =this.settings.height;
+    }else{
+        height = this[p.svg].getBoundingClientRect().height;
+    }
+
+    // create the scales
+    let xScale,yScale;
+    let projection=null;
+
+    if(this.layout instanceof GeoLayout){
+        xScale = scaleLinear();
+        yScale = scaleLinear();
+        projection = this.layout.projection;
+    }
+    else{
+        const xdomain = extent(vertices.map(d=>d.x).concat(edges.reduce((acc,e)=> acc.concat([e.v1.x,e.v0.x]),[])));
+        // almost always the same except when the trendline is added as an edge without vertices
+        const ydomain =  extent(vertices.map(d=>d.y).concat(edges.reduce((acc,e)=>acc.concat([e.v1.y,e.v0.y]),[])));
+
+        xScale = this.settings.xScale.scale()
+            .domain(xdomain)
+            .range([0, width - this._margins.right-this._margins.left]);
+
+        yScale = this.settings.yScale.scale()
+            .domain(ydomain)
+            .range([height -this._margins.bottom-this._margins.top,0]);
+    }
+
+    this.scales = {x:xScale, y:yScale, width, height, projection};
 }

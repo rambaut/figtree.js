@@ -2,8 +2,7 @@ import {mergeDeep} from "../utilities";
 import {Bauble} from "./bauble";
 import {select} from "d3";
 import uuid from "uuid";
-import p from "../privateConstants";
-/** @module bauble */
+import p from "../_privateConstants";
 
 export class RectangularBauble extends Bauble {
 
@@ -139,6 +138,11 @@ export class RectangularBauble extends Bauble {
         return this;
     }
 }
+
+/**
+ * A helper function that returns a new rectangular bauble
+ * @returns {RectangularBauble}
+ */
 export function rectangle(){
     return new RectangularBauble();
 }

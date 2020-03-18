@@ -2,9 +2,7 @@ import {mergeDeep} from "../utilities";
 import {Bauble} from "./bauble";
 import {select} from "d3";
 import uuid from "uuid"
-import p from "../privateConstants";
-/** @module bauble */
-
+import p from "../_privateConstants";
 
 /**
  * The CircleBauble class. Each vertex is assigned a circle in the svg.

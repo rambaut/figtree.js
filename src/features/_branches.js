@@ -2,7 +2,7 @@ import {BaubleManager} from "./baubleManager";
 import {isFunction} from "../utilities";
 import {Branch} from "../baubles/branch";
 import {select,curveStepBefore,mouse} from "d3";
-import p from "../privateConstants";
+import p from "../_privateConstants";
 
 class BranchFactory extends BaubleManager{
     constructor(){
@@ -12,6 +12,7 @@ class BranchFactory extends BaubleManager{
         this._curve =curveStepBefore;
         this.type=p.branch;
     }
+
     getElement(d, scales) {
         const element=super.getElement(d, scales);
         if(this._curveRadius instanceof Function){

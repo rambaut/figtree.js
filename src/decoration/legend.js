@@ -1,6 +1,6 @@
 import {Decoration} from "./decoration";
 import {select} from "d3";
-import p from "../privateConstants";
+import p from "../_privateConstants";
 
 /**
  * A discrete legend for displaying traits
