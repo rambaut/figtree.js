@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: rectanglebauble.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: rectanglebauble.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import {mergeDeep} from "../utilities";
+import {Bauble} from "./bauble";
+import {select} from "d3";
+import uuid from "uuid";
+import p from "../privateConstants";
+/** @module bauble */
+
+export class RectangularBauble extends Bauble {
+
+    constructor() {
+        super();
+        this._attrs ={
+                height: 16,
+                width: 6,
+                rx: 2,
+                ry:2,
+            };
+        }
+
+
+    /**
+     * A function that assigns width,height,x,y,rx, and ry attributes to a rect selection.
+     * @param selection
+     * @param border
+     * @return {*|null|undefined}
+     */
+    update(selection){
+    if(selection==null&amp;&amp;!this.selection){
+        return
+    }
+    if(selection){
+        this.selection=selection;
+    }
+        const w = this.attr("width");
+        const h =this.attr("height");
+        return selection
+            .selectAll(`.${this.id}`)
+            .data(d => [d].filter(this.filter()),d=>this.id)
+            .join(
+                enter => enter
+                    .append("rect")
+                    .attr("class",`node-shape ${this.id}`)
+                    .attr("x", -w / 2)
+                    .attr("y", -h / 2)
+                    .attrs(this._attrs)
+                    .each((d,i,n)=>{
+                        const element = select(n[i]);
+                        for( const [key,func] of Object.entries(this._interactions)){
+                            element.on(key,(d,i,n)=>func(d,i,n))
+                        }
+                    }),
+                update => update
+                    .call(update =>update.transition(d=>`u${uuid.v4()}`)
+                        .duration(this.transitions().transitionDuration)
+                        .ease(this.transitions().transitionEase)
+                        .attr("x", -w / 2)
+                        .attr("y", -h / 2)
+                        .attrs(this._attrs)
+                        .each((d,i,n)=>{
+                            const element = select(n[i]);
+                            for( const [key,func] of Object.entries(this._interactions)){
+                                element.on(key,(d,i,n)=>func(d,i,n))
+                            }
+                        })
+                    )
+            )
+
+    };
+
+    /**
+     * Helper function to class the node as 'hovered' and update the radius if provided
+     * @param r - optional hover border
+     * @return {retangleBauble}
+     */
+    hilightOnHover(r = null) {
+        let oldR;
+        super.on("mouseenter",
+            (d, i,n) => {
+                if(r) {
+                    if (!this._attrs.r) {
+                        this._attrs.r = this._attrs["r"];
+                    }
+                    this.attr("width", this.attr("width")+r);
+                    this.attr("height", this.attr("height")+r);
+
+                }
+                const parent = select(n[i]).node().parentNode;
+                this.update(select(parent));
+                select(parent).classed("hovered",true)
+                    .raise();
+
+                this.attr("width", this.attr("width")-r);
+                this.attr("height", this.attr("height")-r);
+                // move to top
+
+            });
+        super.on("mouseleave",
+            (d,i,n) => {
+
+                const parent = select(n[i]).node().parentNode;
+                select(parent).classed("hovered",false);
+                this.update(select(parent));
+
+            });
+        return this;
+    }
+
+    /**
+     * Rotate a node on click
+     * @param recursive - optional default -false;
+     * @return {CircleBauble}
+     */
+    rotateOnClick(recursive=false){
+        super.on("click",(d,n,i)=>{
+            const node = this.manager().figure()[p.tree].getNode(d.key);
+            this.manager().figure()[p.tree].rotate(node,recursive);
+        });
+        return this;
+    }
+    /**
+     * helper method to annotate the underlying tree node as key:true; Useful for linking interactions between figures
+     * that share a tree.
+     * @param key
+     * @return {CircleBauble}
+     */
+    annotateOnHover(key){
+        super.on("mouseenter",
+            (d, i,n) => {
+                this.manager().figure()[p.tree].annotateNode(this.manager().figure()[p.tree].getNode(d.id),{[key]:true});
+                this.manager().figure()[p.tree].treeUpdateCallback();
+                const parent = select(n[i]).node().parentNode;
+                select(parent).raise();
+            });
+        super.on("mouseleave",
+            (d,i,n) => {
+                this.manager().figure()[p.tree].annotateNode(this.manager().figure()[p.tree].getNode(d.id),{[key]:false});
+                this.manager().figure()[p.tree].treeUpdateCallback();
+            });
+        return this;
+    }
+}
+export function rectangle(){
+    return new RectangularBauble();
+}</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-bauble.html">bauble</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Wed Mar 18 2020 15:02:35 GMT+0000 (Greenwich Mean Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

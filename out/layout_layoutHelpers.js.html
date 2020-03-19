@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: layout/layoutHelpers.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: layout/layoutHelpers.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import {mean} from "d3";
+import {Type} from "../tree";
+import p from "../_privateConstants.js";
+
+function getVertexClassesFromNode(node){
+    let classes = [(!node.children ? "external-node" : "internal-node")];
+    const tree = node.tree;
+    if (node.annotations) {
+        classes = [
+            ...classes,
+            ...Object.entries(node.annotations)
+                .filter(([key]) => {
+                    return tree.annotations[key] &amp;&amp;
+                        (tree.annotations[key].type === Type.DISCRETE ||
+                            tree.annotations[key].type === Type.BOOLEAN ||
+                            tree.annotations[key].type === Type.INTEGER);
+                })
+                .map(([key, value]) =>{
+                    if(tree.annotations[key].type===Type.DISCRETE || tree.annotations[key].type === Type.INTEGER){
+                        return `${key}-${value}`;
+                    }else if(tree.annotations[key].type === Type.BOOLEAN &amp;&amp; value ){
+                        return `${key}`
+                    }
+                })];
+    }
+    return classes;
+}
+
+// TODO update this to handel location for other layouts that aren't left to right
+/**
+ * Makes a vertex from a node in a tree.
+ * anatomy of a vertex
+ * {
+        name:node.name,
+        length:node.length,
+        height:node.height,
+        divergence:node.divergence,
+        level:node.level,
+        label:node.label,
+        annotations:node.annotations,
+        key: node.id,
+        id:node.id,
+        parent:node.parent?node.parent.id:null,
+        children:node.children?node.children.map(child=>child.id):null,
+        degree: (node.children ? node.children.length + 1 : 1),// the number of edges (including stem)
+        textLabel:{
+            labelBelow:labelBelow,
+            x:leftLabel?"-6":"12",
+            y:leftLabel?(labelBelow ? "-8": "8" ):"0",
+            alignmentBaseline: leftLabel?(labelBelow ? "bottom": "hanging" ):"middle",
+            textAnchor:leftLabel?"end":"start",
+        },
+
+
+        classes: getVertexClassesFromNode(node),
+        [p.node]:node,
+    };
+ *
+ * @param node
+* @returns vertex
+ */
+export function makeVertexFromNode(node){
+    const leftLabel= !!node.children;
+    const labelBelow= (!!node.children &amp;&amp; (!node.parent || node.parent.children[0] !== node));
+
+    return {
+        name:node.name,
+        length:node.length,
+        height:node.height,
+        divergence:node.divergence,
+        level:node.level,
+        label:node.label,
+        annotations:node.annotations,
+        key: node.id,
+        id:node.id,
+        parent:node.parent?node.parent.id:null,
+        children:node.children?node.children.map(child=>child.id):null,
+        degree: (node.children ? node.children.length + 1 : 1),// the number of edges (including stem)
+        textLabel:{
+            labelBelow:labelBelow,
+            x:leftLabel?"-6":"12",
+            y:leftLabel?(labelBelow ? "-8": "8" ):"0",
+            alignmentBaseline: leftLabel?(labelBelow ? "bottom": "hanging" ):"middle",
+            textAnchor:leftLabel?"end":"start",
+        },
+
+
+        classes: getVertexClassesFromNode(node),
+        [p.node]:node,
+    };
+}
+
+/**
+ * Makes edges from an array of vertices.
+ *
+ * Edge {
+            v0: parent vertex,
+            v1: target vertex,
+            key: vertex.key,
+            id:vertex.id,
+            classes:vertex.classes,
+            x:x position,
+            y:y.position,
+            textLabel:{ label postions
+                x:,
+                y: -6,
+                alignmentBaseline: "bottom",
+                textAnchor:"middle",
+            },
+ * @param vertices
+ * @returns {*}
+ */
+export function makeEdges(vertices){
+    const nodeMap = new Map(vertices.map(v=>[v[p.node],v]));
+    return vertices.filter(v=>v[p.node].parent).map(v=>{
+        return {
+            v0: nodeMap.get(v[p.node].parent),
+            v1: v,
+            key: v.key,
+            id:v.id,
+            classes:v.classes,
+            x:nodeMap.get(v[p.node].parent).x,
+            y:v.y,
+            textLabel:{
+                x:mean([v.x,nodeMap.get(v[p.node].parent).x]),
+                y: -6,
+                alignmentBaseline: "bottom",
+                textAnchor:"middle",
+            },
+        }
+    })
+}
+
+export const layoutFactory=makeVertices=>tree=>{
+    const vertices = makeVertices(tree);
+    const edges = makeEdges(vertices);
+    return {vertices,edges}
+};</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-bauble.html">bauble</a></li><li><a href="module-figtree.html">figtree</a></li><li><a href="module-tree.html">tree</a></li></ul><h3>Classes</h3><ul><li><a href="Axis.html">Axis</a></li><li><a href="BaubleManager.html">BaubleManager</a></li><li><a href="CircleBauble.html">CircleBauble</a></li><li><a href="Decoration.html">Decoration</a></li><li><a href="Label.html">Label</a></li><li><a href="Legend.html">Legend</a></li><li><a href="module-bauble.Bauble.html">Bauble</a></li><li><a href="module-figtree.FigTree.html">FigTree</a></li><li><a href="module-tree.Tree.html">Tree</a></li><li><a href="module-tree-Node.html">Node</a></li><li><a href="ScaleBar.html">ScaleBar</a></li></ul><h3>Global</h3><ul><li><a href="global.html#branch">branch</a></li><li><a href="global.html#branchLabel">branchLabel</a></li><li><a href="global.html#branchPathGenerator">branchPathGenerator</a></li><li><a href="global.html#circle">circle</a></li><li><a href="global.html#dateToDecimal">dateToDecimal</a></li><li><a href="global.html#decimalToDate">decimalToDate</a></li><li><a href="global.html#equalAngleLayout">equalAngleLayout</a></li><li><a href="global.html#internalNodeLabel">internalNodeLabel</a></li><li><a href="global.html#label">label</a></li><li><a href="global.html#leapYear">leapYear</a></li><li><a href="global.html#leastSquares">leastSquares</a></li><li><a href="global.html#legend">legend</a></li><li><a href="global.html#makeEdges">makeEdges</a></li><li><a href="global.html#makeVertexFromNode">makeVertexFromNode</a></li><li><a href="global.html#rectangle">rectangle</a></li><li><a href="global.html#scaleBar">scaleBar</a></li><li><a href="global.html#tipLabel">tipLabel</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Wed Mar 18 2020 15:22:23 GMT+0000 (Greenwich Mean Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
