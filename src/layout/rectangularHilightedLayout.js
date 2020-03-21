@@ -48,4 +48,12 @@ export function rectangularVerticesHighlight(predicate,compressionFactor) {
     }
 }
 
+/**
+ *
+ * This layout highlights parts of the tree and compresses others. The layout factory takes a predicate function that is called
+ * on each node and returns true or false. true == more space around node.
+ * @param predicate - {Function} a function (node)=> boolean. True == more space around the node.
+ * @param compressionFactor - factor to compress space around node that are not highlighted. 1 = no compression 0=no space.
+ * @returns {Function}
+ */
 export const rectangularHilightedLayout=(predicate, compressionFactor) => layoutFactory(rectangularVerticesHighlight(predicate,compressionFactor));

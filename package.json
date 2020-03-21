@@ -39,7 +39,7 @@
     "webpack-dev-server": "^3.9.0"
   },
   "scripts": {
-    "docs": "jsdoc -r src/*",
+    "docs": "jsdoc -r src/* -d ./doc/",
     "build-webpack": "webpack",
     "start:dev": "webpack-dev-server",
     "build": "rollup -c",
