@@ -19,8 +19,10 @@ import{BaubleManager} from "./src/features/baubleManager"
 import {scaleBar} from "./src/decoration/scaleBar";
 import {legend} from "./src/decoration/legend";
 import {Decoration} from "./src/decoration/decoration";
+import {rectangularHilightedLayout} from "./src/layout/rectangularHilightedLayout"
 
 export{Tree,Type,FigTree,rectangularLayout,
     Bauble,CircleBauble,RectangularBauble,Branch,
     nodes,equalAngleLayout,rootToTipLayout,decimalToDate,axis,circle,rectangle,BaubleManager,
-    nodeBackground,branch,branches,label,tipLabel,internalNodeLabel,branchLabel,scaleBar,legend,Decoration};
+    nodeBackground,branch,branches,label,tipLabel,internalNodeLabel,branchLabel,scaleBar,legend,rectangularHilightedLayout,
+    Decoration};

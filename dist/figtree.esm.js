@@ -11490,19 +11490,7 @@ function rectangularVertices(tree) {
 
   return vertices;
 }
-
-var layoutFactory$1 = function layoutFactory(makeVertices) {
-  return function (tree) {
-    var vertices = makeVertices(tree);
-    var edges = makeEdges(vertices);
-    return {
-      vertices: vertices,
-      edges: edges
-    };
-  };
-};
-
-var rectangularLayout = layoutFactory$1(rectangularVertices);
+var rectangularLayout = layoutFactory(rectangularVertices);
 
 var _marked =
 /*#__PURE__*/
@@ -12788,5 +12776,79 @@ function legend() {
   return new Legend();
 }
 
-export { Bauble, BaubleManager, Branch, CircleBauble, Decoration, FigTree, RectangularBauble, Tree, Type, axis$1 as axis, branch, branchLabel, branches, circle, decimalToDate, equalAngleLayout, internalNodeLabel, label, legend, nodeBackground, nodes, rectangle, rectangularLayout, rootToTipLayout, scaleBar, tipLabel };
+function ownKeys$7(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread$7(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$7(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$7(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+function rectangularVerticesHighlight(predicate, compressionFactor) {
+  return function rectangularHighlightedLayout(tree) {
+    var currentY = 0;
+    var vertices = [];
+    var previousTip = null;
+
+    var traverse = function traverse(node) {
+      var siblingPositions = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+      var myChildrenPositions = [];
+
+      if (node.children) {
+        var _iteratorNormalCompletion = true;
+        var _didIteratorError = false;
+        var _iteratorError = undefined;
+
+        try {
+          for (var _iterator = node.children[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+            var child = _step.value;
+            traverse(child, myChildrenPositions);
+          }
+        } catch (err) {
+          _didIteratorError = true;
+          _iteratorError = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion && _iterator["return"] != null) {
+              _iterator["return"]();
+            }
+          } finally {
+            if (_didIteratorError) {
+              throw _iteratorError;
+            }
+          }
+        }
+
+        siblingPositions.push(mean(myChildrenPositions));
+
+        var vertex = _objectSpread$7({}, makeVertexFromNode(node), {
+          y: mean(myChildrenPositions),
+          x: node.divergence
+        });
+
+        vertices.push(vertex);
+      } else {
+        if (previousTip !== null && (predicate(previousTip) || predicate(node))) {
+          currentY += 1;
+        } else {
+          currentY += compressionFactor;
+        }
+
+        previousTip = node;
+        siblingPositions.push(currentY);
+
+        var _vertex = _objectSpread$7({}, makeVertexFromNode(node), {
+          y: currentY,
+          x: node.divergence
+        });
+
+        vertices.push(_vertex);
+      }
+    };
+
+    traverse(tree.rootNode); //slow!
+
+    return vertices;
+  };
+}
+var rectangularHilightedLayout = function rectangularHilightedLayout(predicate, compressionFactor) {
+  return layoutFactory(rectangularVerticesHighlight(predicate, compressionFactor));
+};
+
+export { Bauble, BaubleManager, Branch, CircleBauble, Decoration, FigTree, RectangularBauble, Tree, Type, axis$1 as axis, branch, branchLabel, branches, circle, decimalToDate, equalAngleLayout, internalNodeLabel, label, legend, nodeBackground, nodes, rectangle, rectangularHilightedLayout, rectangularLayout, rootToTipLayout, scaleBar, tipLabel };
 //# sourceMappingURL=figtree.esm.js.map

@@ -1,5 +1,5 @@
 import {mean} from "d3";
-import {makeEdges, makeVertexFromNode} from "./layoutHelpers";
+import {layoutFactory, makeVertexFromNode} from "./layoutHelpers";
 
 
 
@@ -33,13 +33,5 @@ export function rectangularVertices(tree){
     //slow!
     return vertices;
 }
-
-
-
-const layoutFactory=makeVertices=>tree=>{
-    const vertices = makeVertices(tree);
-    const edges = makeEdges(vertices);
-    return {vertices,edges}
-};
 
 export const rectangularLayout = layoutFactory(rectangularVertices);
