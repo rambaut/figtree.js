@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: layout/rectangularHilightedLayout.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: layout/rectangularHilightedLayout.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import {mean} from "d3";
+import {layoutFactory, makeVertexFromNode} from "./layoutHelpers";
+import {rectangularVertices} from "./rectangularLayout.f";
+import {equalAngleVertices} from "./equaleanglelayout.f";
+
+
+
+
+export function rectangularVerticesHighlight(predicate,compressionFactor) {
+    return function rectangularHighlightedLayout(tree)
+    {
+        let currentY = 0;
+        const vertices = [];
+        let previousTip=null;
+
+        const traverse = function (node, siblingPositions = []) {
+            const myChildrenPositions = [];
+
+            if (node.children) {
+
+                for (const child of node.children) {
+                    traverse(child, myChildrenPositions);
+                }
+                siblingPositions.push(mean(myChildrenPositions));
+                const vertex = {
+                    ...makeVertexFromNode(node),
+                    y: mean(myChildrenPositions),
+                    x: node.divergence
+                };
+                vertices.push(vertex);
+            } else {
+                if(previousTip!==null &amp;&amp;(predicate(previousTip)|| predicate(node))){
+                    currentY += 1;
+                }
+                else{
+                    currentY+=compressionFactor;
+                }
+                previousTip=node;
+                siblingPositions.push(currentY);
+                const vertex = {...makeVertexFromNode(node), y: currentY, x: node.divergence};
+                vertices.push(vertex);
+            }
+        };
+
+        traverse(tree.rootNode);
+        //slow!
+        return vertices;
+    }
+}
+
+/**
+ *
+ * This layout highlights parts of the tree and compresses others. The layout factory takes a predicate function that is called
+ * on each node and returns true or false. true == more space around node.
+ * @param predicate - {Function} a function (node)=> boolean. True == more space around the node.
+ * @param compressionFactor - factor to compress space around node that are not highlighted. 1 = no compression 0=no space.
+ * @returns {Function}
+ */
+export const rectangularHilightedLayout=(predicate, compressionFactor) => layoutFactory(rectangularVerticesHighlight(predicate,compressionFactor));
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-bauble.html">bauble</a></li><li><a href="module-figtree.html">figtree</a></li><li><a href="module-tree.html">tree</a></li></ul><h3>Classes</h3><ul><li><a href="Axis.html">Axis</a></li><li><a href="BaubleManager.html">BaubleManager</a></li><li><a href="CircleBauble.html">CircleBauble</a></li><li><a href="Decoration.html">Decoration</a></li><li><a href="Label.html">Label</a></li><li><a href="Legend.html">Legend</a></li><li><a href="module-bauble.Bauble.html">Bauble</a></li><li><a href="module-figtree.FigTree.html">FigTree</a></li><li><a href="module-tree.Tree.html">Tree</a></li><li><a href="module-tree-Node.html">Node</a></li><li><a href="ScaleBar.html">ScaleBar</a></li></ul><h3>Global</h3><ul><li><a href="global.html#branch">branch</a></li><li><a href="global.html#branchLabel">branchLabel</a></li><li><a href="global.html#branchPathGenerator">branchPathGenerator</a></li><li><a href="global.html#circle">circle</a></li><li><a href="global.html#dateToDecimal">dateToDecimal</a></li><li><a href="global.html#decimalToDate">decimalToDate</a></li><li><a href="global.html#equalAngleLayout">equalAngleLayout</a></li><li><a href="global.html#internalNodeLabel">internalNodeLabel</a></li><li><a href="global.html#label">label</a></li><li><a href="global.html#leapYear">leapYear</a></li><li><a href="global.html#leastSquares">leastSquares</a></li><li><a href="global.html#legend">legend</a></li><li><a href="global.html#makeEdges">makeEdges</a></li><li><a href="global.html#makeVertexFromNode">makeVertexFromNode</a></li><li><a href="global.html#rectangle">rectangle</a></li><li><a href="global.html#rectangularHilightedLayout">rectangularHilightedLayout</a></li><li><a href="global.html#scaleBar">scaleBar</a></li><li><a href="global.html#tipLabel">tipLabel</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Sat Mar 21 2020 11:15:18 GMT+0000 (Greenwich Mean Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
