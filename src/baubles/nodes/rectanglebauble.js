@@ -1,10 +1,11 @@
-import {mergeDeep} from "../utilities";
-import {Bauble} from "./bauble";
+import {mergeDeep} from "../../utilities";
+import {Bauble} from "../bauble";
 import {select} from "d3";
 import uuid from "uuid";
-import p from "../_privateConstants";
+import p from "../../_privateConstants";
+import {AbstractNodeBauble} from "./nodeBauble";
 
-export class RectangularBauble extends Bauble {
+export class RectangularBauble extends AbstractNodeBauble {
 
     constructor() {
         super();
@@ -100,40 +101,6 @@ export class RectangularBauble extends Bauble {
                 select(parent).classed("hovered",false);
                 this.update(select(parent));
 
-            });
-        return this;
-    }
-
-    /**
-     * Rotate a node on click
-     * @param recursive - optional default -false;
-     * @return {CircleBauble}
-     */
-    rotateOnClick(recursive=false){
-        super.on("click",(d,n,i)=>{
-            const node = this.manager().figure()[p.tree].getNode(d.key);
-            this.manager().figure()[p.tree].rotate(node,recursive);
-        });
-        return this;
-    }
-    /**
-     * helper method to annotate the underlying tree node as key:true; Useful for linking interactions between figures
-     * that share a tree.
-     * @param key
-     * @return {CircleBauble}
-     */
-    annotateOnHover(key){
-        super.on("mouseenter",
-            (d, i,n) => {
-                this.manager().figure()[p.tree].annotateNode(this.manager().figure()[p.tree].getNode(d.id),{[key]:true});
-                this.manager().figure()[p.tree].treeUpdateCallback();
-                const parent = select(n[i]).node().parentNode;
-                select(parent).raise();
-            });
-        super.on("mouseleave",
-            (d,i,n) => {
-                this.manager().figure()[p.tree].annotateNode(this.manager().figure()[p.tree].getNode(d.id),{[key]:false});
-                this.manager().figure()[p.tree].treeUpdateCallback();
             });
         return this;
     }

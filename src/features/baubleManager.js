@@ -102,7 +102,9 @@ export  class BaubleManager{
                     })
                     .each(function (d) {
                        for(const bauble of self._baubleHelpers){
-                           bauble.update(select(this));
+                           if(bauble.filter()(d)){
+                               bauble.update(select(this));
+                           }
                        }
                     }),
                 update => update
@@ -115,7 +117,9 @@ export  class BaubleManager{
                         })
                         .each(function (d) {
                             for(const bauble of self._baubleHelpers){
-                                bauble.update(select(this));
+                                if(bauble.filter()(d)) {
+                                    bauble.update(select(this));
+                                }
                             }
                         })
                     )

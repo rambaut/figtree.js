@@ -1,5 +1,5 @@
 import {select} from "d3";
-import {Bauble} from "./bauble";
+import {Bauble} from "../bauble";
 
 /**
  * Bauble class for labels

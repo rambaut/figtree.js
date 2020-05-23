@@ -61,12 +61,6 @@
         /*    !*stroke-width: 1;*!*/
         /*}*/
 
-        .node-background {
-            fill: rgb(255, 255, 255);
-            /*stroke: rgb(255, 255, 255);*/
-            /*stroke-width: 1;*/
-        }
-
         .node-label {
             font-family: "helvetica-neue",  "helvetica",  "sans-serif";
             font-size: 14pt;
@@ -78,16 +72,6 @@
         }
         .node.hovered .node-label{
             opacity:1;
-        }
-        .node .node-shape{
-            stroke-width:0;
-            stroke: #541753;
-            -webkit-transition: stroke-width 500ms; /* Safari prior 6.1 */
-            transition: stroke-width 500ms;
-        }
-        .node-background .node-shape{
-            fill: #541753;
-
         }
 
         .node.hovered .node-shape {
@@ -160,8 +144,8 @@
 <script type="module">
 
     import {Tree,rectangularLayout,CircleBauble,FigTree,BaubleManager,Branch,
-        nodes,nodeBackground,circle,branches,branch,tipLabel,internalNodeLabel,label,
-        branchLabel, axis,scaleBar,legend,rectangle}  from "./dist/figtree.esm.js";
+        nodes,nodeBackground,circle,roughCircle,branches,branch,tipLabel,internalNodeLabel,label,
+        branchLabel, axis,scaleBar,legend,rectangle,axisBars,roughBranch}  from "./dist/figtree.esm.js";
 
 
     const width = 600,
@@ -192,16 +176,25 @@
 
     const fig = new FigTree(treeSVG,margins,tree);
     const colorScale = d3.scaleOrdinal().range(["steelblue","#c71585"]).domain(["Internal node","External node"])
+    const xAxis=  axis()
+        .location("bottom")
+        .y(height-margins.top-margins.bottom+5)
+        .x(0)
+        .title({text:"Divergence",
+            yPadding:30})
+        .tickFormat(d3.format(".1f"))
 
     fig
         .layout(rectangularLayout)
         .nodes(
-            circle()
-                    .filter(d=>d.degree===1)
-                    .attr("fill","#c71585")
-                    .attr("r",5)
-                    .hilightOnHover(10)
-                    .rotateOnClick(),
+            roughCircle()
+                .filter(d=>d.degree===1),
+            // circle()
+            //         .filter(d=>d.degree===1)
+            //         .attr("fill","#c71585")
+            //         .attr("r",5)
+            //         .hilightOnHover(10)
+            //         .rotateOnClick(),
             internalNodeLabel(d=>d.y),
             tipLabel(d=>d.name),
             rectangle()
@@ -211,13 +204,8 @@
                 .rotateOnClick()
 
         )
-        .nodeBackgrounds(
-            circle()
-                .filter(d=>d.degree===1)
-                .attr("r",7)
-        )
         .branches(
-                branch()
+            roughBranch()
                     .hilightOnHover()
                     // .reRootOnClick()
                     .on("click",(d,n,i)=>{
@@ -230,30 +218,23 @@
             branchLabel(d=>"label!")
             )
 
-        .feature(
-            axis()
-                .location("bottom")
-                .y(height-margins.top-margins.bottom+5)
-                .x(0)
-                .title({text:"Divergence",
-                    yPadding:30})
-                .tickFormat(d3.format(".1f"))
-        )
-        .feature(
-            scaleBar()
-                .direction("x")
-                .length(0.3)
-                .x(20)
-                .y(height-margins.top-margins.bottom-20)
-                .title({text:"0.3 sub/site",
-                    yPadding:3})
-        )
-        .feature(
-            legend()
-                .scale(colorScale)
-                .x(0)
-                .y(height-margins.bottom)
-        );
+        .feature(xAxis)
+        .feature(axisBars(xAxis))
+        // .feature(
+        //     scaleBar()
+        //         .direction("x")
+        //         .length(0.3)
+        //         .x(20)
+        //         .y(height-margins.top-margins.bottom-20)
+        //         .title({text:"0.3 sub/site",
+        //             yPadding:3})
+        // )
+        // .feature(
+        //     legend()
+        //         .scale(colorScale)
+        //         .x(0)
+        //         .y(height-margins.bottom)
+        // );
     document.getElementById('reset-button').onclick = function() {
         // reset to the original tree
         if(document.getElementById('checkbox').checked){

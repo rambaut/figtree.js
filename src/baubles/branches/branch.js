@@ -1,19 +1,12 @@
 import {curveStepBefore, line} from "d3-shape";
-import {mergeDeep} from "../utilities";
-import {Bauble} from "./bauble";
+import {mergeDeep} from "../../utilities";
+import {Bauble} from "../bauble";
 import {mouse, select} from "d3"
 import uuid from "uuid"
-import p from "../_privateConstants";
-import {BaubleManager} from "../features/baubleManager";
+import p from "../../_privateConstants";
+import {BaubleManager} from "../../features/baubleManager";
 
 export class Branch extends Bauble {
-    static DEFAULT_SETTINGS() {
-        return {
-            curveRadius: 0,
-            attrs: {"fill":"none","stroke":"black"},
-        }
-
-    }
 
     constructor() {
         super();
@@ -21,7 +14,6 @@ export class Branch extends Bauble {
         this._curveRadius = 0;
         this._attrs= {"fill":"none","stroke":"black"};
     }
-
 
     update(selection) {
         this.branchPath =this.branchPathGenerator();

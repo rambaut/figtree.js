@@ -1,4 +1,4 @@
-import {Branch} from "./branch";
+import {Branch} from "./branches/branch";
 import {mergeDeep} from "../utilities";
 import {curveNatural,geoPath} from "d3";
 

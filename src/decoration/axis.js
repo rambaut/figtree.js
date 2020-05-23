@@ -21,9 +21,12 @@ class Axis extends Decoration {
         this._y=0;
         super.layer("axes-layer")
         this._reverse = false;
+        this._hasBeenReversed=false;
         this._origin=null;
+        this._needsNewOrigin=false;
         this._scale = null;
-
+        this._axis=null;
+        this._bars=false;
     }
 
     /**
@@ -45,22 +48,30 @@ class Axis extends Decoration {
             return this._origin;
         }else{
             this._origin=x;
+            this._needsNewOrigin=true;
             return this;
         }
     }
-
    reverse(){
         this._reverse=!this._reverse;
+        this._hasBeenReversed=false;
         return this;
    }
    scale(s=null){
         if(s===null){
-            return this_scale;
+            return this._scale;
         }
         else{
             this._scale = s;
             return this;
         }
+   }
+   //TODO support more calls to d3 axis
+   tickValues(){
+        return this.scale().ticks()
+   }
+   bars(){
+
    }
 
     updateScales(){
@@ -68,24 +79,23 @@ class Axis extends Decoration {
         const length = ["top","bottom"].indexOf(this._location)>-1?
             this.scales().width - this.figure()._margins.left - this.figure()._margins.right:
             this.scales().height -this.figure()._margins.top - this.figure()._margins.bottom;
-
-
         if(this.scale()===null){
             this.scale((["top","bottom"].indexOf(this._location)>-1?this.scales().x:this.scales().y).copy())
 
         }
-
-        if(this.origin()!==null){
-            this.scale(this.scale().domain(this.scale().domain().reverse().map((d,i)=>(i===0?this.origin()-d:this.origin()))));
+        if(this._needsNewOrigin){
+            this.scale().domain(this.scale().domain().reverse().map((d,i)=>(i===0?this.origin()-d:this.origin())));
+            this._needsNewOrigin=false
         }
-        if(this._reverse){
-            this.scale(this.scale().domain(this.scale().domain().reverse()));
+        if(this._reverse && !this._hasBeenReversed){
+            const domain=this.scale().domain()
+            this.scale().domain([domain[0],-1*domain[1]]);
+            this._hasBeenReversed=true;
         }
-        //TODO add options to change scales and all that jazz
-
-        const axis = this.d3Axis(this.scale())
-            .ticks(this.ticks()).tickFormat(this.tickFormat());
-        return {length,axis}
+         this._axis = this.d3Axis(this.scale())
+            .ticks(this.ticks()).tickFormat(this.tickFormat())
+             .tickSizeOuter(0);
+        return {length,axis:this._axis}
     }
 
     create() {

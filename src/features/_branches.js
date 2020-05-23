@@ -1,6 +1,6 @@
 import {BaubleManager} from "./baubleManager";
 import {isFunction} from "../utilities";
-import {Branch} from "../baubles/branch";
+import {Branch} from "../baubles/branches/branch";
 import {select,curveStepBefore,mouse} from "d3";
 import p from "../_privateConstants";
 

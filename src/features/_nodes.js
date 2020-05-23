@@ -1,5 +1,5 @@
 import {BaubleManager} from "./baubleManager";
-import {CircleBauble} from "../baubles/circlebauble";
+import {CircleBauble} from "../baubles/nodes/circlebauble";
 import {select} from "d3";
 import p from "../_privateConstants"
 class NodeFactory extends BaubleManager {
