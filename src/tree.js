@@ -1052,9 +1052,9 @@ export class Tree {
 
        // odd parts ensure we're not in a taxon label
        //TODO make this parsing more robust
-        const nexusTokens = nexus.split(/\s*(?:^|[^\w\d])Begin(?:^|[^\w\d])|(?:^|[^\w\d])begin(?:^|[^\w\d])|(?:^|[^\w\d])end(?:^|[^\w\d])|(?:^|[^\w\d])End(?:^|[^\w\d])|(?:^|[^\w\d])BEGIN(?:^|[^\w\d])|(?:^|[^\w\d])END(?:^|[^\w\d])\s*/)
-        const firstToken = nexusTokens.shift().trim();
-        if(firstToken.toLowerCase()!=='#nexus'){
+       const nexusTokens = nexus.split(/\s*(?:\bBegin\s+|\bbegin\s+|\bBEGIN\s+|\bend\s*;|\bEnd\s*;|\bEND\s*;)\s*/).filter(d=> d!=="")
+       const firstToken = nexusTokens.shift().trim();
+       if(firstToken.toLowerCase()!=='#nexus'){
             throw Error("File does not begin with #NEXUS is it a nexus file?")
         }
         for(const section of nexusTokens){
