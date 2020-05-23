@@ -10365,7 +10365,7 @@ function () {
         this.nodeBackgroundManager.element(element);
       }
 
-      this.nodeBackgroundManager.update();
+      this.update();
       return this;
     }
     /**
@@ -12296,6 +12296,7 @@ function () {
 /**
  * The axis class
  */
+//TODO fix scales
 
 var Axis =
 /*#__PURE__*/

@@ -10367,7 +10367,7 @@
 	        this.nodeBackgroundManager.element(element);
 	      }
 
-	      this.nodeBackgroundManager.update();
+	      this.update();
 	      return this;
 	    }
 	    /**
@@ -12298,6 +12298,7 @@
 	/**
 	 * The axis class
 	 */
+	//TODO fix scales
 
 	var Axis =
 	/*#__PURE__*/

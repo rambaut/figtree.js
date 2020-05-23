@@ -4,6 +4,7 @@ import {Decoration} from "./decoration";
 /**
  * The axis class
  */
+//TODO fix scales
 class Axis extends Decoration {
     constructor(){
         super();
@@ -21,6 +22,8 @@ class Axis extends Decoration {
         super.layer("axes-layer")
         this._reverse = false;
         this._origin=null;
+        this._scale = null;
+
     }
 
     /**
@@ -50,6 +53,15 @@ class Axis extends Decoration {
         this._reverse=!this._reverse;
         return this;
    }
+   scale(s=null){
+        if(s===null){
+            return this_scale;
+        }
+        else{
+            this._scale = s;
+            return this;
+        }
+   }
 
     updateScales(){
         this.d3Axis = getD3Axis(this._location);
@@ -58,18 +70,20 @@ class Axis extends Decoration {
             this.scales().height -this.figure()._margins.top - this.figure()._margins.bottom;
 
 
-        const scale =(["top","bottom"].indexOf(this._location)>-1?this.scales().x:this.scales().y).copy();
+        if(this.scale()===null){
+            this.scale((["top","bottom"].indexOf(this._location)>-1?this.scales().x:this.scales().y).copy())
+
+        }
 
         if(this.origin()!==null){
-            scale.domain(scale.domain().reverse().map((d,i)=>(i===0?this.origin()-d:this.origin())));
+            this.scale(this.scale().domain(this.scale().domain().reverse().map((d,i)=>(i===0?this.origin()-d:this.origin()))));
         }
         if(this._reverse){
-            scale.domain(scale.domain().reverse())
+            this.scale(this.scale().domain(this.scale().domain().reverse()));
         }
-
         //TODO add options to change scales and all that jazz
 
-        const axis = this.d3Axis(scale)
+        const axis = this.d3Axis(this.scale())
             .ticks(this.ticks()).tickFormat(this.tickFormat());
         return {length,axis}
     }

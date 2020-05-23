@@ -181,7 +181,7 @@ export class FigTree {
         for(const element of elements){
             this.nodeBackgroundManager.element(element);
         }
-        this.nodeBackgroundManager.update();
+        this.update();
         return this;
     }
 
