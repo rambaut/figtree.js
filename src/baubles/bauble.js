@@ -120,6 +120,12 @@ export class Bauble {
         }
     }
 
+    get vertexMap(){
+        return this.manager().figure().vertexMap()
+    }
+    get tree(){
+        return this.manager().figure().tree()
+    }
     /**
      * sets the x position based on the scale
      * @param unscaledValue - number or function that is passed the data

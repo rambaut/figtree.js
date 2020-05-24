@@ -69,6 +69,7 @@ export class FigTree {
         setupSVG.call(this);
         this.axes=[];
         this._features=[];
+        this._vertexMap=new Map();
 
         this.nodeManager = new BaubleManager()
             .class("node")
@@ -118,6 +119,15 @@ export class FigTree {
         }
     }
 
+    vertexMap(m=null){
+        if(m!==null){
+            this._vertexMap = m
+            return this;
+        }else{
+            return this._vertexMap
+        }
+    }
+
 
 
     /**
@@ -126,7 +136,7 @@ export class FigTree {
      */
     update() {
         const {vertices,edges} = this[p.layout](this[p.tree]);
-
+        this.vertexMap(new Map(vertices.map(v=>[v.id,v])));
         select(`#${this.svgId}`)
             .attr("transform",`translate(${this._margins.left},${this._margins.top})`);
 

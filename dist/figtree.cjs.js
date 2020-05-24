@@ -2335,7 +2335,7 @@ Selection.prototype = selection.prototype = {
   dispatch: selection_dispatch
 };
 
-function select$1(selector) {
+function select(selector) {
   return typeof selector === "string"
       ? new Selection([[document.querySelector(selector)]], [document.documentElement])
       : new Selection([[selector]], root);
@@ -6047,6 +6047,62 @@ function line() {
   return line;
 }
 
+var slice$2 = Array.prototype.slice;
+
+function linkSource(d) {
+  return d.source;
+}
+
+function linkTarget(d) {
+  return d.target;
+}
+
+function link(curve) {
+  var source = linkSource,
+      target = linkTarget,
+      x$1 = x,
+      y$1 = y,
+      context = null;
+
+  function link() {
+    var buffer, argv = slice$2.call(arguments), s = source.apply(this, argv), t = target.apply(this, argv);
+    if (!context) context = buffer = path();
+    curve(context, +x$1.apply(this, (argv[0] = s, argv)), +y$1.apply(this, argv), +x$1.apply(this, (argv[0] = t, argv)), +y$1.apply(this, argv));
+    if (buffer) return context = null, buffer + "" || null;
+  }
+
+  link.source = function(_) {
+    return arguments.length ? (source = _, link) : source;
+  };
+
+  link.target = function(_) {
+    return arguments.length ? (target = _, link) : target;
+  };
+
+  link.x = function(_) {
+    return arguments.length ? (x$1 = typeof _ === "function" ? _ : constant$3(+_), link) : x$1;
+  };
+
+  link.y = function(_) {
+    return arguments.length ? (y$1 = typeof _ === "function" ? _ : constant$3(+_), link) : y$1;
+  };
+
+  link.context = function(_) {
+    return arguments.length ? ((context = _ == null ? null : _), link) : context;
+  };
+
+  return link;
+}
+
+function curveHorizontal(context, x0, y0, x1, y1) {
+  context.moveTo(x0, y0);
+  context.bezierCurveTo(x0 = (x0 + x1) / 2, y0, x0, y1, x1, y1);
+}
+
+function linkHorizontal() {
+  return link(curveHorizontal);
+}
+
 function Step(context, t) {
   this._context = context;
   this._t = t;
@@ -6121,6 +6177,27 @@ function extent(values, valueof) {
     }
   }
   return [min, max];
+}
+
+function max$1(values, valueof) {
+  let max;
+  if (valueof === undefined) {
+    for (const value of values) {
+      if (value != null
+          && (max < value || (max === undefined && value >= value))) {
+        max = value;
+      }
+    }
+  } else {
+    let index = -1;
+    for (let value of values) {
+      if ((value = valueof(value, ++index, values)) != null
+          && (max < value || (max === undefined && value >= value))) {
+        max = value;
+      }
+    }
+  }
+  return max;
 }
 
 function min$1(values, valueof) {
@@ -8523,13 +8600,13 @@ function () {
         }
       }
     }
+  }, {
+    key: "scaledX",
+
     /**
      * sets the x position based on the scale
      * @param unscaledValue - number or function that is passed the data
      */
-
-  }, {
-    key: "scaledX",
     value: function scaledX(unscaledValue) {
       var _this = this;
 
@@ -8576,6 +8653,16 @@ function () {
     //     //TODO put listener on parent only insert this element if the parent is hovered or clicked ect.
     // }
 
+  }, {
+    key: "vertexMap",
+    get: function get() {
+      return this.manager().figure().vertexMap();
+    }
+  }, {
+    key: "tree",
+    get: function get() {
+      return this.manager().figure().tree();
+    }
   }]);
 
   return Bauble;
@@ -8583,7 +8670,7 @@ function () {
 
 function attrsFunction(selection, map) {
   return selection.each(function() {
-    var x = map.apply(this, arguments), s = select$1(this);
+    var x = map.apply(this, arguments), s = select(this);
     for (var name in x) s.attr(name, x[name]);
   });
 }
@@ -8599,7 +8686,7 @@ function selection_attrs(map) {
 
 function stylesFunction(selection, map, priority) {
   return selection.each(function() {
-    var x = map.apply(this, arguments), s = select$1(this);
+    var x = map.apply(this, arguments), s = select(this);
     for (var name in x) s.style(name, x[name], priority);
   });
 }
@@ -8615,7 +8702,7 @@ function selection_styles(map, priority) {
 
 function propertiesFunction(selection, map) {
   return selection.each(function() {
-    var x = map.apply(this, arguments), s = select$1(this);
+    var x = map.apply(this, arguments), s = select(this);
     for (var name in x) s.property(name, x[name]);
   });
 }
@@ -8631,7 +8718,7 @@ function selection_properties(map) {
 
 function attrsFunction$1(transition, map) {
   return transition.each(function() {
-    var x = map.apply(this, arguments), t = select$1(this).transition(transition);
+    var x = map.apply(this, arguments), t = select(this).transition(transition);
     for (var name in x) t.attr(name, x[name]);
   });
 }
@@ -8647,7 +8734,7 @@ function transition_attrs(map) {
 
 function stylesFunction$1(transition, map, priority) {
   return transition.each(function() {
-    var x = map.apply(this, arguments), t = select$1(this).transition(transition);
+    var x = map.apply(this, arguments), t = select(this).transition(transition);
     for (var name in x) t.style(name, x[name], priority);
   });
 }
@@ -10043,7 +10130,7 @@ function () {
               var bauble = _step.value;
 
               if (bauble.filter()(d)) {
-                bauble.update(select$1(this));
+                bauble.update(select(this));
               }
             }
           } catch (err) {
@@ -10077,7 +10164,7 @@ function () {
                 var bauble = _step2.value;
 
                 if (bauble.filter()(d)) {
-                  bauble.update(select$1(this));
+                  bauble.update(select(this));
                 }
               }
             } catch (err) {
@@ -10221,6 +10308,7 @@ function () {
     setupSVG.call(this);
     this.axes = [];
     this._features = [];
+    this._vertexMap = new Map();
     this.nodeManager = new BaubleManager()["class"]("node").layer("nodes-layer").figure(this);
     this.nodeBackgroundManager = new BaubleManager()["class"]("node-background").layer("node-backgrounds-layer").figure(this);
     this.branchManager = new BaubleManager()["class"]("branch").layer("branches-layer").figure(this); // this.setupUpdaters();
@@ -10265,6 +10353,18 @@ function () {
         return this._margins;
       }
     }
+  }, {
+    key: "vertexMap",
+    value: function vertexMap() {
+      var m = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (m !== null) {
+        this._vertexMap = m;
+        return this;
+      } else {
+        return this._vertexMap;
+      }
+    }
     /**
      * Updates the figure when the tree has changed.  You can call this to force an update.
      * Returns the figure.
@@ -10277,7 +10377,10 @@ function () {
           vertices = _this$p$layout.vertices,
           edges = _this$p$layout.edges;
 
-      select$1("#".concat(this.svgId)).attr("transform", "translate(".concat(this._margins.left, ",").concat(this._margins.top, ")"));
+      this.vertexMap(new Map(vertices.map(function (v) {
+        return [v.id, v];
+      })));
+      select("#".concat(this.svgId)).attr("transform", "translate(".concat(this._margins.left, ",").concat(this._margins.top, ")"));
       setUpScales.call(this, vertices, edges);
       updateNodePositions.call(this, vertices);
       updateBranchPositions.call(this, edges);
@@ -10505,11 +10608,11 @@ function () {
 
 function setupSVG() {
   this.svgId = "g-".concat(uuid_1.v4());
-  select$1(this[p.svg]).select("#".concat(this.svgId)).remove(); // add a group which will contain the new tree
+  select(this[p.svg]).select("#".concat(this.svgId)).remove(); // add a group which will contain the new tree
 
-  select$1(this[p.svg]).append("g").attr("id", this.svgId).attr("transform", "translate(".concat(this._margins.left, ",").concat(this._margins.top, ")")); //to selecting every time
+  select(this[p.svg]).append("g").attr("id", this.svgId).attr("transform", "translate(".concat(this._margins.left, ",").concat(this._margins.top, ")")); //to selecting every time
 
-  this.svgSelection = select$1(this[p.svg]).select("#".concat(this.svgId));
+  this.svgSelection = select(this[p.svg]).select("#".concat(this.svgId));
   this.svgSelection.append("g").attr("class", "annotation-layer");
   this.svgSelection.append("g").attr("class", "axes-layer");
   this.svgSelection.append("g").attr("class", "cartoon-layer");
@@ -10799,7 +10902,7 @@ function (_AbstractNodeBauble) {
         return _this2.id;
       }).join(function (enter) {
         return enter.append("circle").attr("class", "node-shape ".concat(_this2.id)).attrs(_this2._attrs).each(function (d, i, n) {
-          var element = select$1(n[i]);
+          var element = select(n[i]);
 
           var _loop = function _loop() {
             var _Object$entries$_i = slicedToArray(_Object$entries[_i], 2),
@@ -10820,7 +10923,7 @@ function (_AbstractNodeBauble) {
           return update.transition(function (d) {
             return "u".concat(uuid_1.v4());
           }).duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attrs(_this2._attrs).each(function (d, i, n) {
-            var element = select$1(n[i]);
+            var element = select(n[i]);
 
             var _loop2 = function _loop2() {
               var _Object$entries2$_i = slicedToArray(_Object$entries2[_i2], 2),
@@ -10864,11 +10967,11 @@ function (_AbstractNodeBauble) {
           _this3.attr("r", r);
         }
 
-        var parent = select$1(n[i]).node().parentNode;
+        var parent = select(n[i]).node().parentNode;
 
-        _this3.update(select$1(parent));
+        _this3.update(select(parent));
 
-        select$1(parent).classed("hovered", true).raise();
+        select(parent).classed("hovered", true).raise();
 
         if (r) {
           _this3.attr("r", oldR);
@@ -10877,10 +10980,10 @@ function (_AbstractNodeBauble) {
       });
 
       get$2(getPrototypeOf(CircleBauble.prototype), "on", this).call(this, "mouseleave", function (d, i, n) {
-        var parent = select$1(n[i]).node().parentNode;
-        select$1(parent).classed("hovered", false);
+        var parent = select(n[i]).node().parentNode;
+        select(parent).classed("hovered", false);
 
-        _this3.update(select$1(parent));
+        _this3.update(select(parent));
       });
 
       return this;
@@ -10946,7 +11049,7 @@ function (_AbstractNodeBauble) {
         return _this2.id;
       }).join(function (enter) {
         return enter.append("rect").attr("class", "node-shape ".concat(_this2.id)).attr("x", -w / 2).attr("y", -h / 2).attrs(_this2._attrs).each(function (d, i, n) {
-          var element = select$1(n[i]);
+          var element = select(n[i]);
 
           var _loop = function _loop() {
             var _Object$entries$_i = slicedToArray(_Object$entries[_i], 2),
@@ -10967,7 +11070,7 @@ function (_AbstractNodeBauble) {
           return update.transition(function (d) {
             return "u".concat(uuid_1.v4());
           }).duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attr("x", -w / 2).attr("y", -h / 2).attrs(_this2._attrs).each(function (d, i, n) {
-            var element = select$1(n[i]);
+            var element = select(n[i]);
 
             var _loop2 = function _loop2() {
               var _Object$entries2$_i = slicedToArray(_Object$entries2[_i2], 2),
@@ -11010,11 +11113,11 @@ function (_AbstractNodeBauble) {
           _this3.attr("height", _this3.attr("height") + r);
         }
 
-        var parent = select$1(n[i]).node().parentNode;
+        var parent = select(n[i]).node().parentNode;
 
-        _this3.update(select$1(parent));
+        _this3.update(select(parent));
 
-        select$1(parent).classed("hovered", true).raise();
+        select(parent).classed("hovered", true).raise();
 
         _this3.attr("width", _this3.attr("width") - r);
 
@@ -11023,10 +11126,10 @@ function (_AbstractNodeBauble) {
       });
 
       get$2(getPrototypeOf(RectangularBauble.prototype), "on", this).call(this, "mouseleave", function (d, i, n) {
-        var parent = select$1(n[i]).node().parentNode;
-        select$1(parent).classed("hovered", false);
+        var parent = select(n[i]).node().parentNode;
+        select(parent).classed("hovered", false);
 
-        _this3.update(select$1(parent));
+        _this3.update(select(parent));
       });
 
       return this;
@@ -11086,7 +11189,7 @@ function (_Bauble) {
         return enter.append("path").attr("d", function (v1, i) {
           return _this2.branchPath(v1, i);
         }).attr("class", "branch-path ".concat(_this2.id)).attrs(_this2._attrs).each(function (d, i, n) {
-          var element = select$1(n[i]);
+          var element = select(n[i]);
 
           var _loop = function _loop() {
             var _Object$entries$_i = slicedToArray(_Object$entries[_i], 2),
@@ -11109,7 +11212,7 @@ function (_Bauble) {
           }).duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attr("d", function (edge, i) {
             return _this2.branchPath(edge, i);
           }).attrs(_this2._attrs).each(function (d, i, n) {
-            var element = select$1(n[i]);
+            var element = select(n[i]);
 
             var _loop2 = function _loop2() {
               var _Object$entries2$_i = slicedToArray(_Object$entries2[_i2], 2),
@@ -11208,11 +11311,11 @@ function (_Bauble) {
           _this4.attr("r", strokeWidth);
         }
 
-        var parent = select$1(n[i]).node().parentNode;
+        var parent = select(n[i]).node().parentNode;
 
-        _this4.update(select$1(parent));
+        _this4.update(select(parent));
 
-        select$1(parent).classed("hovered", true).raise();
+        select(parent).classed("hovered", true).raise();
 
         if (strokeWidth) {
           _this4.attr("r", oldStrokeWidth);
@@ -11220,10 +11323,10 @@ function (_Bauble) {
       });
 
       get$2(getPrototypeOf(Branch.prototype), "on", this).call(this, "mouseleave", function (d, i, n) {
-        var parent = select$1(n[i]).node().parentNode;
-        select$1(parent).classed("hovered", false);
+        var parent = select(n[i]).node().parentNode;
+        select(parent).classed("hovered", false);
 
-        _this4.update(select$1(parent));
+        _this4.update(select(parent));
       });
 
       return this;
@@ -11866,7 +11969,7 @@ function (_Bauble) {
         return "label-".concat(_this2.id);
       }).join(function (enter) {
         return enter.append("text").attr("class", "label ".concat(_this2.id)).attrs(_this2._attrs).each(function (d, i, n) {
-          var element = select$1(n[i]);
+          var element = select(n[i]);
 
           var _loop = function _loop() {
             var _Object$entries$_i = slicedToArray(_Object$entries[_i], 2),
@@ -11887,7 +11990,7 @@ function (_Bauble) {
       }, function (update) {
         return update.call(function (update) {
           return update.transition().duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attrs(_this2._attrs).each(function (d, i, n) {
-            var element = select$1(n[i]);
+            var element = select(n[i]);
 
             var _loop2 = function _loop2() {
               var _Object$entries2$_i = slicedToArray(_Object$entries2[_i2], 2),
@@ -12776,7 +12879,7 @@ function (_Decoration) {
       .attr("width", this.size()).attr("height", this.size()).attr("fill", function (d) {
         return _this2.scale()(d);
       }).each(function (d, i, n) {
-        var element = select$1(n[i]);
+        var element = select(n[i]);
 
         var _loop = function _loop() {
           var _Object$entries$_i = slicedToArray(_Object$entries[_i], 2),
@@ -12819,7 +12922,7 @@ function (_Decoration) {
       .attr("width", this.size()).attr("height", this.size()).attr("fill", function (d) {
         return _this3.scale()(d);
       }).each(function (d, i, n) {
-        var element = select$1(n[i]);
+        var element = select(n[i]);
 
         var _loop2 = function _loop2() {
           var _Object$entries2$_i = slicedToArray(_Object$entries2[_i2], 2),
@@ -13234,7 +13337,7 @@ function (_AbstractNodeBauble) {
         }).attrs(function (vertex, i) {
           return i % 2 ? _this2._strokeAttrs : _this2._fillAttrs;
         }).each(function (d, i, n) {
-          var element = select$1(n[i]);
+          var element = select(n[i]);
 
           var _loop = function _loop() {
             var _Object$entries$_i = slicedToArray(_Object$entries[_i], 2),
@@ -13257,7 +13360,7 @@ function (_AbstractNodeBauble) {
           }).attrs(function (vertex, i) {
             return i % 2 ? _this2._strokeAttrs : _this2._fillAttrs;
           }).each(function (d, i, n) {
-            var element = select$1(n[i]);
+            var element = select(n[i]);
 
             var _loop2 = function _loop2() {
               var _Object$entries2$_i = slicedToArray(_Object$entries2[_i2], 2),
@@ -13375,6 +13478,192 @@ function roughBranch() {
   return new RoughBranchBauble();
 }
 
+var CoalescentBauble =
+/*#__PURE__*/
+function (_AbstractNodeBauble) {
+  inherits(CoalescentBauble, _AbstractNodeBauble);
+
+  function CoalescentBauble() {
+    var _this;
+
+    classCallCheck(this, CoalescentBauble);
+
+    _this = possibleConstructorReturn(this, getPrototypeOf(CoalescentBauble).call(this));
+    _this._attrs = {
+      "r": 5,
+      "cx": 0,
+      "cy": 0
+    };
+    return _this;
+  }
+  /**
+   * A function that assigns cy,cx,and r attributes to a selection. (cx and cy are set to 0 each r is the settings radius
+   * plus the border.
+   * @param selection
+   */
+
+
+  createClass(CoalescentBauble, [{
+    key: "update",
+    value: function update() {
+      var _this2 = this;
+
+      var selection = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (selection == null && !this.selection) {
+        return;
+      }
+
+      if (selection) {
+        this.selection = selection;
+      }
+
+      return selection.selectAll(".".concat(this.id)).data(function (d) {
+        return [d];
+      }, function (d) {
+        return _this2.id;
+      }).join(function (enter) {
+        return enter.append("path").attr("class", "node-shape ".concat(_this2.id)).attrs(_this2._attrs).attr("d", function (d) {
+          return _this2.makeCoalescent(d);
+        }).each(function (d, i, n) {
+          var element = select(n[i]);
+
+          var _loop = function _loop() {
+            var _Object$entries$_i = slicedToArray(_Object$entries[_i], 2),
+                key = _Object$entries$_i[0],
+                func = _Object$entries$_i[1];
+
+            element.on(key, function (d, i, n) {
+              return func(d, i, n);
+            });
+          };
+
+          for (var _i = 0, _Object$entries = Object.entries(_this2._interactions); _i < _Object$entries.length; _i++) {
+            _loop();
+          }
+        });
+      }, function (update) {
+        return update.call(function (update) {
+          return update.transition(function (d) {
+            return "u".concat(uuid_1.v4());
+          }).duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attrs(_this2._attrs).each(function (d, i, n) {
+            var element = select(n[i]);
+
+            var _loop2 = function _loop2() {
+              var _Object$entries2$_i = slicedToArray(_Object$entries2[_i2], 2),
+                  key = _Object$entries2$_i[0],
+                  func = _Object$entries2$_i[1];
+
+              element.on(key, function (d, i, n) {
+                return func(d, i, n);
+              });
+            };
+
+            for (var _i2 = 0, _Object$entries2 = Object.entries(_this2._interactions); _i2 < _Object$entries2.length; _i2++) {
+              _loop2();
+            }
+          });
+        });
+      });
+    }
+  }, {
+    key: "makeCoalescent",
+    value: function makeCoalescent(vertex) {
+      var _this3 = this;
+
+      var descendents = this.tree.postorder(this.tree.getNode(vertex.id)).map(function (n) {
+        return n.id;
+      }).filter(function (id) {
+        return id !== vertex.id;
+      });
+      var relativeChildPositions = descendents.map(function (child) {
+        return _this3.calculateChildPos(vertex, _this3.vertexMap.get(child));
+      });
+      var xEnd = min$1(relativeChildPositions, function (d) {
+        return d.x;
+      });
+      var yTop = min$1(relativeChildPositions, function (d) {
+        return d.y;
+      }) - 0.4;
+      var yBottom = max$1(relativeChildPositions, function (d) {
+        return d.y;
+      }) + 0.4;
+      return coalescentPath({
+        x: xEnd,
+        y: yTop
+      }, {
+        x: xEnd,
+        y: yBottom
+      }, 1, 2);
+    }
+  }, {
+    key: "calculateChildPos",
+    value: function calculateChildPos(me, child) {
+      return {
+        x: this.scales().x(child.x) - this.scales().x(me.x),
+        y: this.scales().y(child.y) - this.scales().y(me.y)
+      };
+    }
+  }]);
+
+  return CoalescentBauble;
+}(AbstractNodeBauble);
+var link$1 = linkHorizontal().x(function (d) {
+  return d.x;
+}).y(function (d) {
+  return d.y;
+});
+/**
+ * A helper function that takes a source and target object (with x, and y positions each) It calculates a symmetric
+ * coalescent shape between source, the target and the reflection of the taget about a horizontal line through the source.
+ * @param source -
+ * @param target -  the target object {x:,y:}
+ * @param slope - a number that deterimines how quickly the curve reaches the max/min height
+ * @param startWidth - The starting width of the shape
+ * @return string
+ */
+// need max x for top and bottom, diff y
+//TODO move slope to class settings
+
+function coalescentPath(topTarget, bottomTarget) {
+  var slope = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1;
+  var startWidth = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 2;
+  var adjustedTopTarget = {
+    y: topTarget.y,
+    x: topTarget.x / slope
+  };
+  var adjustedBottomTarget = {
+    x: bottomTarget.x / slope,
+    y: bottomTarget.y
+  };
+  var start = {
+    x: 0,
+    y: 0 - startWidth / 2
+  };
+  var end = {
+    x: 0,
+    y: 0 + startWidth / 2
+  };
+  var topD = link$1({
+    source: start,
+    target: adjustedTopTarget
+  });
+  var linker = "L".concat(topTarget.x, ",").concat(topTarget.y, "v").concat(adjustedBottomTarget.y - adjustedTopTarget.y, ",0L").concat(adjustedBottomTarget.x, ",").concat(adjustedBottomTarget.y);
+  var bottomD = link$1({
+    source: adjustedBottomTarget,
+    target: end
+  });
+  return topD + linker + bottomD + "L".concat(start.x, ",").concat(start.y);
+}
+/**
+ * helper function returns a new instance of a circle bauble.
+ * @return {CircleBauble}
+ */
+
+function coalescentEvent() {
+  return new CoalescentBauble();
+}
+
 exports.Bauble = Bauble;
 exports.BaubleManager = BaubleManager;
 exports.Branch = Branch;
@@ -13390,6 +13679,7 @@ exports.branch = branch;
 exports.branchLabel = branchLabel;
 exports.branches = branches;
 exports.circle = circle;
+exports.coalescentEvent = coalescentEvent;
 exports.decimalToDate = decimalToDate;
 exports.equalAngleLayout = equalAngleLayout;
 exports.internalNodeLabel = internalNodeLabel;

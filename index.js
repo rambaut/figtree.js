@@ -23,9 +23,9 @@ import {axisBars} from "./src/decoration/axisBars"
 import {rectangularHilightedLayout} from "./src/layout/rectangularHilightedLayout"
 import {roughCircle} from "./src/baubles/nodes/roughcirclebauble"
 import {roughBranch} from "./src/baubles/branches/roughbranchbauble";
-
+import {coalescentEvent} from "./src/baubles/nodes/coalescentNode"
 export{Tree,Type,FigTree,rectangularLayout,
     Bauble,CircleBauble,RectangularBauble,Branch,
     nodes,equalAngleLayout,rootToTipLayout,decimalToDate,axis,circle,roughCircle,rectangle,BaubleManager,
     nodeBackground,branch,branches,label,tipLabel,internalNodeLabel,branchLabel,scaleBar,legend,rectangularHilightedLayout,
-    Decoration,axisBars,roughBranch};
+    Decoration,axisBars,roughBranch,coalescentEvent};

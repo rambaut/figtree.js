@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FigTree Demo</title>
+    <script src="js/d3.js" charset="utf-8"></script>
+    <!--<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>-->
+    <style>
+        text {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 14pt;
+            font-weight: 300;
+        }
+
+        .branch .branch-path {
+            fill: none;
+            stroke: #541753;
+            stroke-width: 2px;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            -webkit-transition: stroke-width 500ms; /* Safari prior 6.1 */
+            transition: stroke-width 500ms;
+
+        }
+
+        .branch.hovered .branch-path {
+            stroke-width: 4px;
+        }
+
+        /*.external-node .node-shape {*/
+        /*    fill: #22b680;*/
+        /*    !*stroke: rgb(255, 255, 255);*!*/
+        /*    !*stroke-width: 1;*!*/
+        /*}*/
+
+        /*.external-node .node-shape.hovered {*/
+        /*    stroke: rgb(0,0,0);*/
+        /*    !*stroke-width: 1;*!*/
+        /*}*/
+        /*.external-node .node-shape.unselected {*/
+        /*    fill: #22b680;*/
+        /*    !*stroke: rgb(255, 255, 255);*!*/
+        /*}*/
+        /*.external-node .node-shape.selected {*/
+        /*    fill: #edb23b;*/
+        /*    !*stroke: rgb(0,0,0);*!*/
+        /*}*/
+
+        /*.internal-node .node-shape {*/
+        /*    fill: #29c5ef;*/
+        /*    !*stroke: rgb(255, 255, 255);*!*/
+        /*    !*stroke-width: 1;*!*/
+        /*}*/
+        /*.internal-node .node-shape.hovered {*/
+        /*    stroke: rgb(0,0,0);*/
+        /*}*/
+
+        /*#root .node-shape {*/
+        /*    fill: #e31e58;*/
+        /*    !*stroke: rgb(255, 255, 255);*!*/
+        /*    !*stroke-width: 1;*!*/
+        /*}*/
+
+        .node-label {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 14pt;
+            /*opacity:0;*/
+            font-weight: 300;
+            -webkit-transition: opacity 1000ms; /* Safari prior 6.1 */
+            transition: opacity 1000ms;
+
+        }
+        .node.hovered .node-label{
+            opacity:1;
+        }
+
+        .node-shape {
+            stroke-width:2;
+        }
+
+
+
+        .trend-line {
+            stroke: rgb(0,0,0);
+            stroke-width: 2px;
+            stroke-linecap: round;
+        }
+
+        .axis text {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 12pt;
+            font-weight: 300;
+        }
+
+        .axis-label text {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 12pt;
+            font-weight: bold;
+        }
+
+        .node-label.support {
+            font-size: 10pt;
+        }
+
+        .branch .label {
+            /*display: none;*/
+            font-size: 8pt;
+        }
+
+        #tooltip {
+            background: #F6EECA;
+            border: 1px solid #005C68;
+            color: #005C68;
+            border-radius: 5px;
+            padding: 5px;
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 12pt;
+            font-weight: 300;
+        }
+        .stop-left {
+            stop-color: #3f51b5;  /* Indigo */
+            stop-opacity: 100%;
+        }
+
+        .stop-right {
+            stop-color: #009688;  /* Teal */
+            stop-opacity: 0%;
+        }
+    </style>
+</head>
+
+<body>
+<div id="tooltip" display="none" style="position: absolute; display: none;"></div>
+<!--<div>-->
+<!--    <figure>-->
+<!--        <svg id="phylogram_1a"  width="600" height="500"></svg>-->
+<!--    </figure>-->
+<!--    &lt;!&ndash;<button id="sort_up_button">Sort ascending</button>&ndash;&gt;-->
+<!--    &lt;!&ndash;<button id="sort_down_button">Sort descending</button>&ndash;&gt;-->
+<!--    &lt;!&ndash;<button id="rectangular_button">Draw rectangular</button>&ndash;&gt;-->
+<!--    &lt;!&ndash;<button id="triangular_button">Draw triangular</button>&ndash;&gt;-->
+<!--</div>-->
+<!-- Rounded switch -->
+
+
+
+<script type="module">
+
+    import {Tree,rectangularLayout,CircleBauble,FigTree,BaubleManager,Branch,
+        nodes,nodeBackground,circle,roughCircle,branches,branch,tipLabel,internalNodeLabel,label,
+        branchLabel, axis,scaleBar,legend,rectangle,axisBars,roughBranch,coalescentEvent}  from "./dist/figtree.esm.js";
+
+
+    const width = 600,
+        height = 300;
+
+
+    const svg =  d3.select("body")
+        .append("svg")
+        .attr("class","figure")
+        .attr("id","phylogram_1a")
+        .attr("width", width )
+        .attr("height",height);
+
+    const nodeGrad = svg.append("defs")
+        .append("linearGradient")
+        .attr("id","nodeGrad")
+    // Create the stops of the main gradient. Each stop will be assigned
+    // a class to style the stop using CSS.
+    nodeGrad.append('stop')
+        .attr('class', 'stop-left')
+        .attr('offset', '0');
+
+    nodeGrad.append('stop')
+        .attr('class', 'stop-right')
+        .attr('offset', '1');
+
+    const newickString =
+        '((((((virus1:0.1,virus2:0.12)0.95:0.08,(virus3:0.011,virus4:0.0087)1.0:0.15)0.65:0.03,virus5:0.21)1.0:0.2,(virus6:0.45,virus7:0.4)0.51:0.02)1.0:0.1,virus8:0.4)1.0:0.1,(virus9:0.04,virus10:0.03)1.0:0.6);';
+
+    const tree = Tree.parseNewick(newickString, "probability");
+
+    const treeSVG = document.getElementById('phylogram_1a');
+    const margins={top:10,bottom:60,left:30,right:60};
+
+    const fig = new FigTree(treeSVG,margins,tree);
+    const colorScale = d3.scaleOrdinal().range(["steelblue","#c71585"]).domain(["Internal node","External node"])
+    const xAxis=  axis()
+        .location("bottom")
+        .y(height-margins.top-margins.bottom+5)
+        .x(0)
+        .title({text:"Divergence",
+            yPadding:30})
+        .tickFormat(d3.format(".1f"))
+
+    fig
+        .layout(rectangularLayout)
+        .nodes(
+            roughCircle()
+                .filter(d=>d.degree===1),
+            // circle()
+            //         .filter(d=>d.degree===1)
+            //         .attr("fill","#c71585")
+            //         .attr("r",5)
+            //         .hilightOnHover(10)
+            //         .rotateOnClick(),
+            tipLabel(d=>d.name),
+            coalescentEvent()
+                .filter(d=>d.degree>1)
+                .attr("fill","url(#nodeGrad)")
+                .hilightOnHover(5)
+                .rotateOnClick()
+
+        )
+        .branches(
+            roughBranch()
+                    .hilightOnHover()
+                    // .reRootOnClick()
+                    .on("click",(d,n,i)=>{
+                        const subtree= new Tree(fig.tree().getNode(d.v1.id).toJS());
+                        fig.tree(subtree)
+                    })
+
+            )
+
+
+        .feature(xAxis)
+        .feature(axisBars(xAxis))
+
+
+
+
+
+</script>
+
+</body>
+
+</html>
