@@ -13,24 +13,6 @@ import {select} from "d3"
 export class RoughCircleBauble extends AbstractNodeBauble {
 
     /**
-     * The default settings for the circleBauble
-     * The default is 6;
-     * @return {{radius: number}}
-     * @constructor
-     */
-    static DEFAULT_SETTINGS() {
-        return {
-            radius: 6,
-
-            attrs: {
-                roughFill: {stroke: () => "black", fill: () => "none"},
-                roughStroke: {"stroke-width": () => 0.5, stroke: () => "black", fill: () => "none"}
-            },
-
-        };
-    }
-
-    /**
      * The constructor.
      */
     constructor(settings = {}) {
@@ -38,7 +20,7 @@ export class RoughCircleBauble extends AbstractNodeBauble {
         this._fillAttrs={stroke:"black", "stroke-width":1,fill: "none"}
         this._strokeAttrs={"stroke-width": 0.5, stroke:"black", fill: "none"}
         this._radius=6;
-        this._roughSettings={}
+        this._roughSettings={"fill":"red"}// just to make fill color will be handled by fillAtrs
 
     }
     /**
@@ -117,8 +99,8 @@ export class RoughCircleBauble extends AbstractNodeBauble {
                 enter => enter
                     .append("path")
                     .attr("d", (d, i) => newPaths[i])
-                    .attr("class", (d,i) => `${pathNames[i]} node-shape rough`)
-                    .attrs((vertex, i) => i%2? this._strokeAttrs:this._fillAttrs )
+                    .attr("class", (d,i) => {console.log(pathNames[i]);return`${pathNames[i]} node-shape rough`})
+                    .attrs((vertex, i) => i%2? this._fillAttrs:this._strokeAttrs)
                     .each((d,i,n)=>{
                         const element = select(n[i]);
                         for( const [key,func] of Object.entries(this._interactions)){
@@ -128,7 +110,7 @@ export class RoughCircleBauble extends AbstractNodeBauble {
                 update => update
                     .call(update => update.transition()
                         .attr("d", (d, i) => newPaths[i])
-                        .attrs((vertex, i) => i%2? this._strokeAttrs:this._fillAttrs )
+                        .attrs((vertex, i) => i%2? this._fillAttrs:this._strokeAttrs)
                         .each((d,i,n)=>{
                             const element = select(n[i]);
                             for( const [key,func] of Object.entries(this._interactions)){

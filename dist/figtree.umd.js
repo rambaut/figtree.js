@@ -6246,6 +6246,26 @@
 	  return maxIndex;
 	}
 
+	function mean$1(values, valueof) {
+	  let count = 0;
+	  let sum = 0;
+	  if (valueof === undefined) {
+	    for (let value of values) {
+	      if (value != null && (value = +value) >= value) {
+	        ++count, sum += value;
+	      }
+	    }
+	  } else {
+	    let index = -1;
+	    for (let value of values) {
+	      if ((value = valueof(value, ++index, values)) != null && (value = +value) >= value) {
+	        ++count, sum += value;
+	      }
+	    }
+	  }
+	  if (count) return sum / count;
+	}
+
 	function isObject(item) {
 	  return item && _typeof_1(item) === 'object' && !Array.isArray(item);
 	}
@@ -6383,10 +6403,13 @@
 	    }));
 	    this.nodesUpdated = false; // a callback function that is called whenever the tree is changed
 
-	    this.treeUpdateCallback = function () {};
+	    this._shouldUpdate = true;
 	  }
 
 	  createClass(Tree, [{
+	    key: "treeUpdateCallback",
+	    value: function treeUpdateCallback() {}
+	  }, {
 	    key: "getSibling",
 
 	    /**
@@ -6850,6 +6873,7 @@
 	    }
 	    /**
 	     * Sorts the child branches of each node in order given by the function. This operates
+	     * recursively from the node given.
 	     * recursively from the node given.
 	     *
 	     * @param node - the node to start sorting from
@@ -7440,9 +7464,15 @@
 	  }, {
 	    key: "subscribeCallback",
 	    value: function subscribeCallback(func) {
+	      var _this6 = this;
+
 	      var currentCallback = this.treeUpdateCallback;
 
 	      this.treeUpdateCallback = function () {
+	        if (!_this6._shouldUpdate) {
+	          return;
+	        }
+
 	        currentCallback();
 	        func();
 	      };
@@ -7456,6 +7486,17 @@
 	      }).map(function (node) {
 	        return node.getClade(tipNameMap);
 	      });
+	    }
+	  }, {
+	    key: "batchUpdateOn",
+	    value: function batchUpdateOn() {
+	      this._shouldUpdate = false;
+	    }
+	  }, {
+	    key: "batchUpdateOff",
+	    value: function batchUpdateOff() {
+	      this._shouldUpdate = true;
+	      this.treeUpdateCallback();
 	    }
 	    /**
 	     * A class method to create a Tree instance from a Newick format string (potentially with node
@@ -7996,11 +8037,11 @@
 
 
 	function calculateHeights() {
-	  var _this6 = this;
+	  var _this7 = this;
 
 	  var maxRTT = max(this.rootToTipLengths());
 	  this.nodeList.forEach(function (node) {
-	    return node._height = maxRTT - _this6.rootToTipLength(node);
+	    return node._height = maxRTT - _this7.rootToTipLength(node);
 	  });
 	  this.heightsKnown = true; // this.treeUpdateCallback();
 	}
@@ -8142,7 +8183,7 @@
 	}
 
 	function setUpArraysAndMaps() {
-	  var _this7 = this;
+	  var _this8 = this;
 
 	  this._nodeList = toConsumableArray(this.preorder());
 	  this.nodesUpdated = false;
@@ -8154,7 +8195,7 @@
 	    }
 
 	    if (node.annotations) {
-	      _this7.addAnnotations(node.annotations);
+	      _this8.addAnnotations(node.annotations);
 	    }
 	  });
 
@@ -8238,6 +8279,7 @@
 	    }
 	  }, {
 	    key: "getClade",
+	    //TODO use bitmap not int
 	    value: function getClade() {
 	      var tipNameMap = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
@@ -8426,12 +8468,12 @@
 	      return this._parent;
 	    },
 	    set: function set(node) {
-	      var _this8 = this;
+	      var _this9 = this;
 
 	      this._parent = node;
 
 	      if (this._parent.children.filter(function (c) {
-	        return c === _this8;
+	        return c === _this9;
 	      }).length === 0) {
 	        this._parent.children.push(this);
 	      }
@@ -10375,6 +10417,7 @@
 	  }, {
 	    key: "update",
 	    value: function update() {
+	      // console.log("updating")
 	      var _this$p$layout = this[p.layout](this[p.tree]),
 	          vertices = _this$p$layout.vertices,
 	          edges = _this$p$layout.edges;
@@ -10621,6 +10664,7 @@
 	  this.svgSelection.append("g").attr("class", "branches-layer");
 	  this.svgSelection.append("g").attr("class", "node-backgrounds-layer");
 	  this.svgSelection.append("g").attr("class", "nodes-layer");
+	  this.svgSelection.append("g").attr("class", "top-annotation-layer");
 	}
 	/**
 	 * A helper function that sets the positions of the node and nodebackground groups in the svg and then calls update
@@ -11551,7 +11595,7 @@
 	    return [v[p.node], v];
 	  }));
 	  return vertices.filter(function (v) {
-	    return v[p.node].parent;
+	    return nodeMap.get(v[p.node].parent);
 	  }).map(function (v) {
 	    return {
 	      v0: nodeMap.get(v[p.node].parent),
@@ -11928,6 +11972,73 @@
 	  return layoutFactory(equalAngleVertices(startingNode));
 	};
 
+	function ownKeys$5(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+	function _objectSpread$5(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$5(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$5(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+	var zoomedVertices = function zoomedVertices(node) {
+	  return function (tree) {
+	    var currentY = 0;
+	    var vertices = [];
+
+	    var traverse = function traverse(node) {
+	      var siblingPositions = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+	      var myChildrenPositions = [];
+
+	      if (node.children) {
+	        var _iteratorNormalCompletion = true;
+	        var _didIteratorError = false;
+	        var _iteratorError = undefined;
+
+	        try {
+	          for (var _iterator = node.children[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+	            var child = _step.value;
+	            traverse(child, myChildrenPositions);
+	          }
+	        } catch (err) {
+	          _didIteratorError = true;
+	          _iteratorError = err;
+	        } finally {
+	          try {
+	            if (!_iteratorNormalCompletion && _iterator["return"] != null) {
+	              _iterator["return"]();
+	            }
+	          } finally {
+	            if (_didIteratorError) {
+	              throw _iteratorError;
+	            }
+	          }
+	        }
+
+	        siblingPositions.push(mean$1(myChildrenPositions));
+
+	        var vertex = _objectSpread$5({}, makeVertexFromNode(node), {
+	          y: mean$1(myChildrenPositions),
+	          x: node.divergence
+	        });
+
+	        vertices.push(vertex);
+	      } else {
+	        currentY += 1;
+	        siblingPositions.push(currentY);
+
+	        var _vertex = _objectSpread$5({}, makeVertexFromNode(node), {
+	          y: currentY,
+	          x: node.divergence
+	        });
+
+	        vertices.push(_vertex);
+	      }
+	    };
+
+	    traverse(node);
+	    console.log(vertices);
+	    return vertices;
+	  };
+	};
+	var rectangularZoomedLayout = function rectangularZoomedLayout(node) {
+	  return layoutFactory(zoomedVertices(node));
+	};
+
 	var nodes = function nodes() {
 	  return new BaubleManager()["class"]("node").layer("nodes-layer");
 	};
@@ -12091,9 +12202,9 @@
 	  // return l.attr("x",setX(l))
 	}
 
-	function ownKeys$5(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+	function ownKeys$6(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
-	function _objectSpread$5(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$5(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$5(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+	function _objectSpread$6(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$6(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$6(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 	var rootToTipVertices = function rootToTipVertices(tree) {
 	  if (!tree.annotations.date) {
 	    console.warn("tree must be annotated with dates to use the root to tip layout");
@@ -12101,7 +12212,7 @@
 	  }
 
 	  return tree.externalNodes.map(function (n) {
-	    return _objectSpread$5({}, makeVertexFromNode(n), {
+	    return _objectSpread$6({}, makeVertexFromNode(n), {
 	      x: n.annotations.date,
 	      y: n.divergence
 	    });
@@ -12225,9 +12336,9 @@
 	  };
 	}
 
-	function ownKeys$6(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+	function ownKeys$7(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
-	function _objectSpread$6(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$6(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$6(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+	function _objectSpread$7(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$7(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$7(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 	/**
 	 * The base Decoration class. Decorations are elements in the figure that can update but don't map directly
 	 * to nodes and branches.
@@ -12300,7 +12411,7 @@
 	      if (!options) {
 	        return this._title;
 	      } else {
-	        this._title = _objectSpread$6({}, this._title, {}, options);
+	        this._title = _objectSpread$7({}, this._title, {}, options);
 	        return this;
 	      }
 	    }
@@ -12547,10 +12658,12 @@
 	      var length = ["top", "bottom"].indexOf(this._location) > -1 ? this.scales().width - this.figure()._margins.left - this.figure()._margins.right : this.scales().height - this.figure()._margins.top - this.figure()._margins.bottom;
 
 	      if (this.scale() === null) {
+	        console.log("using figure scale");
 	        this.scale((["top", "bottom"].indexOf(this._location) > -1 ? this.scales().x : this.scales().y).copy());
 	      }
 
 	      if (this._needsNewOrigin) {
+	        console.log("updating origin");
 	        this.scale().domain(this.scale().domain().reverse().map(function (d, i) {
 	          return i === 0 ? _this2.origin() - d : _this2.origin();
 	        }));
@@ -12558,6 +12671,7 @@
 	      }
 
 	      if (this._reverse && !this._hasBeenReversed) {
+	        console.log("reverse it");
 	        var domain = this.scale().domain();
 	        this.scale().domain([domain[0], -1 * domain[1]]);
 	        this._hasBeenReversed = true;
@@ -13068,9 +13182,9 @@
 	  return new AxisBars(axis);
 	}
 
-	function ownKeys$7(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+	function ownKeys$8(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
-	function _objectSpread$7(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$7(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$7(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+	function _objectSpread$8(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$8(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$8(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 	function rectangularVerticesHighlight(predicate, compressionFactor) {
 	  return function rectangularHighlightedLayout(tree) {
 	    var currentY = 0;
@@ -13108,7 +13222,7 @@
 
 	        siblingPositions.push(mean(myChildrenPositions));
 
-	        var vertex = _objectSpread$7({}, makeVertexFromNode(node), {
+	        var vertex = _objectSpread$8({}, makeVertexFromNode(node), {
 	          y: mean(myChildrenPositions),
 	          x: node.divergence
 	        });
@@ -13124,7 +13238,7 @@
 	        previousTip = node;
 	        siblingPositions.push(currentY);
 
-	        var _vertex = _objectSpread$7({}, makeVertexFromNode(node), {
+	        var _vertex = _objectSpread$8({}, makeVertexFromNode(node), {
 	          y: currentY,
 	          x: node.divergence
 	        });
@@ -13166,47 +13280,9 @@
 	function (_AbstractNodeBauble) {
 	  inherits(RoughCircleBauble, _AbstractNodeBauble);
 
-	  createClass(RoughCircleBauble, null, [{
-	    key: "DEFAULT_SETTINGS",
-
-	    /**
-	     * The default settings for the circleBauble
-	     * The default is 6;
-	     * @return {{radius: number}}
-	     * @constructor
-	     */
-	    value: function DEFAULT_SETTINGS() {
-	      return {
-	        radius: 6,
-	        attrs: {
-	          roughFill: {
-	            stroke: function stroke() {
-	              return "black";
-	            },
-	            fill: function fill() {
-	              return "none";
-	            }
-	          },
-	          roughStroke: {
-	            "stroke-width": function strokeWidth() {
-	              return 0.5;
-	            },
-	            stroke: function stroke() {
-	              return "black";
-	            },
-	            fill: function fill() {
-	              return "none";
-	            }
-	          }
-	        }
-	      };
-	    }
-	    /**
-	     * The constructor.
-	     */
-
-	  }]);
-
+	  /**
+	   * The constructor.
+	   */
 	  function RoughCircleBauble() {
 	    var _this;
 
@@ -13224,7 +13300,10 @@
 	      fill: "none"
 	    };
 	    _this._radius = 6;
-	    _this._roughSettings = {};
+	    _this._roughSettings = {
+	      "fill": "red"
+	    }; // just to make fill color will be handled by fillAtrs
+
 	    return _this;
 	  }
 	  /**
@@ -13335,9 +13414,10 @@
 	        return enter.append("path").attr("d", function (d, i) {
 	          return newPaths[i];
 	        }).attr("class", function (d, i) {
+	          console.log(pathNames[i]);
 	          return "".concat(pathNames[i], " node-shape rough");
 	        }).attrs(function (vertex, i) {
-	          return i % 2 ? _this2._strokeAttrs : _this2._fillAttrs;
+	          return i % 2 ? _this2._fillAttrs : _this2._strokeAttrs;
 	        }).each(function (d, i, n) {
 	          var element = select(n[i]);
 
@@ -13360,7 +13440,7 @@
 	          return update.transition().attr("d", function (d, i) {
 	            return newPaths[i];
 	          }).attrs(function (vertex, i) {
-	            return i % 2 ? _this2._strokeAttrs : _this2._fillAttrs;
+	            return i % 2 ? _this2._fillAttrs : _this2._strokeAttrs;
 	          }).each(function (d, i, n) {
 	            var element = select(n[i]);
 
@@ -13491,21 +13571,40 @@
 	    classCallCheck(this, CoalescentBauble);
 
 	    _this = possibleConstructorReturn(this, getPrototypeOf(CoalescentBauble).call(this));
-	    _this._attrs = {
-	      "r": 5,
-	      "cx": 0,
-	      "cy": 0
+	    _this._attrs = {};
+	    _this._settings = {
+	      slope: "min",
+	      "start-width": 2
 	    };
 	    return _this;
 	  }
 	  /**
-	   * A function that assigns cy,cx,and r attributes to a selection. (cx and cy are set to 0 each r is the settings radius
-	   * plus the border.
-	   * @param selection
+	   * settings passed to roughjs
+	   * @param string
+	   * @param value
+	   * @returns {RoughCircleBauble|*}
 	   */
 
 
 	  createClass(CoalescentBauble, [{
+	    key: "setting",
+	    value: function setting(string) {
+	      var value = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+
+	      if (value) {
+	        this._settings[string] = value;
+	        return this;
+	      } else {
+	        return this._settings[string];
+	      }
+	    }
+	    /**
+	     * A function that assigns cy,cx,and r attributes to a selection. (cx and cy are set to 0 each r is the settings radius
+	     * plus the border.
+	     * @param selection
+	     */
+
+	  }, {
 	    key: "update",
 	    value: function update() {
 	      var _this2 = this;
@@ -13525,8 +13624,10 @@
 	      }, function (d) {
 	        return _this2.id;
 	      }).join(function (enter) {
-	        return enter.append("path").attr("class", "node-shape ".concat(_this2.id)).attrs(_this2._attrs).attr("d", function (d) {
-	          return _this2.makeCoalescent(d);
+	        return enter.append("path").attr("class", "node-shape ".concat(_this2.id)).call(function (enter) {
+	          return enter.transition().duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attrs(_this2._attrs).attr("d", function (d) {
+	            return _this2.makeCoalescent(d);
+	          });
 	        }).each(function (d, i, n) {
 	          var element = select(n[i]);
 
@@ -13548,7 +13649,9 @@
 	        return update.call(function (update) {
 	          return update.transition(function (d) {
 	            return "u".concat(uuid_1.v4());
-	          }).duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attrs(_this2._attrs).each(function (d, i, n) {
+	          }).duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attrs(_this2._attrs).attr("d", function (d) {
+	            return _this2.makeCoalescent(d);
+	          }).each(function (d, i, n) {
 	            var element = select(n[i]);
 
 	            var _loop2 = function _loop2() {
@@ -13573,15 +13676,16 @@
 	    value: function makeCoalescent(vertex) {
 	      var _this3 = this;
 
-	      var descendents = this.tree.postorder(this.tree.getNode(vertex.id)).map(function (n) {
+	      var descendents = toConsumableArray(this.tree.postorder(this.tree.getNode(vertex.id))).map(function (n) {
 	        return n.id;
 	      }).filter(function (id) {
 	        return id !== vertex.id;
 	      });
+
 	      var relativeChildPositions = descendents.map(function (child) {
 	        return _this3.calculateChildPos(vertex, _this3.vertexMap.get(child));
 	      });
-	      var xEnd = min$1(relativeChildPositions, function (d) {
+	      var xEnd = max$1(relativeChildPositions, function (d) {
 	        return d.x;
 	      });
 	      var yTop = min$1(relativeChildPositions, function (d) {
@@ -13590,13 +13694,14 @@
 	      var yBottom = max$1(relativeChildPositions, function (d) {
 	        return d.y;
 	      }) + 0.4;
+	      var slope = calcSlope(relativeChildPositions, this.setting("slope"));
 	      return coalescentPath({
 	        x: xEnd,
 	        y: yTop
 	      }, {
 	        x: xEnd,
 	        y: yBottom
-	      }, 1, 2);
+	      }, slope, this.setting("start-width"));
 	    }
 	  }, {
 	    key: "calculateChildPos",
@@ -13658,6 +13763,48 @@
 	  return topD + linker + bottomD + "L".concat(start.x, ",").concat(start.y);
 	}
 	/**
+	 * This function takes a source vertex and target vertices. It calculates the target
+	 * for vertex and passes data on to the coalescent path function.
+	 * @param vertex
+	 * @param targets
+	 * @param scales
+	 * @param slope
+	 * @return string
+	 */
+
+	/**
+	 * A helper function that takes the source and target vertices
+	 * and calculates the slope so that the curve flattens and at
+	 * at the closest vertex (in the x direction).
+
+	 * @param targets
+	 */
+
+	function calcSlope(targets) {
+	  var option = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "min";
+
+	  var _extent = extent(targets, function (d) {
+	    return d.x;
+	  }),
+	      _extent2 = slicedToArray(_extent, 2),
+	      min = _extent2[0],
+	      max = _extent2[1];
+
+	  switch (option) {
+	    case "min":
+	      return max / min;
+
+	    case "max":
+	      return 1;
+
+	    case parseFloat(option):
+	      return max / (min * parseFloat(option));
+
+	    default:
+	      return max / min;
+	  }
+	}
+	/**
 	 * helper function returns a new instance of a circle bauble.
 	 * @return {CircleBauble}
 	 */
@@ -13692,6 +13839,7 @@
 	exports.rectangle = rectangle;
 	exports.rectangularHilightedLayout = rectangularHilightedLayout;
 	exports.rectangularLayout = rectangularLayout;
+	exports.rectangularZoomedLayout = rectangularZoomedLayout;
 	exports.rootToTipLayout = rootToTipLayout;
 	exports.roughBranch = roughBranch;
 	exports.roughCircle = roughCircle;

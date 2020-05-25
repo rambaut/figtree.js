@@ -14,7 +14,6 @@
 
         .branch .branch-path {
             fill: none;
-            stroke: #541753;
             stroke-width: 2px;
             stroke-linecap: round;
             stroke-linejoin: round;
@@ -161,19 +160,45 @@
         .attr("id","phylogram_1a")
         .attr("width", width )
         .attr("height",height);
+   const defs= svg.append("defs")
 
-    const nodeGrad = svg.append("defs")
+    const nodeGrad = defs
         .append("linearGradient")
         .attr("id","nodeGrad")
-    // Create the stops of the main gradient. Each stop will be assigned
-    // a class to style the stop using CSS.
     nodeGrad.append('stop')
-        .attr('class', 'stop-left')
-        .attr('offset', '0');
+        .attr('offset', '0')
+        .style("stop-color","#3f51b5")
+        .style("stop-opacity", "100%")
+    nodeGrad.append('stop')
+        .attr('offset', '0.5')
+        .style("stop-color","#3f51b5")
+        .style("stop-opacity", "0%")
 
     nodeGrad.append('stop')
-        .attr('class', 'stop-right')
-        .attr('offset', '1');
+        .attr('offset', '1')
+        .style("stop-color","#3f51b5")
+        .style("stop-opacity", "0%")
+
+    const branchGrad=defs
+        .append("linearGradient")
+        .attr("id","strokeGrad");
+
+    branchGrad.append("stop")
+        .style("stop-opacity","0%")
+        .style("stop-color","#683fb5")
+        .attr("offset","0");
+
+    branchGrad.append("stop")
+        .style("stop-opacity","0%")
+        .style("stop-color","#683fb5")
+        .attr("offset","0.5");
+    branchGrad.append("stop")
+        .style("stop-opacity","100%")
+        .style("stop-color","#683fb5")
+        .attr("offset","1");
+
+
+
 
     const newickString =
         '((((((virus1:0.1,virus2:0.12)0.95:0.08,(virus3:0.011,virus4:0.0087)1.0:0.15)0.65:0.03,virus5:0.21)1.0:0.2,(virus6:0.45,virus7:0.4)0.51:0.02)1.0:0.1,virus8:0.4)1.0:0.1,(virus9:0.04,virus10:0.03)1.0:0.6);';
@@ -197,7 +222,9 @@
         .layout(rectangularLayout)
         .nodes(
             roughCircle()
-                .filter(d=>d.degree===1),
+                .filter(d=>d.degree===1)
+                .radius(20)
+                .fillAttr("stroke","#3f51b5"),
             // circle()
             //         .filter(d=>d.degree===1)
             //         .attr("fill","#c71585")
@@ -208,13 +235,15 @@
             coalescentEvent()
                 .filter(d=>d.degree>1)
                 .attr("fill","url(#nodeGrad)")
-                .hilightOnHover(5)
+                .attr('pointer-events',"none")
+                .setting("slope",0.5)
                 .rotateOnClick()
 
         )
         .branches(
             roughBranch()
                     .hilightOnHover()
+                    .attr("stroke","url(#strokeGrad)")
                     // .reRootOnClick()
                     .on("click",(d,n,i)=>{
                         const subtree= new Tree(fig.tree().getNode(d.v1.id).toJS());

@@ -10,6 +10,7 @@ import {Branch,branches,branch} from "./src/baubles/branches/branch";
 // import {GreatCircleBranchBauble} from "./src/baubles/greatCircleBranchBauble";
 import{rectangularLayout} from "./src/layout/rectangularLayout.f";
 import{equalAngleLayout} from "./src/layout/equaleanglelayout.f";
+import {rectangularZoomedLayout} from "./src/layout/rectangularZoomedLayout.js"
 import {nodes,nodeBackground} from "./src/features/_nodes";
 import {Label,label,tipLabel,internalNodeLabel,branchLabel} from "./src/baubles/nodes/label";
 import {rootToTipLayout} from "./src/layout/rootToTipLayout";
@@ -27,5 +28,5 @@ import {coalescentEvent} from "./src/baubles/nodes/coalescentNode"
 export{Tree,Type,FigTree,rectangularLayout,
     Bauble,CircleBauble,RectangularBauble,Branch,
     nodes,equalAngleLayout,rootToTipLayout,decimalToDate,axis,circle,roughCircle,rectangle,BaubleManager,
-    nodeBackground,branch,branches,label,tipLabel,internalNodeLabel,branchLabel,scaleBar,legend,rectangularHilightedLayout,
+    nodeBackground,branch,branches,label,tipLabel,internalNodeLabel,branchLabel,scaleBar,legend,rectangularHilightedLayout,rectangularZoomedLayout,
     Decoration,axisBars,roughBranch,coalescentEvent};

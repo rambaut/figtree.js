@@ -72,9 +72,10 @@ export class Tree {
 
         this.nodesUpdated = false;
         // a callback function that is called whenever the tree is changed
-        this.treeUpdateCallback = () => {};
-    };
+        this._shouldUpdate=true
 
+    };
+    treeUpdateCallback(){};
     /**
      * Gets the root node of the Tree
      *
@@ -378,6 +379,7 @@ export class Tree {
 
     /**
      * Sorts the child branches of each node in order given by the function. This operates
+     * recursively from the node given.
      * recursively from the node given.
      *
      * @param node - the node to start sorting from
@@ -825,7 +827,8 @@ export class Tree {
      */
     subscribeCallback(func){
         const currentCallback = this.treeUpdateCallback;
-        this.treeUpdateCallback = () =>{
+        this.treeUpdateCallback = ()=>{
+            if(!this._shouldUpdate){return}
             currentCallback();
             func();
         }
@@ -835,6 +838,13 @@ export class Tree {
             return  this.nodeList.filter(n=>n.parent).map(node=>node.getClade(tipNameMap));
     }
 
+    batchUpdateOn(){
+        this._shouldUpdate=false;
+    }
+    batchUpdateOff(){
+        this._shouldUpdate=true;
+        this.treeUpdateCallback()
+    }
     /**
      * A class method to create a Tree instance from a Newick format string (potentially with node
      * labels and branch lengths). Taxon labels should be quoted (either " or ') if they contain whitespace
@@ -1418,6 +1428,7 @@ class Node{
     get tree(){
         return this._tree;
     }
+    //TODO use bitmap not int
     getClade(tipNameMap=null){
         if(tipNameMap==null && this.clade && this._tree.nodesUpdated===false){
             return(this._clade)

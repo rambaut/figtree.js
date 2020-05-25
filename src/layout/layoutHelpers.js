@@ -112,7 +112,7 @@ export function makeVertexFromNode(node){
  */
 export function makeEdges(vertices){
     const nodeMap = new Map(vertices.map(v=>[v[p.node],v]));
-    return vertices.filter(v=>v[p.node].parent).map(v=>{
+    return vertices.filter(v=>nodeMap.get(v[p.node].parent)).map(v=>{
         return {
             v0: nodeMap.get(v[p.node].parent),
             v1: v,

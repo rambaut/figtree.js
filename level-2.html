@@ -176,13 +176,7 @@
 
     const fig = new FigTree(treeSVG,margins,tree);
     const colorScale = d3.scaleOrdinal().range(["steelblue","#c71585"]).domain(["Internal node","External node"])
-    const xAxis=  axis()
-        .location("bottom")
-        .y(height-margins.top-margins.bottom+5)
-        .x(0)
-        .title({text:"Divergence",
-            yPadding:30})
-        .tickFormat(d3.format(".1f"))
+
 
     fig
         .layout(rectangularLayout)
@@ -217,7 +211,15 @@
             .branches(
             branchLabel(d=>"label!")
             )
-
+    const xAxis=  axis()
+        .location("bottom")
+        .y(height-margins.top-margins.bottom+5)
+        .x(0)
+        .title({text:"Divergence",
+            yPadding:30})
+        .tickFormat(d3.format(".1f"))
+        .scale(d3.scaleLinear().domain([0,100]).range([0,width-margins.left-margins.right]))
+        fig
         .feature(xAxis)
         .feature(axisBars(xAxis))
         // .feature(

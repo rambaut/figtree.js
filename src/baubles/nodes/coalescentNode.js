@@ -1,12 +1,28 @@
 import uuid from "uuid";
 import {AbstractNodeBauble} from "./nodeBauble";
 import {linkHorizontal,select} from "d3"
-import {max,min} from "d3-array";
+import {max,min,extent} from "d3-array";
 export class CoalescentBauble extends AbstractNodeBauble {
 
     constructor() {
         super();
-        this._attrs = {"r": 5, "cx": 0, "cy": 0}
+        this._attrs = {}
+        this._settings={slope:"min","start-width":2}
+    }
+
+    /**
+     * settings passed to roughjs
+     * @param string
+     * @param value
+     * @returns {RoughCircleBauble|*}
+     */
+    setting(string,value=null){
+        if(value){
+            this._settings[string] = value;
+            return this
+        }else{
+            return this._settings[string]
+        }
     }
 
     /**
@@ -28,19 +44,24 @@ export class CoalescentBauble extends AbstractNodeBauble {
                 enter => enter
                     .append("path")
                     .attr("class", `node-shape ${this.id}`)
-                    .attrs(this._attrs)
-                    .attr("d",d=>this.makeCoalescent(d))
+                    .call(enter=>enter.transition()
+                        .duration(this.transitions().transitionDuration)
+                        .ease(this.transitions().transitionEase)
+                        .attrs(this._attrs)
+                        .attr("d",d=>this.makeCoalescent(d)))
                     .each((d, i, n) => {
                         const element = select(n[i]);
                         for (const [key, func] of Object.entries(this._interactions)) {
                             element.on(key, (d, i, n) => func(d, i, n))
                         }
                     }),
+
                 update => update
                     .call(update => update.transition(d => `u${uuid.v4()}`)
                         .duration(this.transitions().transitionDuration)
                         .ease(this.transitions().transitionEase)
                         .attrs(this._attrs)
+                        .attr("d",d=>this.makeCoalescent(d))
                         .each((d, i, n) => {
                             const element = select(n[i]);
                             for (const [key, func] of Object.entries(this._interactions)) {
@@ -52,12 +73,14 @@ export class CoalescentBauble extends AbstractNodeBauble {
     };
 
    makeCoalescent(vertex){
-       const descendents = this.tree.postorder(this.tree.getNode(vertex.id)).map(n=>n.id).filter(id=>id!==vertex.id)
+       const descendents = [...this.tree.postorder(this.tree.getNode(vertex.id))].map(n=>n.id).filter(id=>id!==vertex.id)
         const relativeChildPositions = descendents.map(child=> this.calculateChildPos(vertex,this.vertexMap.get(child)));
-        const xEnd=min(relativeChildPositions,d=>d.x);
+        const xEnd=max(relativeChildPositions,d=>d.x);
         const yTop=min(relativeChildPositions,d=>d.y)-0.4;
         const yBottom =max(relativeChildPositions,d=>d.y)+0.4;
-        return coalescentPath({x:xEnd,y:yTop},{x:xEnd,y:yBottom},1,2)
+
+       const slope= calcSlope(relativeChildPositions,this.setting("slope"));
+        return coalescentPath({x:xEnd,y:yTop},{x:xEnd,y:yBottom},slope,this.setting("start-width"))
     }
 
     calculateChildPos(me,child){
@@ -116,7 +139,7 @@ export function coalescentPath(topTarget,bottomTarget,slope=1,startWidth=2){
 
  * @param targets
  */
-export function calcSlope(targets,option){
+export function calcSlope(targets,option="min"){
     const [min,max]=extent(targets,d=>d.x);
 
     switch (option) {
@@ -125,7 +148,7 @@ export function calcSlope(targets,option){
         case "max":
             return 1;
         case parseFloat(option):
-            return max/(min+ (max-min)*parseFloat(option))
+            return max/(min*parseFloat(option))
         default:
             return max/min;
     }

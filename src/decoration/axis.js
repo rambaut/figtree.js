@@ -80,14 +80,17 @@ class Axis extends Decoration {
             this.scales().width - this.figure()._margins.left - this.figure()._margins.right:
             this.scales().height -this.figure()._margins.top - this.figure()._margins.bottom;
         if(this.scale()===null){
+            console.log("using figure scale")
             this.scale((["top","bottom"].indexOf(this._location)>-1?this.scales().x:this.scales().y).copy())
 
         }
         if(this._needsNewOrigin){
+            console.log("updating origin")
             this.scale().domain(this.scale().domain().reverse().map((d,i)=>(i===0?this.origin()-d:this.origin())));
             this._needsNewOrigin=false
         }
         if(this._reverse && !this._hasBeenReversed){
+            console.log("reverse it")
             const domain=this.scale().domain()
             this.scale().domain([domain[0],-1*domain[1]]);
             this._hasBeenReversed=true;

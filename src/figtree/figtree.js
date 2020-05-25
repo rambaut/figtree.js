@@ -71,6 +71,7 @@ export class FigTree {
         this._features=[];
         this._vertexMap=new Map();
 
+
         this.nodeManager = new BaubleManager()
             .class("node")
             .layer("nodes-layer")
@@ -135,6 +136,7 @@ export class FigTree {
      * Returns the figure.
      */
     update() {
+        // console.log("updating")
         const {vertices,edges} = this[p.layout](this[p.tree]);
         this.vertexMap(new Map(vertices.map(v=>[v.id,v])));
         select(`#${this.svgId}`)
@@ -323,6 +325,8 @@ function setupSVG(){
     this.svgSelection.append("g").attr("class", "branches-layer");
     this.svgSelection.append("g").attr("class", "node-backgrounds-layer");
     this.svgSelection.append("g").attr("class", "nodes-layer");
+    this.svgSelection.append("g").attr("class","top-annotation-layer");
+
 
 }
 /**
