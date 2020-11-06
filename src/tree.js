@@ -3,9 +3,9 @@
 /** @module tree */
 
 import uuid from "uuid";
-import {max,timeParse} from "d3";
-import {maxIndex,minIndex} from "d3-array";
-import {dateToDecimal,isInt} from "./utilities";
+import {max, timeParse} from "d3";
+import {maxIndex} from "d3-array";
+import {dateToDecimal} from "./utilities";
 // import * as BitSetModule from "bitset";
 // const BitSet =BitSetModule.__moduleExports;
 // for unique node ids
@@ -57,14 +57,6 @@ export class Tree {
                 // an id string has been specified in the newick label.
                 node._id = node.label.substring(1);
             }
-            const newAnnotations ={};
-            // if(node.label){
-            //     newAnnotations.label=node.label;
-            // }
-            // if(node.name){
-            //     newAnnotations.name=node.name
-            // }
-            node.annotations = node.annotations?{...newAnnotations,...node.annotations,}:newAnnotations;
             this.addAnnotations(node.annotations);
         });
         this._nodeMap = new Map(this.nodeList.map( (node) => [node.id, node] ));
@@ -364,7 +356,7 @@ export class Tree {
      *
      * @param node - the node to start sorting from
      * @param {boolean} increasing - sorting in increasing node order or decreasing?
-     * @returns {number} - the number of tips below this node
+     * @returns {Tree} - the number of tips below this node
      */
 
 
@@ -385,19 +377,15 @@ export class Tree {
      * @param node - the node to start sorting from
      * @param {function} ordering - provides a pairwise sorting order.
      *  Function signature: (nodeA, childCountNodeA, nodeB, childCountNodeB)
-     * @returns {number} - the number of tips below this node
+     * @returns {Tree} - the number of tips below this node
      */
     order(ordering, node = this.rootNode) {
-
         orderNodes.call(this, node, ordering);
-
         this.treeUpdateCallback();
         return this;
     }
     _order(ordering, node = this.rootNode) {
-
         orderNodes.call(this, node, ordering);
-
         return this;
     }
 
@@ -413,8 +401,7 @@ export class Tree {
         const path2 = [...Tree.pathToRoot(node2)];
       
         const sharedAncestors = path1.filter(n1=>path2.map(n2=>n2.id).indexOf(n1.id)>-1);
-        const lastSharedAncestor = sharedAncestors[maxIndex(sharedAncestors,node=>node.level)];
-        return lastSharedAncestor;
+        return sharedAncestors[maxIndex(sharedAncestors, node => node.level)];
       
     }
 
@@ -1126,7 +1113,6 @@ function orderNodes(node, ordering, callback = null) {
             counts.set(child, value);
             count += value;
         }
-
         // sort the children using the provided function
         node.children.sort((a, b) => {
             return ordering(a, counts.get(a), b, counts.get(b),node)
@@ -1232,13 +1218,14 @@ function makeNode(nodeData){
 }
 
 /**
- * A private function that sets up the tree by traversing from the root Node and sets all heights and lenghts
+ * A private function that sets up the tree by traversing from the root Node and sets all heights and lengths
  * @param node
  */
 function setUpNodes(node){
     if(node.children){
         const childrenNodes=[]
         for(const child of node.children){
+            //HERE?
             const childNode = makeNode.call(this,{...child,parent:node,level:node.level+1})
             childrenNodes.push(childNode);
             setUpNodes.call(this,childNode);
@@ -1383,7 +1370,7 @@ class Node{
     }
 
     get annotations() {
-        return {...this._annotations};
+        return this._annotations;
     }
 
     set annotations(value) {
@@ -1399,13 +1386,6 @@ class Node{
         for(const child of this._children){
             child.parent=this;
         }
-        this._tree.nodesUpdated = true;
-    }
-    addChild(node){
-        const newNode = new Node({...node,tree:this._tree,level:this._level+1});
-        this.children = [...this._children,newNode];
-        setUpNodes.call(this._tree,newNode);
-        this._tree.addAnnotations(newNode.annotations);
         this._tree.nodesUpdated = true;
     }
     get parent() {

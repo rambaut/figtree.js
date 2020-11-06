@@ -3,7 +3,6 @@ import {select,easeCubic,scaleLinear} from "d3";
 import uuid from "uuid";
 import { mergeDeep} from "../utilities";
 import 'd3-selection-multi';
-import {GeoLayout} from "../layout/_deprecatedClasses/geoLayout";
 import {BaubleManager} from "../features/baubleManager"
 import p from "../_privateConstants.js"
 import extent from "d3-array/src/extent";
@@ -52,8 +51,8 @@ export class FigTree {
      * @param settings {Object} [settings={width:null,height:null}] sets the size for drawing the figure. If not provided, the size of the svg will be used.
      * @returns {FigTree}
      */
-    constructor(svg=null, margins={top:10,bottom:60,left:30,right:60},tree=null, settings = {}) {
-        // this[p.layout] = layout;
+    constructor(svg=null, margins={top:10,bottom:60,left:30,right:60},tree, settings = {}) {
+        this.id = Symbol("FIGREE");
         this._margins = margins;
 
         this.settings = mergeDeep(FigTree.DEFAULT_SETTINGS(),settings);
@@ -66,6 +65,8 @@ export class FigTree {
         this[p.tree].subscribeCallback( () => {
                 this.update();
             });
+
+        tree.nodeList.forEach(node => node[this.id] = {ignore: false, collapsed: false,hidden:false});
         setupSVG.call(this);
         this.axes=[];
         this._features=[];
@@ -87,7 +88,7 @@ export class FigTree {
             .class("branch")
             .layer("branches-layer")
             .figure(this);
-        // this.setupUpdaters();
+
         return this;
     }
 
@@ -130,31 +131,25 @@ export class FigTree {
     }
 
 
-
     /**
      * Updates the figure when the tree has changed.  You can call this to force an update.
      * Returns the figure.
      */
     update() {
-        // console.log("updating")
-        const {vertices,edges} = this[p.layout](this[p.tree]);
-        this.vertexMap(new Map(vertices.map(v=>[v.id,v])));
+        this[p.layout](this);
         select(`#${this.svgId}`)
             .attr("transform",`translate(${this._margins.left},${this._margins.top})`);
 
-        setUpScales.call(this,vertices,edges);
-
-        updateNodePositions.call(this,vertices);
-        updateBranchPositions.call(this,edges);
+        setUpScales.call(this);
+        updateNodePositions.call(this,this.tree().nodeList.filter(n=>!n[this.id].ignore));
+        updateBranchPositions.call(this,this.tree().nodeList.filter(n=>!n[this.id].ignore).filter(n=>n.parent));
 
         for(const feature of this._features){
-            feature.update({vertices,edges})
+            feature.update(this.tree().nodeList.filter(n=>!n[this.id].ignore))
         }
         return this;
 
     }
-
-
 
     /**
      * Adds an element to the node update cycle. The element's update method will be called for each node selection.
@@ -197,7 +192,6 @@ export class FigTree {
         return this;
     }
 
-
     /**
      * Registers some text to appear in a popup box when the mouse hovers over the selection.
      *
@@ -226,8 +220,6 @@ export class FigTree {
 
     }
 
-
-// setters and getters
     /**
      * Get or set SVG
      * @param svg - optional parameter.
@@ -289,21 +281,6 @@ export class FigTree {
         this.update();
         return this;
     }
-    // axis(){
-    //     const a = axis();
-    //     this.feature(a);
-    //     return a;
-    // }
-    // scaleBar(){
-    //     const sb=scaleBar();
-    //     this.feature(sb);
-    //     return sb;
-    // }
-    // legend(){
-    //     const l = legend();
-    //     this.feature(l);
-    //     return l;
-    // }
 }
 
 function setupSVG(){
@@ -332,21 +309,21 @@ function setupSVG(){
 /**
  * A helper function that sets the positions of the node and nodebackground groups in the svg and then calls update
  * functions of the node and node background elements.
- * @param vertices
+ * @param nodes
  */
-function updateNodePositions(vertices) {
-    this.nodeManager.update(vertices);
-    this.nodeBackgroundManager.update(vertices);
+function updateNodePositions(nodes) {
+    this.nodeManager.update(nodes);
+    this.nodeBackgroundManager.update(nodes);
 }
 
 /**
- * A helper function that sets the postions of the branch groups and calls the update functions of the branch elements.
- * @param edges
+ * A helper function that sets the positions of the branch groups and calls the update functions of the branch elements.
+ * @param nodes
  */
-function updateBranchPositions(edges){
-    this.branchManager.update(edges)
+function updateBranchPositions(nodes){
+    this.branchManager.update(nodes);
 }
-function setUpScales(vertices,edges){
+function setUpScales(){
     let width,height;
     if(Object.keys(this.settings).indexOf("width")>-1){
         width =this.settings.width;
@@ -358,29 +335,13 @@ function setUpScales(vertices,edges){
     }else{
         height = this[p.svg].getBoundingClientRect().height;
     }
-
-    // create the scales
-    let xScale,yScale;
-    let projection=null;
-
-    if(this.layout instanceof GeoLayout){
-        xScale = scaleLinear();
-        yScale = scaleLinear();
-        projection = this.layout.projection;
-    }
-    else{
-        const xdomain = extent(vertices.map(d=>d.x).concat(edges.reduce((acc,e)=> acc.concat([e.v1.x,e.v0.x]),[])));
-        // almost always the same except when the trendline is added as an edge without vertices
-        const ydomain =  extent(vertices.map(d=>d.y).concat(edges.reduce((acc,e)=>acc.concat([e.v1.y,e.v0.y]),[])));
-
-        xScale = this.settings.xScale.scale()
+        const xdomain = extent(this.tree().nodeList.filter(n=>!n[this.id].ignore).map(n=>n[this.id].x));
+        const ydomain =  extent(this.tree().nodeList.filter(n=>!n[this.id].ignore).map(n=>n[this.id].y));
+        const xScale = this.settings.xScale.scale()
             .domain(xdomain)
             .range([0, width - this._margins.right-this._margins.left]);
-
-        yScale = this.settings.yScale.scale()
+        const yScale = this.settings.yScale.scale()
             .domain(ydomain)
             .range([height -this._margins.bottom-this._margins.top,0]);
-    }
-
-    this.scales = {x:xScale, y:yScale, width, height, projection};
+    this.scales = {x:xScale, y:yScale, width, height};
 }

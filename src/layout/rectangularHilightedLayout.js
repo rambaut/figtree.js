@@ -1,53 +1,5 @@
 import {mean} from "d3";
-import {layoutFactory, makeVertexFromNode} from "./layoutHelpers";
-import {rectangularVertices} from "./rectangularLayout.f";
-import {equalAngleVertices} from "./equaleanglelayout.f";
-
-
-
-
-export function rectangularVerticesHighlight(predicate,compressionFactor) {
-    return function rectangularHighlightedLayout(tree)
-    {
-        let currentY = 0;
-        const vertices = [];
-        let previousTip=null;
-
-        const traverse = function (node, siblingPositions = []) {
-            const myChildrenPositions = [];
-
-            if (node.children) {
-
-                for (const child of node.children) {
-                    traverse(child, myChildrenPositions);
-                }
-                siblingPositions.push(mean(myChildrenPositions));
-                const vertex = {
-                    ...makeVertexFromNode(node),
-                    y: mean(myChildrenPositions),
-                    x: node.divergence
-                };
-                vertices.push(vertex);
-            } else {
-                if(previousTip!==null &&(predicate(previousTip)|| predicate(node))){
-                    currentY += 1;
-                }
-                else{
-                    currentY+=compressionFactor;
-                }
-                previousTip=node;
-                siblingPositions.push(currentY);
-                const vertex = {...makeVertexFromNode(node), y: currentY, x: node.divergence};
-                vertices.push(vertex);
-            }
-        };
-
-        traverse(tree.rootNode);
-        //slow!
-        return vertices;
-    }
-}
-
+import {getClassesFromNode, layoutFactory, makeVertexFromNode} from "./layoutHelpers";
 /**
  *
  * This layout highlights parts of the tree and compresses others. The layout factory takes a predicate function that is called
@@ -56,4 +8,48 @@ export function rectangularVerticesHighlight(predicate,compressionFactor) {
  * @param compressionFactor - factor to compress space around node that are not highlighted. 1 = no compression 0=no space.
  * @returns {Function}
  */
-export const rectangularHilightedLayout=(predicate, compressionFactor) => layoutFactory(rectangularVerticesHighlight(predicate,compressionFactor));
+
+export function rectangularHilightedLayout(predicate,compressionFactor) {
+    return function helper(figtree)
+    {
+        let currentY = 0;
+        let previousTip=null;
+        const id = figtree.id;
+        const tree = figtree.tree();
+
+        const traverse = function (node, siblingPositions = []) {
+            const myChildrenPositions = [];
+            if (!node[id].ignore) {
+                let yPos;
+
+                if (node.children) {
+
+                    if(node[id].collapsed){
+                        yPos = (currentY +=1);
+                    }else{
+                        for (const child of node.children) {
+                            traverse(child, myChildrenPositions);
+                        }
+                        yPos = mean(myChildrenPositions);
+                    }
+                } else {
+
+
+                    if (previousTip !== null && (predicate(previousTip) || predicate(node))) {
+                        yPos =(currentY += 1);
+                    } else {
+                        yPos = (currentY += compressionFactor);
+                    }
+                    previousTip = node;
+                }
+                siblingPositions.push(yPos);
+                node[id].x = node.divergence;
+                node[id].y = yPos;
+                node[id].classes = getClassesFromNode(node);
+            }
+        };
+
+        traverse(tree.rootNode);
+    }
+}
+

@@ -45,14 +45,14 @@ export class AbstractNodeBauble extends Bauble{
     annotateOnHover(key){
         super.on("mouseenter",
             (d, i,n) => {
-                this.manager().figure()[p.tree].annotateNode(this.manager().figure()[p.tree].getNode(d.id),{[key]:true});
+                this.manager().figure()[p.tree].annotateNode(d,{[key]:true});
                 this.manager().figure()[p.tree].treeUpdateCallback();
                 const parent = select(n[i]).node().parentNode;
                 select(parent).raise();
             });
         super.on("mouseleave",
             (d,i,n) => {
-                this.manager().figure()[p.tree].annotateNode(this.manager().figure()[p.tree].getNode(d.id),{[key]:false});
+                this.manager().figure()[p.tree].annotateNode(d,{[key]:false});
                 this.manager().figure()[p.tree].treeUpdateCallback();
             });
         return this;
@@ -65,8 +65,7 @@ export class AbstractNodeBauble extends Bauble{
      */
     rotateOnClick(recursive=false){
         super.on("click",(d,n,i)=>{
-            const node = this.manager().figure()[p.tree].getNode(d.key);
-            this.manager().figure()[p.tree].rotate(node,recursive);
+            this.manager().figure()[p.tree].rotate(d,recursive);
         });
         return this;
     }
@@ -80,8 +79,7 @@ export class AbstractNodeBauble extends Bauble{
     annotateOnClick(key){
         super.on("click",
             (d, i,n) => {
-                const node = this.manager().figure()[p.tree].getNode(d.id) //TODO helper getters
-                this.manager().figure()[p.tree].annotateNode(node,{[key]:!node.annotations[key]});
+                this.manager().figure()[p.tree].annotateNode(d,{[key]:!node.annotations[key]});
                 this.manager().figure()[p.tree].treeUpdateCallback();
                 const parent = select(n[i]).node().parentNode;
                 select(parent).raise();

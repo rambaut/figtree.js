@@ -3,7 +3,6 @@ import {max, min} from "d3";
 
 export const rootToTipVertices=(tree)=>{
 
-
     if(!tree.annotations.date){
         console.warn("tree must be annotated with dates to use the root to tip layout")
         return [];
@@ -50,11 +49,9 @@ const makeTrendlineEdge=predicate=>(vertices)=>{
 };
 
 
-export const rootToTipLayout = (predicate =()=>true) => tree =>{
-    const vertices = rootToTipVertices(tree);
-    const {edges,regression} = makeTrendlineEdge(predicate)(vertices);
-    return {vertices,edges,regression};
-};
+export function rootToTipLayout(figtree){
+    figtree.tree().externalNodes.forEach(n=>{n[figtree.id].x=n.annotations.date;n[figtree.id].y=n.divergence});
+}
 /**
  * returns slope, intercept and r-square of the line
  * @param data

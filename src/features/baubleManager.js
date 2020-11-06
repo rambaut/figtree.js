@@ -15,7 +15,7 @@ export  class BaubleManager{
         this.type = null;
         this._baubleHelpers=[];
         this._filter = ()=>true;
-
+        this._figureId = null;
         return this;
     }
 
@@ -44,6 +44,7 @@ export  class BaubleManager{
         }
         else{
             this._figure=f;
+            this._figureId = this.figure().id
             return this;
         }
     }
@@ -91,14 +92,14 @@ export  class BaubleManager{
             svgLayer = this.figure().svgSelection.append("g").attr("class",this.layer());
         }
         svgLayer.selectAll(`.${this.class()}`)
-            .data(data, (d) => `${this.class()}_${d.key}`)
+            .data(data, (d) => `${this.class()}_${d.id}`)
             .join(
                 enter => enter
                     .append("g")
-                    .attr("id", (d) => d.key)
-                    .attr("class", (d) => [`${this.class()}`, ...d.classes].join(" "))
+                    .attr("id", (d) => d.id)
+                    .attr("class", (d) => [`${this.class()}`, ...d[this._figureId].classes].join(" "))
                     .attr("transform", (d) => {
-                        return `translate(${this.figure().scales.x(d.x)}, ${this.figure().scales.y(d.y)})`;
+                        return `translate(${this.figure().scales.x(d[this._figureId].x)}, ${this.figure().scales.y(d[this._figureId].y)})`;
                     })
                     .each(function (d) {
                        for(const bauble of self._baubleHelpers){
@@ -111,9 +112,9 @@ export  class BaubleManager{
                     .call(update => update.transition()
                         .duration(this.figure().transitions().transitionDuration)
                         .ease(this.figure().transitions().transitionEase)
-                        .attr("class", (d) => [`${this.class()}`, ...d.classes].join(" "))
+                        .attr("class", (d) => [`${this.class()}`, ...d[this._figureId].classes].join(" "))
                         .attr("transform", (d) => {
-                            return `translate(${this.figure().scales.x(d.x)}, ${this.figure().scales.y(d.y)})`;
+                            return `translate(${this.figure().scales.x(d[this._figureId].x)}, ${this.figure().scales.y(d[this._figureId].y)})`;
                         })
                         .each(function (d) {
                             for(const bauble of self._baubleHelpers){

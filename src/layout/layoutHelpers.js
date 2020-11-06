@@ -2,7 +2,7 @@ import {mean} from "d3";
 import {Type} from "../tree";
 import p from "../_privateConstants.js";
 
-function getVertexClassesFromNode(node){
+export function getClassesFromNode(node){
     let classes = [(!node.children ? "external-node" : "internal-node")];
     const tree = node.tree;
     if (node.annotations) {

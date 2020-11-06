@@ -139,7 +139,7 @@
     console.log(tree.annotations)
     const layout =rectangularLayout;
     const margins = { top: 10, bottom: 60, left: 10, right: 150};
-    const branchSettings = branch().hilightOnHover().reRootOnClick().curve(d3.curveStepBefore);
+    const branchSettings = branch().hilightOnHover().collapseOnClick().curve(d3.curveStepBefore);
     const figTree = new FigTree(treeSVG,margins,tree)
                 .layout(rectangularLayout)
                 .nodes(
@@ -313,7 +313,7 @@
     const rootToTipSVG = document.getElementById('rrt-2-svg');
     const margins = { top: 10, bottom: 60, left: 100, right: 100}
     const rootToTipPlot = new FigTree(rootToTipSVG, { top: 10, bottom: 60, left: 60, right: 100},tree)
-    .layout(rootToTipLayout())
+    .layout(rootToTipLayout)
         .nodes(
             circle()
                 .filter(d=>!d.children)

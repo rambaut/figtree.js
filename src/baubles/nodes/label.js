@@ -13,6 +13,14 @@ export class Label extends Bauble{
         return this;
     }
     update(selection){
+        const id = this.manager()._figureId;
+        this.attr("x",d=>d[id].textLabel.x)
+        this.attr("y",d=>d[id].textLabel.y)
+        this.attr("alignment-baseline",d=>d[id].textLabel.alignmentBaseline)
+        this.attr("text-anchor",d=>d[id].textLabel.textAnchor)
+
+
+
         return selection
             .selectAll(`.${this.id}`)
             .data(d => [d].filter(this.filter()),d=>`label-${this.id}`)
@@ -70,13 +78,7 @@ export class Label extends Bauble{
 export function label(text){
 
 return new Label()
-        .attr("x",d=>d.textLabel.x)
-        .attr("y",d=> d.textLabel.y)
-        .attr("alignment-baseline",d=>d.textLabel.alignmentBaseline)
-        .attr("text-anchor",d=>d.textLabel.textAnchor)
         .text(text)
-
-
 }
 
 /**
@@ -86,7 +88,7 @@ return new Label()
  */
 export function tipLabel(text){
     return label(text)
-        .filter(d=>d.degree===1);
+        .filter(d=>!d.children);
 }
 /**
  * Helper function filters label to just work on internal nodes
@@ -95,7 +97,7 @@ export function tipLabel(text){
  */
 export function internalNodeLabel(text){
     return label(text)
-        .filter(d=>d.degree>1);
+        .filter(d=>d.children);
 }
 
 /**

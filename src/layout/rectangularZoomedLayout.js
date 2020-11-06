@@ -1,35 +1,36 @@
 import {mean} from "d3-array";
-import {layoutFactory, makeVertexFromNode} from "./layoutHelpers";
-import {rectangularVertices} from "./rectangularLayout.f";
+import {getClassesFromNode} from "./layoutHelpers";
 
-export const zoomedVertices = (node)=>tree=>{
-    let currentY=0;
-    const vertices=[];
+export const rectangularZoomedLayout = (node)=>figtree=>{
+    let currentY = 0;
 
-    const traverse = function(node,siblingPositions=[]){
-        const myChildrenPositions=[];
+    const id = figtree.id;
 
-        if(node.children){
+    const traverse = function (node, siblingPositions = []) {
+        const myChildrenPositions = [];
 
-            for(const child of node.children){
-                traverse(child,myChildrenPositions);
+        if (!node[id].ignore) {
+            let yPos;
+            if (node.children) {
+
+                if(node[id].collapsed){
+                    yPos = (currentY +=1);
+                }else{
+                    for (const child of node.children) {
+                        traverse(child, myChildrenPositions);
+                    }
+                    yPos = mean(myChildrenPositions);
+                }
+            } else {
+                yPos = (currentY += 1);
+                siblingPositions.push(currentY);
             }
-            siblingPositions.push(mean(myChildrenPositions));
-            const vertex = {...makeVertexFromNode(node),
-                y:mean(myChildrenPositions),
-                x:node.divergence};
-            vertices.push(vertex);
-        }else{
-            currentY+=1;
-            siblingPositions.push(currentY);
-            const vertex = {...makeVertexFromNode(node), y:currentY, x:node.divergence};
-            vertices.push(vertex);
+            siblingPositions.push(yPos);
+            node[id].x = node.divergence;
+            node[id].y = yPos;
+            node[id].classes = getClassesFromNode(node);
         }
-    };
-
+    }
     traverse(node);
-    console.log(vertices)
-    return vertices;
 }
 
-export const rectangularZoomedLayout = (node)=>layoutFactory(zoomedVertices(node));

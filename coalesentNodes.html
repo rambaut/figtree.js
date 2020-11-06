@@ -222,7 +222,7 @@
         .layout(rectangularLayout)
         .nodes(
             roughCircle()
-                .filter(d=>d.degree===1)
+                .filter(d=>!d.children)
                 .radius(20)
                 .fillAttr("stroke","#3f51b5"),
             // circle()
@@ -233,7 +233,7 @@
             //         .rotateOnClick(),
             tipLabel(d=>d.name),
             coalescentEvent()
-                .filter(d=>d.degree>1)
+                .filter(d=>d.children)
                 .attr("fill","url(#nodeGrad)")
                 .attr('pointer-events',"none")
                 .setting("slope",0.5)

@@ -2,6 +2,7 @@
 
 /** @module bauble */
 import uuid from "uuid";
+import {select} from "d3";
 
 /**
  * The Bauble class
@@ -160,6 +161,20 @@ export class Bauble {
     //     this.filter()
     //     //TODO put listener on parent only insert this element if the parent is hovered or clicked ect.
     // }
+
+    collapseOnClick(){
+        this.on("click",
+            (d,i,n) => {
+                    d[this.manager()._figureId].collapsed= !d[this.manager()._figureId].collapsed;
+                    for(const descendent of this.tree.postorder(d)){
+                        if(descendent!==d){
+                            descendent[this.manager()._figureId].ignore=!descendent[this.manager()._figureId].ignore
+                        }
+                    }
+                    this.manager().figure().update()
+            });
+        return this;
+    }
 
 }
 

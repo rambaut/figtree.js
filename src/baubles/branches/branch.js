@@ -1,9 +1,7 @@
 import {curveStepBefore, line} from "d3-shape";
-import {mergeDeep} from "../../utilities";
 import {Bauble} from "../bauble";
 import {mouse, select} from "d3"
 import uuid from "uuid"
-import p from "../../_privateConstants";
 import {BaubleManager} from "../../features/baubleManager";
 
 export class Branch extends Bauble {
@@ -16,7 +14,7 @@ export class Branch extends Bauble {
     }
 
     update(selection) {
-        this.branchPath =this.branchPathGenerator();
+        this.branchPath =this.branchPathGenerator(this.manager()._figureId);
         if(selection==null&&!this.selection){
             return
         }
@@ -55,29 +53,21 @@ export class Branch extends Bauble {
             )
     };
 
-    branchPathGenerator() {
-        const branchPath = (e, i) => {
+    branchPathGenerator(id) {
+        return (node, i) => {
             const branchLine = line()
                 .x((v) => v.x)
                 .y((v) => v.y)
                 .curve(this._curve);
-            const factor = e.v0.y - e.v1.y > 0 ? 1 : -1;
-            const dontNeedCurve = e.v0.y - e.v1.y === 0 ? 0 : 1;
-            const output = this._curveRadius > 0 ?
-                branchLine(
-                    [{x: 0, y: this.scales().y(e.v0.y) - this.scales().y(e.v1.y)},
-                        {x: 0, y: dontNeedCurve * factor * this._curveRadius},
-                        {x: 0 + dontNeedCurve * this._curveRadius, y: 0},
-                        {x: this.scales().x(e.v1.x) - this.scales().x(e.v0.x), y: 0}
-                    ]) :
-                branchLine(
-                    [{x: 0, y: this.scales().y(e.v0.y) - this.scales().y(e.v1.y)},
-                        {x: this.scales().x(e.v1.x ) - this.scales().x(e.v0.x), y: 0}
-                    ]);
-            return (output)
+            const parent = node.parent;
+            return branchLine(
+                [{
+                    x: this.scales().x(parent[id].x) - this.scales().x(node[id].x),
+                    y: this.scales().y(parent[id].y) - this.scales().y(node[id].y)
+                },
+                    {x: 0, y: 0}]);
 
         };
-        return branchPath;
     }
 
     curve(curve=null){
@@ -132,12 +122,13 @@ export class Branch extends Bauble {
      */
     reRootOnClick(distance ="x"){
         super.on("click",
-            (d,i,n)=>{
-
-                const x1 = this.manager().figure().scales.x(d.v1.x),
-                    x2 = this.manager().figure().scales.x(d.v0.x),
-                    y1=this.manager().figure().scales.y(d.v1.y),
-                    y2=this.manager().figure().scales.y(d.v0.y),
+            (node,i,n)=>{
+                const parent = node.parent;
+                const id = this.manager()._figureId;
+                const x1 = this.manager().figure().scales.x(node[id].x),
+                    x2 = this.manager().figure().scales.x(parent[id].x),
+                    y1=this.manager().figure().scales.y(node[id].y),
+                    y2=this.manager().figure().scales.y(parent[id].y),
                     [mx,my] = mouse(document.getElementById(this.manager().figure().svgId));
 
                 const proportion = distance.toLocaleLowerCase()==="x"? Math.abs( (mx - x2) / (x1 - x2)):distance.toLocaleLowerCase()==="euclidean"?
@@ -148,7 +139,7 @@ export class Branch extends Bauble {
                 }
 
                 const tree = this.manager().figure().tree();
-                tree.reroot(tree.getNode(d.id),proportion)
+                tree.reroot(node,proportion)
 
             });
         return this;
@@ -167,29 +158,21 @@ export class Branch extends Bauble {
  * @return {function(*, *)}
  */
 
-export function branchPathGenerator({scales,curveRadius,curve}) {
-    const branchPath = (e, i) => {
+export function branchPathGenerator({scales,curve,id}) {
+    return (node, i) => {
         const branchLine = line()
             .x((v) => v.x)
             .y((v) => v.y)
-            .curve(curve);
-        const factor = e.v0.y - e.v1.y > 0 ? 1 : -1;
-        const dontNeedCurve = e.v0.y - e.v1.y === 0 ? 0 : 1;
-        const output = curveRadius > 0 ?
-            branchLine(
-                [{x: 0, y: scales.y(e.v0.y) - scales.y(e.v1.y)},
-                    {x: 0, y: dontNeedCurve * factor * curveRadius},
-                    {x: 0 + dontNeedCurve * curveRadius, y: 0},
-                    {x: scales.x(e.v1.x + scales.xOffset) - scales.x(e.v0.x + scales.xOffset), y: 0}
-                ]) :
-            branchLine(
-                [{x: 0, y: scales.y(e.v0.y) - scales.y(e.v1.y)},
-                    {x: scales.x(e.v1.x + scales.xOffset) - scales.x(e.v0.x + scales.xOffset), y: 0}
-                ]);
-        return (output)
+            .curve(_curve);
+        const parent = node.parent;
+        return branchLine(
+            [{
+                x: scales().x(parent[id].x) - scales().x(node[id].x),
+                y: scales().y(parent[id].y) - scales().y(node[id].y)
+            },
+                {x: 0, y: 0}]);
 
     };
-    return branchPath;
 }
 
 

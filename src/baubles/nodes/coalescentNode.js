@@ -25,11 +25,7 @@ export class CoalescentBauble extends AbstractNodeBauble {
         }
     }
 
-    /**
-     * A function that assigns cy,cx,and r attributes to a selection. (cx and cy are set to 0 each r is the settings radius
-     * plus the border.
-     * @param selection
-     */
+
     update(selection = null) {
         if (selection == null && !this.selection) {
             return
@@ -72,9 +68,13 @@ export class CoalescentBauble extends AbstractNodeBauble {
             );
     };
 
-   makeCoalescent(vertex){
-       const descendents = [...this.tree.postorder(this.tree.getNode(vertex.id))].map(n=>n.id).filter(id=>id!==vertex.id)
-        const relativeChildPositions = descendents.map(child=> this.calculateChildPos(vertex,this.vertexMap.get(child)));
+   makeCoalescent(node){
+       console.log(node)
+       const id = this.manager()._figureId;
+       const descendents = [...this.tree.postorder(node)].filter(n=>n!==node);
+        const relativeChildPositions = descendents.map(child=>
+            ({x: this.scales().x(child[id].x) -this.scales().x(node[id].x),
+            y:this.scales().y(child[id].y) -this.scales().y(node[id].y)}));
         const xEnd=max(relativeChildPositions,d=>d.x);
         const yTop=min(relativeChildPositions,d=>d.y)-0.4;
         const yBottom =max(relativeChildPositions,d=>d.y)+0.4;
@@ -83,9 +83,6 @@ export class CoalescentBauble extends AbstractNodeBauble {
         return coalescentPath({x:xEnd,y:yTop},{x:xEnd,y:yBottom},slope,this.setting("start-width"))
     }
 
-    calculateChildPos(me,child){
-        return {x: this.scales().x(child.x) -this.scales().x(me.x),y:this.scales().y(child.y) -this.scales().y(me.y)}
-    }
 }
 
 const link = linkHorizontal()
