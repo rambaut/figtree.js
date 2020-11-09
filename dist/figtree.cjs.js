@@ -8631,45 +8631,16 @@ function () {
       }
 
       return this;
-    } // revealOnHover(){
-    //
-    //     this.filter()
-    //     //TODO put listener on parent only insert this element if the parent is hovered or clicked ect.
-    // }
-
+    }
   }, {
     key: "collapseOnClick",
     value: function collapseOnClick() {
       var _this3 = this;
 
-      this.on("click", function (d, i, n) {
-        d[_this3.manager()._figureId].collapsed = !d[_this3.manager()._figureId].collapsed;
-        var _iteratorNormalCompletion = true;
-        var _didIteratorError = false;
-        var _iteratorError = undefined;
-
-        try {
-          for (var _iterator = _this3.tree.postorder(d)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-            var descendent = _step.value;
-
-            if (descendent !== d) {
-              descendent[_this3.manager()._figureId].ignore = !descendent[_this3.manager()._figureId].ignore;
-            }
-          }
-        } catch (err) {
-          _didIteratorError = true;
-          _iteratorError = err;
-        } finally {
-          try {
-            if (!_iteratorNormalCompletion && _iterator["return"] != null) {
-              _iterator["return"]();
-            }
-          } finally {
-            if (_didIteratorError) {
-              throw _iteratorError;
-            }
-          }
-        }
+      this.on("click", function (node, i, n) {
+        var collapse = !node[_this3.manager()._figureId].collapsed;
+        node[_this3.manager()._figureId].collapsed = collapse;
+        collapseHelperTraversal(node, collapse, _this3.manager()._figureId);
 
         _this3.manager().figure().update();
       });
@@ -8689,6 +8660,38 @@ function () {
 
   return Bauble;
 }();
+
+function collapseHelperTraversal(node, collapse, id) {
+  if (node.children) {
+    var _iteratorNormalCompletion = true;
+    var _didIteratorError = false;
+    var _iteratorError = undefined;
+
+    try {
+      for (var _iterator = node.children[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+        var child = _step.value;
+        child[id].ignore = collapse;
+
+        if (!child[id].collapsed) {
+          collapseHelperTraversal(child, collapse, id);
+        }
+      }
+    } catch (err) {
+      _didIteratorError = true;
+      _iteratorError = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion && _iterator["return"] != null) {
+          _iterator["return"]();
+        }
+      } finally {
+        if (_didIteratorError) {
+          throw _iteratorError;
+        }
+      }
+    }
+  }
+}
 
 function attrsFunction(selection, map) {
   return selection.each(function() {

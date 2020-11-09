@@ -156,27 +156,28 @@ export class Bauble {
         }
         return this;
     }
-    // revealOnHover(){
-    //
-    //     this.filter()
-    //     //TODO put listener on parent only insert this element if the parent is hovered or clicked ect.
-    // }
+
 
     collapseOnClick(){
         this.on("click",
-            (d,i,n) => {
-                    d[this.manager()._figureId].collapsed= !d[this.manager()._figureId].collapsed;
-                    for(const descendent of this.tree.postorder(d)){
-                        if(descendent!==d){
-                            descendent[this.manager()._figureId].ignore=!descendent[this.manager()._figureId].ignore
-                        }
-                    }
-                    this.manager().figure().update()
+            (node,i,n) => {
+                const collapse = !node[this.manager()._figureId].collapsed;
+                node[this.manager()._figureId].collapsed = collapse;
+                collapseHelperTraversal(node,collapse,this.manager()._figureId)
+                this.manager().figure().update()
             });
         return this;
     }
-
 }
 
-
+function collapseHelperTraversal(node,collapse,id) {
+        if(node.children){
+            for(const child of node.children){
+                child[id].ignore=collapse;
+                if(!child[id].collapsed){
+                    collapseHelperTraversal(child,collapse,id);
+                }
+            }
+        }
+}
 
