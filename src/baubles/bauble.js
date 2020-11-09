@@ -27,6 +27,10 @@ export class Bauble {
 
     }
 
+    clear(selection){
+        selection.selectAll(`.${this.id}`).remove()
+    }
+
 
     /**
      * Getter or setter of bauble filter. The filter is function that will be passed the vertex or edge.It should return
@@ -157,7 +161,6 @@ export class Bauble {
         return this;
     }
 
-
     collapseOnClick(){
         this.on("click",
             (node,i,n) => {
@@ -168,6 +171,12 @@ export class Bauble {
             });
         return this;
     }
+
+    onClick(f){
+        this.on("click",(d,i,n)=>f(d,i,n));
+        return this;
+    }
+
 }
 
 function collapseHelperTraversal(node,collapse,id) {

@@ -137,6 +137,8 @@ export class FigTree {
      */
     update() {
         this[p.layout](this);
+
+        console.log(this.tree())
         select(`#${this.svgId}`)
             .attr("transform",`translate(${this._margins.left},${this._margins.top})`);
 

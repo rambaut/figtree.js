@@ -8471,6 +8471,11 @@ function () {
     value: function update(selection) {
       throw new Error("Don't call the base class method");
     }
+  }, {
+    key: "clear",
+    value: function clear(selection) {
+      selection.selectAll(".".concat(this.id)).remove();
+    }
     /**
      * Getter or setter of bauble filter. The filter is function that will be passed the vertex or edge.It should return
      * true or false
@@ -8643,6 +8648,14 @@ function () {
         collapseHelperTraversal(node, collapse, _this3.manager()._figureId);
 
         _this3.manager().figure().update();
+      });
+      return this;
+    }
+  }, {
+    key: "onClick",
+    value: function onClick(f) {
+      this.on("click", function (d, i, n) {
+        return f(d, i, n);
       });
       return this;
     }
@@ -8950,6 +8963,8 @@ function () {
 
                 if (bauble.filter()(d)) {
                   bauble.update(select(this));
+                } else {
+                  bauble.clear(select(this));
                 }
               }
             } catch (err) {
@@ -9167,6 +9182,7 @@ function () {
       var _this2 = this;
 
       this[p.layout](this);
+      console.log(this.tree());
       select("#".concat(this.svgId)).attr("transform", "translate(".concat(this._margins.left, ",").concat(this._margins.top, ")"));
       setUpScales.call(this);
       updateNodePositions.call(this, this.tree().nodeList.filter(function (n) {

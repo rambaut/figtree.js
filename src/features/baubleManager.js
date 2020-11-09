@@ -120,6 +120,8 @@ export  class BaubleManager{
                             for(const bauble of self._baubleHelpers){
                                 if(bauble.filter()(d)) {
                                     bauble.update(select(this));
+                                }else{
+                                    bauble.clear(select(this))
                                 }
                             }
                         })
