@@ -2,7 +2,6 @@
 
 /** @module bauble */
 import uuid from "uuid";
-import {select} from "d3";
 
 /**
  * The Bauble class
@@ -85,7 +84,18 @@ export class Bauble {
      * @return {Bauble}
      */
     on(eventListener,value){
-        this._interactions[eventListener] = value;
+        const currentCallback =  this._interactions[eventListener];
+        // console.log(currentCallback)
+        this._interactions[eventListener] = currentCallback === undefined ? value : (d, i, n) => {
+            console.log(currentCallback)
+            currentCallback(d, i, n);
+            value(d, i, n)
+        };
+        return this;
+    }
+
+    clearOn(eventListener){
+        this._interactions[eventListener] = null;
         return this;
     }
 

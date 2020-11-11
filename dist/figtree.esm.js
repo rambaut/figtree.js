@@ -8539,7 +8539,19 @@ function () {
   }, {
     key: "on",
     value: function on(eventListener, value) {
-      this._interactions[eventListener] = value;
+      var currentCallback = this._interactions[eventListener]; // console.log(currentCallback)
+
+      this._interactions[eventListener] = currentCallback === undefined ? value : function (d, i, n) {
+        console.log(currentCallback);
+        currentCallback(d, i, n);
+        value(d, i, n);
+      };
+      return this;
+    }
+  }, {
+    key: "clearOn",
+    value: function clearOn(eventListener) {
+      this._interactions[eventListener] = null;
       return this;
     }
     /**
