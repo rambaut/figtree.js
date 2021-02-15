@@ -7998,7 +7998,8 @@
 	  this.nodeList.forEach(function (node) {
 	    return node._height = maxRTT - _this7.rootToTipLength(node);
 	  });
-	  this.heightsKnown = true; // this.treeUpdateCallback();
+	  this.heightsKnown = true;
+	  this.lengthsKnown = false; // this.treeUpdateCallback();
 	}
 	/**
 	 * A private recursive function that calculates the length of the branch below each node
@@ -8009,7 +8010,8 @@
 	  this.nodeList.forEach(function (node) {
 	    return node._length = node.parent ? node.parent.height - node.height : 0;
 	  });
-	  this.lengthsKnown = true; // this.treeUpdateCallback();
+	  this.lengthsKnown = true;
+	  this.heightsKnown = false; // this.treeUpdateCallback();
 	}
 	/**
 	 * A private recursive function that uses the Fitch algorithm to assign
@@ -9196,7 +9198,6 @@
 	      var _this2 = this;
 
 	      this[p.layout](this);
-	      console.log(this.tree());
 	      select("#".concat(this.svgId)).attr("transform", "translate(".concat(this._margins.left, ",").concat(this._margins.top, ")"));
 	      setUpScales.call(this);
 	      updateNodePositions.call(this, this.tree().nodeList.filter(function (n) {

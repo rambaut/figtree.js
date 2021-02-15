@@ -1134,6 +1134,7 @@ function calculateHeights() {
     const maxRTT = max(this.rootToTipLengths());
     this.nodeList.forEach((node) => node._height =  maxRTT - this.rootToTipLength(node));
     this.heightsKnown = true;
+    this.lengthsKnown=false;
     // this.treeUpdateCallback();
 }
 
@@ -1144,6 +1145,7 @@ function calculateLengths(){
 
     this.nodeList.forEach((node)=> node._length =node.parent? node.parent.height- node.height:0);
     this.lengthsKnown=true;
+    this.heightsKnown=false;
     // this.treeUpdateCallback();
 
 }
