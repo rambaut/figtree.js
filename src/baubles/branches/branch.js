@@ -63,9 +63,10 @@ export class Branch extends Bauble {
             return branchLine(
                 [{
                     x: this.scales().x(parent[id].x) - this.scales().x(node[id].x),
-                    y: this.scales().y(parent[id].y) - this.scales().y(node[id].y)
+                    y: this.scales().y(parent[id].y) - this.scales().y(node[id].y) +0.01 // gradients need y change
                 },
-                    {x: 0, y: 0}]);
+                    {x: 0, y: -0.01}]);
+
 
         };
     }
