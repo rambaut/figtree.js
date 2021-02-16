@@ -218,7 +218,7 @@
                                     .tickFormat(d3.format(".2f"))
                                     .ticks(4)
                             );
-    // tree.order(tree.rootNode, false);
+    // tree.order(tree.root, false);
     const rttpLayout = rootToTipLayout((v)=>!v.annotations.excluded);
     const rootToTipPlot = new FigTree(document.getElementById('rrt-3-svg'), margins,tree)
         .layout(rttpLayout)

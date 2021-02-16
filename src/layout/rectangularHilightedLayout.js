@@ -49,7 +49,7 @@ export function rectangularHilightedLayout(predicate,compressionFactor) {
             }
         };
 
-        traverse(tree.rootNode);
+        traverse(tree.root);
     }
 }
 

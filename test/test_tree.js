@@ -17,20 +17,20 @@ console.log(`Internal nodes: ${tree.internalNodes.length}`);
 console.log(`All nodes: ${[...tree.preorder()].map((node) => node.name ? node.name : "node").join(", ")}`);
 console.log(`All nodes: ${[...tree.postorder()].map((node) => node.name ? node.name : "node").join(", ")}`);
 
-tree.rotate(tree.rootNode, true);
+tree.rotate(tree.root, true);
 console.log(`Rotated: ${tree.toNewick()}`);
 
-tree.order(tree.rootNode, true);
+tree.order(tree.root, true);
 console.log(`Increasing: ${tree.toNewick()}`);
 
-tree.order(tree.rootNode, false);
+tree.order(tree.root, false);
 console.log(`Decreasing: ${tree.toNewick()}`);
 
 tree.reroot(tree.externalNodes[0]);
 console.log(`Rerooted: ${tree.toNewick()}`);
 
-console.log("Root node key: ", tree.rootNode.key, tree.getNode(tree.rootNode.key));
-console.log("Root parent: ", tree.rootNode.parent);
+console.log("Root node key: ", tree.root.key, tree.getNode(tree.root.key));
+console.log("Root parent: ", tree.root.parent);
 
 console.log("RTT: " + tree.rootToTipLengths());
 

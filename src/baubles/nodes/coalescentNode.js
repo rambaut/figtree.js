@@ -69,7 +69,6 @@ export class CoalescentBauble extends AbstractNodeBauble {
     };
 
    makeCoalescent(node){
-       console.log(node)
        const id = this.manager()._figureId;
        const descendents = [...this.tree.postorder(node)].filter(n=>n!==node);
         const relativeChildPositions = descendents.map(child=>

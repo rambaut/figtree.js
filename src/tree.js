@@ -17,11 +17,6 @@ export const Type = {
     PROBABILITIES: Symbol("PROBABILITIES"),
 };
 
-export const CollapseStyles = {
-    TRIANGLE : Symbol("TRIANGLE"),
-    BRANCH : Symbol("BRANCH"),
-};
-
 /**
  * The Tree class
  */
@@ -40,28 +35,27 @@ export class Tree {
      * @constructor
      * @param {object} rootNode - The root node of the tree as an object.
      */
-    constructor(rootNode = {},settings={}) {
+    constructor(heightsKnown=false) {
 
-        this.settings = {...Tree.DEFAULT_SETTINGS(), ...settings};
+        //TODO make private things private with symbols
 
-        this.heightsKnown = this.settings.heightsKnown;
-        this.lengthsKnown = this.settings.lengthsKnown;
-        this.root = makeNode.call(this,{...rootNode,...{length:0,level:0}});
+        this.heightsKnown = heightsKnown;
+        this.lengthsKnown = !heightsKnown;
+        // this._root = makeNode.call(this,{...rootNode,...{length:0,level:0}});
         // This converts all the json objects to Node instances
-        setUpNodes.call(this,this.root);
-
+        // setUpNodes.call(this,this.root);
         this.annotations = {};
-        this._nodeList = [...this.preorder()];
-        this._nodeList.forEach( (node) => {
-            if (node.label && node.label.startsWith("#")) {
-                // an id string has been specified in the newick label.
-                node._id = node.label.substring(1);
-            }
-            this.addAnnotations(node.annotations);
-        });
-        this._nodeMap = new Map(this.nodeList.map( (node) => [node.id, node] ));
-        this._tipMap = new Map(this.externalNodes.map( (tip) => [tip.name, tip] ));
+        // for(const node of this.preorder()){
+        //     if (node.label && node.label.startsWith("#")) {
+        //         // an id string has been specified in the newick label.
+        //         node._id = node.label.substring(1);
+        //     }
+        //     this.addAnnotations(node.annotations);
+        //     this._nodeMap.set(node.id, node);
+        // }
 
+        this._tipMap = new Map();
+        this._nodeMap=new Map();
         this.nodesUpdated = false;
         // a callback function that is called whenever the tree is changed
         this._shouldUpdate=true
@@ -73,9 +67,13 @@ export class Tree {
      *
      * @returns {Object|*}
      */
-    get rootNode() {
-        return this.root;
+    get root() {
+        return this._root;
     };
+
+    set root(node){
+        this._root=node;
+    }
 
     /**
      * Gets an array containing all the node objects
@@ -83,9 +81,6 @@ export class Tree {
      * @returns {*}
      */
     get nodes() {
-        if(this.nodesUpdated){
-            setUpArraysAndMaps.call(this);
-        }
         return [...this.preorder()];
     };
 
@@ -93,11 +88,8 @@ export class Tree {
      * get array of node list
      * @returns {*}
      */
+    //TODO remove
     get nodeList(){
-        if(this.nodesUpdated){
-            setUpArraysAndMaps.call(this);
-
-        }
         return this.nodes
     }
 
@@ -107,9 +99,6 @@ export class Tree {
      * @returns {*}
      */
     get externalNodes() {
-        if(this.nodesUpdated){
-            setUpArraysAndMaps.call(this);
-        }
         return this.nodes.filter((node) => !node.children);
     };
 
@@ -121,22 +110,13 @@ export class Tree {
      * @returns {*}
      */
     get internalNodes() {
-        if(this.nodesUpdated){
-            setUpArraysAndMaps.call(this);
-        }
         return this.nodes.filter((node) => node.children );
     };
 
     get nodeMap(){
-        if(this.nodesUpdated){
-            setUpArraysAndMaps.call(this);
-        }
         return this._nodeMap ;
     }
     get tipMap(){
-        if(this.nodesUpdated){
-            setUpArraysAndMaps.call(this);
-        }
         return this._tipMap ;
     }
 
@@ -240,10 +220,10 @@ export class Tree {
      * start at the root node. Providing another node will generate a subtree. Labels and branch lengths are
      * included if available.
      *
-     * @param {object} node - The node of the tree to be written (defaults as the rootNode).
+     * @param {object} node - The node of the tree to be written (defaults as the root).
      * @returns {string}
      */
-    toNewick(node = this.rootNode) {
+    toNewick(node = this.root) {
         return (node.children ? `(${node.children.map(child => this.toNewick(child)).join(",")})${node.label ? node.label : ""}` : node.name) + (node.length ? `:${node.length}` : "");
     };
 
@@ -254,15 +234,15 @@ export class Tree {
      * @param proportion - proportion along the branch to place the root (default 0.5)
      */
     reroot(node, proportion = 0.5) {
-        if (node === this.rootNode) {
+        if (node === this.root) {
             // the node is the root - nothing to do
             return;
         }
 
 
-        const rootLength = this.rootNode.children[0].length + this.rootNode.children[1].length;
+        const rootLength = this.root.children[0].length + this.root.children[1].length;
 
-        if (node.parent !== this.rootNode) {
+        if (node.parent !== this.root) {
             // the node is not a child of the existing root so the root is actually changing
 
             let node0 = node;
@@ -283,7 +263,7 @@ export class Tree {
                 // remove the node that will becoming the parent from the children
                 parent._children = parent.children.filter((child) => child !== node0);
 
-                if (parent.parent === this.rootNode) {
+                if (parent.parent === this.root) {
                     const sibling = this.getSibling(parent);
                     parent._children.push(sibling);
                     sibling._length = rootLength;
@@ -305,7 +285,7 @@ export class Tree {
 
             // Set the order of the children to be the same as for the original parent of the node.
             // This makes for a more visually consistent rerooting graphically.
-            this.rootNode.children = nodeAtTop ? [rootChild1, rootChild2] : [rootChild2, rootChild1];
+            this.root.children = nodeAtTop ? [rootChild1, rootChild2] : [rootChild2, rootChild1];
 
             // connect all the children to their parents
             this.internalNodes
@@ -344,7 +324,7 @@ export class Tree {
                     this.rotate(child, recursive);
                 }
             }
-            node.children.reverse();
+            node._children.reverse();
         }
 
         this.treeUpdateCallback();
@@ -360,7 +340,7 @@ export class Tree {
      */
 
 
-    orderByNodeDensity(increasing = true, node = this.rootNode) {
+    orderByNodeDensity(increasing = true, node = this.root) {
         const factor = increasing ? 1 : -1;
         orderNodes.call(this, node, (nodeA, countA, nodeB, countB) => {
             return (countA - countB) * factor;
@@ -379,12 +359,12 @@ export class Tree {
      *  Function signature: (nodeA, childCountNodeA, nodeB, childCountNodeB)
      * @returns {Tree} - the number of tips below this node
      */
-    order(ordering, node = this.rootNode) {
+    order(ordering, node = this.root) {
         orderNodes.call(this, node, ordering);
         this.treeUpdateCallback();
         return this;
     }
-    _order(ordering, node = this.rootNode) {
+    _order(ordering, node = this.root) {
         orderNodes.call(this, node, ordering);
         return this;
     }
@@ -557,20 +537,42 @@ export class Tree {
             return;
         }
         // remove the node from it's parent's children
-        node.parent._children=node.parent._children.filter(n=>n!==node);
+        const parent = node.parent;
+        node.parent.removeChild(node);
         //update child lengths
-        if(node._children){
-        node._children.forEach(child=>{
+        if(node.children){
+        node.children.forEach(child=>{
             child._length += node.length;
-            child.parent = node.parent;// This also updates parent's children array;
+            child.parent = parent;
+            parent.addChild(child);
             })
+        }else{
+            if(node.name){
+                this._tipMap.delete(node.name);
+            }
         }
+        this._nodeMap.delete(node._id);
         // else if(node.parent._children.length===1){
         //     console.log("removing parent")
         //     this.removeNode(node.parent); // if it's a tip then remove it's parent which is now degree two;
         // }
         this.nodesUpdated = true;
-        return this;
+    }
+
+    addNode(nodeData={},external=false){
+        const node = new Node({...nodeData, tree:this});
+        this._nodeMap.set(node.id, node);
+        if(external){
+            if(node.name===null){
+                throw new Error("tips need names");
+
+            }
+            if(this._tipMap.has(node.name)){
+                throw new Error("${node.name} already in tree");
+            }
+            this._tipMap.set(node.name, node);
+        }
+        return node;
     }
 
     /**
@@ -800,9 +802,9 @@ export class Tree {
      * @param node
      */
     annotateNodesFromTips(name, acctran = true) {
-        fitchParsimony(name, this.rootNode);
+        fitchParsimony(name, this.root);
 
-        reconstructInternalStates(name, [], acctran, this.rootNode);
+        reconstructInternalStates(name, [], acctran, this.root);
 
         this.treeUpdateCallback();
 
@@ -855,6 +857,8 @@ export class Tree {
         let annotationKeyNext = true;
         let annotationKey;
         let isAnnotationARange=false;
+        let annotations={};
+        const tree = new Tree();
 
         for (const token of tokens.filter(token => token.length > 0)) {
             // console.log(`Token ${i}: ${token}, level: ${level}`);
@@ -867,7 +871,7 @@ export class Tree {
                     }
                 }else if (token==="{"){
                     isAnnotationARange=true;
-                    currentNode.annotations[annotationKey]=[];
+                    annotations[annotationKey]=[];
                 }else if (token==="}"){
                     isAnnotationARange=false
                 }
@@ -875,6 +879,8 @@ export class Tree {
                     // close BEAST annotation
                     inAnnotation = false;
                     annotationKeyNext = true;
+                    tree.annotateNode(currentNode, annotations);
+                    annotations={};
                 } else{
                     // must be annotation
                     // remove any quoting and then trim whitespace
@@ -889,13 +895,13 @@ export class Tree {
                         annotationKey = annotationToken.replace(".","_");
                     }else{
                         if(isAnnotationARange){
-                            currentNode.annotations[annotationKey].push(annotationToken);
+                            annotations[annotationKey].push(annotationToken);
                         }else{
                             if(isNaN(annotationToken)){
-                                currentNode.annotations[annotationKey]=annotationToken;
+                                annotations[annotationKey]=annotationToken;
 
                             }else{
-                                currentNode.annotations[annotationKey] = parseFloat((annotationToken));
+                                annotations[annotationKey] = parseFloat((annotationToken));
                             }
                         }
                     }
@@ -910,15 +916,13 @@ export class Tree {
                     throw new Error("expecting a comma");
                 }
 
-                let node = {
-                    level: level,
-                    parent: currentNode,
-                    children: [],
-                    annotations: {}
-                };
+                let node = tree.addNode();
+
                 level += 1;
                 if (currentNode) {
                     nodeStack.push(currentNode);
+                }else{
+                    tree.root=node;
                 }
                 currentNode = node;
 
@@ -931,7 +935,8 @@ export class Tree {
                 }
 
                 let parent = nodeStack.pop();
-                parent.children.push(currentNode);
+                parent.addChild(currentNode);
+                currentNode.parent = parent;
 
                 currentNode = parent;
             } else if (token === ")") {
@@ -944,8 +949,8 @@ export class Tree {
 
                 // the end of an internal node
                 let parent = nodeStack.pop();
-                parent.children.push(currentNode);
-
+                parent.addChild(currentNode);
+                currentNode.parent = parent;
                 level -= 1;
                 currentNode = parent;
 
@@ -974,16 +979,12 @@ export class Tree {
                         if (isNaN(value)) {
                             value = currentNode.label;
                         }
-                        currentNode.annotations[options.labelName] = value;
-                    } else {
-                        currentNode.id = currentNode.label.substring(1);
+                        let label_annotation={};
+                        label_annotation[options.labelName] = value;
+                        tree.annotateNode(currentNode,label_annotation)
                     }
                     labelNext = false;
                 } else {
-                    // an external node
-                    if (!currentNode.children) {
-                        currentNode.children = []
-                    }
 
                     let name = options.tipNameMap?options.tipNameMap.get(token):token;
 
@@ -1019,12 +1020,11 @@ export class Tree {
 
                     }
 
-                    const externalNode = {
-                        name: name.replace(/\'/g,''),
-                        id:`node-${parseInt(token)?parseInt(token):token.replace(/\'/g,'')}`,
-                        parent: currentNode,
-                        annotations: { date: decimalDate }
-                    };
+                    const externalNode = tree.addNode( {name: name.replace(/\'/g,'')},
+                        true);
+                    if(decimalDate!==null){
+                        tree.annotateNode(externalNode,{ date: decimalDate })
+                    }
 
                     if (currentNode) {
                         nodeStack.push(currentNode);
@@ -1037,7 +1037,7 @@ export class Tree {
         if (level > 0) {
             throw new Error("the brackets in the newick file are not balanced")
         }
-        return new Tree(currentNode);
+        return tree;
     };
 
     /*
@@ -1110,13 +1110,13 @@ function orderNodes(node, ordering, callback = null) {
         const counts = new Map();
         for (const child of node.children) {
             const value = orderNodes(child, ordering, callback);
-            counts.set(child, value);
+            counts.set(child.id, value);
             count += value;
         }
         // sort the children using the provided function
-        node.children.sort((a, b) => {
-            return ordering(a, counts.get(a), b, counts.get(b),node)
-        });
+      node._children.sort((a, b) => {
+            return ordering(a, counts.get(a), b, counts.get(b), node)
+        })
 
         if (callback) callback();
     } else {
@@ -1215,42 +1215,50 @@ function reconstructInternalStates(name, parentStates, acctran, node ) {
 
     return nodeStates;
 }
-function makeNode(nodeData){
-    return new Node({...nodeData, tree:this});
-}
-
-/**
- * A private function that sets up the tree by traversing from the root Node and sets all heights and lengths
- * @param node
- */
-function setUpNodes(node){
-    if(node.children){
-        const childrenNodes=[]
-        for(const child of node.children){
-            //HERE?
-            const childNode = makeNode.call(this,{...child,parent:node,level:node.level+1})
-            childrenNodes.push(childNode);
-            setUpNodes.call(this,childNode);
+function makeNode(nodeData,external=false){
+    const node = new Node({...nodeData, tree:this});
+    this._nodeMap.set(node.id, node);
+    if(external){
+        if(this._tipMap.has(node.name)){
+            throw new Error("${node.name} already in tree");
         }
-        node.children = childrenNodes;
+        this._tipMap.set(node.name, node);
     }
 }
 
-function setUpArraysAndMaps() {
-    this._nodeList = [...this.preorder()];
-    this.nodesUpdated=false;
-    this._nodeList.forEach((node) => {
-        if (node.label && node.label.startsWith("#")) {
-            // an id string has been specified in the newick label.
-            node._id = node.label.substring(1);
-        }
-        if (node.annotations) {
-            this.addAnnotations(node.annotations);
-        }
-    });
-    this._nodeMap = new Map(this.nodeList.map((node) => [node.id, node]));
-    this._tipMap = new Map(this.externalNodes.map((tip) => [tip.name, tip]));
-}
+// /**
+//  * A private function that sets up the tree by traversing from the root Node and sets all heights and lengths
+//  * @param node
+//  */
+// function setUpNodes(node){
+//     if(node.children){
+//         const childrenNodes=[]
+//         for(const child of node.children){
+//             //HERE?
+//             const childNode = makeNode.call(this,{...child,parent:node,level:node.level+1})
+//             childrenNodes.push(childNode);
+//             setUpNodes.call(this,childNode);
+//         }
+//         node.children = childrenNodes;
+//     }
+// }
+
+// function setUpArraysAndMaps() {
+//     this.nodesUpdated=false;
+//     this._nodeMap = new Map(this.preorder().map((node) => [node.id, node]));
+//     this._tipMap = new Map(this.externalNodes.map((tip) => [tip.name, tip]));
+//     for( const node in this.preorder()){
+//         if (node.label && node.label.startsWith("#")) {
+//             // an id string has been specified in the newick label.
+//             node._id = node.label.substring(1);
+//         }
+//         if (node.annotations) {
+//             this.addAnnotations(node.annotations);
+//         }
+//     };
+//     //TODO add to loop above
+//
+// }
 
 /**
  * The node class. This wraps a node in a tree and notifies the tree when
@@ -1283,19 +1291,18 @@ class Node{
             parent:undefined,
             children:null,
             label:undefined,
-            id:`node-${uuid.v4()}`
-        }
 
+        }
 
     }
 
 
     constructor(nodeData ={}){
         const data = {...Node.DEFAULT_NODE(),...nodeData};
-
-        this._id = data.id;
+//TODO like symbol here but need id's in figure
+        // this._id = Symbol("node");
+        this._id = ` node-${uuid.v4()}`
         this._height = data.height;
-        this._divergence= data.divergence;
         this._length = data.length;
         this._name = data.name;
         this._annotations= data.annotations;
@@ -1303,6 +1310,7 @@ class Node{
         this._children = data.children;
         this._tree = data.tree;
         this._label = data.label;
+
 
     }
     get level() {
@@ -1322,9 +1330,6 @@ class Node{
         this._name = value;
     }
 
-    set level(value) {
-        this._level = value;
-    }
     get label() {
         return this._label;
     }
@@ -1355,7 +1360,7 @@ class Node{
     set height(value) {
         this._height = value;
         this._tree.lengthsKnown=false;
-        this._tree.treeUpdateCallback();
+        // this._tree.treeUpdateCallback();
     }
 
     get length() {
@@ -1366,9 +1371,11 @@ class Node{
     }
 
     set length(value) {
+        if(!this._tree.lengthsKnown){
+            calculateLengths.call(this._tree);
+        }
         this._length = value;
-        this._tree.heightsKnown = false;
-        this._tree.treeUpdateCallback();
+        // this._tree.treeUpdateCallback();
     }
 
     get annotations() {
@@ -1379,33 +1386,51 @@ class Node{
         this._annotations = value;
     }
 
+    /**
+     * Return an array over the children nodes
+     * @return {*}
+     */
+    //TODO return empty not null
     get children() {
-        return this._children;
+        if(this._children===null){
+            return null
+        }
+        return this._children.map(childId=>this._tree.getNode(childId));
+    }
+    removeChild(node){
+        this._children= this._children.filter(childId => childId !== node.id);
     }
 
-    set children(value) {
-        this._children = value;
-        for(const child of this._children){
-            child.parent=this;
+    addChild(node) {
+        if(this._children===null){
+            this._children=[];
         }
-        this._tree.nodesUpdated = true;
+        this._children.push(node.id);
     }
+
+    // set children(value) {
+    //     this._children = value;
+    //     for(const child of this._children){
+    //         child.parent=this;
+    //     }
+    //     this._tree.nodesUpdated = true;
+    // }
     get parent() {
-        return this._parent;
+        return this._tree.getNode(this._parent);
     }
-    set parent(node) {
-        this._parent = node;
-        if(this._parent.children.filter(c=>c===this).length===0){
-            this._parent.children.push(this)
-        }
-        this._tree.nodesUpdated = true;
+
+    set parent(parent){
+        this._parent=parent.id
     }
+    // set parent(node) {
+    //     this._parent = node;
+    //     if(this._parent.children.filter(c=>c===this).length===0){
+    //         this._parent.children.push(this)
+    //     }
+    //     this._tree.nodesUpdated = true;
+    // }
     get id(){
         return this._id;
-    }
-    set id(value){
-        this._tree.nodesUpdated=true;
-        this._id = value;
     }
     get tree(){
         return this._tree;
@@ -1436,7 +1461,7 @@ class Node{
 
     toJS(){
         return ({
-                id: this.id,
+                // id: this.id,
                 name:this.name,
                 length:this.length,
                 height:this.height,

@@ -26,7 +26,7 @@ export function getClassesFromNode(node){
     return classes;
 }
 
-// TODO update this to handel location for other layouts that aren't left to right
+// TODO update this to handle location for other layouts that aren't left to right
 /**
  * Makes a vertex from a node in a tree.
  * anatomy of a vertex

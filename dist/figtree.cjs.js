@@ -28,6 +28,23 @@ function _typeof(obj) {
 module.exports = _typeof;
 });
 
+function _defineProperty(obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
+
+  return obj;
+}
+
+var defineProperty = _defineProperty;
+
 function _arrayWithHoles(arr) {
   if (Array.isArray(arr)) return arr;
 }
@@ -77,6 +94,36 @@ function _slicedToArray(arr, i) {
 }
 
 var slicedToArray = _slicedToArray;
+
+function _arrayWithoutHoles(arr) {
+  if (Array.isArray(arr)) {
+    for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) {
+      arr2[i] = arr[i];
+    }
+
+    return arr2;
+  }
+}
+
+var arrayWithoutHoles = _arrayWithoutHoles;
+
+function _iterableToArray(iter) {
+  if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
+}
+
+var iterableToArray = _iterableToArray;
+
+function _nonIterableSpread() {
+  throw new TypeError("Invalid attempt to spread non-iterable instance");
+}
+
+var nonIterableSpread = _nonIterableSpread;
+
+function _toConsumableArray(arr) {
+  return arrayWithoutHoles(arr) || iterableToArray(arr) || nonIterableSpread();
+}
+
+var toConsumableArray = _toConsumableArray;
 
 var runtime_1 = createCommonjsModule(function (module) {
 /**
@@ -807,53 +854,6 @@ try {
 });
 
 var regenerator = runtime_1;
-
-function _arrayWithoutHoles(arr) {
-  if (Array.isArray(arr)) {
-    for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) {
-      arr2[i] = arr[i];
-    }
-
-    return arr2;
-  }
-}
-
-var arrayWithoutHoles = _arrayWithoutHoles;
-
-function _iterableToArray(iter) {
-  if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
-}
-
-var iterableToArray = _iterableToArray;
-
-function _nonIterableSpread() {
-  throw new TypeError("Invalid attempt to spread non-iterable instance");
-}
-
-var nonIterableSpread = _nonIterableSpread;
-
-function _toConsumableArray(arr) {
-  return arrayWithoutHoles(arr) || iterableToArray(arr) || nonIterableSpread();
-}
-
-var toConsumableArray = _toConsumableArray;
-
-function _defineProperty(obj, key, value) {
-  if (key in obj) {
-    Object.defineProperty(obj, key, {
-      value: value,
-      enumerable: true,
-      configurable: true,
-      writable: true
-    });
-  } else {
-    obj[key] = value;
-  }
-
-  return obj;
-}
-
-var defineProperty = _defineProperty;
 
 function _classCallCheck(instance, Constructor) {
   if (!(instance instanceof Constructor)) {
@@ -6321,40 +6321,27 @@ function () {
   }]);
 
   function Tree() {
-    var _this = this;
-
-    var rootNode = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-    var settings = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+    var heightsKnown = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
 
     classCallCheck(this, Tree);
 
-    this.settings = _objectSpread({}, Tree.DEFAULT_SETTINGS(), {}, settings);
-    this.heightsKnown = this.settings.heightsKnown;
-    this.lengthsKnown = this.settings.lengthsKnown;
-    this.root = makeNode.call(this, _objectSpread({}, rootNode, {}, {
-      length: 0,
-      level: 0
-    })); // This converts all the json objects to Node instances
+    //TODO make private things private with symbols
+    this.heightsKnown = heightsKnown;
+    this.lengthsKnown = !heightsKnown; // this._root = makeNode.call(this,{...rootNode,...{length:0,level:0}});
+    // This converts all the json objects to Node instances
+    // setUpNodes.call(this,this.root);
 
-    setUpNodes.call(this, this.root);
-    this.annotations = {};
-    this._nodeList = toConsumableArray(this.preorder());
+    this.annotations = {}; // for(const node of this.preorder()){
+    //     if (node.label && node.label.startsWith("#")) {
+    //         // an id string has been specified in the newick label.
+    //         node._id = node.label.substring(1);
+    //     }
+    //     this.addAnnotations(node.annotations);
+    //     this._nodeMap.set(node.id, node);
+    // }
 
-    this._nodeList.forEach(function (node) {
-      if (node.label && node.label.startsWith("#")) {
-        // an id string has been specified in the newick label.
-        node._id = node.label.substring(1);
-      }
-
-      _this.addAnnotations(node.annotations);
-    });
-
-    this._nodeMap = new Map(this.nodeList.map(function (node) {
-      return [node.id, node];
-    }));
-    this._tipMap = new Map(this.externalNodes.map(function (tip) {
-      return [tip.name, tip];
-    }));
+    this._tipMap = new Map();
+    this._nodeMap = new Map();
     this.nodesUpdated = false; // a callback function that is called whenever the tree is changed
 
     this._shouldUpdate = true;
@@ -6663,15 +6650,15 @@ function () {
      * start at the root node. Providing another node will generate a subtree. Labels and branch lengths are
      * included if available.
      *
-     * @param {object} node - The node of the tree to be written (defaults as the rootNode).
+     * @param {object} node - The node of the tree to be written (defaults as the root).
      * @returns {string}
      */
     value: function toNewick() {
-      var _this2 = this;
+      var _this = this;
 
-      var node = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.rootNode;
+      var node = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this.root;
       return (node.children ? "(".concat(node.children.map(function (child) {
-        return _this2.toNewick(child);
+        return _this.toNewick(child);
       }).join(","), ")").concat(node.label ? node.label : "") : node.name) + (node.length ? ":".concat(node.length) : "");
     }
   }, {
@@ -6684,18 +6671,18 @@ function () {
      * @param proportion - proportion along the branch to place the root (default 0.5)
      */
     value: function reroot(node) {
-      var _this3 = this;
+      var _this2 = this;
 
       var proportion = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0.5;
 
-      if (node === this.rootNode) {
+      if (node === this.root) {
         // the node is the root - nothing to do
         return;
       }
 
-      var rootLength = this.rootNode.children[0].length + this.rootNode.children[1].length;
+      var rootLength = this.root.children[0].length + this.root.children[1].length;
 
-      if (node.parent !== this.rootNode) {
+      if (node.parent !== this.root) {
         (function () {
           // the node is not a child of the existing root so the root is actually changing
           var node0 = node;
@@ -6713,8 +6700,8 @@ function () {
               return child !== node0;
             });
 
-            if (parent.parent === _this3.rootNode) {
-              var sibling = _this3.getSibling(parent);
+            if (parent.parent === _this2.root) {
+              var sibling = _this2.getSibling(parent);
 
               parent._children.push(sibling);
 
@@ -6737,9 +6724,9 @@ function () {
           // This makes for a more visually consistent rerooting graphically.
 
 
-          _this3.rootNode.children = nodeAtTop ? [rootChild1, rootChild2] : [rootChild2, rootChild1]; // connect all the children to their parents
+          _this2.root.children = nodeAtTop ? [rootChild1, rootChild2] : [rootChild2, rootChild1]; // connect all the children to their parents
 
-          _this3.internalNodes.forEach(function (node) {
+          _this2.internalNodes.forEach(function (node) {
             node.children.forEach(function (child) {
               child._parent = node;
             });
@@ -6799,7 +6786,7 @@ function () {
           }
         }
 
-        node.children.reverse();
+        node._children.reverse();
       }
 
       this.treeUpdateCallback();
@@ -6817,7 +6804,7 @@ function () {
      */
     value: function orderByNodeDensity() {
       var increasing = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
-      var node = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.rootNode;
+      var node = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.root;
       var factor = increasing ? 1 : -1;
       orderNodes.call(this, node, function (nodeA, countA, nodeB, countB) {
         return (countA - countB) * factor;
@@ -6839,7 +6826,7 @@ function () {
   }, {
     key: "order",
     value: function order(ordering) {
-      var node = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.rootNode;
+      var node = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.root;
       orderNodes.call(this, node, ordering);
       this.treeUpdateCallback();
       return this;
@@ -6847,7 +6834,7 @@ function () {
   }, {
     key: "_order",
     value: function _order(ordering) {
-      var node = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.rootNode;
+      var node = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.root;
       orderNodes.call(this, node, ordering);
       return this;
     }
@@ -6991,10 +6978,10 @@ function () {
   }, {
     key: "rootToTipLengths",
     value: function rootToTipLengths() {
-      var _this4 = this;
+      var _this3 = this;
 
       return this.externalNodes.map(function (tip) {
-        return _this4.rootToTipLength(tip);
+        return _this3.rootToTipLength(tip);
       });
     }
     /**
@@ -7006,7 +6993,7 @@ function () {
   }, {
     key: "splitBranches",
     value: function splitBranches() {
-      var _this5 = this;
+      var _this4 = this;
 
       var splits = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
@@ -7024,13 +7011,13 @@ function () {
                   time = _ref3[0],
                   id = _ref3[1];
 
-              splitNode = _this5.splitBranch(splitNode, time);
+              splitNode = _this4.splitBranch(splitNode, time);
               splitNode._id = id;
             });
           }
         } else {
           // if no splitLocations are given then split it in the middle.
-          _this5.splitBranch(node, 0.5);
+          _this4.splitBranch(node, 0.5);
         }
       });
 
@@ -7086,23 +7073,53 @@ function () {
       } // remove the node from it's parent's children
 
 
-      node.parent._children = node.parent._children.filter(function (n) {
-        return n !== node;
-      }); //update child lengths
+      var parent = node.parent;
+      node.parent.removeChild(node); //update child lengths
 
-      if (node._children) {
-        node._children.forEach(function (child) {
+      if (node.children) {
+        node.children.forEach(function (child) {
           child._length += node.length;
-          child.parent = node.parent; // This also updates parent's children array;
+          child.parent = parent;
+          parent.addChild(child);
         });
-      } // else if(node.parent._children.length===1){
+      } else {
+        if (node.name) {
+          this._tipMap["delete"](node.name);
+        }
+      }
+
+      this._nodeMap["delete"](node._id); // else if(node.parent._children.length===1){
       //     console.log("removing parent")
       //     this.removeNode(node.parent); // if it's a tip then remove it's parent which is now degree two;
       // }
 
 
       this.nodesUpdated = true;
-      return this;
+    }
+  }, {
+    key: "addNode",
+    value: function addNode() {
+      var nodeData = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+      var external = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+      var node = new Node(_objectSpread({}, nodeData, {
+        tree: this
+      }));
+
+      this._nodeMap.set(node.id, node);
+
+      if (external) {
+        if (node.name === null) {
+          throw new Error("tips need names");
+        }
+
+        if (this._tipMap.has(node.name)) {
+          throw new Error("${node.name} already in tree");
+        }
+
+        this._tipMap.set(node.name, node);
+      }
+
+      return node;
     }
     /**
      * deletes a node and all it's descendents from the tree;
@@ -7405,8 +7422,8 @@ function () {
     key: "annotateNodesFromTips",
     value: function annotateNodesFromTips(name) {
       var acctran = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-      fitchParsimony(name, this.rootNode);
-      reconstructInternalStates(name, [], acctran, this.rootNode);
+      fitchParsimony(name, this.root);
+      reconstructInternalStates(name, [], acctran, this.root);
       this.treeUpdateCallback();
     }
     /**
@@ -7417,12 +7434,12 @@ function () {
   }, {
     key: "subscribeCallback",
     value: function subscribeCallback(func) {
-      var _this6 = this;
+      var _this5 = this;
 
       var currentCallback = this.treeUpdateCallback;
 
       this.treeUpdateCallback = function () {
-        if (!_this6._shouldUpdate) {
+        if (!_this5._shouldUpdate) {
           return;
         }
 
@@ -7463,7 +7480,7 @@ function () {
      */
 
   }, {
-    key: "rootNode",
+    key: "root",
 
     /**
      * Gets the root node of the Tree
@@ -7471,21 +7488,20 @@ function () {
      * @returns {Object|*}
      */
     get: function get() {
-      return this.root;
+      return this._root;
+    },
+    set: function set(node) {
+      this._root = node;
     }
-  }, {
-    key: "nodes",
-
     /**
      * Gets an array containing all the node objects
      *
      * @returns {*}
      */
-    get: function get() {
-      if (this.nodesUpdated) {
-        setUpArraysAndMaps.call(this);
-      }
 
+  }, {
+    key: "nodes",
+    get: function get() {
       return toConsumableArray(this.preorder());
     }
   }, {
@@ -7495,11 +7511,8 @@ function () {
      * get array of node list
      * @returns {*}
      */
+    //TODO remove
     get: function get() {
-      if (this.nodesUpdated) {
-        setUpArraysAndMaps.call(this);
-      }
-
       return this.nodes;
     }
     /**
@@ -7511,10 +7524,6 @@ function () {
   }, {
     key: "externalNodes",
     get: function get() {
-      if (this.nodesUpdated) {
-        setUpArraysAndMaps.call(this);
-      }
-
       return this.nodes.filter(function (node) {
         return !node.children;
       });
@@ -7528,10 +7537,6 @@ function () {
      * @returns {*}
      */
     get: function get() {
-      if (this.nodesUpdated) {
-        setUpArraysAndMaps.call(this);
-      }
-
       return this.nodes.filter(function (node) {
         return node.children;
       });
@@ -7539,19 +7544,11 @@ function () {
   }, {
     key: "nodeMap",
     get: function get() {
-      if (this.nodesUpdated) {
-        setUpArraysAndMaps.call(this);
-      }
-
       return this._nodeMap;
     }
   }, {
     key: "tipMap",
     get: function get() {
-      if (this.nodesUpdated) {
-        setUpArraysAndMaps.call(this);
-      }
-
       return this._tipMap;
     }
   }], [{
@@ -7603,6 +7600,8 @@ function () {
       var annotationKeyNext = true;
       var annotationKey;
       var isAnnotationARange = false;
+      var annotations = {};
+      var tree = new Tree();
       var _iteratorNormalCompletion6 = true;
       var _didIteratorError6 = false;
       var _iteratorError6 = undefined;
@@ -7623,13 +7622,15 @@ function () {
               }
             } else if (token === "{") {
               isAnnotationARange = true;
-              currentNode.annotations[annotationKey] = [];
+              annotations[annotationKey] = [];
             } else if (token === "}") {
               isAnnotationARange = false;
             } else if (token === "]") {
               // close BEAST annotation
               inAnnotation = false;
               annotationKeyNext = true;
+              tree.annotateNode(currentNode, annotations);
+              annotations = {};
             } else {
               // must be annotation
               // remove any quoting and then trim whitespace
@@ -7647,12 +7648,12 @@ function () {
                 annotationKey = annotationToken.replace(".", "_");
               } else {
                 if (isAnnotationARange) {
-                  currentNode.annotations[annotationKey].push(annotationToken);
+                  annotations[annotationKey].push(annotationToken);
                 } else {
                   if (isNaN(annotationToken)) {
-                    currentNode.annotations[annotationKey] = annotationToken;
+                    annotations[annotationKey] = annotationToken;
                   } else {
-                    currentNode.annotations[annotationKey] = parseFloat(annotationToken);
+                    annotations[annotationKey] = parseFloat(annotationToken);
                   }
                 }
               }
@@ -7665,16 +7666,13 @@ function () {
               throw new Error("expecting a comma");
             }
 
-            var node = {
-              level: level,
-              parent: currentNode,
-              children: [],
-              annotations: {}
-            };
+            var node = tree.addNode();
             level += 1;
 
             if (currentNode) {
               nodeStack.push(currentNode);
+            } else {
+              tree.root = node;
             }
 
             currentNode = node;
@@ -7687,7 +7685,8 @@ function () {
             }
 
             var parent = nodeStack.pop();
-            parent.children.push(currentNode);
+            parent.addChild(currentNode);
+            currentNode.parent = parent;
             currentNode = parent;
           } else if (token === ")") {
             // finished an internal node
@@ -7700,8 +7699,9 @@ function () {
 
             var _parent = nodeStack.pop();
 
-            _parent.children.push(currentNode);
+            _parent.addChild(currentNode);
 
+            currentNode.parent = _parent;
             level -= 1;
             currentNode = _parent;
             labelNext = true;
@@ -7733,18 +7733,13 @@ function () {
                   value = currentNode.label;
                 }
 
-                currentNode.annotations[options.labelName] = value;
-              } else {
-                currentNode.id = currentNode.label.substring(1);
+                var label_annotation = {};
+                label_annotation[options.labelName] = value;
+                tree.annotateNode(currentNode, label_annotation);
               }
 
               labelNext = false;
             } else {
-              // an external node
-              if (!currentNode.children) {
-                currentNode.children = [];
-              }
-
               var name = options.tipNameMap ? options.tipNameMap.get(token) : token; // remove any quoting and then trim whitespace
 
               if (name.startsWith("\"") || name.startsWith("'")) {
@@ -7785,14 +7780,15 @@ function () {
                 }
               }
 
-              var externalNode = {
-                name: name.replace(/\'/g, ''),
-                id: "node-".concat(parseInt(token) ? parseInt(token) : token.replace(/\'/g, '')),
-                parent: currentNode,
-                annotations: {
+              var externalNode = tree.addNode({
+                name: name.replace(/\'/g, '')
+              }, true);
+
+              if (decimalDate !== null) {
+                tree.annotateNode(externalNode, {
                   date: decimalDate
-                }
-              };
+                });
+              }
 
               if (currentNode) {
                 nodeStack.push(currentNode);
@@ -7821,7 +7817,7 @@ function () {
         throw new Error("the brackets in the newick file are not balanced");
       }
 
-      return new Tree(currentNode);
+      return tree;
     }
   }, {
     key: "parseNexus",
@@ -7954,7 +7950,7 @@ function orderNodes(node, ordering) {
       for (var _iterator9 = node.children[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
         var child = _step9.value;
         var value = orderNodes(child, ordering, callback);
-        counts.set(child, value);
+        counts.set(child.id, value);
         count += value;
       } // sort the children using the provided function
 
@@ -7973,9 +7969,10 @@ function orderNodes(node, ordering) {
       }
     }
 
-    node.children.sort(function (a, b) {
+    node._children.sort(function (a, b) {
       return ordering(a, counts.get(a), b, counts.get(b), node);
     });
+
     if (callback) callback();
   } else {
     count = 1;
@@ -7990,11 +7987,11 @@ function orderNodes(node, ordering) {
 
 
 function calculateHeights() {
-  var _this7 = this;
+  var _this6 = this;
 
   var maxRTT = max(this.rootToTipLengths());
   this.nodeList.forEach(function (node) {
-    return node._height = maxRTT - _this7.rootToTipLength(node);
+    return node._height = maxRTT - _this6.rootToTipLength(node);
   });
   this.heightsKnown = true;
   this.lengthsKnown = false; // this.treeUpdateCallback();
@@ -8091,77 +8088,53 @@ function reconstructInternalStates(name, parentStates, acctran, node) {
 }
 
 function makeNode(nodeData) {
-  return new Node(_objectSpread({}, nodeData, {
+  var external = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+  var node = new Node(_objectSpread({}, nodeData, {
     tree: this
   }));
-}
-/**
- * A private function that sets up the tree by traversing from the root Node and sets all heights and lengths
- * @param node
- */
 
+  this._nodeMap.set(node.id, node);
 
-function setUpNodes(node) {
-  if (node.children) {
-    var childrenNodes = [];
-    var _iteratorNormalCompletion10 = true;
-    var _didIteratorError10 = false;
-    var _iteratorError10 = undefined;
-
-    try {
-      for (var _iterator10 = node.children[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
-        var child = _step10.value;
-        //HERE?
-        var childNode = makeNode.call(this, _objectSpread({}, child, {
-          parent: node,
-          level: node.level + 1
-        }));
-        childrenNodes.push(childNode);
-        setUpNodes.call(this, childNode);
-      }
-    } catch (err) {
-      _didIteratorError10 = true;
-      _iteratorError10 = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion10 && _iterator10["return"] != null) {
-          _iterator10["return"]();
-        }
-      } finally {
-        if (_didIteratorError10) {
-          throw _iteratorError10;
-        }
-      }
+  if (external) {
+    if (this._tipMap.has(node.name)) {
+      throw new Error("${node.name} already in tree");
     }
 
-    node.children = childrenNodes;
+    this._tipMap.set(node.name, node);
   }
-}
+} // /**
+//  * A private function that sets up the tree by traversing from the root Node and sets all heights and lengths
+//  * @param node
+//  */
+// function setUpNodes(node){
+//     if(node.children){
+//         const childrenNodes=[]
+//         for(const child of node.children){
+//             //HERE?
+//             const childNode = makeNode.call(this,{...child,parent:node,level:node.level+1})
+//             childrenNodes.push(childNode);
+//             setUpNodes.call(this,childNode);
+//         }
+//         node.children = childrenNodes;
+//     }
+// }
+// function setUpArraysAndMaps() {
+//     this.nodesUpdated=false;
+//     this._nodeMap = new Map(this.preorder().map((node) => [node.id, node]));
+//     this._tipMap = new Map(this.externalNodes.map((tip) => [tip.name, tip]));
+//     for( const node in this.preorder()){
+//         if (node.label && node.label.startsWith("#")) {
+//             // an id string has been specified in the newick label.
+//             node._id = node.label.substring(1);
+//         }
+//         if (node.annotations) {
+//             this.addAnnotations(node.annotations);
+//         }
+//     };
+//     //TODO add to loop above
+//
+// }
 
-function setUpArraysAndMaps() {
-  var _this8 = this;
-
-  this._nodeList = toConsumableArray(this.preorder());
-  this.nodesUpdated = false;
-
-  this._nodeList.forEach(function (node) {
-    if (node.label && node.label.startsWith("#")) {
-      // an id string has been specified in the newick label.
-      node._id = node.label.substring(1);
-    }
-
-    if (node.annotations) {
-      _this8.addAnnotations(node.annotations);
-    }
-  });
-
-  this._nodeMap = new Map(this.nodeList.map(function (node) {
-    return [node.id, node];
-  }));
-  this._tipMap = new Map(this.externalNodes.map(function (tip) {
-    return [tip.name, tip];
-  }));
-}
 /**
  * The node class. This wraps a node in a tree and notifies the tree when
  * the node updates. It can be treated almost exactly like an object. It just has
@@ -8194,8 +8167,7 @@ function () {
         annotations: {},
         parent: undefined,
         children: null,
-        label: undefined,
-        id: "node-".concat(uuid_1.v4())
+        label: undefined
       };
     }
   }]);
@@ -8205,11 +8177,12 @@ function () {
 
     classCallCheck(this, Node);
 
-    var data = _objectSpread({}, Node.DEFAULT_NODE(), {}, nodeData);
+    var data = _objectSpread({}, Node.DEFAULT_NODE(), {}, nodeData); //TODO like symbol here but need id's in figure
+    // this._id = Symbol("node");
 
-    this._id = data.id;
+
+    this._id = " node-".concat(uuid_1.v4());
     this._height = data.height;
-    this._divergence = data.divergence;
     this._length = data.length;
     this._name = data.name;
     this._annotations = data.annotations;
@@ -8220,6 +8193,29 @@ function () {
   }
 
   createClass(Node, [{
+    key: "removeChild",
+    value: function removeChild(node) {
+      this._children = this._children.filter(function (childId) {
+        return childId !== node.id;
+      });
+    }
+  }, {
+    key: "addChild",
+    value: function addChild(node) {
+      if (this._children === null) {
+        this._children = [];
+      }
+
+      this._children.push(node.id);
+    } // set children(value) {
+    //     this._children = value;
+    //     for(const child of this._children){
+    //         child.parent=this;
+    //     }
+    //     this._tree.nodesUpdated = true;
+    // }
+
+  }, {
     key: "getClade",
     //TODO use bitmap not int
     value: function getClade() {
@@ -8241,26 +8237,26 @@ function () {
         bits = bits.concat(this.id);
         this._clade = bits;
       } else {
-        var _iteratorNormalCompletion11 = true;
-        var _didIteratorError11 = false;
-        var _iteratorError11 = undefined;
+        var _iteratorNormalCompletion10 = true;
+        var _didIteratorError10 = false;
+        var _iteratorError10 = undefined;
 
         try {
-          for (var _iterator11 = this.children[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
-            var child = _step11.value;
+          for (var _iterator10 = this.children[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+            var child = _step10.value;
             bits = bits.concat(child.getClade(tipNameMap));
           }
         } catch (err) {
-          _didIteratorError11 = true;
-          _iteratorError11 = err;
+          _didIteratorError10 = true;
+          _iteratorError10 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion11 && _iterator11["return"] != null) {
-              _iterator11["return"]();
+            if (!_iteratorNormalCompletion10 && _iterator10["return"] != null) {
+              _iterator10["return"]();
             }
           } finally {
-            if (_didIteratorError11) {
-              throw _iteratorError11;
+            if (_didIteratorError10) {
+              throw _iteratorError10;
             }
           }
         }
@@ -8274,7 +8270,7 @@ function () {
     key: "toJS",
     value: function toJS() {
       return {
-        id: this.id,
+        // id: this.id,
         name: this.name,
         length: this.length,
         height: this.height,
@@ -8298,9 +8294,6 @@ function () {
       }
 
       return level;
-    },
-    set: function set(value) {
-      this._level = value;
     }
   }, {
     key: "name",
@@ -8330,9 +8323,7 @@ function () {
     },
     set: function set(value) {
       this._height = value;
-      this._tree.lengthsKnown = false;
-
-      this._tree.treeUpdateCallback();
+      this._tree.lengthsKnown = false; // this._tree.treeUpdateCallback();
     }
   }, {
     key: "divergence",
@@ -8358,10 +8349,11 @@ function () {
       return this._length;
     },
     set: function set(value) {
-      this._length = value;
-      this._tree.heightsKnown = false;
+      if (!this._tree.lengthsKnown) {
+        calculateLengths.call(this._tree);
+      }
 
-      this._tree.treeUpdateCallback();
+      this._length = value; // this._tree.treeUpdateCallback();
     }
   }, {
     key: "annotations",
@@ -8371,65 +8363,44 @@ function () {
     set: function set(value) {
       this._annotations = value;
     }
+    /**
+     * Return an array over the children nodes
+     * @return {*}
+     */
+    //TODO return empty not null
+
   }, {
     key: "children",
     get: function get() {
-      return this._children;
-    },
-    set: function set(value) {
-      this._children = value;
-      var _iteratorNormalCompletion12 = true;
-      var _didIteratorError12 = false;
-      var _iteratorError12 = undefined;
+      var _this7 = this;
 
-      try {
-        for (var _iterator12 = this._children[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
-          var child = _step12.value;
-          child.parent = this;
-        }
-      } catch (err) {
-        _didIteratorError12 = true;
-        _iteratorError12 = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion12 && _iterator12["return"] != null) {
-            _iterator12["return"]();
-          }
-        } finally {
-          if (_didIteratorError12) {
-            throw _iteratorError12;
-          }
-        }
+      if (this._children === null) {
+        return null;
       }
 
-      this._tree.nodesUpdated = true;
+      return this._children.map(function (childId) {
+        return _this7._tree.getNode(childId);
+      });
     }
   }, {
     key: "parent",
     get: function get() {
-      return this._parent;
+      return this._tree.getNode(this._parent);
     },
-    set: function set(node) {
-      var _this9 = this;
+    set: function set(parent) {
+      this._parent = parent.id;
+    } // set parent(node) {
+    //     this._parent = node;
+    //     if(this._parent.children.filter(c=>c===this).length===0){
+    //         this._parent.children.push(this)
+    //     }
+    //     this._tree.nodesUpdated = true;
+    // }
 
-      this._parent = node;
-
-      if (this._parent.children.filter(function (c) {
-        return c === _this9;
-      }).length === 0) {
-        this._parent.children.push(this);
-      }
-
-      this._tree.nodesUpdated = true;
-    }
   }, {
     key: "id",
     get: function get() {
       return this._id;
-    },
-    set: function set(value) {
-      this._tree.nodesUpdated = true;
-      this._id = value;
     }
   }, {
     key: "tree",
@@ -10248,7 +10219,7 @@ function getClassesFromNode(node) {
   }
 
   return classes;
-} // TODO update this to handel location for other layouts that aren't left to right
+} // TODO update this to handle location for other layouts that aren't left to right
 
 function rectangularLayout(figtree) {
   var currentY = 0;
@@ -10313,7 +10284,7 @@ function rectangularLayout(figtree) {
     }
   };
 
-  traverse(tree.rootNode);
+  traverse(tree.root);
 }
 
 var rectangularZoomedLayout = function rectangularZoomedLayout(node) {
@@ -11466,7 +11437,7 @@ function rectangularHilightedLayout(predicate, compressionFactor) {
       }
     };
 
-    traverse(tree.rootNode);
+    traverse(tree.root);
   };
 }
 
@@ -11849,8 +11820,6 @@ function (_AbstractNodeBauble) {
     key: "makeCoalescent",
     value: function makeCoalescent(node) {
       var _this3 = this;
-
-      console.log(node);
 
       var id = this.manager()._figureId;
 

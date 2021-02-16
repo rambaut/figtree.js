@@ -47,6 +47,6 @@ export function rectangularLayout(figtree) {
         }
     }
 
-    traverse(tree.rootNode);
+    traverse(tree.root);
 }
 
