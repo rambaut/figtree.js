@@ -10,6 +10,7 @@ class AxisBars extends Decoration{
         this._x=null;
         this._y=null;
     }
+
     axis(a=null){
         if(a===null){
             return this._axis;
@@ -18,7 +19,22 @@ class AxisBars extends Decoration{
             return this;
         }
     }
-
+    oddFill(a=null){
+        if(a===null){
+            return this._oddFill;
+        }else{
+            this._oddFill=a;
+            return this;
+        }
+    }
+    evenFill(a=null){
+        if(a===null){
+            return this._evenFill;
+        }else{
+            this._evenFill=a;
+            return this;
+        }
+    }
     y(y=null){
         if(y==null){
             if(this._y==null){
@@ -69,8 +85,9 @@ class AxisBars extends Decoration{
             .attr("x",(d,i)=>this.scale(d))
             .attr("width",(d,i)=>this.scale(ticks[i+1])-this.scale(d))
             .attr("fill",(d,i)=>i%2?this._oddFill:this._evenFill)
-            .attr("height",this.figure().scales.height)
-            .attr("y",-1*this.figure().scales.height)
+            //relative to axis position
+            .attr("height",this.figure().scales.height-this.figure().margins().bottom)
+            .attr("y",-1*this.figure().scales.height+this.figure().margins().bottom)
     }
 }
 
