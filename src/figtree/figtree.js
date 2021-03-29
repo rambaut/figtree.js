@@ -312,8 +312,8 @@ function setupSVG(){
  * @param nodes
  */
 function updateNodePositions(nodes) {
-    this.nodeManager.update(nodes);
-    this.nodeBackgroundManager.update(nodes);
+    this.nodeManager.update(nodes.filter(n=>n[this.id].x)); //hack to see if the node has been laidout TODO set flag
+    this.nodeBackgroundManager.update(nodes.filter(n=>n[this.id].x));
 }
 
 /**
@@ -321,7 +321,7 @@ function updateNodePositions(nodes) {
  * @param nodes
  */
 function updateBranchPositions(nodes){
-    this.branchManager.update(nodes);
+    this.branchManager.update(nodes.filter(n=>n[this.id].x));
 }
 function setUpScales(){
     let width,height;

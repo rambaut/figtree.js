@@ -132,7 +132,7 @@
 </div>
 <!-- <script src ="dist/figtree.js"></script> -->
 <script type="module">
-    import {Tree,FigTree,circle,axis,tipLabel,equalAngleLayout,rootToTipLayout,branch}  from "./dist/figtree.esm.js";
+    import {Tree,FigTree,circle,axis,tipLabel,rootToTipLayout,branch}  from "./dist/figtree.esm.js";
 
     const timeTreeString =
         '((((virusA_1975.5:20.0,virusB_1966:10.0):10.0,virusC_1986:40.0):15.0,(virusD_1969:35.0,virusE_1955.5:20.0):5.0):25.0,(virusF_2002:55.0,virusG_1965:15.0):40.0);';
@@ -145,25 +145,25 @@
     const rootToTipSVG =document.getElementById('phylogram_1b');
     const margins = { top: 10, bottom: 60, left: 100, right: 50};
 
-    const unRootedFig = new FigTree(treeSVG,margins,tree)
-                            .layout(equalAngleLayout(tree.internalNodes[5]))
-                            .nodes(
-                                    circle()
-                                    .attr("fill",d=>d.degree>1?"steelblue":"#c71585")
-                                    .attr("r",d=>d.annotations.hovered?10:5)
-                                    .rotateOnClick(),
-                                tipLabel(d=>d.name)
-                            )
-                            .nodeBackgrounds(
-                                circle()
-                                    .attr("r",7)
-                            )
-                            .branches(
-                                branch()
-                                    .curve(d3.curveBasis)
-                                    .hilightOnHover()
-                                    .reRootOnClick("euclidean")
-                            );
+    // const unRootedFig = new FigTree(treeSVG,margins,tree)
+    //                         .layout(equalAngleLayout(tree.internalNodes[5]))
+    //                         .nodes(
+    //                                 circle()
+    //                                 .attr("fill",d=>d.degree>1?"steelblue":"#c71585")
+    //                                 .attr("r",d=>d.annotations.hovered?10:5)
+    //                                 .rotateOnClick(),
+    //                             tipLabel(d=>d.name)
+    //                         )
+    //                         .nodeBackgrounds(
+    //                             circle()
+    //                                 .attr("r",7)
+    //                         )
+    //                         .branches(
+    //                             branch()
+    //                                 .curve(d3.curveBasis)
+    //                                 .hilightOnHover()
+    //                                 .reRootOnClick("euclidean")
+    //                         );
 
     const rootToTipPlot = new FigTree(rootToTipSVG,margins,tree)
                                 .layout(rootToTipLayout())
@@ -177,11 +177,6 @@
                                     circle()
                                         .attr("r",7)
                                 )
-                                .branches(
-                                    branch()
-                                            .curve(d3.curveBasis)
-                                            .hilightOnHover()
-                                    )
                                 .feature(
                                     axis()
                                         .location("bottom")

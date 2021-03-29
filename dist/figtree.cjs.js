@@ -1222,6 +1222,41 @@ function mean(values, valueof) {
   if (m) return sum / m;
 }
 
+function min(values, valueof) {
+  var n = values.length,
+      i = -1,
+      value,
+      min;
+
+  if (valueof == null) {
+    while (++i < n) { // Find the first comparable value.
+      if ((value = values[i]) != null && value >= value) {
+        min = value;
+        while (++i < n) { // Compare the remaining values.
+          if ((value = values[i]) != null && min > value) {
+            min = value;
+          }
+        }
+      }
+    }
+  }
+
+  else {
+    while (++i < n) { // Find the first comparable value.
+      if ((value = valueof(values[i], i, values)) != null && value >= value) {
+        min = value;
+        while (++i < n) { // Compare the remaining values.
+          if ((value = valueof(values[i], i, values)) != null && min > value) {
+            min = value;
+          }
+        }
+      }
+    }
+  }
+
+  return min;
+}
+
 var slice = Array.prototype.slice;
 
 function identity(x) {
@@ -6246,7 +6281,7 @@ function max$1(values, valueof) {
   return max;
 }
 
-function min(values, valueof) {
+function min$1(values, valueof) {
   let min;
   if (valueof === undefined) {
     for (const value of values) {
@@ -9334,8 +9369,15 @@ function setupSVG() {
 
 
 function updateNodePositions(nodes) {
-  this.nodeManager.update(nodes);
-  this.nodeBackgroundManager.update(nodes);
+  var _this4 = this;
+
+  this.nodeManager.update(nodes.filter(function (n) {
+    return n[_this4.id].x;
+  })); //hack to see if the node has been laidout TODO set flag
+
+  this.nodeBackgroundManager.update(nodes.filter(function (n) {
+    return n[_this4.id].x;
+  }));
 }
 /**
  * A helper function that sets the positions of the branch groups and calls the update functions of the branch elements.
@@ -9344,11 +9386,15 @@ function updateNodePositions(nodes) {
 
 
 function updateBranchPositions(nodes) {
-  this.branchManager.update(nodes);
+  var _this5 = this;
+
+  this.branchManager.update(nodes.filter(function (n) {
+    return n[_this5.id].x;
+  }));
 }
 
 function setUpScales() {
-  var _this4 = this;
+  var _this6 = this;
 
   var width, height;
 
@@ -9365,14 +9411,14 @@ function setUpScales() {
   }
 
   var xdomain = extent(this.tree().nodeList.filter(function (n) {
-    return !n[_this4.id].ignore;
+    return !n[_this6.id].ignore;
   }).map(function (n) {
-    return n[_this4.id].x;
+    return n[_this6.id].x;
   }));
   var ydomain = extent(this.tree().nodeList.filter(function (n) {
-    return !n[_this4.id].ignore;
+    return !n[_this6.id].ignore;
   }).map(function (n) {
-    return n[_this4.id].y;
+    return n[_this6.id].y;
   }));
   var xScale = this.settings.xScale.scale().domain(xdomain).range([0, width - this._margins.right - this._margins.left]);
   var yScale = this.settings.yScale.scale().domain(ydomain).range([height - this._margins.bottom - this._margins.top, 0]);
@@ -10449,11 +10495,130 @@ function branchLabel(text) {
   // return l.attr("x",setX(l))
 }
 
-function rootToTipLayout(figtree) {
-  figtree.tree().externalNodes.forEach(function (n) {
-    n[figtree.id].x = n.annotations.date;
-    n[figtree.id].y = n.divergence;
-  });
+var rootToTipLayout = function rootToTipLayout() {
+  var predicate = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function (n) {
+    return true;
+  };
+  return function (figtree) {
+    var id = figtree.id;
+    var tree = figtree.tree();
+
+    if (!tree.annotations.date) {
+      console.warn("tree must be annotated with dates to use the root to tip layout");
+      return [];
+    }
+
+    tree.externalNodes.forEach(function (n) {
+      n[id].x = n.annotations.date;
+      n[id].y = n.divergence;
+      n[id].classes = getClassesFromNode(n);
+      n[id].textLabel = {
+        labelBelow: false,
+        x: "12",
+        y: "0",
+        alignmentBaseline: "middle",
+        textAnchor: "start"
+      };
+    });
+    figtree.regression = makeTrendlineEdge(predicate, id)(tree.externalNodes);
+  };
+}; // TODO add edges from tips to parent on trendline to compare outliers.
+
+var makeTrendlineEdge = function makeTrendlineEdge(predicate, id) {
+  return function (vertices) {
+    var usedVertices = vertices.filter(predicate);
+    var regression = leastSquares(usedVertices, id);
+    var x1 = min(vertices, function (d) {
+      return d[id].x;
+    });
+    var x2 = max(vertices, function (d) {
+      return d[id].x;
+    });
+    var y1 = 0.0;
+    var y2 = max(usedVertices, function (d) {
+      return d[id].y;
+    });
+
+    if (usedVertices.length > 1 && regression.slope > 0.0) {
+      x1 = regression.xIntercept;
+      y2 = regression.y(x2);
+    } else if (usedVertices > 1 && regression.slope < 0.0) {
+      x2 = regression.xIntercept;
+      y1 = regression.y(x1);
+      y2 = 0;
+    }
+
+    var startPoint = {
+      key: "startPoint",
+      x: x1,
+      y: y1
+    };
+    var endPoint = {
+      key: "endPoint",
+      x: x2,
+      y: y2
+    };
+    return {
+      v0: startPoint,
+      v1: endPoint,
+      key: "trendline",
+      id: "trendline",
+      classes: ["trendline"],
+      x: startPoint.x,
+      y: endPoint.y,
+      textLabel: {
+        // TODO update this for regression labeling
+        dx: [endPoint.x, startPoint.x],
+        dy: -6,
+        alignmentBaseline: "hanging",
+        textAnchor: "middle"
+      },
+      regression: regression
+    };
+  };
+};
+/**
+ * returns slope, intercept and r-square of the line
+ * @param data
+ * @returns {{slope: number, xIntercept: number, yIntercept: number, rSquare: number, y: (function(*): number)}}
+ */
+
+
+function leastSquares(data, id) {
+  var xBar = data.reduce(function (a, b) {
+    return a + b[id].x;
+  }, 0.0) / data.length;
+  var yBar = data.reduce(function (a, b) {
+    return a + b[id].y;
+  }, 0.0) / data.length;
+  var ssXX = data.map(function (d) {
+    return Math.pow(d[id].x - xBar, 2);
+  }).reduce(function (a, b) {
+    return a + b;
+  }, 0.0);
+  var ssYY = data.map(function (d) {
+    return Math.pow(d[id].y - yBar, 2);
+  }).reduce(function (a, b) {
+    return a + b;
+  }, 0.0);
+  var ssXY = data.map(function (d) {
+    return (d[id].x - xBar) * (d[id].y - yBar);
+  }).reduce(function (a, b) {
+    return a + b;
+  }, 0.0);
+  var slope = ssXY / ssXX;
+  var yIntercept = yBar - xBar * slope;
+  var xIntercept = -(yIntercept / slope);
+  var rSquare = Math.pow(ssXY, 2) / (ssXX * ssYY);
+  return {
+    slope: slope,
+    xIntercept: xIntercept,
+    yIntercept: yIntercept,
+    rSquare: rSquare,
+    y: function y(x) {
+      return x * slope + yIntercept;
+    }
+  };
 }
 
 function ownKeys$2(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
@@ -11811,7 +11976,7 @@ var CoalescentBauble = /*#__PURE__*/function (_AbstractNodeBauble) {
       var xEnd = max$1(relativeChildPositions, function (d) {
         return d.x;
       });
-      var yTop = min(relativeChildPositions, function (d) {
+      var yTop = min$1(relativeChildPositions, function (d) {
         return d.y;
       }) - 0.4;
       var yBottom = max$1(relativeChildPositions, function (d) {

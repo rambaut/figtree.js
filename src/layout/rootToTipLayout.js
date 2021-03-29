@@ -1,24 +1,39 @@
-import {makeVertexFromNode} from "./layoutHelpers";
+import {getClassesFromNode} from "./layoutHelpers";
 import {max, min} from "d3";
 
-export const rootToTipVertices=(tree)=>{
+export const rootToTipLayout=(predicate=(n)=>true)=>(figtree)=>{
 
+    const id = figtree.id;
+    const tree = figtree.tree();
     if(!tree.annotations.date){
         console.warn("tree must be annotated with dates to use the root to tip layout")
         return [];
     }
-    return tree.externalNodes.map(n=>({...makeVertexFromNode(n),x:n.annotations.date,y:n.divergence}));
+    tree.externalNodes.forEach(n=> {
+        n[id].x= n.annotations.date;
+        n[id].y= n.divergence;
+        n[id].classes = getClassesFromNode(n);
+        n[id].textLabel={
+            labelBelow:false,
+            x:"12",
+            y:"0",
+            alignmentBaseline: "middle",
+            textAnchor:"start",
+        }
+    });
+    figtree.regression = makeTrendlineEdge(predicate,id)(tree.externalNodes);
+
 }
 // TODO add edges from tips to parent on trendline to compare outliers.
-const makeTrendlineEdge=predicate=>(vertices)=>{
+const makeTrendlineEdge=(predicate,id)=>(vertices)=>{
 
     const usedVertices = vertices.filter(predicate);
-    const regression  = leastSquares(usedVertices);
+    const regression  = leastSquares(usedVertices,id);
 
-    let x1 = min(vertices, d => d.x);
-    let x2 = max(vertices, d => d.x);
+    let x1 = min(vertices, d => d[id].x);
+    let x2 = max(vertices, d => d[id].x);
     let y1 = 0.0;
-    let y2 = max(usedVertices, d => d.y);
+    let y2 = max(usedVertices, d => d[id].y);
     if (usedVertices.length > 1 && regression.slope > 0.0) {
         x1 = regression.xIntercept;
         y2 =regression.y(x2)
@@ -31,7 +46,7 @@ const makeTrendlineEdge=predicate=>(vertices)=>{
     const startPoint = {key:"startPoint",x:x1,y:y1};
     const endPoint = {key:"endPoint",x:x2,y:y2};
 
-    return {edges:[{
+    return {
         v0: startPoint,
         v1: endPoint,
         key: "trendline",
@@ -45,30 +60,28 @@ const makeTrendlineEdge=predicate=>(vertices)=>{
             alignmentBaseline: "hanging",
             textAnchor:"middle",
         },
-    }],regression:regression}
+    regression:regression}
 };
 
 
-export function rootToTipLayout(figtree){
-    figtree.tree().externalNodes.forEach(n=>{n[figtree.id].x=n.annotations.date;n[figtree.id].y=n.divergence});
-}
+
 /**
  * returns slope, intercept and r-square of the line
  * @param data
  * @returns {{slope: number, xIntercept: number, yIntercept: number, rSquare: number, y: (function(*): number)}}
  */
-function leastSquares(data) {
+function leastSquares(data,id) {
 
-    const xBar = data.reduce((a, b) => (a + b.x), 0.0) / data.length;
-    const yBar = data.reduce((a, b) => (a + b.y), 0.0) / data.length;
+    const xBar = data.reduce((a, b) => (a + b[id].x), 0.0) / data.length;
+    const yBar = data.reduce((a, b) => (a + b[id].y), 0.0) / data.length;
 
-    const ssXX = data.map((d) => Math.pow(d.x - xBar, 2))
+    const ssXX = data.map((d) => Math.pow(d[id].x - xBar, 2))
         .reduce((a, b) => a + b, 0.0);
 
-    const ssYY = data.map((d) => Math.pow(d.y - yBar, 2))
+    const ssYY = data.map((d) => Math.pow(d[id].y - yBar, 2))
         .reduce((a, b) => a + b, 0.0);
 
-    const ssXY = data.map((d) => (d.x - xBar) * (d.y - yBar))
+    const ssXY = data.map((d) => (d[id].x - xBar) * (d[id].y - yBar))
         .reduce((a, b) => a + b, 0.0);
 
     const slope = ssXY / ssXX;
