@@ -87,7 +87,6 @@ export class Bauble {
         const currentCallback =  this._interactions[eventListener];
         // console.log(currentCallback)
         this._interactions[eventListener] = currentCallback === undefined ? value : (d, i, n) => {
-            console.log(currentCallback)
             currentCallback(d, i, n);
             value(d, i, n)
         };
@@ -135,9 +134,6 @@ export class Bauble {
         }
     }
 
-    get vertexMap(){
-        return this.manager().figure().vertexMap()
-    }
     get tree(){
         return this.manager().figure().tree()
     }

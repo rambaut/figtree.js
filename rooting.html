@@ -132,7 +132,7 @@
 </div>
 <!-- <script src ="dist/figtree.js"></script> -->
 <script type="module">
-    import {Tree,FigTree,circle,axis,tipLabel,rootToTipLayout,branch}  from "./dist/figtree.esm.js";
+    import {Tree,FigTree,circle,axis,tipLabel,rootToTipLayout,trendLine,textAnnotation}  from "./dist/figtree.esm.js";
 
     const timeTreeString =
         '((((virusA_1975.5:20.0,virusB_1966:10.0):10.0,virusC_1986:40.0):15.0,(virusD_1969:35.0,virusE_1955.5:20.0):5.0):25.0,(virusF_2002:55.0,virusG_1965:15.0):40.0);';
@@ -197,6 +197,16 @@
                                         .tickFormat(d3.format(".3f"))
                                         .ticks(4)
                                 )
+                                .feature(trendLine())
+
+        const makeLabel=(figure)=>()=>{
+        return `Rate:${figure.regression.slope}
+        TMRCA:${figure.regression.xIntercept}`;
+        }
+        rootToTipPlot
+            .feature(textAnnotation()
+                        .text(makeLabel(rootToTipPlot))
+                    )
 
 
 </script>

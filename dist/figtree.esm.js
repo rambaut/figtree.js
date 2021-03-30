@@ -8513,7 +8513,6 @@ var Bauble = /*#__PURE__*/function () {
       var currentCallback = this._interactions[eventListener]; // console.log(currentCallback)
 
       this._interactions[eventListener] = currentCallback === undefined ? value : function (d, i, n) {
-        console.log(currentCallback);
         currentCallback(d, i, n);
         value(d, i, n);
       };
@@ -8567,11 +8566,6 @@ var Bauble = /*#__PURE__*/function () {
           return this.manager().figure().scales;
         }
       }
-    }
-  }, {
-    key: "vertexMap",
-    get: function get() {
-      return this.manager().figure().vertexMap();
     }
   }, {
     key: "tree",
@@ -9051,14 +9045,43 @@ var FigTree = /*#__PURE__*/function () {
     return this;
   }
   /**
-   * Setter/getter for transition setting.
-   * @param t {Object} [t={transitionEase,transitionDuration:} - sets the transition ease and duration (in milliseconds) and returns the figtree instance
-   * if nothing is provided it returns the current settings.
-   * @returns {{transitionEase: cubicInOut, transitionDuration: number}|*}
+   * a getter function that returns the nodes that are included in the scale calculations
+   * @return {*}
    */
 
 
   createClass(FigTree, [{
+    key: "verticesForScales",
+    get: function get() {
+      var _this2 = this;
+
+      var v = this.tree().nodes.filter(function (n) {
+        return !n[_this2.id].ignore;
+      });
+
+      if (this.regression) {
+        return v.concat(this.regression.points);
+      }
+
+      return v;
+    }
+  }, {
+    key: "verticiesToPlot",
+    get: function get() {
+      var _this3 = this;
+
+      return this.tree().nodes.filter(function (n) {
+        return !n[_this3.id].hidden && !n[_this3.id].ignore;
+      });
+    }
+    /**
+     * Setter/getter for transition setting.
+     * @param t {Object} [t={transitionEase,transitionDuration:} - sets the transition ease and duration (in milliseconds) and returns the figtree instance
+     * if nothing is provided it returns the current settings.
+     * @returns {{transitionEase: cubicInOut, transitionDuration: number}|*}
+     */
+
+  }, {
     key: "transitions",
     value: function transitions() {
       var t = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
@@ -9108,17 +9131,11 @@ var FigTree = /*#__PURE__*/function () {
   }, {
     key: "update",
     value: function update() {
-      var _this2 = this;
-
       this[p.layout](this);
       select("#".concat(this.svgId)).attr("transform", "translate(".concat(this._margins.left, ",").concat(this._margins.top, ")"));
       setUpScales.call(this);
-      updateNodePositions.call(this, this.tree().nodeList.filter(function (n) {
-        return !n[_this2.id].ignore;
-      }));
-      updateBranchPositions.call(this, this.tree().nodeList.filter(function (n) {
-        return !n[_this2.id].ignore;
-      }).filter(function (n) {
+      updateNodePositions.call(this, this.verticiesToPlot);
+      updateBranchPositions.call(this, this.verticiesToPlot.filter(function (n) {
         return n.parent;
       }));
 
@@ -9128,9 +9145,7 @@ var FigTree = /*#__PURE__*/function () {
       try {
         for (_iterator.s(); !(_step = _iterator.n()).done;) {
           var feature = _step.value;
-          feature.update(this.tree().nodeList.filter(function (n) {
-            return !n[_this2.id].ignore;
-          }));
+          feature.update(this.verticiesToPlot);
         }
       } catch (err) {
         _iterator.e(err);
@@ -9262,7 +9277,7 @@ var FigTree = /*#__PURE__*/function () {
   }, {
     key: "tree",
     value: function tree() {
-      var _this3 = this;
+      var _this4 = this;
 
       var _tree = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
@@ -9271,7 +9286,7 @@ var FigTree = /*#__PURE__*/function () {
       } else {
         this[p.tree] = _tree;
         this[p.tree].subscribeCallback(function () {
-          _this3.update();
+          _this4.update();
         });
         this.update();
         return this;
@@ -9365,14 +9380,15 @@ function setupSVG() {
 
 
 function updateNodePositions(nodes) {
-  var _this4 = this;
+  var _this5 = this;
 
+  // TODO check to see if rtt and add nodes if needed.
   this.nodeManager.update(nodes.filter(function (n) {
-    return n[_this4.id].x;
+    return n[_this5.id].x;
   })); //hack to see if the node has been laidout TODO set flag
 
   this.nodeBackgroundManager.update(nodes.filter(function (n) {
-    return n[_this4.id].x;
+    return n[_this5.id].x;
   }));
 }
 /**
@@ -9382,15 +9398,15 @@ function updateNodePositions(nodes) {
 
 
 function updateBranchPositions(nodes) {
-  var _this5 = this;
+  var _this6 = this;
 
   this.branchManager.update(nodes.filter(function (n) {
-    return n[_this5.id].x;
+    return n[_this6.id].x;
   }));
 }
 
 function setUpScales() {
-  var _this6 = this;
+  var _this7 = this;
 
   var width, height;
 
@@ -9406,15 +9422,11 @@ function setUpScales() {
     height = this[p.svg].getBoundingClientRect().height;
   }
 
-  var xdomain = extent(this.tree().nodeList.filter(function (n) {
-    return !n[_this6.id].ignore;
-  }).map(function (n) {
-    return n[_this6.id].x;
+  var xdomain = extent(this.verticesForScales.map(function (n) {
+    return n[_this7.id].x;
   }));
-  var ydomain = extent(this.tree().nodeList.filter(function (n) {
-    return !n[_this6.id].ignore;
-  }).map(function (n) {
-    return n[_this6.id].y;
+  var ydomain = extent(this.verticesForScales.map(function (n) {
+    return n[_this7.id].y;
   }));
   var xScale = this.settings.xScale.scale().domain(xdomain).range([0, width - this._margins.right - this._margins.left]);
   var yScale = this.settings.yScale.scale().domain(ydomain).range([height - this._margins.bottom - this._margins.top, 0]);
@@ -10491,6 +10503,9 @@ function branchLabel(text) {
   // return l.attr("x",setX(l))
 }
 
+function ownKeys$2(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread$2(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$2(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$2(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 var rootToTipLayout = function rootToTipLayout() {
   var predicate = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function (n) {
     return true;
@@ -10515,6 +10530,9 @@ var rootToTipLayout = function rootToTipLayout() {
         alignmentBaseline: "middle",
         textAnchor: "start"
       };
+    });
+    tree.internalNodes.forEach(function (n) {
+      n[id].ignore = true;
     });
     figtree.regression = makeTrendlineEdge(predicate, id)(tree.externalNodes);
   };
@@ -10544,33 +10562,27 @@ var makeTrendlineEdge = function makeTrendlineEdge(predicate, id) {
       y2 = 0;
     }
 
-    var startPoint = {
-      key: "startPoint",
+    var startPoint = defineProperty({}, id, {
+      classes: "trendline",
       x: x1,
-      y: y1
-    };
-    var endPoint = {
-      key: "endPoint",
+      y: y1,
+      ignore: false,
+      hidden: true,
+      collapse: false
+    });
+
+    var endPoint = defineProperty({}, id, {
+      classes: "trendline",
       x: x2,
-      y: y2
-    };
-    return {
-      v0: startPoint,
-      v1: endPoint,
-      key: "trendline",
-      id: "trendline",
-      classes: ["trendline"],
-      x: startPoint.x,
-      y: endPoint.y,
-      textLabel: {
-        // TODO update this for regression labeling
-        dx: [endPoint.x, startPoint.x],
-        dy: -6,
-        alignmentBaseline: "hanging",
-        textAnchor: "middle"
-      },
-      regression: regression
-    };
+      y: y2,
+      ignore: false,
+      hidden: true,
+      collapse: false
+    });
+
+    return _objectSpread$2({
+      points: [startPoint, endPoint]
+    }, regression);
   };
 };
 /**
@@ -10617,9 +10629,9 @@ function leastSquares(data, id) {
   };
 }
 
-function ownKeys$2(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+function ownKeys$3(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
-function _objectSpread$2(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$2(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$2(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+function _objectSpread$3(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$3(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$3(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
 /**
  * The base Decoration class. Decorations are elements in the figure that can update but don't map directly
  * to nodes and branches.
@@ -10638,6 +10650,8 @@ var Decoration = /*#__PURE__*/function () {
     };
     this._id = "s".concat(uuid_1.v4());
     this._interactions = [];
+    this._x = 0;
+    this._y = 0;
   }
   /**
    * Get or set svg layer elements will be added to.
@@ -10690,7 +10704,7 @@ var Decoration = /*#__PURE__*/function () {
       if (!options) {
         return this._title;
       } else {
-        this._title = _objectSpread$2(_objectSpread$2({}, this._title), options);
+        this._title = _objectSpread$3(_objectSpread$3({}, this._title), options);
         return this;
       }
     }
@@ -10822,6 +10836,30 @@ var Decoration = /*#__PURE__*/function () {
         return this;
       } else {
         return this._y;
+      }
+    }
+  }, {
+    key: "scaledY",
+    value: function scaledY() {
+      var d = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (d !== null) {
+        this._y = this.scales().y(d);
+        return this;
+      } else {
+        return this._y;
+      }
+    }
+  }, {
+    key: "scaledX",
+    value: function scaledX() {
+      var d = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (d !== null) {
+        this._x = this.scales().x(d);
+        return this;
+      } else {
+        return this._x;
       }
     }
   }]);
@@ -12089,5 +12127,138 @@ function coalescentEvent() {
   return new CoalescentBauble();
 }
 
-export { Bauble, BaubleManager, Branch, CircleBauble, Decoration, FigTree, RectangularBauble, Tree, Type, axis$1 as axis, axisBars, branch, branchLabel, branches, circle, coalescentEvent, decimalToDate, internalNodeLabel, label, legend, nodeBackground, nodes, rectangle, rectangularHilightedLayout, rectangularLayout, rectangularZoomedLayout, rootToTipLayout, roughBranch, roughCircle, scaleBar, tipLabel };
+function _createSuper$c(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct$c(); return function _createSuperInternal() { var Super = getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return possibleConstructorReturn(this, result); }; }
+
+function _isNativeReflectConstruct$c() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
+
+var TrendLine = /*#__PURE__*/function (_Decoration) {
+  inherits(TrendLine, _Decoration);
+
+  var _super = _createSuper$c(TrendLine);
+
+  function TrendLine() {
+    var _thisSuper, _this;
+
+    classCallCheck(this, TrendLine);
+
+    _this = _super.call(this);
+
+    get$2((_thisSuper = assertThisInitialized(_this), getPrototypeOf(TrendLine.prototype)), "layer", _thisSuper).call(_thisSuper, "top-annotation-layer");
+
+    _this.selection = null;
+    _this._attrs = {
+      "stroke": "black",
+      "stroke-width": 1.5
+    };
+    return _this;
+  }
+
+  createClass(TrendLine, [{
+    key: "create",
+    value: function create() {
+      var selection = this.figure().svgSelection.select(".".concat(this.layer()));
+      this.selection = selection.append("g").attr("id", this._id).attr("class", "trendline");
+      this.updateCycle();
+    }
+  }, {
+    key: "updateCycle",
+    value: function updateCycle() {
+      var _this2 = this;
+
+      this.selection.selectAll("path").data([this.figure().regression.points]).join("path").attr("fill", "none").attrs(this._attrs).attr("d", line().x(function (d) {
+        return _this2.scales().x(d[_this2.figure().id].x);
+      }).y(function (d) {
+        return _this2.scales().y(d[_this2.figure().id].y);
+      }));
+    }
+    /**
+     * Get or set attributes that will style the elements.
+     * @param string
+     * @param value - a string, number, or function that will be passed to d3 selection.
+     * @return {Bauble|*}
+     */
+
+  }, {
+    key: "attr",
+    value: function attr(string) {
+      var value = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+
+      if (value) {
+        this._attrs[string] = value;
+        return this;
+      } else {
+        return this._attrs[string];
+      }
+    }
+  }]);
+
+  return TrendLine;
+}(Decoration);
+
+function trendLine() {
+  return new TrendLine();
+}
+
+function _createSuper$d(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct$d(); return function _createSuperInternal() { var Super = getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return possibleConstructorReturn(this, result); }; }
+
+function _isNativeReflectConstruct$d() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
+
+var TextAnnotation = /*#__PURE__*/function (_Decoration) {
+  inherits(TextAnnotation, _Decoration);
+
+  var _super = _createSuper$d(TextAnnotation);
+
+  function TextAnnotation() {
+    var _thisSuper, _this;
+
+    classCallCheck(this, TextAnnotation);
+
+    _this = _super.call(this);
+
+    get$2((_thisSuper = assertThisInitialized(_this), getPrototypeOf(TextAnnotation.prototype)), "layer", _thisSuper).call(_thisSuper, "top-annotation-layer");
+
+    _this._text = null;
+    _this._attrs = {};
+    _this.selection = null;
+    return _this;
+  }
+
+  createClass(TextAnnotation, [{
+    key: "text",
+    value: function text() {
+      var t = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (t == null) {
+        return this._text;
+      }
+
+      this._text = t;
+      return this;
+    }
+  }, {
+    key: "create",
+    value: function create() {
+      var selection = this.figure().svgSelection.select(".".concat(this.layer()));
+      this.selection = selection.append("g").attr("id", this._id).attr("class", "text_annotation");
+      this.updateCycle();
+    }
+  }, {
+    key: "updateCycle",
+    value: function updateCycle(selection) {
+      var text = typeof this._text === 'function' ? this._text() : this._text;
+      console.log(text);
+      this.selection.attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")).selectAll("text").data([text]).join("text").attrs(this._attrs).text(function (d) {
+        return d;
+      });
+    }
+  }]);
+
+  return TextAnnotation;
+}(Decoration);
+
+function textAnnotation() {
+  return new TextAnnotation();
+}
+
+export { Bauble, BaubleManager, Branch, CircleBauble, Decoration, FigTree, RectangularBauble, Tree, Type, axis$1 as axis, axisBars, branch, branchLabel, branches, circle, coalescentEvent, decimalToDate, internalNodeLabel, label, legend, nodeBackground, nodes, rectangle, rectangularHilightedLayout, rectangularLayout, rectangularZoomedLayout, rootToTipLayout, roughBranch, roughCircle, scaleBar, textAnnotation, tipLabel, trendLine };
 //# sourceMappingURL=figtree.esm.js.map

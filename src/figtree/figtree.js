@@ -1,7 +1,7 @@
 "use strict";
-import {select,easeCubic,scaleLinear} from "d3";
+import {easeCubic, scaleLinear, select} from "d3";
 import uuid from "uuid";
-import { mergeDeep} from "../utilities";
+import {mergeDeep} from "../utilities";
 import 'd3-selection-multi';
 import {BaubleManager} from "../features/baubleManager"
 import p from "../_privateConstants.js"
@@ -93,6 +93,21 @@ export class FigTree {
     }
 
     /**
+     * a getter function that returns the nodes that are included in the scale calculations
+     * @return {*}
+     */
+    get verticesForScales(){
+       const v = this.tree().nodes.filter(n=>!n[this.id].ignore);
+       if(this.regression){
+           return v.concat(this.regression.points);
+       }
+        return v;
+    }
+    get verticiesToPlot(){
+        return this.tree().nodes.filter(n => !n[this.id].hidden && !n[this.id].ignore);
+    }
+
+    /**
      * Setter/getter for transition setting.
      * @param t {Object} [t={transitionEase,transitionDuration:} - sets the transition ease and duration (in milliseconds) and returns the figtree instance
      * if nothing is provided it returns the current settings.
@@ -141,11 +156,11 @@ export class FigTree {
             .attr("transform",`translate(${this._margins.left},${this._margins.top})`);
 
         setUpScales.call(this);
-        updateNodePositions.call(this,this.tree().nodeList.filter(n=>!n[this.id].ignore));
-        updateBranchPositions.call(this,this.tree().nodeList.filter(n=>!n[this.id].ignore).filter(n=>n.parent));
+        updateNodePositions.call(this,this.verticiesToPlot);
+        updateBranchPositions.call(this,this.verticiesToPlot.filter(n=>n.parent));
 
         for(const feature of this._features){
-            feature.update(this.tree().nodeList.filter(n=>!n[this.id].ignore))
+            feature.update(this.verticiesToPlot)
         }
         return this;
 
@@ -312,6 +327,7 @@ function setupSVG(){
  * @param nodes
  */
 function updateNodePositions(nodes) {
+    // TODO check to see if rtt and add nodes if needed.
     this.nodeManager.update(nodes.filter(n=>n[this.id].x)); //hack to see if the node has been laidout TODO set flag
     this.nodeBackgroundManager.update(nodes.filter(n=>n[this.id].x));
 }
@@ -335,8 +351,8 @@ function setUpScales(){
     }else{
         height = this[p.svg].getBoundingClientRect().height;
     }
-        const xdomain = extent(this.tree().nodeList.filter(n=>!n[this.id].ignore).map(n=>n[this.id].x));
-        const ydomain =  extent(this.tree().nodeList.filter(n=>!n[this.id].ignore).map(n=>n[this.id].y));
+        const xdomain = extent(this.verticesForScales.map(n=>n[this.id].x));
+        const ydomain =  extent(this.verticesForScales.map(n=>n[this.id].y));
         const xScale = this.settings.xScale.scale()
             .domain(xdomain)
             .range([0, width - this._margins.right-this._margins.left]);

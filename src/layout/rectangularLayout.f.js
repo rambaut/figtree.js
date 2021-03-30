@@ -27,7 +27,6 @@ export function rectangularLayout(figtree) {
                 siblingPositions.push(currentY);
             }
 
-
             siblingPositions.push(yPos);
 
             const leftLabel= !!node.children;

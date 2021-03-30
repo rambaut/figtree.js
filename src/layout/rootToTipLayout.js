@@ -21,6 +21,9 @@ export const rootToTipLayout=(predicate=(n)=>true)=>(figtree)=>{
             textAnchor:"start",
         }
     });
+    tree.internalNodes.forEach(n=>{
+        n[id].ignore=true;
+    })
     figtree.regression = makeTrendlineEdge(predicate,id)(tree.externalNodes);
 
 }
@@ -43,24 +46,13 @@ const makeTrendlineEdge=(predicate,id)=>(vertices)=>{
         y2=0;
     }
 
-    const startPoint = {key:"startPoint",x:x1,y:y1};
-    const endPoint = {key:"endPoint",x:x2,y:y2};
+    const startPoint = {[id]:{classes:"trendline",x:x1,y:y1,ignore:false,hidden:true,collapse:false}};
+    const endPoint = {[id]:{classes:"trendline",x:x2,y:y2,ignore:false,hidden:true,collapse:false}};
 
     return {
-        v0: startPoint,
-        v1: endPoint,
-        key: "trendline",
-        id:"trendline",
-        classes:["trendline"],
-        x:startPoint.x,
-        y:endPoint.y,
-        textLabel:{ // TODO update this for regression labeling
-            dx:[endPoint.x,startPoint.x],
-            dy: -6,
-            alignmentBaseline: "hanging",
-            textAnchor:"middle",
-        },
-    regression:regression}
+        points:[startPoint,endPoint],
+        ...regression
+    }
 };
 
 

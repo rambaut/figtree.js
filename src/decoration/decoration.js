@@ -17,6 +17,8 @@ export class Decoration {
         };
         this._id= `s${uuid.v4()}`;
         this._interactions=[];
+        this._x=0;
+        this._y=0;
     }
     /**
      * Get or set svg layer elements will be added to.
@@ -160,5 +162,24 @@ export class Decoration {
             return this._y;
         }
     }
+
+    scaledY(d = null) {
+    if (d !== null) {
+        this._y = this.scales().y(d);
+        return this;
+        } else {
+        return this._y;
+    }
+}
+
+    scaledX(d = null) {
+        if (d !== null) {
+            this._x = this.scales().x(d);
+            return this;
+        } else {
+            return this._x;
+        }
+    }
+
 }
 
