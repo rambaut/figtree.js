@@ -328,8 +328,8 @@ function setupSVG(){
  */
 function updateNodePositions(nodes) {
     // TODO check to see if rtt and add nodes if needed.
-    this.nodeManager.update(nodes.filter(n=>n[this.id].x)); //hack to see if the node has been laidout TODO set flag
-    this.nodeBackgroundManager.update(nodes.filter(n=>n[this.id].x));
+    this.nodeManager.update(nodes); //hack to see if the node has been laidout TODO set flag
+    this.nodeBackgroundManager.update(nodes);
 }
 
 /**

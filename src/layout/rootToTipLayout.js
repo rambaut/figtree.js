@@ -82,8 +82,9 @@ function leastSquares(data,id) {
     const rSquare = Math.pow(ssXY, 2) / (ssXX * ssYY);
 
     return {
-        slope, xIntercept, yIntercept, rSquare, y: function (x) {
+        slope, xIntercept, yIntercept, rSquare,
+        y: function (x) {
             return x * slope + yIntercept
-        }
+        },
     };
 }

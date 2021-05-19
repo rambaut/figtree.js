@@ -9386,16 +9386,10 @@
 
 
 	function updateNodePositions(nodes) {
-	  var _this5 = this;
-
 	  // TODO check to see if rtt and add nodes if needed.
-	  this.nodeManager.update(nodes.filter(function (n) {
-	    return n[_this5.id].x;
-	  })); //hack to see if the node has been laidout TODO set flag
+	  this.nodeManager.update(nodes); //hack to see if the node has been laidout TODO set flag
 
-	  this.nodeBackgroundManager.update(nodes.filter(function (n) {
-	    return n[_this5.id].x;
-	  }));
+	  this.nodeBackgroundManager.update(nodes);
 	}
 	/**
 	 * A helper function that sets the positions of the branch groups and calls the update functions of the branch elements.
@@ -9404,15 +9398,15 @@
 
 
 	function updateBranchPositions(nodes) {
-	  var _this6 = this;
+	  var _this5 = this;
 
 	  this.branchManager.update(nodes.filter(function (n) {
-	    return n[_this6.id].x;
+	    return n[_this5.id].x;
 	  }));
 	}
 
 	function setUpScales() {
-	  var _this7 = this;
+	  var _this6 = this;
 
 	  var width, height;
 
@@ -9429,10 +9423,10 @@
 	  }
 
 	  var xdomain = extent(this.verticesForScales.map(function (n) {
-	    return n[_this7.id].x;
+	    return n[_this6.id].x;
 	  }));
 	  var ydomain = extent(this.verticesForScales.map(function (n) {
-	    return n[_this7.id].y;
+	    return n[_this6.id].y;
 	  }));
 	  var xScale = this.settings.xScale.scale().domain(xdomain).range([0, width - this._margins.right - this._margins.left]);
 	  var yScale = this.settings.yScale.scale().domain(ydomain).range([height - this._margins.bottom - this._margins.top, 0]);
