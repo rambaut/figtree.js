@@ -172,7 +172,7 @@ export class Tree {
         const traverse = function *(node,filter) {
             if(filter(node)) {
                 yield node;
-                if (node.children) {
+                if (node.children!=null) {
                     for (const child of node.children) {
                         yield* traverse(child, filter);
                     }
@@ -191,7 +191,7 @@ export class Tree {
     *postorder(startNode=this.root,filter=()=>true) {
         const traverse = function *(node,filter) {
             if(filter(node)) {
-                if (node.children) {
+                if (node.children!=null) {
                     for (const child of node.children) {
                         yield* traverse(child, filter);
                     }

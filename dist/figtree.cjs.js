@@ -6624,7 +6624,7 @@ var Tree = /*#__PURE__*/function () {
                         return node;
 
                       case 3:
-                        if (!node.children) {
+                        if (!(node.children != null)) {
                           _context.next = 20;
                           break;
                         }
@@ -6715,7 +6715,7 @@ var Tree = /*#__PURE__*/function () {
                           break;
                         }
 
-                        if (!node.children) {
+                        if (!(node.children != null)) {
                           _context3.next = 18;
                           break;
                         }
@@ -11353,10 +11353,10 @@ var Legend = /*#__PURE__*/function (_Decoration) {
       }
 
       var selection = this.figure().svgSelection.select(".".concat(this.layer()));
-      var group = selection.select("g#".concat(this._id)).transition().attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")); //https://www.d3-graph-gallery.com/graph/custom_legend.html#cont1
+      var group = selection.select("g#".concat(this._id)).attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")); //https://www.d3-graph-gallery.com/graph/custom_legend.html#cont1
       // Add one dot in the legend for each name.
 
-      group.selectAll("rect").transition().attr("x", 0).attr("y", function (d, i) {
+      group.selectAll("rect").data(this.scale().domain()).join("rect").attr("x", 0).attr("y", function (d, i) {
         return i * (_this3.size() + 5);
       }) // 100 is where the first dot appears. 25 is the distance between dots
       .attr("width", this.size()).attr("height", this.size()).attr("fill", function (d) {
@@ -11379,7 +11379,7 @@ var Legend = /*#__PURE__*/function (_Decoration) {
         }
       }); // Add one dot in the legend for each name.
 
-      group.selectAll("text").transition().attr("x", this.size() * 1.2).attr("y", function (d, i) {
+      group.selectAll("text").data(this.scale().domain()).join("text").attr("x", this.size() * 1.2).attr("y", function (d, i) {
         return i * (_this3.size() + 5) + _this3.size() / 2;
       }) // 100 is where the first dot appears. 25 is the distance between dots
       .text(function (d) {

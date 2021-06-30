@@ -108,31 +108,35 @@ class Legend extends Decoration {
 
         const group = selection
             .select(`g#${this._id}`)
-            .transition()
             .attr("transform", `translate(${this._x}, ${this._y})`);
 //https://www.d3-graph-gallery.com/graph/custom_legend.html#cont1
 // Add one dot in the legend for each name.
+
+
         group.selectAll("rect")
-            .transition()
-            .attr("x", 0)
-            .attr("y",  (d, i)=> {
-                return i * (this.size() + 5)
-            }) // 100 is where the first dot appears. 25 is the distance between dots
-            .attr("width", this.size())
-            .attr("height", this.size())
-            .attr("fill",(d) =>{
+            .data(this.scale().domain())
+            .join("rect")
+                .attr("x", 0)
+                .attr("y",  (d, i)=> {
+                    return i * (this.size() + 5)
+                }) // 100 is where the first dot appears. 25 is the distance between dots
+                .attr("width", this.size())
+                .attr("height", this.size())
+                .attr("fill",(d) =>{
                 return this.scale()(d)
-            })
-            .each((d,i,n)=>{
-                const element = select(n[i]);
-                for( const [key,func] of Object.entries(this._interactions)){
-                    element.on(key,(d,i,n)=>func(d,i,n))
-                }
-            });
+                })
+        .each((d,i,n)=>{
+            const element = select(n[i]);
+            for( const [key,func] of Object.entries(this._interactions)){
+                element.on(key,(d,i,n)=>func(d,i,n))
+            }
+        });
+
 
 // Add one dot in the legend for each name.
         group.selectAll("text")
-            .transition()
+            .data(this.scale().domain())
+            .join("text")
             .attr("x", this.size() * 1.2)
             .attr("y",  (d, i) =>{
                 return i * (this.size() + 5) + (this.size() / 2)
