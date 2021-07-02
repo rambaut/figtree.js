@@ -8428,7 +8428,8 @@ var Bauble = /*#__PURE__*/function () {
 
     this._filter = function () {
       return true;
-    };
+    }; // this._aligned=false;
+
   }
   /**
    * A function that appends the element to the selection, joins the data, assigns the attributes to the svg objects
@@ -8504,6 +8505,21 @@ var Bauble = /*#__PURE__*/function () {
         return this._attrs[string];
       }
     }
+    /**
+     * Get or set attributes that will style the elements.
+     * @param string
+     * @param value - a string, number, or function that will be passed to d3 selection.
+     * @return {Bauble|*}
+     */
+    // align(bool=null){
+    //     if(bool){
+    //         this._aligned = bool;
+    //         return this
+    //     }else{
+    //         return this._aligned;
+    //     }
+    // }
+
     /**
      * Set a call back to be fired when the event listener is triggered.
      * @param eventListener - a string that defines the event listener
@@ -12357,25 +12373,53 @@ var TraitBar = /*#__PURE__*/function (_Decoration) {
       }).length - 1);
       group.selectAll("rect").data(nodes.filter(function (n) {
         return !n.children;
-      })).join("rect").attr("x", 0).attr("y", function (d, i) {
-        return _this2.figure().scales.y(d[_this2.figure().id].y) - rect_height / 2;
-      }) // 100 is where the first dot appears. 25 is the distance between dots
-      .attr("height", rect_height).attrs(this._attrs).each(function (d, i, n) {
-        var element = select(n[i]);
+      }));
+      join(function (enter) {
+        return enter.append("rect").attr("x", 0).attr("y", function (d, i) {
+          return _this2.figure().scales.y(d[_this2.figure().id].y) - rect_height / 2;
+        }) // 100 is where the first dot appears. 25 is the distance between dots
+        .attr("height", rect_height).attrs(_this2._attrs).each(function (d, i, n) {
+          var element = select(n[i]);
 
-        var _loop = function _loop() {
-          var _Object$entries$_i = slicedToArray(_Object$entries[_i], 2),
-              key = _Object$entries$_i[0],
-              func = _Object$entries$_i[1];
+          var _loop = function _loop() {
+            var _Object$entries$_i = slicedToArray(_Object$entries[_i], 2),
+                key = _Object$entries$_i[0],
+                func = _Object$entries$_i[1];
 
-          element.on(key, function (d, i, n) {
-            return func(d, i, n);
+            element.on(key, function (d, i, n) {
+              return func(d, i, n);
+            });
+          };
+
+          for (var _i = 0, _Object$entries = Object.entries(_this2._interactions); _i < _Object$entries.length; _i++) {
+            _loop();
+          }
+        });
+      }, function (update) {
+        return update.call(function (update) {
+          return update.transition(function (d) {
+            return "u".concat(uuid_1.v4());
+          }).duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attr("x", 0).attr("y", function (d, i) {
+            return _this2.figure().scales.y(d[_this2.figure().id].y) - rect_height / 2;
+          }) // 100 is where the first dot appears. 25 is the distance between dots
+          .attrs(_this2._attrs).each(function (d, i, n) {
+            var element = select(n[i]);
+
+            var _loop2 = function _loop2() {
+              var _Object$entries2$_i = slicedToArray(_Object$entries2[_i2], 2),
+                  key = _Object$entries2$_i[0],
+                  func = _Object$entries2$_i[1];
+
+              element.on(key, function (d, i, n) {
+                return func(d, i, n);
+              });
+            };
+
+            for (var _i2 = 0, _Object$entries2 = Object.entries(_this2._interactions); _i2 < _Object$entries2.length; _i2++) {
+              _loop2();
+            }
           });
-        };
-
-        for (var _i = 0, _Object$entries = Object.entries(_this2._interactions); _i < _Object$entries.length; _i++) {
-          _loop();
-        }
+        });
       });
     }
   }]);

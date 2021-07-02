@@ -14,6 +14,8 @@ export class Bauble {
         this._attrs ={};
         this._interactions = {};
         this._filter=()=>true;
+        // this._aligned=false;
+
     }
 
     /**
@@ -75,6 +77,21 @@ export class Bauble {
             return this._attrs[string]
         }
     }
+
+    /**
+     * Get or set attributes that will style the elements.
+     * @param string
+     * @param value - a string, number, or function that will be passed to d3 selection.
+     * @return {Bauble|*}
+     */
+    // align(bool=null){
+    //     if(bool){
+    //         this._aligned = bool;
+    //         return this
+    //     }else{
+    //         return this._aligned;
+    //     }
+    // }
 
     /**
      * Set a call back to be fired when the event listener is triggered.

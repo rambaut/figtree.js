@@ -1,5 +1,6 @@
 import {Decoration} from "./decoration";
 import {select} from "d3";
+import uuid from "uuid";
 
 class TraitBar extends Decoration{
     constructor() {
@@ -63,20 +64,38 @@ class TraitBar extends Decoration{
 
         group.selectAll("rect")
             .data(nodes.filter(n=>!n.children))
-            .join("rect")
-            .attr("x", 0)
-            .attr("y",  (d, i)=> {
-                return this.figure().scales.y(d[this.figure().id].y )- rect_height/2
-            }) // 100 is where the first dot appears. 25 is the distance between dots
-            .attr("height",rect_height)
-            .attrs(this._attrs)
-            .each((d,i,n)=>{
-                const element = select(n[i]);
-                for( const [key,func] of Object.entries(this._interactions)){
-                    element.on(key,(d,i,n)=>func(d,i,n))
-                }
-            });
-
+        join(
+            enter => enter
+                .append("rect")
+                .attr("x", 0)
+                .attr("y",  (d, i)=> {
+                    return this.figure().scales.y(d[this.figure().id].y )- rect_height/2
+                }) // 100 is where the first dot appears. 25 is the distance between dots
+                .attr("height",rect_height)
+                .attrs(this._attrs)
+                .each((d,i,n)=>{
+                    const element = select(n[i]);
+                    for( const [key,func] of Object.entries(this._interactions)){
+                        element.on(key,(d,i,n)=>func(d,i,n))
+                    }
+                }),
+            update => update
+                .call(update => update.transition(d=>`u${uuid.v4()}`)
+                    .duration(this.transitions().transitionDuration)
+                    .ease(this.transitions().transitionEase)
+                    .attr("x", 0)
+                    .attr("y",  (d, i)=> {
+                        return this.figure().scales.y(d[this.figure().id].y )- rect_height/2
+                    }) // 100 is where the first dot appears. 25 is the distance between dots
+                    .attrs(this._attrs)
+                    .each((d,i,n)=>{
+                        const element = select(n[i]);
+                        for( const [key,func] of Object.entries(this._interactions)){
+                            element.on(key,(d,i,n)=>func(d,i,n))
+                        }
+                    }),
+                )
+        );
     }
 
 

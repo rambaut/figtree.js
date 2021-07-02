@@ -204,7 +204,7 @@
         '((((((virus1:0.1,virus2:0.12)0.95:0.08,(virus3:0.011,virus4:0.0087)1.0:0.15)0.65:0.03,virus5:0.21)1.0:0.2,(virus6:0.45,virus7:0.4)0.51:0.02)1.0:0.1,virus8:0.4)1.0:0.1,(virus9:0.04,virus10:0.03)1.0:0.6);';
 
     const tree = Tree.parseNewick(newickString, "probability");
-
+    tree.orderByNodeDensity(true);
     const treeSVG = document.getElementById('phylogram_1a');
     const margins={top:10,bottom:60,left:30,right:60};
 
@@ -225,13 +225,13 @@
                 .filter(d=>!d.children)
                 .radius(20)
                 .fillAttr("stroke","#3f51b5"),
-            // circle()
-            //         .filter(d=>d.degree===1)
-            //         .attr("fill","#c71585")
-            //         .attr("r",5)
-            //         .hilightOnHover(10)
-            //         .rotateOnClick(),
-            tipLabel(d=>d.name),
+            circle()
+                    .filter(d=>!d.children)
+                    .attr("fill","#c71585")
+                    .attr("r",5)
+                    .attr("cx",20)
+                    .hilightOnHover(10),
+            tipLabel(d=>d.name).attr("x",25),
             coalescentEvent()
                 .filter(d=>d.children)
                 .attr("fill","url(#nodeGrad)")
@@ -255,10 +255,6 @@
 
         .feature(xAxis)
         .feature(axisBars(xAxis))
-        .feature(traitBar()
-                    .x(550)
-                    .attr("fill",(d,i)=>i%2===0?"red":"blue")
-    )
 
 
 
