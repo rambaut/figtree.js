@@ -87,6 +87,7 @@ class TraitBar extends Decoration{
                     .attr("y",  (d, i)=> {
                         return this.figure().scales.y(d[this.figure().id].y )- rect_height/2
                     }) // 100 is where the first dot appears. 25 is the distance between dots
+                    .attr("height",rect_height)
                     .attrs(this._attrs)
                     .each((d,i,n)=>{
                         const element = select(n[i]);

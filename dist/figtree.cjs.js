@@ -12401,7 +12401,7 @@ var TraitBar = /*#__PURE__*/function (_Decoration) {
           }).duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attr("x", 0).attr("y", function (d, i) {
             return _this2.figure().scales.y(d[_this2.figure().id].y) - rect_height / 2;
           }) // 100 is where the first dot appears. 25 is the distance between dots
-          .attrs(_this2._attrs).each(function (d, i, n) {
+          .attr("height", rect_height).attrs(_this2._attrs).each(function (d, i, n) {
             var element = select(n[i]);
 
             var _loop2 = function _loop2() {
