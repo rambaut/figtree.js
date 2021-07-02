@@ -109,30 +109,30 @@ export class Decoration {
 
     /**
      * Decorations have a create method which enters them onto a selection and an updateCycle method
-     * that updated the already existing object. These are all handled by the update method which
+     * that updated the already existing object. These are all handled by the update method in the parent class
      * @param selection
      */
     create(selection) {
         throw new Error("Don't call the base class method")
     };
     /**
-     * Decorations have a create method which enters them onto a selection and an updateCycle method
-     * that updated the already existing object. These are all handled by the update method which
-     * @param selection
+     * Decorations have a create method which enters them into a selection and an updateCycle method
+     * that updated the already existing object. These are all handled by the update method in the parent class.
+     * @param nodes that are in the figure
      */
-    update(selection) {
+    update(nodes) {
         if (!this._created) {
-            this.create(selection);
+            this.create(nodes);
             this._created = true;
         }
-        this.updateCycle();
+        this.updateCycle(nodes);
     }
     /**
-     * Decorations have a create method which enters them onto a selection and an updateCycle method
-     * that updated the already existing object. These are all handled by the update method which
-     * @param selection
+     * Decorations have a create method which enters them into a selection and an updateCycle method
+     * that updated the already existing object. These are all handled by the update method in the parent class.
+     * @param nodes
      */
-    updateCycle(selection) {
+    updateCycle(nodes) {
         throw new Error("Don't call the base class method")
     }
 

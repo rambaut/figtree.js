@@ -296,6 +296,19 @@ export class FigTree {
         this.update();
         return this;
     }
+
+    /**
+     * remove a feature from the update cycle. Also removes the figure frome the feature
+
+     * @param feature
+     * @return {FigTree}
+     */
+    removeFeature(f){
+        f.figure(null);
+        this._features = this._features.filter(feature=>feature!=f);
+        this.update();
+        return this;
+    }
 }
 
 function setupSVG(){
@@ -358,6 +371,6 @@ function setUpScales(){
             .range([0, width - this._margins.right-this._margins.left]);
         const yScale = this.settings.yScale.scale()
             .domain(ydomain)
-            .range([height -this._margins.bottom-this._margins.top,0]);
+            .range([0,height -this._margins.bottom-this._margins.top]);
     this.scales = {x:xScale, y:yScale, width, height};
 }

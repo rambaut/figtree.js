@@ -147,7 +147,7 @@
 
     import {Tree,rectangularLayout,CircleBauble,FigTree,BaubleManager,Branch,
         nodes,nodeBackground,circle,roughCircle,branches,branch,tipLabel,internalNodeLabel,label,
-        branchLabel, axis,scaleBar,legend,rectangle,axisBars,roughBranch,coalescentEvent}  from "./dist/figtree.esm.js";
+        branchLabel, axis,scaleBar,legend,rectangle,axisBars,roughBranch,coalescentEvent,traitBar}  from "./dist/figtree.esm.js";
 
 
     const width = 600,
@@ -255,6 +255,10 @@
 
         .feature(xAxis)
         .feature(axisBars(xAxis))
+        .feature(traitBar()
+                    .x(550)
+                    .attr("fill",(d,i)=>i%2===0?"red":"blue")
+    )
 
 
 

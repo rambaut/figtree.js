@@ -34,7 +34,6 @@ export function rectangularHilightedLayout(predicate,compressionFactor) {
                     }
                 } else {
 
-
                     if (previousTip !== null && (predicate(previousTip) || predicate(node))) {
                         yPos =(currentY += 1);
                     } else {

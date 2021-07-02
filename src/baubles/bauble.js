@@ -23,7 +23,6 @@ export class Bauble {
      */
     update(selection) {
         throw new Error("Don't call the base class method")
-
     }
 
     clear(selection){

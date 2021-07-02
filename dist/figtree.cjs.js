@@ -9331,6 +9331,22 @@ var FigTree = /*#__PURE__*/function () {
       this.update();
       return this;
     }
+    /**
+     * remove a feature from the update cycle. Also removes the figure frome the feature
+      * @param feature
+     * @return {FigTree}
+     */
+
+  }, {
+    key: "removeFeature",
+    value: function removeFeature(f) {
+      f.figure(null);
+      this._features = this._features.filter(function (feature) {
+        return feature != f;
+      });
+      this.update();
+      return this;
+    }
   }], [{
     key: "DEFAULT_SETTINGS",
     value: function DEFAULT_SETTINGS() {
@@ -9427,7 +9443,7 @@ function setUpScales() {
     return n[_this6.id].y;
   }));
   var xScale = this.settings.xScale.scale().domain(xdomain).range([0, width - this._margins.right - this._margins.left]);
-  var yScale = this.settings.yScale.scale().domain(ydomain).range([height - this._margins.bottom - this._margins.top, 0]);
+  var yScale = this.settings.yScale.scale().domain(ydomain).range([0, height - this._margins.bottom - this._margins.top]);
   this.scales = {
     x: xScale,
     y: yScale,
@@ -10764,7 +10780,7 @@ var Decoration = /*#__PURE__*/function () {
     }
     /**
      * Decorations have a create method which enters them onto a selection and an updateCycle method
-     * that updated the already existing object. These are all handled by the update method which
+     * that updated the already existing object. These are all handled by the update method in the parent class
      * @param selection
      */
 
@@ -10777,27 +10793,27 @@ var Decoration = /*#__PURE__*/function () {
     key: "update",
     value:
     /**
-     * Decorations have a create method which enters them onto a selection and an updateCycle method
-     * that updated the already existing object. These are all handled by the update method which
-     * @param selection
+     * Decorations have a create method which enters them into a selection and an updateCycle method
+     * that updated the already existing object. These are all handled by the update method in the parent class.
+     * @param nodes that are in the figure
      */
-    function update(selection) {
+    function update(nodes) {
       if (!this._created) {
-        this.create(selection);
+        this.create(nodes);
         this._created = true;
       }
 
-      this.updateCycle();
+      this.updateCycle(nodes);
     }
     /**
-     * Decorations have a create method which enters them onto a selection and an updateCycle method
-     * that updated the already existing object. These are all handled by the update method which
-     * @param selection
+     * Decorations have a create method which enters them into a selection and an updateCycle method
+     * that updated the already existing object. These are all handled by the update method in the parent class.
+     * @param nodes
      */
 
   }, {
     key: "updateCycle",
-    value: function updateCycle(selection) {
+    value: function updateCycle(nodes) {
       throw new Error("Don't call the base class method");
     }
     /**
@@ -11257,7 +11273,7 @@ var Legend = /*#__PURE__*/function (_Decoration) {
     _this._x = 0;
     _this._y = 0;
 
-    get$2((_thisSuper = assertThisInitialized(_this), getPrototypeOf(Legend.prototype)), "layer", _thisSuper).call(_thisSuper, "axes-layer");
+    get$2((_thisSuper = assertThisInitialized(_this), getPrototypeOf(Legend.prototype)), "layer", _thisSuper).call(_thisSuper, "top-annotation-layer");
 
     _this._size = 20;
     _this._scale = null;
@@ -11302,7 +11318,7 @@ var Legend = /*#__PURE__*/function (_Decoration) {
     }
   }, {
     key: "create",
-    value: function create() {
+    value: function create(nodes) {
       var _this2 = this;
 
       if (this.scale() === null) {
@@ -12258,6 +12274,119 @@ function textAnnotation() {
   return new TextAnnotation();
 }
 
+function _createSuper$e(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct$e(); return function _createSuperInternal() { var Super = getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return possibleConstructorReturn(this, result); }; }
+
+function _isNativeReflectConstruct$e() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
+
+var TraitBar = /*#__PURE__*/function (_Decoration) {
+  inherits(TraitBar, _Decoration);
+
+  var _super = _createSuper$e(TraitBar);
+
+  function TraitBar() {
+    var _thisSuper, _this;
+
+    classCallCheck(this, TraitBar);
+
+    _this = _super.call(this);
+    _this._title = {
+      text: "",
+      xPadding: 0,
+      yPadding: 0,
+      rotation: 0
+    };
+    _this._x = 0;
+    _this._y = 0;
+
+    get$2((_thisSuper = assertThisInitialized(_this), getPrototypeOf(TraitBar.prototype)), "layer", _thisSuper).call(_thisSuper, "top-annotation-layer");
+
+    _this._size = 20;
+    _this._scale = null;
+    _this._attrs = {
+      "width": 3
+    };
+    return _this;
+  }
+  /**
+   * The size of the square used to display the color
+   * @param d - value or function to be called on the tree node
+   * @return {TraitBar|function}
+   */
+
+
+  createClass(TraitBar, [{
+    key: "attr",
+    value: function attr(string) {
+      var d = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+
+      if (d) {
+        this._attrs[string] = d;
+        return this;
+      } else {
+        return this._attrs[string];
+      }
+    }
+    /**
+     * set the width of the trait bar
+     * @param d
+     * @return {TraitBar|Function}
+     */
+
+  }, {
+    key: "width",
+    value: function width() {
+      var d = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+      return this.attr("width", d);
+    }
+  }, {
+    key: "create",
+    value: function create(nodes) {
+      var selection = this.figure().svgSelection.select(".".concat(this.layer()));
+      var group = selection.append("g").attr("id", this._id).attr("class", "trait-bar").attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")"));
+      this.updateCycle(nodes);
+    }
+  }, {
+    key: "updateCycle",
+    value: function updateCycle(nodes) {
+      var _this2 = this;
+
+      var selection = this.figure().svgSelection.select(".".concat(this.layer()));
+      var group = selection.select("g#".concat(this._id)).attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")"));
+      var rect_height = this.figure().scales.y.range()[1] / (nodes.filter(function (n) {
+        return !n.children;
+      }).length - 1);
+      group.selectAll("rect").data(nodes.filter(function (n) {
+        return !n.children;
+      })).join("rect").attr("x", 0).attr("y", function (d, i) {
+        return _this2.figure().scales.y(d[_this2.figure().id].y) - rect_height / 2;
+      }) // 100 is where the first dot appears. 25 is the distance between dots
+      .attr("height", rect_height).attrs(this._attrs).each(function (d, i, n) {
+        var element = select(n[i]);
+
+        var _loop = function _loop() {
+          var _Object$entries$_i = slicedToArray(_Object$entries[_i], 2),
+              key = _Object$entries$_i[0],
+              func = _Object$entries$_i[1];
+
+          element.on(key, function (d, i, n) {
+            return func(d, i, n);
+          });
+        };
+
+        for (var _i = 0, _Object$entries = Object.entries(_this2._interactions); _i < _Object$entries.length; _i++) {
+          _loop();
+        }
+      });
+    }
+  }]);
+
+  return TraitBar;
+}(Decoration);
+
+function traitBar() {
+  return new TraitBar();
+}
+
 exports.Bauble = Bauble;
 exports.BaubleManager = BaubleManager;
 exports.Branch = Branch;
@@ -12290,5 +12419,6 @@ exports.roughCircle = roughCircle;
 exports.scaleBar = scaleBar;
 exports.textAnnotation = textAnnotation;
 exports.tipLabel = tipLabel;
+exports.traitBar = traitBar;
 exports.trendLine = trendLine;
 //# sourceMappingURL=figtree.cjs.js.map

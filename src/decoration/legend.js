@@ -16,7 +16,7 @@ class Legend extends Decoration {
         };
         this._x = 0;
         this._y = 0;
-        super.layer("axes-layer")
+        super.layer("top-annotation-layer")
         this._size=20;
         this._scale=null;
     }
@@ -49,7 +49,7 @@ class Legend extends Decoration {
         }
     }
 
-    create() {
+    create(nodes) {
 
         if(this.scale()===null){
             return;
