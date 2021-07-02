@@ -64,7 +64,7 @@ class TraitBar extends Decoration{
 
         group.selectAll("rect")
             .data(nodes.filter(n=>!n.children))
-        join(
+            .join(
             enter => enter
                 .append("rect")
                 .attr("x", 0)

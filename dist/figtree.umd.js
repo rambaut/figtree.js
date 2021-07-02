@@ -12375,8 +12375,7 @@
 	      }).length - 1);
 	      group.selectAll("rect").data(nodes.filter(function (n) {
 	        return !n.children;
-	      }));
-	      join(function (enter) {
+	      })).join(function (enter) {
 	        return enter.append("rect").attr("x", 0).attr("y", function (d, i) {
 	          return _this2.figure().scales.y(d[_this2.figure().id].y) - rect_height / 2;
 	        }) // 100 is where the first dot appears. 25 is the distance between dots
