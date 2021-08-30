@@ -27,6 +27,7 @@ class Axis extends Decoration {
         this._scale = null;
         this._axis=null;
         this._bars=false;
+        this._usesFigureScale=true; //flag ensures we get updated figure scale when needed.
     }
 
     /**
@@ -63,6 +64,11 @@ class Axis extends Decoration {
         }
         else{
             this._scale = s;
+            if(this._scale===this.figure().scales.y || this._scale===this.figure().scales.x){
+                this._usesFigureScale=true;
+            }else{
+                this._usesFigureScale=false;
+            }
             return this;
         }
    }
@@ -75,14 +81,16 @@ class Axis extends Decoration {
    }
 
     updateScales(){
+
         this.d3Axis = getD3Axis(this._location);
         const length = ["top","bottom"].indexOf(this._location)>-1?
             this.scales().width - this.figure()._margins.left - this.figure()._margins.right:
             this.scales().height -this.figure()._margins.top - this.figure()._margins.bottom;
-        if(this.scale()===null){
+        if(this.scale()===null || this._usesFigureScale===true){
             console.log("using figure scale")
+            //TODO scale() !== scales()
             this.scale((["top","bottom"].indexOf(this._location)>-1?this.scales().x:this.scales().y).copy())
-
+            this._usesFigureScale=true; // force this to be true call above sets to false since it's a copy
         }
         if(this._needsNewOrigin){
             console.log("updating origin")
@@ -98,6 +106,8 @@ class Axis extends Decoration {
          this._axis = this.d3Axis(this.scale())
             .ticks(this.ticks()).tickFormat(this.tickFormat())
              .tickSizeOuter(0);
+        console.log(this._usesFigureScale)
+
         return {length,axis:this._axis}
     }
 

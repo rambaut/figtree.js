@@ -309,6 +309,18 @@ export class FigTree {
         this.update();
         return this;
     }
+
+    /**
+     * A helper function that toggle the ignore flag on a node in this figure.
+     * @param node
+     * @return {FigTree}
+     */
+    ignore(node){
+        node[this.id].ignore = !node[this.id].ignore;
+        this.update();
+        return this;
+
+    }
 }
 
 function setupSVG(){
@@ -372,5 +384,6 @@ function setUpScales(){
         const yScale = this.settings.yScale.scale()
             .domain(ydomain)
             .range([height -this._margins.bottom-this._margins.top,0]); //flipped
+    console.log(xScale.domain())
     this.scales = {x:xScale, y:yScale, width, height};
 }

@@ -9365,6 +9365,19 @@
 	      this.update();
 	      return this;
 	    }
+	    /**
+	     * A helper function that toggle the ignore flag on a node in this figure.
+	     * @param node
+	     * @return {FigTree}
+	     */
+
+	  }, {
+	    key: "ignore",
+	    value: function ignore(node) {
+	      node[this.id].ignore = !node[this.id].ignore;
+	      this.update();
+	      return this;
+	    }
 	  }], [{
 	    key: "DEFAULT_SETTINGS",
 	    value: function DEFAULT_SETTINGS() {
@@ -9463,6 +9476,7 @@
 	  var xScale = this.settings.xScale.scale().domain(xdomain).range([0, width - this._margins.right - this._margins.left]);
 	  var yScale = this.settings.yScale.scale().domain(ydomain).range([height - this._margins.bottom - this._margins.top, 0]); //flipped
 
+	  console.log(xScale.domain());
 	  this.scales = {
 	    x: xScale,
 	    y: yScale,
@@ -10567,7 +10581,9 @@
 	    tree.internalNodes.forEach(function (n) {
 	      n[id].ignore = true;
 	    });
-	    figtree.regression = makeTrendlineEdge(predicate, id)(tree.externalNodes);
+	    figtree.regression = makeTrendlineEdge(predicate, id)(tree.externalNodes.filter(function (n) {
+	      return !n[figtree.id].ignore;
+	    }));
 	  };
 	}; // TODO add edges from tips to parent on trendline to compare outliers.
 
@@ -10940,6 +10956,8 @@
 	    _this._scale = null;
 	    _this._axis = null;
 	    _this._bars = false;
+	    _this._usesFigureScale = true; //flag ensures we get updated figure scale when needed.
+
 	    return _this;
 	  }
 	  /**
@@ -10990,6 +11008,13 @@
 	        return this._scale;
 	      } else {
 	        this._scale = s;
+
+	        if (this._scale === this.figure().scales.y || this._scale === this.figure().scales.x) {
+	          this._usesFigureScale = true;
+	        } else {
+	          this._usesFigureScale = false;
+	        }
+
 	        return this;
 	      }
 	    } //TODO support more calls to d3 axis
@@ -11010,9 +11035,11 @@
 	      this.d3Axis = getD3Axis(this._location);
 	      var length = ["top", "bottom"].indexOf(this._location) > -1 ? this.scales().width - this.figure()._margins.left - this.figure()._margins.right : this.scales().height - this.figure()._margins.top - this.figure()._margins.bottom;
 
-	      if (this.scale() === null) {
-	        console.log("using figure scale");
+	      if (this.scale() === null || this._usesFigureScale === true) {
+	        console.log("using figure scale"); //TODO scale() !== scales()
+
 	        this.scale((["top", "bottom"].indexOf(this._location) > -1 ? this.scales().x : this.scales().y).copy());
+	        this._usesFigureScale = true; // force this to be true call above sets to false since it's a copy
 	      }
 
 	      if (this._needsNewOrigin) {
@@ -11031,6 +11058,7 @@
 	      }
 
 	      this._axis = this.d3Axis(this.scale()).ticks(this.ticks()).tickFormat(this.tickFormat()).tickSizeOuter(0);
+	      console.log(this._usesFigureScale);
 	      return {
 	        length: length,
 	        axis: this._axis

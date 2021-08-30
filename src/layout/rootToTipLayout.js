@@ -24,7 +24,7 @@ export const rootToTipLayout=(predicate=(n)=>true)=>(figtree)=>{
     tree.internalNodes.forEach(n=>{
         n[id].ignore=true;
     })
-    figtree.regression = makeTrendlineEdge(predicate,id)(tree.externalNodes);
+    figtree.regression = makeTrendlineEdge(predicate,id)(tree.externalNodes.filter(n=>!n[figtree.id].ignore));
 
 }
 // TODO add edges from tips to parent on trendline to compare outliers.
