@@ -9459,7 +9459,8 @@ function setUpScales() {
     return n[_this6.id].y;
   }));
   var xScale = this.settings.xScale.scale().domain(xdomain).range([0, width - this._margins.right - this._margins.left]);
-  var yScale = this.settings.yScale.scale().domain(ydomain).range([0, height - this._margins.bottom - this._margins.top]);
+  var yScale = this.settings.yScale.scale().domain(ydomain).range([height - this._margins.bottom - this._margins.top, 0]); //flipped
+
   this.scales = {
     x: xScale,
     y: yScale,

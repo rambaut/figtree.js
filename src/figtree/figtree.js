@@ -371,6 +371,6 @@ function setUpScales(){
             .range([0, width - this._margins.right-this._margins.left]);
         const yScale = this.settings.yScale.scale()
             .domain(ydomain)
-            .range([0,height -this._margins.bottom-this._margins.top]);
+            .range([height -this._margins.bottom-this._margins.top,0]); //flipped
     this.scales = {x:xScale, y:yScale, width, height};
 }

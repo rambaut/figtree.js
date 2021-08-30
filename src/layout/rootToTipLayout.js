@@ -76,7 +76,7 @@ function leastSquares(data,id) {
     const ssXY = data.map((d) => (d[id].x - xBar) * (d[id].y - yBar))
         .reduce((a, b) => a + b, 0.0);
 
-    const slope = ssXY / ssXX;
+    const slope =ssXY / ssXX;
     const yIntercept = yBar - (xBar * slope);
     const xIntercept = -(yIntercept / slope);
     const rSquare = Math.pow(ssXY, 2) / (ssXX * ssYY);
