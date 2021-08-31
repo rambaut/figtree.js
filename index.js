@@ -13,7 +13,7 @@ import{rectangularLayout} from "./src/layout/rectangularLayout.f";
 import {rectangularZoomedLayout} from "./src/layout/rectangularZoomedLayout.js"
 import {nodes,nodeBackground} from "./src/features/_nodes";
 import {Label,label,tipLabel,internalNodeLabel,branchLabel} from "./src/baubles/nodes/label";
-import {rootToTipLayout} from "./src/layout/rootToTipLayout";
+import {rootToTipLayout,predicatedRootToTipLayout} from "./src/layout/rootToTipLayout";
 import {decimalToDate} from "./src/utilities";
 import{axis} from "./src/decoration/axis"
 import{BaubleManager} from "./src/features/baubleManager"
@@ -29,8 +29,9 @@ import {trendLine} from "./src/decoration/trendLine";
 import{textAnnotation} from "./src/decoration/textAnnotation";
 import{traitBar} from "./src/decoration/traitBar";
 import {geographicLayout} from"./src/layout/geographicLayout";
+
 export{Tree,Type,FigTree,rectangularLayout,
     Bauble,CircleBauble,RectangularBauble,Branch,
     nodes,rootToTipLayout,decimalToDate,axis,circle,roughCircle,rectangle,BaubleManager,
     nodeBackground,branch,branches,label,tipLabel,internalNodeLabel,branchLabel,scaleBar,legend,rectangularHilightedLayout,rectangularZoomedLayout,
-    Decoration,axisBars,roughBranch,coalescentEvent,trendLine,textAnnotation,traitBar,geographicLayout};
+    Decoration,axisBars,roughBranch,coalescentEvent,trendLine,textAnnotation,traitBar,geographicLayout,predicatedRootToTipLayout};

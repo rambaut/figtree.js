@@ -27,6 +27,33 @@ export function rootToTipLayout(figtree){
     figtree.regression = makeTrendlineEdge(id)(tree.externalNodes.filter(n=>!n[id].ignore));
 
 }
+
+export const  predicatedRootToTipLayout=(p=()=>true)=>(figtree)=>{
+    const id = figtree.id;
+    const tree = figtree.tree();
+    if(!tree.annotations.date){
+        console.warn("tree must be annotated with dates to use the root to tip layout")
+        return [];
+    }
+    tree.externalNodes.forEach(n=> {
+        n[id].x= n.annotations.date;
+        n[id].y= n.divergence;
+        n[id].classes = getClassesFromNode(n);
+        n[id].textLabel={
+            labelBelow:false,
+            x:"12",
+            y:"0",
+            alignmentBaseline: "middle",
+            textAnchor:"start",
+        }
+    });
+    tree.internalNodes.forEach(n=>{
+        figtree.ignoreAndHide(n,false);
+    })
+
+    figtree.regression = pmakeTrendlineEdge(p,id)(tree.externalNodes.filter(n=>!n[id].ignore));
+
+}
 // TODO add edges from tips to parent on trendline to compare outliers.
 const makeTrendlineEdge=(id)=>(usedVertices)=>{
 
@@ -34,6 +61,33 @@ const makeTrendlineEdge=(id)=>(usedVertices)=>{
 
     let x1 = min(usedVertices, d => d[id].x);
     let x2 = max(usedVertices, d => d[id].x);
+    let y1 = 0.0;
+    let y2 = max(usedVertices, d => d[id].y);
+    if (usedVertices.length > 1 && regression.slope > 0.0) {
+        x1 = regression.xIntercept;
+        y2 =regression.y(x2)
+    }else if(usedVertices> 1 && regression.slope < 0.0 ){
+        x2 = regression.xIntercept;
+        y1= regression.y(x1);
+        y2=0;
+    }
+
+    const startPoint = {[id]:{classes:"trendline",x:x1,y:y1,ignore:false,hidden:true,collapse:false}};
+    const endPoint = {[id]:{classes:"trendline",x:x2,y:y2,ignore:false,hidden:true,collapse:false}};
+
+    return {
+        points:[startPoint,endPoint],
+        ...regression
+    }
+};
+
+const pmakeTrendlineEdge=(predicate,id)=>(vertices)=>{
+
+    const usedVertices = vertices.filter(predicate);
+    const regression  = leastSquares(usedVertices,id);
+
+    let x1 = min(vertices, d => d[id].x);
+    let x2 = max(vertices, d => d[id].x);
     let y1 = 0.0;
     let y2 = max(usedVertices, d => d[id].y);
     if (usedVertices.length > 1 && regression.slope > 0.0) {

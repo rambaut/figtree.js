@@ -28,7 +28,7 @@ class TextAnnotation extends Decoration{
     }
     updateCycle(selection) {
         const text = typeof this._text==='function'?this._text():this._text;
-        console.log(text)
+        // console.log(text)
         this.selection
             .attr("transform", `translate(${this._x}, ${this._y})`)
             .selectAll("text")

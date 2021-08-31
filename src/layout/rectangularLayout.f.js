@@ -10,6 +10,9 @@ export function rectangularLayout(figtree) {
 
     const traverse = function (node, siblingPositions = []) {
         const myChildrenPositions = [];
+        if(!node[id]){
+            console.log(node)
+        }
         if (!node[id].ignore) {
             let yPos;
             if (node.children) {

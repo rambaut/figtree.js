@@ -6890,7 +6890,6 @@ var Tree = /*#__PURE__*/function () {
 
       this.heightsKnown = false;
       this.treeUpdateCallback();
-      console.log(toConsumableArray(this.postorder()));
     }
   }, {
     key: "rotate",
@@ -7163,9 +7162,7 @@ var Tree = /*#__PURE__*/function () {
     value: function splitBranch(node) {
       var splitLocation = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0.5;
       var oldLength = node.length;
-      var splitNode = makeNode.call(this, {
-        parent: node.parent,
-        children: [node],
+      var splitNode = this.addNode({
         length: oldLength * splitLocation,
         annotations: {
           insertedNode: true
@@ -7173,13 +7170,14 @@ var Tree = /*#__PURE__*/function () {
       });
 
       if (node.parent) {
-        node.parent.children[node.parent.children.indexOf(node)] = splitNode;
+        node.parent.addChild(splitNode);
+        node.parent.removeChild(node);
       } else {
         // node is the root so make splitNode the root
         this.root = splitNode;
       }
 
-      node.parent = splitNode;
+      splitNode.addChild(node);
       node._length = oldLength - splitNode.length;
       this.nodesUpdated = true;
       this.heightsKnown = false;
@@ -8102,23 +8100,6 @@ function reconstructInternalStates(name, parentStates, acctran, node) {
 
   return nodeStates;
 }
-
-function makeNode(nodeData) {
-  var external = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-  var node = new Node(_objectSpread(_objectSpread({}, nodeData), {}, {
-    tree: this
-  }));
-
-  this._nodeMap.set(node.id, node);
-
-  if (external) {
-    if (this._tipMap.has(node.name)) {
-      throw new Error("${node.name} already in tree");
-    }
-
-    this._tipMap.set(node.name, node);
-  }
-} // /**
 //  * A private function that sets up the tree by traversing from the root Node and sets all heights and lengths
 //  * @param node
 //  */
@@ -8984,7 +8965,7 @@ var BaubleManager = /*#__PURE__*/function () {
         });
       }, function (update) {
         return update.call(function (update) {
-          return update.transition().duration(_this.figure().transitions().transitionDuration).ease(_this.figure().transitions().transitionEase).attr("class", function (d) {
+          return update.transition(uuid_1.v4()).duration(_this.figure().transitions().transitionDuration).ease(_this.figure().transitions().transitionEase).attr("class", function (d) {
             return ["".concat(_this["class"]())].concat(toConsumableArray(d[_this._figureId].classes)).join(" ");
           }).attr("transform", function (d) {
             return "translate(".concat(_this.figure().scales.x(d[_this._figureId].x), ", ").concat(_this.figure().scales.y(d[_this._figureId].y), ")");
@@ -9105,6 +9086,17 @@ var FigTree = /*#__PURE__*/function () {
     this[p.svg] = svg;
     this[p.tree] = tree;
     this[p.tree].subscribeCallback(function () {
+      //enroll new nodes if any
+      tree.nodeList.forEach(function (node) {
+        if (!node[_this.id]) {
+          node[_this.id] = {
+            ignore: false,
+            collapsed: false,
+            hidden: false
+          };
+        }
+      });
+
       _this.update();
     });
     tree.nodeList.forEach(function (node) {
@@ -9593,7 +9585,6 @@ function setupSVG() {
 
 
 function updateNodePositions(nodes) {
-  console.log(nodes);
   this.nodeManager.update(nodes); //hack to see if the node has been laidout TODO set flag
 
   this.nodeBackgroundManager.update(nodes);
@@ -10461,6 +10452,10 @@ function rectangularLayout(figtree) {
     var siblingPositions = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
     var myChildrenPositions = [];
 
+    if (!node[id]) {
+      console.log(node);
+    }
+
     if (!node[id].ignore) {
       var yPos;
 
@@ -10763,7 +10758,40 @@ function rootToTipLayout(figtree) {
   figtree.regression = makeTrendlineEdge(id)(tree.externalNodes.filter(function (n) {
     return !n[id].ignore;
   }));
-} // TODO add edges from tips to parent on trendline to compare outliers.
+}
+var predicatedRootToTipLayout = function predicatedRootToTipLayout() {
+  var p = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {
+    return true;
+  };
+  return function (figtree) {
+    var id = figtree.id;
+    var tree = figtree.tree();
+
+    if (!tree.annotations.date) {
+      console.warn("tree must be annotated with dates to use the root to tip layout");
+      return [];
+    }
+
+    tree.externalNodes.forEach(function (n) {
+      n[id].x = n.annotations.date;
+      n[id].y = n.divergence;
+      n[id].classes = getClassesFromNode(n);
+      n[id].textLabel = {
+        labelBelow: false,
+        x: "12",
+        y: "0",
+        alignmentBaseline: "middle",
+        textAnchor: "start"
+      };
+    });
+    tree.internalNodes.forEach(function (n) {
+      figtree.ignoreAndHide(n, false);
+    });
+    figtree.regression = pmakeTrendlineEdge(p, id)(tree.externalNodes.filter(function (n) {
+      return !n[id].ignore;
+    }));
+  };
+}; // TODO add edges from tips to parent on trendline to compare outliers.
 
 var makeTrendlineEdge = function makeTrendlineEdge(id) {
   return function (usedVertices) {
@@ -10772,6 +10800,54 @@ var makeTrendlineEdge = function makeTrendlineEdge(id) {
       return d[id].x;
     });
     var x2 = max(usedVertices, function (d) {
+      return d[id].x;
+    });
+    var y1 = 0.0;
+    var y2 = max(usedVertices, function (d) {
+      return d[id].y;
+    });
+
+    if (usedVertices.length > 1 && regression.slope > 0.0) {
+      x1 = regression.xIntercept;
+      y2 = regression.y(x2);
+    } else if (usedVertices > 1 && regression.slope < 0.0) {
+      x2 = regression.xIntercept;
+      y1 = regression.y(x1);
+      y2 = 0;
+    }
+
+    var startPoint = defineProperty({}, id, {
+      classes: "trendline",
+      x: x1,
+      y: y1,
+      ignore: false,
+      hidden: true,
+      collapse: false
+    });
+
+    var endPoint = defineProperty({}, id, {
+      classes: "trendline",
+      x: x2,
+      y: y2,
+      ignore: false,
+      hidden: true,
+      collapse: false
+    });
+
+    return _objectSpread$2({
+      points: [startPoint, endPoint]
+    }, regression);
+  };
+};
+
+var pmakeTrendlineEdge = function pmakeTrendlineEdge(predicate, id) {
+  return function (vertices) {
+    var usedVertices = vertices.filter(predicate);
+    var regression = leastSquares(usedVertices, id);
+    var x1 = min(vertices, function (d) {
+      return d[id].x;
+    });
+    var x2 = max(vertices, function (d) {
       return d[id].x;
     });
     var y1 = 0.0;
@@ -11232,10 +11308,16 @@ var Axis = /*#__PURE__*/function (_Decoration) {
       var length = ["top", "bottom"].indexOf(this._location) > -1 ? this.scales().width - this.figure()._margins.left - this.figure()._margins.right : this.scales().height - this.figure()._margins.top - this.figure()._margins.bottom;
 
       if (this.scale() === null || this._usesFigureScale === true) {
-        console.log("using figure scale"); //TODO scale() !== scales()
-
+        // console.log("using figure scale")
+        //TODO scale() !== scales()
         this.scale((["top", "bottom"].indexOf(this._location) > -1 ? this.scales().x : this.scales().y).copy());
         this._usesFigureScale = true; // force this to be true call above sets to false since it's a copy
+
+        if (this._origin) {
+          if (this._origin !== this.scale().domain()[1]) {
+            this._needsNewOrigin = true;
+          }
+        }
       }
 
       if (this._needsNewOrigin) {
@@ -11253,8 +11335,8 @@ var Axis = /*#__PURE__*/function (_Decoration) {
         this._hasBeenReversed = true;
       }
 
-      this._axis = this.d3Axis(this.scale()).ticks(this.ticks()).tickFormat(this.tickFormat()).tickSizeOuter(0);
-      console.log(this._usesFigureScale);
+      this._axis = this.d3Axis(this.scale()).ticks(this.ticks()).tickFormat(this.tickFormat()).tickSizeOuter(0); // console.log(this._usesFigureScale)
+
       return {
         length: length,
         axis: this._axis
@@ -12015,7 +12097,6 @@ var RoughCircleBauble = /*#__PURE__*/function (_AbstractNodeBauble) {
         return enter.append("path").attr("d", function (d, i) {
           return newPaths[i];
         }).attr("class", function (d, i) {
-          console.log(pathNames[i]);
           return "".concat(pathNames[i], " node-shape rough");
         }).attrs(function (vertex, i) {
           return i % 2 ? _this2._fillAttrs : _this2._strokeAttrs;
@@ -12504,8 +12585,8 @@ var TextAnnotation = /*#__PURE__*/function (_Decoration) {
   }, {
     key: "updateCycle",
     value: function updateCycle(selection) {
-      var text = typeof this._text === 'function' ? this._text() : this._text;
-      console.log(text);
+      var text = typeof this._text === 'function' ? this._text() : this._text; // console.log(text)
+
       this.selection.attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")).selectAll("text").data([text]).join("text").attrs(this._attrs).text(function (d) {
         return d;
       });
@@ -12711,6 +12792,7 @@ exports.label = label;
 exports.legend = legend;
 exports.nodeBackground = nodeBackground;
 exports.nodes = nodes;
+exports.predicatedRootToTipLayout = predicatedRootToTipLayout;
 exports.rectangle = rectangle;
 exports.rectangularHilightedLayout = rectangularHilightedLayout;
 exports.rectangularLayout = rectangularLayout;

@@ -99,7 +99,7 @@ export class RoughCircleBauble extends AbstractNodeBauble {
                 enter => enter
                     .append("path")
                     .attr("d", (d, i) => newPaths[i])
-                    .attr("class", (d,i) => {console.log(pathNames[i]);return`${pathNames[i]} node-shape rough`})
+                    .attr("class", (d,i) => {return`${pathNames[i]} node-shape rough`})
                     .attrs((vertex, i) => i%2? this._fillAttrs:this._strokeAttrs)
                     // .styles((vertex, i) => i%2? this._fillStyles:this._strokeStyles) //TODO
                     .each((d,i,n)=>{

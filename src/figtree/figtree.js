@@ -63,7 +63,13 @@ export class FigTree {
         this[p.svg]=svg;
         this[p.tree] = tree;
         this[p.tree].subscribeCallback( () => {
-                this.update();
+        //enroll new nodes if any
+            tree.nodeList.forEach(node => {
+                if (!node[this.id]) {
+                    node[this.id] = {ignore: false, collapsed: false, hidden: false};
+                }
+            })
+            this.update();
             });
 
         tree.nodeList.forEach(node => node[this.id] = {ignore: false, collapsed: false,hidden:false});
@@ -428,7 +434,6 @@ function setupSVG(){
  * @param nodes
  */
 function updateNodePositions(nodes) {
-    console.log(nodes)
     this.nodeManager.update(nodes); //hack to see if the node has been laidout TODO set flag
     this.nodeBackgroundManager.update(nodes);
 }

@@ -326,7 +326,6 @@ export class Tree {
 
         this.heightsKnown = false;
         this.treeUpdateCallback();
-        console.log([...this.postorder()])
     };
 
     /**
@@ -523,22 +522,22 @@ export class Tree {
     splitBranch(node, splitLocation=0.5) {
         const oldLength = node.length;
 
-        const splitNode = makeNode.call(this,
+        const splitNode = this.addNode(
             {
-            parent: node.parent,
-            children: [node],
             length: oldLength*splitLocation,
             annotations: {
                 insertedNode: true
             }
         });
         if (node.parent) {
-            node.parent.children[node.parent.children.indexOf(node)] = splitNode;
+            node.parent.addChild(splitNode);
+            node.parent.removeChild(node);
         } else {
             // node is the root so make splitNode the root
             this.root = splitNode;
         }
-        node.parent = splitNode;
+        splitNode.addChild(node)
+
         node._length = oldLength-splitNode.length;
         this.nodesUpdated=true;
         this.heightsKnown=false;

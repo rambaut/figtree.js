@@ -1,5 +1,6 @@
 import {isFunction} from "../utilities";
 import {select} from "d3";
+import uuid from "uuid";
 
 
 // also but some case specific helper functions for each style.
@@ -109,7 +110,7 @@ export  class BaubleManager{
                        }
                     }),
                 update => update
-                    .call(update => update.transition()
+                    .call(update => update.transition(uuid.v4())
                         .duration(this.figure().transitions().transitionDuration)
                         .ease(this.figure().transitions().transitionEase)
                         .attr("class", (d) => [`${this.class()}`, ...d[this._figureId].classes].join(" "))
