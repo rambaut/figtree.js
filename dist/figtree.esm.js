@@ -6806,8 +6806,6 @@ var Tree = /*#__PURE__*/function () {
      * @param proportion - proportion along the branch to place the root (default 0.5)
      */
     function reroot(node) {
-      var _this2 = this;
-
       var proportion = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0.5;
 
       if (node === this.root) {
@@ -6816,70 +6814,79 @@ var Tree = /*#__PURE__*/function () {
       }
 
       var rootLength = this.root.children[0].length + this.root.children[1].length;
+      var rootChild1 = node;
+      var rootChild2 = node.parent;
+      var nodeAtTop = node.parent.children[0] === node;
 
       if (node.parent !== this.root) {
-        (function () {
-          // the node is not a child of the existing root so the root is actually changing
-          var node0 = node;
-          var parent = node.parent;
-          var lineage = []; // was the node the first child in the parent's children?
+        // the node is not a child of the existing root so the root is actually changing
+        var node0 = node;
+        var parent = node.parent;
+        var gp = parent.parent; // was the node the first child in the parent's children?
 
-          var nodeAtTop = parent.children[0] === node;
-          var rootChild1 = node;
-          var rootChild2 = parent;
-          var oldLength = parent.length;
+        var oldLength = parent.length;
+        var done = false;
+        parent.removeChild(node0);
 
-          while (parent.parent) {
-            // remove the node that will becoming the parent from the children
-            parent._children = parent.children.filter(function (child) {
-              return child !== node0;
-            });
+        while (!done) {
+          if (gp === this.root) {
+            //root should only have 1 child or we arive right away and need to get the sibling
+            var sibling = this.root.children.length === 1 ? this.root.children[0] : this.getSibling(parent);
+            gp.removeChild(sibling);
+            gp.removeChild(parent); // just ncase we got here right away
 
-            if (parent.parent === _this2.root) {
-              var sibling = _this2.getSibling(parent);
+            parent.addChild(sibling); // parent._children.push(sibling);
 
-              parent._children.push(sibling);
+            sibling._length = rootLength;
+            done = true;
+          } else {
+            var tmpGP = gp.parent;
+            gp.removeChild(parent);
+            gp.parent.removeChild(gp);
+            parent.addChild(gp); // swap the parent and parent's parent's length around
 
-              sibling._length = rootLength;
-            } else {
-              // swap the parent and parent's parent's length around
-              var _ref = [oldLength, parent.parent.length];
-              parent.parent._length = _ref[0];
-              oldLength = _ref[1];
+            var tmp = gp._length;
+            gp._length = oldLength;
+            oldLength = tmp; // [gp._length, oldLength] = [oldLength, gp._length];
 
-              // add the new child
-              parent._children.push(parent.parent);
-            }
-
-            lineage = [parent].concat(toConsumableArray(lineage));
             node0 = parent;
-            parent = parent.parent;
-          } // Reuse the root node as root...
-          // Set the order of the children to be the same as for the original parent of the node.
-          // This makes for a more visually consistent rerooting graphically.
+            parent = gp;
+            gp = tmpGP; // remove the node that will becoming the parent from the children
+            // parent._children = parent.children.filter((child) => child !== node0);
+          }
+        } // Reuse the root node as root...
+        // Set the order of the children to be the same as for the original parent of the node.
+        // This makes for a more visually consistent rerooting graphically.
 
 
-          _this2.root.children = nodeAtTop ? [rootChild1, rootChild2] : [rootChild2, rootChild1]; // connect all the children to their parents
+        if (nodeAtTop) {
+          this.root.addChild(rootChild1);
+          this.root.addChild(rootChild2);
+        } else {
+          this.root.addChild(rootChild2);
+          this.root.addChild(rootChild1);
+        } // connect all the children to their parents
 
-          _this2.internalNodes.forEach(function (node) {
-            node.children.forEach(function (child) {
-              child._parent = node;
-            });
+
+        this.internalNodes.forEach(function (node) {
+          node.children.forEach(function (child) {
+            child.parent = node;
           });
-
-          var l = rootChild1.length * proportion;
-          rootChild2._length = l;
-          rootChild1._length = rootChild1.length - l;
-        })();
+        });
+        var l = rootChild1.length * proportion;
+        rootChild2._length = l;
+        rootChild1._length = rootChild1.length - l;
       } else {
         // the root is staying the same, just the position of the root changing
-        var l = node.length * (1.0 - proportion);
-        node._length = l;
-        this.getSibling(node)._length = rootLength - l;
+        var _l = node.length * (1.0 - proportion);
+
+        node._length = _l;
+        this.getSibling(node)._length = rootLength - _l;
       }
 
       this.heightsKnown = false;
       this.treeUpdateCallback();
+      console.log(toConsumableArray(this.postorder()));
     }
   }, {
     key: "rotate",
@@ -7094,10 +7101,10 @@ var Tree = /*#__PURE__*/function () {
   }, {
     key: "rootToTipLengths",
     value: function rootToTipLengths() {
-      var _this3 = this;
+      var _this2 = this;
 
       return this.externalNodes.map(function (tip) {
-        return _this3.rootToTipLength(tip);
+        return _this2.rootToTipLength(tip);
       });
     }
     /**
@@ -7109,7 +7116,7 @@ var Tree = /*#__PURE__*/function () {
   }, {
     key: "splitBranches",
     value: function splitBranches() {
-      var _this4 = this;
+      var _this3 = this;
 
       var splits = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
@@ -7122,18 +7129,18 @@ var Tree = /*#__PURE__*/function () {
         if (splits !== null) {
           if (splits[node.id]) {
             var splitNode = node;
-            splits[node.id].forEach(function (_ref2) {
-              var _ref3 = slicedToArray(_ref2, 2),
-                  time = _ref3[0],
-                  id = _ref3[1];
+            splits[node.id].forEach(function (_ref) {
+              var _ref2 = slicedToArray(_ref, 2),
+                  time = _ref2[0],
+                  id = _ref2[1];
 
-              splitNode = _this4.splitBranch(splitNode, time);
+              splitNode = _this3.splitBranch(splitNode, time);
               splitNode._id = id;
             });
           }
         } else {
           // if no splitLocations are given then split it in the middle.
-          _this4.splitBranch(node, 0.5);
+          _this3.splitBranch(node, 0.5);
         }
       });
 
@@ -7540,12 +7547,12 @@ var Tree = /*#__PURE__*/function () {
   }, {
     key: "subscribeCallback",
     value: function subscribeCallback(func) {
-      var _this5 = this;
+      var _this4 = this;
 
       var currentCallback = this.treeUpdateCallback;
 
       this.treeUpdateCallback = function () {
-        if (!_this5._shouldUpdate) {
+        if (!_this4._shouldUpdate) {
           return;
         }
 
@@ -7992,11 +7999,11 @@ function orderNodes(node, ordering) {
 
 
 function calculateHeights() {
-  var _this6 = this;
+  var _this5 = this;
 
   var maxRTT = max(this.rootToTipLengths());
   this.nodeList.forEach(function (node) {
-    return node._height = maxRTT - _this6.rootToTipLength(node);
+    return node._height = maxRTT - _this5.rootToTipLength(node);
   });
   this.heightsKnown = true;
   this.lengthsKnown = false; // this.treeUpdateCallback();
@@ -8073,16 +8080,16 @@ function reconstructInternalStates(name, parentStates, acctran, node) {
     var _max = Object.entries(stateCounts).reduce(function (prev, current) {
       return prev[1] > current[1] ? prev : current;
     })[1];
-    nodeStates = Object.entries(stateCounts).filter(function (_ref4) {
-      var _ref5 = slicedToArray(_ref4, 2),
-          state = _ref5[0],
-          count = _ref5[1];
+    nodeStates = Object.entries(stateCounts).filter(function (_ref3) {
+      var _ref4 = slicedToArray(_ref3, 2),
+          state = _ref4[0],
+          count = _ref4[1];
 
       return count === _max;
-    }).map(function (_ref6) {
-      var _ref7 = slicedToArray(_ref6, 2),
-          state = _ref7[0],
-          count = _ref7[1];
+    }).map(function (_ref5) {
+      var _ref6 = slicedToArray(_ref5, 2),
+          state = _ref6[0],
+          count = _ref6[1];
 
       return state;
     });
@@ -8269,14 +8276,14 @@ var Node = /*#__PURE__*/function () {
   }, {
     key: "children",
     get: function get() {
-      var _this7 = this;
+      var _this6 = this;
 
       if (this._children === null) {
         return null;
       }
 
       return this._children.map(function (childId) {
-        return _this7._tree.getNode(childId);
+        return _this6._tree.getNode(childId);
       });
     }
   }, {
@@ -8285,6 +8292,7 @@ var Node = /*#__PURE__*/function () {
       this._children = this._children.filter(function (childId) {
         return childId !== node.id;
       });
+      node._parent = null;
     }
   }, {
     key: "addChild",
@@ -8294,6 +8302,8 @@ var Node = /*#__PURE__*/function () {
       }
 
       this._children.push(node.id);
+
+      node.parent = this;
     } // set children(value) {
     //     this._children = value;
     //     for(const child of this._children){
@@ -8420,6 +8430,7 @@ var Bauble = /*#__PURE__*/function () {
 
     this.id = "n".concat(uuid_1.v4());
     this._attrs = {};
+    this._styles = {};
     this._interactions = {};
 
     this._filter = function () {
@@ -8499,6 +8510,25 @@ var Bauble = /*#__PURE__*/function () {
         return this;
       } else {
         return this._attrs[string];
+      }
+    }
+    /**
+     * Get or set style that will style the elements.
+     * @param string
+     * @param value - a string, number, or function that will be passed to d3 selection.
+     * @return {Bauble|*}
+     */
+
+  }, {
+    key: "style",
+    value: function style(string) {
+      var value = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+
+      if (value) {
+        this._styles[string] = value;
+        return this;
+      } else {
+        return this._styles[string];
       }
     }
     /**
@@ -8651,10 +8681,39 @@ var Bauble = /*#__PURE__*/function () {
       return this;
     }
   }, {
+    key: "ignoreOnClick",
+    value: function ignoreOnClick() {
+      var _this4 = this;
+
+      this.on("click", function (node, i, n) {
+        _this4.manager().figure().ignore(node, true); // this.manager().figure().update()
+
+      });
+      return this;
+    }
+  }, {
     key: "onClick",
     value: function onClick(f) {
       this.on("click", function (d, i, n) {
         return f(d, i, n);
+      });
+      return this;
+    }
+    /**
+     * helper method to fire a function on mouse enter and leave
+     * that share a tree.
+     * @param key
+     * @return {AbstractNodeBauble}
+     */
+
+  }, {
+    key: "onHover",
+    value: function onHover(f) {
+      this.on("mouseenter", function (d, i, n) {
+        f(d, i, n);
+      });
+      this.on("mouseleave", function (d, i, n) {
+        f(d, i, n);
       });
       return this;
     }
@@ -9055,6 +9114,8 @@ var FigTree = /*#__PURE__*/function () {
     this.axes = [];
     this._features = [];
     this._vertexMap = new Map();
+    this._calculateScales = true; //TODO make that a constant
+
     this.nodeManager = new BaubleManager()["class"]("node").layer("nodes-layer").figure(this);
     this.nodeBackgroundManager = new BaubleManager()["class"]("node-background").layer("node-backgrounds-layer").figure(this);
     this.branchManager = new BaubleManager()["class"]("branch").layer("branches-layer").figure(this);
@@ -9087,7 +9148,7 @@ var FigTree = /*#__PURE__*/function () {
       var _this3 = this;
 
       return this.tree().nodes.filter(function (n) {
-        return !n[_this3.id].hidden && !n[_this3.id].ignore;
+        return !n[_this3.id].hidden;
       });
     }
     /**
@@ -9137,6 +9198,18 @@ var FigTree = /*#__PURE__*/function () {
         return this;
       } else {
         return this._vertexMap;
+      }
+    }
+  }, {
+    key: "calculateScales",
+    value: function calculateScales() {
+      var m = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (m !== null) {
+        this._calculateScales = m;
+        return this;
+      } else {
+        return this._calculateScales;
       }
     }
     /**
@@ -9367,9 +9440,100 @@ var FigTree = /*#__PURE__*/function () {
 
   }, {
     key: "ignore",
-    value: function ignore(node) {
-      node[this.id].ignore = !node[this.id].ignore;
-      this.update();
+    value:
+    /**
+    * A helper function that toggle the ignore flag on a node in this figure.
+    * @param node
+    * @return {FigTree}
+    */
+    function ignore(node) {
+      var update = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+      node[this.id].ignore = true;
+
+      if (update) {
+        this.update();
+      }
+
+      return this;
+    }
+    /**
+    * A helper function that hides a node and ignores it.
+    * @param node
+    * @return {FigTree}
+    */
+
+  }, {
+    key: "hide",
+    value:
+    /**
+    * A helper function that toggle the hidden flag on a node in this figure.
+    * @param node
+    * @return {FigTree}
+    */
+    function hide(node) {
+      var update = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+      node[this.id].hidden = true;
+
+      if (update) {
+        this.update();
+      }
+
+      return this;
+    }
+  }, {
+    key: "ignoreAndHide",
+    value: function ignoreAndHide(node) {
+      var update = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+      node[this.id].hidden = true;
+      node[this.id].ignore = true;
+
+      if (update) {
+        this.update();
+      }
+
+      return this;
+    }
+    /**
+    * A helper function that unhides a node and unignores it.
+    * @param node
+    * @return {FigTree}
+    */
+
+  }, {
+    key: "reveal",
+    value: function reveal(node) {
+      var update = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+      node[this.id].hidden = false;
+      node[this.id].ignore = false;
+
+      if (update) {
+        this.update();
+      }
+
+      return this;
+    }
+  }, {
+    key: "show",
+    value: function show(node) {
+      var update = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+      node[this.id].hidden = false;
+
+      if (update) {
+        this.update();
+      }
+
+      return this;
+    }
+  }, {
+    key: "notice",
+    value: function notice(node) {
+      var update = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+      node[this.id].ignore = false;
+
+      if (update) {
+        this.update();
+      }
+
       return this;
     }
   }], [{
@@ -9425,7 +9589,7 @@ function setupSVG() {
 
 
 function updateNodePositions(nodes) {
-  // TODO check to see if rtt and add nodes if needed.
+  console.log(nodes);
   this.nodeManager.update(nodes); //hack to see if the node has been laidout TODO set flag
 
   this.nodeBackgroundManager.update(nodes);
@@ -9461,22 +9625,43 @@ function setUpScales() {
     height = this[p.svg].getBoundingClientRect().height;
   }
 
-  var xdomain = extent(this.verticesForScales.map(function (n) {
-    return n[_this6.id].x;
-  }));
-  var ydomain = extent(this.verticesForScales.map(function (n) {
-    return n[_this6.id].y;
-  }));
-  var xScale = this.settings.xScale.scale().domain(xdomain).range([0, width - this._margins.right - this._margins.left]);
-  var yScale = this.settings.yScale.scale().domain(ydomain).range([height - this._margins.bottom - this._margins.top, 0]); //flipped
+  if (this._calculateScales) {
+    var xdomain = extent(this.verticesForScales.map(function (n) {
+      return n[_this6.id].x;
+    }));
+    var ydomain = extent(this.verticesForScales.map(function (n) {
+      return n[_this6.id].y;
+    }));
+    var xScale = this.settings.xScale.scale().domain(xdomain).range([0, width - this._margins.right - this._margins.left]);
+    var yScale = this.settings.yScale.scale().domain(ydomain).range([height - this._margins.bottom - this._margins.top, 0]); //flipped
 
-  console.log(xScale.domain());
-  this.scales = {
-    x: xScale,
-    y: yScale,
-    width: width,
-    height: height
-  };
+    this.scales = {
+      x: xScale,
+      y: yScale,
+      width: width,
+      height: height
+    };
+  } else {
+    var _xdomain = extent(this.verticesForScales.map(function (n) {
+      return n[_this6.id].x;
+    }));
+
+    var _ydomain = extent(this.verticesForScales.map(function (n) {
+      return n[_this6.id].y;
+    }));
+
+    var _xScale = this.settings.xScale.scale().domain(_xdomain).range(_xdomain);
+
+    var _yScale = this.settings.yScale.scale().domain(_ydomain).range(_ydomain); //flipped
+
+
+    this.scales = {
+      x: _xScale,
+      y: _yScale,
+      width: width,
+      height: height
+    };
+  }
 }
 
 var getPrototypeOf = createCommonjsModule(function (module) {
@@ -9753,7 +9938,7 @@ var CircleBauble = /*#__PURE__*/function (_AbstractNodeBauble) {
       }, function (d) {
         return _this2.id;
       }).join(function (enter) {
-        return enter.append("circle").attr("class", "node-shape ".concat(_this2.id)).attrs(_this2._attrs).each(function (d, i, n) {
+        return enter.append("circle").attr("class", "node-shape ".concat(_this2.id)).attrs(_this2._attrs).styles(_this2._styles).each(function (d, i, n) {
           var element = select(n[i]);
 
           var _loop = function _loop() {
@@ -9774,7 +9959,7 @@ var CircleBauble = /*#__PURE__*/function (_AbstractNodeBauble) {
         return update.call(function (update) {
           return update.transition(function (d) {
             return "u".concat(uuid_1.v4());
-          }).duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attrs(_this2._attrs).each(function (d, i, n) {
+          }).duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attrs(_this2._attrs).styles(_this2._styles).each(function (d, i, n) {
             var element = select(n[i]);
 
             var _loop2 = function _loop2() {
@@ -9903,7 +10088,7 @@ var RectangularBauble = /*#__PURE__*/function (_AbstractNodeBauble) {
       }, function (d) {
         return _this2.id;
       }).join(function (enter) {
-        return enter.append("rect").attr("class", "node-shape ".concat(_this2.id)).attr("x", -w / 2).attr("y", -h / 2).attrs(_this2._attrs).each(function (d, i, n) {
+        return enter.append("rect").attr("class", "node-shape ".concat(_this2.id)).attr("x", -w / 2).attr("y", -h / 2).attrs(_this2._attrs).styles(_this2._styles).each(function (d, i, n) {
           var element = select(n[i]);
 
           var _loop = function _loop() {
@@ -9924,7 +10109,7 @@ var RectangularBauble = /*#__PURE__*/function (_AbstractNodeBauble) {
         return update.call(function (update) {
           return update.transition(function (d) {
             return "u".concat(uuid_1.v4());
-          }).duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attr("x", -w / 2).attr("y", -h / 2).attrs(_this2._attrs).each(function (d, i, n) {
+          }).duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attr("x", -w / 2).attr("y", -h / 2).attrs(_this2._attrs).styles(_this2._styles).each(function (d, i, n) {
             var element = select(n[i]);
 
             var _loop2 = function _loop2() {
@@ -10046,7 +10231,7 @@ var Branch = /*#__PURE__*/function (_Bauble) {
       }).join(function (enter) {
         return enter.append("path").attr("d", function (v1, i) {
           return _this2.branchPath(v1, i);
-        }).attr("class", "branch-path ".concat(_this2.id)).attrs(_this2._attrs).each(function (d, i, n) {
+        }).attr("class", "branch-path ".concat(_this2.id)).attrs(_this2._attrs).styles(_this2._styles).each(function (d, i, n) {
           var element = select(n[i]);
 
           var _loop = function _loop() {
@@ -10069,7 +10254,7 @@ var Branch = /*#__PURE__*/function (_Bauble) {
             return "u".concat(uuid_1.v4());
           }).duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attr("d", function (edge, i) {
             return _this2.branchPath(edge, i);
-          }).attrs(_this2._attrs).each(function (d, i, n) {
+          }).attrs(_this2._attrs).styles(_this2._styles).each(function (d, i, n) {
             var element = select(n[i]);
 
             var _loop2 = function _loop2() {
@@ -10431,7 +10616,7 @@ var Label = /*#__PURE__*/function (_Bauble) {
       }, function (d) {
         return "label-".concat(_this2.id);
       }).join(function (enter) {
-        return enter.append("text").attr("class", "label ".concat(_this2.id)).attrs(_this2._attrs).each(function (d, i, n) {
+        return enter.append("text").attr("class", "label ".concat(_this2.id)).attrs(_this2._attrs).styles(_this2._styles).each(function (d, i, n) {
           var element = select(n[i]);
 
           var _loop = function _loop() {
@@ -10452,7 +10637,7 @@ var Label = /*#__PURE__*/function (_Bauble) {
         });
       }, function (update) {
         return update.call(function (update) {
-          return update.transition().duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attrs(_this2._attrs).each(function (d, i, n) {
+          return update.transition().duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attrs(_this2._attrs).styles(_this2._styles).each(function (d, i, n) {
             var element = select(n[i]);
 
             var _loop2 = function _loop2() {
@@ -10547,48 +10732,42 @@ function branchLabel(text) {
 function ownKeys$2(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
 function _objectSpread$2(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$2(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$2(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-var rootToTipLayout = function rootToTipLayout() {
-  var predicate = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function (n) {
-    return true;
-  };
-  return function (figtree) {
-    var id = figtree.id;
-    var tree = figtree.tree();
+function rootToTipLayout(figtree) {
+  var id = figtree.id;
+  var tree = figtree.tree();
 
-    if (!tree.annotations.date) {
-      console.warn("tree must be annotated with dates to use the root to tip layout");
-      return [];
-    }
+  if (!tree.annotations.date) {
+    console.warn("tree must be annotated with dates to use the root to tip layout");
+    return [];
+  }
 
-    tree.externalNodes.forEach(function (n) {
-      n[id].x = n.annotations.date;
-      n[id].y = n.divergence;
-      n[id].classes = getClassesFromNode(n);
-      n[id].textLabel = {
-        labelBelow: false,
-        x: "12",
-        y: "0",
-        alignmentBaseline: "middle",
-        textAnchor: "start"
-      };
-    });
-    tree.internalNodes.forEach(function (n) {
-      n[id].ignore = true;
-    });
-    figtree.regression = makeTrendlineEdge(predicate, id)(tree.externalNodes.filter(function (n) {
-      return !n[figtree.id].ignore;
-    }));
-  };
-}; // TODO add edges from tips to parent on trendline to compare outliers.
+  tree.externalNodes.forEach(function (n) {
+    n[id].x = n.annotations.date;
+    n[id].y = n.divergence;
+    n[id].classes = getClassesFromNode(n);
+    n[id].textLabel = {
+      labelBelow: false,
+      x: "12",
+      y: "0",
+      alignmentBaseline: "middle",
+      textAnchor: "start"
+    };
+  });
+  tree.internalNodes.forEach(function (n) {
+    figtree.ignoreAndHide(n, false);
+  });
+  figtree.regression = makeTrendlineEdge(id)(tree.externalNodes.filter(function (n) {
+    return !n[id].ignore;
+  }));
+} // TODO add edges from tips to parent on trendline to compare outliers.
 
-var makeTrendlineEdge = function makeTrendlineEdge(predicate, id) {
-  return function (vertices) {
-    var usedVertices = vertices.filter(predicate);
+var makeTrendlineEdge = function makeTrendlineEdge(id) {
+  return function (usedVertices) {
     var regression = leastSquares(usedVertices, id);
-    var x1 = min(vertices, function (d) {
+    var x1 = min(usedVertices, function (d) {
       return d[id].x;
     });
-    var x2 = max(vertices, function (d) {
+    var x2 = max(usedVertices, function (d) {
       return d[id].x;
     });
     var y1 = 0.0;
@@ -10695,6 +10874,7 @@ var Decoration = /*#__PURE__*/function () {
     this._interactions = [];
     this._x = 0;
     this._y = 0;
+    this._classes = "";
   }
   /**
    * Get or set svg layer elements will be added to.
@@ -10712,6 +10892,24 @@ var Decoration = /*#__PURE__*/function () {
         return this._figure;
       } else {
         this._figure = f;
+        return this;
+      }
+    }
+    /**
+     * Get or set svg layer elements will be added to.
+     * @param l
+     * @return {BaubleManager|*}
+     */
+
+  }, {
+    key: "classes",
+    value: function classes() {
+      var f = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (f === null) {
+        return this._classes;
+      } else {
+        this._classes = f;
         return this;
       }
     }
@@ -11066,7 +11264,7 @@ var Axis = /*#__PURE__*/function (_Decoration) {
           axis = _this$updateScales.axis;
 
       var selection = this.figure().svgSelection.select(".".concat(this.layer()));
-      selection.append("g").attr("id", this._id).attr("class", "axis").attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")).call(axis);
+      selection.append("g").attr("id", this._id).attr("class", "axis ".concat(this._classes)).attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")).call(axis);
       var pos = {
         x: 0,
         y: 0
@@ -11078,7 +11276,7 @@ var Axis = /*#__PURE__*/function (_Decoration) {
         pos.y = length / 2;
       }
 
-      selection.append("g").attr("id", "".concat(this._id, "-label")).attr("class", "axis-label").attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")).append("text").attr("transform", "translate(".concat(pos.x + this._title.xPadding, ", ").concat(pos.y + this._title.yPadding, ") rotate(").concat(this._title.rotation, ")")).attr("alignment-baseline", "hanging").style("text-anchor", "middle").text(this._title.text);
+      selection.append("g").attr("id", "".concat(this._id, "-label")).attr("class", "axis-label ".concat(this._classes)).attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")).append("text").attr("transform", "translate(".concat(pos.x + this._title.xPadding, ", ").concat(pos.y + this._title.yPadding, ") rotate(").concat(this._title.rotation, ")")).attr("alignment-baseline", "hanging").style("text-anchor", "middle").text(this._title.text);
     }
   }, {
     key: "tickFormat",
@@ -11121,7 +11319,7 @@ var Axis = /*#__PURE__*/function (_Decoration) {
 
       var selection = this.figure().svgSelection.select(".".concat(this.layer()));
       selection.select("g#".concat(this._id)).transition() // .duration()
-      .attr("id", this._id).attr("class", "axis").attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")).call(axis);
+      .attr("id", this._id).attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")).call(axis);
       var pos = {
         x: 0,
         y: 0
@@ -11240,7 +11438,7 @@ var ScaleBar = /*#__PURE__*/function (_Decoration) {
     key: "create",
     value: function create() {
       var selection = this.figure().svgSelection.select(".".concat(this.layer()));
-      var group = selection.append("g").attr("id", this._id).attr("class", "scale-bar").attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")"));
+      var group = selection.append("g").attr("id", this._id).attr("class", "scale-bar ".concat(this._classes)).attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")"));
       group.append("line").attr("x1", 0).attr("y1", 0).attr("x2", this.direction() === "x" ? this.scales().x(this._length) : 0).attr("y2", this.direction() === "y" ? this.scales().y(this._length) : 0).attr("stroke", "black");
       var pos = {
         x: 0,
@@ -11367,7 +11565,7 @@ var Legend = /*#__PURE__*/function (_Decoration) {
       }
 
       var selection = this.figure().svgSelection.select(".".concat(this.layer()));
-      var group = selection.append("g").attr("id", this._id).attr("class", "legend").attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")); //https://www.d3-graph-gallery.com/graph/custom_legend.html#cont1
+      var group = selection.append("g").attr("id", this._id).attr("class", "legend ".concat(this._classes)).attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")")); //https://www.d3-graph-gallery.com/graph/custom_legend.html#cont1
       // Add one dot in the legend for each name.
 
       group.selectAll("rect").data(this.scale().domain()).enter().append("rect").attr("x", 0).attr("y", function (d, i) {
@@ -11553,7 +11751,7 @@ var AxisBars = /*#__PURE__*/function (_Decoration) {
     key: "create",
     value: function create() {
       var selection = this.figure().svgSelection.select(".".concat(this.layer()));
-      var barLayer = selection.append("g").attr("id", this._id).attr("class", "axis-bars").attr("transform", "translate(".concat(this.x(), ", ").concat(this.y(), ")"));
+      var barLayer = selection.append("g").attr("id", this._id).attr("class", "axis-bars ".concat(this._classes)).attr("transform", "translate(".concat(this.x(), ", ").concat(this.y(), ")"));
     }
   }, {
     key: "scale",
@@ -11817,7 +12015,8 @@ var RoughCircleBauble = /*#__PURE__*/function (_AbstractNodeBauble) {
           return "".concat(pathNames[i], " node-shape rough");
         }).attrs(function (vertex, i) {
           return i % 2 ? _this2._fillAttrs : _this2._strokeAttrs;
-        }).each(function (d, i, n) {
+        }) // .styles((vertex, i) => i%2? this._fillStyles:this._strokeStyles) //TODO
+        .each(function (d, i, n) {
           var element = select(n[i]);
 
           var _loop = function _loop() {
@@ -11840,7 +12039,8 @@ var RoughCircleBauble = /*#__PURE__*/function (_AbstractNodeBauble) {
             return newPaths[i];
           }).attrs(function (vertex, i) {
             return i % 2 ? _this2._fillAttrs : _this2._strokeAttrs;
-          }).each(function (d, i, n) {
+          }) // .styles((vertex, i) => i%2? this._fillStyles:this._strokeStyles) //TODO
+          .each(function (d, i, n) {
             var element = select(n[i]);
 
             var _loop2 = function _loop2() {
@@ -11999,7 +12199,7 @@ var CoalescentBauble = /*#__PURE__*/function (_AbstractNodeBauble) {
         return _this2.id;
       }).join(function (enter) {
         return enter.append("path").attr("class", "node-shape ".concat(_this2.id)).call(function (enter) {
-          return enter.transition().duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attrs(_this2._attrs).attr("d", function (d) {
+          return enter.transition().duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attrs(_this2._attrs).styles(_this2._styles).attr("d", function (d) {
             return _this2.makeCoalescent(d);
           });
         }).each(function (d, i, n) {
@@ -12023,7 +12223,7 @@ var CoalescentBauble = /*#__PURE__*/function (_AbstractNodeBauble) {
         return update.call(function (update) {
           return update.transition(function (d) {
             return "u".concat(uuid_1.v4());
-          }).duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attrs(_this2._attrs).attr("d", function (d) {
+          }).duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attrs(_this2._attrs).styles(_this2._styles).attr("d", function (d) {
             return _this2.makeCoalescent(d);
           }).each(function (d, i, n) {
             var element = select(n[i]);
@@ -12212,7 +12412,7 @@ var TrendLine = /*#__PURE__*/function (_Decoration) {
     key: "create",
     value: function create() {
       var selection = this.figure().svgSelection.select(".".concat(this.layer()));
-      this.selection = selection.append("g").attr("id", this._id).attr("class", "trendline");
+      this.selection = selection.append("g").attr("id", this._id).attr("class", "trendline ".concat(this._classes));
       this.updateCycle();
     }
   }, {
@@ -12294,7 +12494,7 @@ var TextAnnotation = /*#__PURE__*/function (_Decoration) {
     key: "create",
     value: function create() {
       var selection = this.figure().svgSelection.select(".".concat(this.layer()));
-      this.selection = selection.append("g").attr("id", this._id).attr("class", "text_annotation");
+      this.selection = selection.append("g").attr("id", this._id).attr("class", "text-annotation ".concat(this._classes));
       this.updateCycle();
     }
   }, {
@@ -12383,7 +12583,7 @@ var TraitBar = /*#__PURE__*/function (_Decoration) {
     key: "create",
     value: function create(nodes) {
       var selection = this.figure().svgSelection.select(".".concat(this.layer()));
-      var group = selection.append("g").attr("id", this._id).attr("class", "trait-bar").attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")"));
+      var group = selection.append("g").attr("id", this._id).attr("class", "trait-bar ".concat(this._classes)).attr("transform", "translate(".concat(this._x, ", ").concat(this._y, ")"));
       this.updateCycle(nodes);
     }
   }, {
@@ -12455,5 +12655,34 @@ function traitBar() {
   return new TraitBar();
 }
 
-export { Bauble, BaubleManager, Branch, CircleBauble, Decoration, FigTree, RectangularBauble, Tree, Type, axis$1 as axis, axisBars, branch, branchLabel, branches, circle, coalescentEvent, decimalToDate, internalNodeLabel, label, legend, nodeBackground, nodes, rectangle, rectangularHilightedLayout, rectangularLayout, rectangularZoomedLayout, rootToTipLayout, roughBranch, roughCircle, scaleBar, textAnnotation, tipLabel, traitBar, trendLine };
+var geographicLayout = function geographicLayout(projection) {
+  return function (figtree) {
+    var id = figtree.id;
+    var tree = figtree.tree();
+    figtree.calculateScales(false);
+
+    if (!tree.annotations.longitude) {
+      console.warn("tree must be annotated with longitude and latitiude");
+      return [];
+    }
+
+    tree.nodes.forEach(function (n) {
+      var point = projection([n.annotations.longitude, n.annotations.latitude]);
+      n[id].x = point[0];
+      n[id].y = point[1];
+      n[id].classes = getClassesFromNode(n);
+      var leftLabel = !!n.children;
+      var labelBelow = !!n.children && (!n.parent || n.parent.children[0] !== n);
+      n[id].textLabel = {
+        labelBelow: labelBelow,
+        x: leftLabel ? "-6" : "12",
+        y: leftLabel ? labelBelow ? "-8" : "8" : "0",
+        alignmentBaseline: leftLabel ? labelBelow ? "bottom" : "hanging" : "middle",
+        textAnchor: leftLabel ? "end" : "start"
+      };
+    });
+  };
+};
+
+export { Bauble, BaubleManager, Branch, CircleBauble, Decoration, FigTree, RectangularBauble, Tree, Type, axis$1 as axis, axisBars, branch, branchLabel, branches, circle, coalescentEvent, decimalToDate, geographicLayout, internalNodeLabel, label, legend, nodeBackground, nodes, rectangle, rectangularHilightedLayout, rectangularLayout, rectangularZoomedLayout, rootToTipLayout, roughBranch, roughCircle, scaleBar, textAnnotation, tipLabel, traitBar, trendLine };
 //# sourceMappingURL=figtree.esm.js.map

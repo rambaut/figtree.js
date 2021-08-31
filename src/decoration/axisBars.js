@@ -62,7 +62,7 @@ class AxisBars extends Decoration{
         const barLayer = selection
             .append("g")
             .attr("id", this._id)
-            .attr("class", "axis-bars")
+            .attr("class", `axis-bars ${this._classes}`)
             .attr("transform", `translate(${this.x()}, ${this.y()})`)
     }
 

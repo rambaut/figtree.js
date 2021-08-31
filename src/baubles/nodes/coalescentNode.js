@@ -44,6 +44,7 @@ export class CoalescentBauble extends AbstractNodeBauble {
                         .duration(this.transitions().transitionDuration)
                         .ease(this.transitions().transitionEase)
                         .attrs(this._attrs)
+                        .styles(this._styles)
                         .attr("d",d=>this.makeCoalescent(d)))
                     .each((d, i, n) => {
                         const element = select(n[i]);
@@ -57,6 +58,7 @@ export class CoalescentBauble extends AbstractNodeBauble {
                         .duration(this.transitions().transitionDuration)
                         .ease(this.transitions().transitionEase)
                         .attrs(this._attrs)
+                        .styles(this._styles)
                         .attr("d",d=>this.makeCoalescent(d))
                         .each((d, i, n) => {
                             const element = select(n[i]);

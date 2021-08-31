@@ -19,6 +19,7 @@ export class Decoration {
         this._interactions=[];
         this._x=0;
         this._y=0;
+        this._classes=""
     }
     /**
      * Get or set svg layer elements will be added to.
@@ -30,6 +31,19 @@ export class Decoration {
             return this._figure;
         } else {
             this._figure = f;
+            return this;
+        }
+    }
+    /**
+     * Get or set svg layer elements will be added to.
+     * @param l
+     * @return {BaubleManager|*}
+     */
+    classes(f = null) {
+        if (f === null) {
+            return this._classes;
+        } else {
+            this._classes = f;
             return this;
         }
     }

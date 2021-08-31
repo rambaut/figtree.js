@@ -55,7 +55,7 @@ class ScaleBar extends Decoration {
         const group =selection
             .append("g")
             .attr("id", this._id)
-            .attr("class", "scale-bar")
+            .attr("class", `scale-bar ${this._classes}`)
             .attr("transform", `translate(${this._x}, ${this._y})`)
 
             group

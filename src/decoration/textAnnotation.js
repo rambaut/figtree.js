@@ -22,7 +22,8 @@ class TextAnnotation extends Decoration{
         this.selection =   selection
             .append("g")
             .attr("id", this._id)
-            .attr("class","text_annotation")
+            .attr("class", `text-annotation ${this._classes}`)
+
         this.updateCycle();
     }
     updateCycle(selection) {

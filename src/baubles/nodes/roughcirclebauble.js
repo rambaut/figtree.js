@@ -101,6 +101,7 @@ export class RoughCircleBauble extends AbstractNodeBauble {
                     .attr("d", (d, i) => newPaths[i])
                     .attr("class", (d,i) => {console.log(pathNames[i]);return`${pathNames[i]} node-shape rough`})
                     .attrs((vertex, i) => i%2? this._fillAttrs:this._strokeAttrs)
+                    // .styles((vertex, i) => i%2? this._fillStyles:this._strokeStyles) //TODO
                     .each((d,i,n)=>{
                         const element = select(n[i]);
                         for( const [key,func] of Object.entries(this._interactions)){
@@ -111,6 +112,7 @@ export class RoughCircleBauble extends AbstractNodeBauble {
                     .call(update => update.transition()
                         .attr("d", (d, i) => newPaths[i])
                         .attrs((vertex, i) => i%2? this._fillAttrs:this._strokeAttrs)
+                        // .styles((vertex, i) => i%2? this._fillStyles:this._strokeStyles) //TODO
                         .each((d,i,n)=>{
                             const element = select(n[i]);
                             for( const [key,func] of Object.entries(this._interactions)){

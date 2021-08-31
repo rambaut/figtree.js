@@ -59,7 +59,7 @@ class Legend extends Decoration {
         const group = selection
             .append("g")
             .attr("id", this._id)
-            .attr("class", "legend")
+            .attr("class", `legend ${this._classes}`)
             .attr("transform", `translate(${this._x}, ${this._y})`);
 //https://www.d3-graph-gallery.com/graph/custom_legend.html#cont1
 // Add one dot in the legend for each name.

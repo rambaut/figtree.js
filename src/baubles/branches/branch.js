@@ -31,6 +31,7 @@ export class Branch extends Bauble {
                     .attr("d", (v1,i) => this.branchPath(v1,i))
                     .attr("class", `branch-path ${this.id}`)
                     .attrs(this._attrs)
+                    .styles(this._styles)
                     .each((d,i,n)=>{
                         const element = select(n[i]);
                         for( const [key,func] of Object.entries(this._interactions)){
@@ -43,6 +44,7 @@ export class Branch extends Bauble {
                         .ease(this.transitions().transitionEase)
                         .attr("d", (edge,i) => this.branchPath(edge,i))
                         .attrs(this._attrs)
+                        .styles(this._styles)
                         .each((d,i,n)=>{
                             const element = select(n[i]);
                             for( const [key,func] of Object.entries(this._interactions)){

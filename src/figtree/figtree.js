@@ -71,7 +71,8 @@ export class FigTree {
         this.axes=[];
         this._features=[];
         this._vertexMap=new Map();
-
+        this._calculateScales=true
+            //TODO make that a constant
 
         this.nodeManager = new BaubleManager()
             .class("node")
@@ -104,7 +105,7 @@ export class FigTree {
         return v;
     }
     get verticiesToPlot(){
-        return this.tree().nodes.filter(n => !n[this.id].hidden && !n[this.id].ignore);
+        return this.tree().nodes.filter(n => !n[this.id].hidden);
     }
 
     /**
@@ -145,6 +146,14 @@ export class FigTree {
         }
     }
 
+    calculateScales(m=null){
+        if(m!==null){
+            this._calculateScales = m
+            return this;
+        }else{
+            return this._calculateScales;
+        }
+    }
 
     /**
      * Updates the figure when the tree has changed.  You can call this to force an update.
@@ -321,6 +330,74 @@ export class FigTree {
         return this;
 
     }
+        /**
+     * A helper function that toggle the hidden flag on a node in this figure.
+     * @param node
+     * @return {FigTree}
+     */
+         hide(node,update=true){
+            node[this.id].hidden = true;
+            if(update){
+                this.update();
+            }
+            return this;
+    
+        }
+            /**
+     * A helper function that toggle the ignore flag on a node in this figure.
+     * @param node
+     * @return {FigTree}
+     */
+    ignore(node,update=true){
+        node[this.id].ignore = true;
+        if(update){
+            this.update();
+        }
+        return this;
+
+    }
+        /**
+     * A helper function that hides a node and ignores it.
+     * @param node
+     * @return {FigTree}
+     */
+         ignoreAndHide(node,update=true){
+            node[this.id].hidden = true;
+            node[this.id].ignore = true;
+            if(update){
+                this.update();
+            }
+            return this;
+    
+        }
+        /**
+     * A helper function that unhides a node and unignores it.
+     * @param node
+     * @return {FigTree}
+     */
+        reveal(node,update=true){
+            node[this.id].hidden = false;
+            node[this.id].ignore = false;
+            if(update){
+                this.update();
+
+            }
+            return this;
+        }
+        show(node,update=true){
+            node[this.id].hidden = false;
+            if(update){
+                this.update();
+            }
+            return this;
+        }
+        notice(node,update=true){
+        node[this.id].ignore = false;
+        if(update){
+            this.update();
+        }
+        return this;
+    }
 }
 
 function setupSVG(){
@@ -344,7 +421,6 @@ function setupSVG(){
     this.svgSelection.append("g").attr("class", "nodes-layer");
     this.svgSelection.append("g").attr("class","top-annotation-layer");
 
-
 }
 /**
  * A helper function that sets the positions of the node and nodebackground groups in the svg and then calls update
@@ -352,7 +428,7 @@ function setupSVG(){
  * @param nodes
  */
 function updateNodePositions(nodes) {
-    // TODO check to see if rtt and add nodes if needed.
+    console.log(nodes)
     this.nodeManager.update(nodes); //hack to see if the node has been laidout TODO set flag
     this.nodeBackgroundManager.update(nodes);
 }
@@ -365,6 +441,7 @@ function updateBranchPositions(nodes){
     this.branchManager.update(nodes.filter(n=>n[this.id].x));
 }
 function setUpScales(){
+
     let width,height;
     if(Object.keys(this.settings).indexOf("width")>-1){
         width =this.settings.width;
@@ -376,14 +453,29 @@ function setUpScales(){
     }else{
         height = this[p.svg].getBoundingClientRect().height;
     }
-        const xdomain = extent(this.verticesForScales.map(n=>n[this.id].x));
-        const ydomain =  extent(this.verticesForScales.map(n=>n[this.id].y));
+    if(this._calculateScales) {
+        const xdomain = extent(this.verticesForScales.map(n => n[this.id].x));
+        const ydomain = extent(this.verticesForScales.map(n => n[this.id].y));
         const xScale = this.settings.xScale.scale()
             .domain(xdomain)
-            .range([0, width - this._margins.right-this._margins.left]);
+            .range([0, width - this._margins.right - this._margins.left]);
         const yScale = this.settings.yScale.scale()
             .domain(ydomain)
-            .range([height -this._margins.bottom-this._margins.top,0]); //flipped
-    console.log(xScale.domain())
-    this.scales = {x:xScale, y:yScale, width, height};
+            .range([height - this._margins.bottom - this._margins.top, 0]); //flipped
+        this.scales = {x:xScale, y:yScale, width, height};
+    }else{
+        const xdomain = extent(this.verticesForScales.map(n => n[this.id].x));
+        const ydomain = extent(this.verticesForScales.map(n => n[this.id].y));
+        const xScale = this.settings.xScale.scale()
+            .domain(xdomain)
+            .range(xdomain);
+        const yScale = this.settings.yScale.scale()
+            .domain(ydomain)
+            .range(ydomain); //flipped
+        this.scales = {x:xScale, y:yScale, width, height};
+    }
+
+
+
+
 }

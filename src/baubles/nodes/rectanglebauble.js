@@ -43,6 +43,7 @@ export class RectangularBauble extends AbstractNodeBauble {
                     .attr("x", -w / 2)
                     .attr("y", -h / 2)
                     .attrs(this._attrs)
+                    .styles(this._styles)
                     .each((d,i,n)=>{
                         const element = select(n[i]);
                         for( const [key,func] of Object.entries(this._interactions)){
@@ -56,6 +57,7 @@ export class RectangularBauble extends AbstractNodeBauble {
                         .attr("x", -w / 2)
                         .attr("y", -h / 2)
                         .attrs(this._attrs)
+                        .styles(this._styles)
                         .each((d,i,n)=>{
                             const element = select(n[i]);
                             for( const [key,func] of Object.entries(this._interactions)){

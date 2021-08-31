@@ -47,7 +47,7 @@ class TraitBar extends Decoration{
         const group = selection
             .append("g")
             .attr("id", this._id)
-            .attr("class", "trait-bar")
+            .attr("class", `trait-bar ${this._classes}`)
             .attr("transform", `translate(${this._x}, ${this._y})`);
         this.updateCycle(nodes);
     };

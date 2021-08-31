@@ -239,59 +239,77 @@ export class Tree {
             return;
         }
 
-
         const rootLength = this.root.children[0].length + this.root.children[1].length;
+
+
+        const rootChild1 = node;
+        const rootChild2 = node.parent;
+        const nodeAtTop = node.parent.children[0] === node;
 
         if (node.parent !== this.root) {
             // the node is not a child of the existing root so the root is actually changing
-
             let node0 = node;
             let parent = node.parent;
-
-            let lineage = [ ];
+            let gp = parent.parent;
 
             // was the node the first child in the parent's children?
-            const nodeAtTop = parent.children[0] === node;
-
-            const rootChild1 = node;
-            const rootChild2 = parent;
 
             let oldLength = parent.length;
+            let i=0;
+            let done=false;
+            parent.removeChild(node0)
 
-            while (parent.parent) {
-
-                // remove the node that will becoming the parent from the children
-                parent._children = parent.children.filter((child) => child !== node0);
-
-                if (parent.parent === this.root) {
-                    const sibling = this.getSibling(parent);
-                    parent._children.push(sibling);
+            while (!done) {
+                if (gp === this.root) {
+                    //root should only have 1 child or we arive right away and need to get the sibling
+                    const sibling = this.root.children.length===1? this.root.children[0]:this.getSibling(parent) ;
+                    gp.removeChild(sibling);
+                    gp.removeChild(parent); // just ncase we got here right away
+                    parent.addChild(sibling)
+                    // parent._children.push(sibling);
                     sibling._length = rootLength;
-                } else {
-                    // swap the parent and parent's parent's length around
-                    [parent.parent._length, oldLength] = [oldLength, parent.parent.length];
+                    done = true
+                }else {
 
-                    // add the new child
-                    parent._children.push(parent.parent);
+                    let tmpGP = gp.parent;
+                    gp.removeChild(parent);
+                    gp.parent.removeChild(gp);
+                    parent.addChild(gp)
+                    // swap the parent and parent's parent's length around
+                    let tmp = gp._length;
+                    gp._length = oldLength;
+                    oldLength = tmp;
+                    // [gp._length, oldLength] = [oldLength, gp._length];
+
+                    node0 = parent;
+                    parent = gp;
+                    gp = tmpGP;
+
+                    // remove the node that will becoming the parent from the children
+                    // parent._children = parent.children.filter((child) => child !== node0);
+
                 }
 
-                lineage = [parent, ...lineage];
-
-                node0 = parent;
-                parent = parent.parent;
             }
 
             // Reuse the root node as root...
 
             // Set the order of the children to be the same as for the original parent of the node.
             // This makes for a more visually consistent rerooting graphically.
-            this.root.children = nodeAtTop ? [rootChild1, rootChild2] : [rootChild2, rootChild1];
+
+            if(nodeAtTop){
+                this.root.addChild(rootChild1);
+                this.root.addChild(rootChild2);
+            }else{
+                this.root.addChild(rootChild2);
+                this.root.addChild(rootChild1);
+            }
 
             // connect all the children to their parents
             this.internalNodes
                 .forEach((node) => {
                     node.children.forEach((child) => {
-                        child._parent = node;
+                        child.parent = node;
                     })
                 });
 
@@ -308,6 +326,7 @@ export class Tree {
 
         this.heightsKnown = false;
         this.treeUpdateCallback();
+        console.log([...this.postorder()])
     };
 
     /**
@@ -1399,6 +1418,7 @@ class Node{
     }
     removeChild(node){
         this._children= this._children.filter(childId => childId !== node.id);
+        node._parent=null;
     }
 
     addChild(node) {
@@ -1406,6 +1426,7 @@ class Node{
             this._children=[];
         }
         this._children.push(node.id);
+        node.parent = this;
     }
 
     // set children(value) {

@@ -12,6 +12,7 @@ export class Bauble {
     constructor() {
         this.id=`n${uuid.v4()}`;
         this._attrs ={};
+        this._styles ={};
         this._interactions = {};
         this._filter=()=>true;
         // this._aligned=false;
@@ -78,6 +79,21 @@ export class Bauble {
         }
     }
 
+
+    /**
+     * Get or set style that will style the elements.
+     * @param string
+     * @param value - a string, number, or function that will be passed to d3 selection.
+     * @return {Bauble|*}
+     */
+    style(string,value=null){
+        if(value){
+            this._styles[string] = value;
+            return this
+        }else{
+            return this._styles[string]
+        }
+    }
     /**
      * Get or set attributes that will style the elements.
      * @param string
@@ -193,9 +209,35 @@ export class Bauble {
             });
         return this;
     }
+   ignoreOnClick(){
+        this.on("click",
+            (node,i,n) => {
+                this.manager().figure().ignore(node, true);
+                // this.manager().figure().update()
+            });
+        return this;
+    }
 
     onClick(f){
         this.on("click",(d,i,n)=>f(d,i,n));
+        return this;
+    }
+
+    /**
+     * helper method to fire a function on mouse enter and leave
+     * that share a tree.
+     * @param key
+     * @return {AbstractNodeBauble}
+     */
+    onHover(f){
+        this.on("mouseenter",
+            (d, i,n) => {
+                f(d,i,n)
+            });
+        this.on("mouseleave",
+            (d,i,n) => {
+                f(d,i,n)
+            });
         return this;
     }
 

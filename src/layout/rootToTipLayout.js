@@ -1,8 +1,7 @@
 import {getClassesFromNode} from "./layoutHelpers";
 import {max, min} from "d3";
 
-export const rootToTipLayout=(predicate=(n)=>true)=>(figtree)=>{
-
+export function rootToTipLayout(figtree){
     const id = figtree.id;
     const tree = figtree.tree();
     if(!tree.annotations.date){
@@ -22,19 +21,19 @@ export const rootToTipLayout=(predicate=(n)=>true)=>(figtree)=>{
         }
     });
     tree.internalNodes.forEach(n=>{
-        n[id].ignore=true;
+        figtree.ignoreAndHide(n,false);
     })
-    figtree.regression = makeTrendlineEdge(predicate,id)(tree.externalNodes.filter(n=>!n[figtree.id].ignore));
+
+    figtree.regression = makeTrendlineEdge(id)(tree.externalNodes.filter(n=>!n[id].ignore));
 
 }
 // TODO add edges from tips to parent on trendline to compare outliers.
-const makeTrendlineEdge=(predicate,id)=>(vertices)=>{
+const makeTrendlineEdge=(id)=>(usedVertices)=>{
 
-    const usedVertices = vertices.filter(predicate);
     const regression  = leastSquares(usedVertices,id);
 
-    let x1 = min(vertices, d => d[id].x);
-    let x2 = max(vertices, d => d[id].x);
+    let x1 = min(usedVertices, d => d[id].x);
+    let x2 = max(usedVertices, d => d[id].x);
     let y1 = 0.0;
     let y2 = max(usedVertices, d => d[id].y);
     if (usedVertices.length > 1 && regression.slope > 0.0) {

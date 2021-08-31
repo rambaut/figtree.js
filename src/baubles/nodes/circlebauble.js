@@ -42,6 +42,7 @@ export class CircleBauble extends AbstractNodeBauble{
                     .append("circle")
                     .attr("class",`node-shape ${this.id}`)
                     .attrs(this._attrs)
+                    .styles(this._styles)
                     .each((d,i,n)=>{
                         const element = select(n[i]);
                         for( const [key,func] of Object.entries(this._interactions)){
@@ -53,6 +54,7 @@ export class CircleBauble extends AbstractNodeBauble{
                         .duration(this.transitions().transitionDuration)
                         .ease(this.transitions().transitionEase)
                         .attrs(this._attrs)
+                        .styles(this._styles)
                         .each((d,i,n)=>{
                             const element = select(n[i]);
                             for( const [key,func] of Object.entries(this._interactions)){

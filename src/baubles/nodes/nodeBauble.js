@@ -58,6 +58,7 @@ export class AbstractNodeBauble extends Bauble{
         return this;
     }
 
+
     /**
      * Rotate a node on click
      * @param recursive - optional default -false;

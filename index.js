@@ -28,9 +28,9 @@ import {coalescentEvent} from "./src/baubles/nodes/coalescentNode";
 import {trendLine} from "./src/decoration/trendLine";
 import{textAnnotation} from "./src/decoration/textAnnotation";
 import{traitBar} from "./src/decoration/traitBar";
-
+import {geographicLayout} from"./src/layout/geographicLayout";
 export{Tree,Type,FigTree,rectangularLayout,
     Bauble,CircleBauble,RectangularBauble,Branch,
     nodes,rootToTipLayout,decimalToDate,axis,circle,roughCircle,rectangle,BaubleManager,
     nodeBackground,branch,branches,label,tipLabel,internalNodeLabel,branchLabel,scaleBar,legend,rectangularHilightedLayout,rectangularZoomedLayout,
-    Decoration,axisBars,roughBranch,coalescentEvent,trendLine,textAnnotation,traitBar};
+    Decoration,axisBars,roughBranch,coalescentEvent,trendLine,textAnnotation,traitBar,geographicLayout};

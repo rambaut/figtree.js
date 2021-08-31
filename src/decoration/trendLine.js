@@ -14,7 +14,8 @@ class TrendLine extends Decoration {
         this.selection =   selection
             .append("g")
             .attr("id", this._id)
-            .attr("class","trendline")
+            .attr("class",`trendline ${this._classes}`)
+
         this.updateCycle();
     }
     updateCycle() {

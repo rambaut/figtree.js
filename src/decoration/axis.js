@@ -118,7 +118,7 @@ class Axis extends Decoration {
         selection
             .append("g")
             .attr("id", this._id)
-            .attr("class", "axis")
+            .attr("class", `axis ${this._classes}`)
             .attr("transform", `translate(${this._x}, ${this._y})`)
             .call(axis);
 
@@ -132,7 +132,7 @@ class Axis extends Decoration {
         selection
             .append("g")
             .attr("id", `${this._id}-label`)
-            .attr("class", "axis-label")
+            .attr("class", `axis-label ${this._classes}`)
             .attr("transform", `translate(${this._x}, ${this._y})`)
             .append("text")
             .attr("transform", `translate(${pos.x+this._title.xPadding}, ${pos.y+this._title.yPadding}) rotate(${this._title.rotation})`)
@@ -181,7 +181,6 @@ class Axis extends Decoration {
             .transition()
             // .duration()
             .attr("id", this._id)
-            .attr("class", "axis")
             .attr("transform", `translate(${this._x}, ${this._y})`)
             .call(axis);
 
