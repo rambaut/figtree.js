@@ -10,14 +10,24 @@ export class Label extends Bauble{
         this._text=()=>"";
         this._scaleX=false;
         this._scaleY=false;
+        this._isBranchLabel=false;
         return this;
     }
     update(selection){
         const id = this.manager()._figureId;
-        this.attr("x",d=>d[id].textLabel.x)
-        this.attr("y",d=>d[id].textLabel.y)
-        this.attr("alignment-baseline",d=>d[id].textLabel.alignmentBaseline)
-        this.attr("text-anchor",d=>d[id].textLabel.textAnchor)
+        if(this._isBranchLabel){
+            this.attr("x",d=> -this.scales().x(d.length)/2)
+            this.attr("y",d=>-6)
+            this.attr("alignment-baseline","bottom")
+            this.attr("text-anchor","middle")
+        }else{
+            this.attr("x",d=>d[id].textLabel.x) // TODO clean up this is for branchlables
+            this.attr("y",d=>d[id].textLabel.y)
+            this.attr("alignment-baseline",d=>d[id].textLabel.alignmentBaseline)
+            this.attr("text-anchor",d=>d[id].textLabel.textAnchor)
+        }
+
+
 
 
 
@@ -108,8 +118,9 @@ export function internalNodeLabel(text){
  * @return {Bauble|*|null|undefined}
  */
 export function branchLabel(text){
-   return label(text)
-        .scaledX(d=>(d.v1.x-d.v0.x)/2);
+   const l = label(text)
+    l._isBranchLabel=true;
+   return l;
     // const setX = obj => d=>{
     //     // console.log((obj.scales().x(d.v1.x)-obj.scales().x(d.v0.x)/2));
     //     return (obj.scales().x(d.v1.x)-obj.scales().x(d.v0.x))/2

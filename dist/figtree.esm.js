@@ -10584,6 +10584,7 @@ var Label = /*#__PURE__*/function (_Bauble) {
 
     _this._scaleX = false;
     _this._scaleY = false;
+    _this._isBranchLabel = false;
     return possibleConstructorReturn(_this, assertThisInitialized(_this));
   }
 
@@ -10594,18 +10595,31 @@ var Label = /*#__PURE__*/function (_Bauble) {
 
       var id = this.manager()._figureId;
 
-      this.attr("x", function (d) {
-        return d[id].textLabel.x;
-      });
-      this.attr("y", function (d) {
-        return d[id].textLabel.y;
-      });
-      this.attr("alignment-baseline", function (d) {
-        return d[id].textLabel.alignmentBaseline;
-      });
-      this.attr("text-anchor", function (d) {
-        return d[id].textLabel.textAnchor;
-      });
+      if (this._isBranchLabel) {
+        this.attr("x", function (d) {
+          return -_this2.scales().x(d.length) / 2;
+        });
+        this.attr("y", function (d) {
+          return -6;
+        });
+        this.attr("alignment-baseline", "bottom");
+        this.attr("text-anchor", "middle");
+      } else {
+        this.attr("x", function (d) {
+          return d[id].textLabel.x;
+        }); // TODO clean up this is for branchlables
+
+        this.attr("y", function (d) {
+          return d[id].textLabel.y;
+        });
+        this.attr("alignment-baseline", function (d) {
+          return d[id].textLabel.alignmentBaseline;
+        });
+        this.attr("text-anchor", function (d) {
+          return d[id].textLabel.textAnchor;
+        });
+      }
+
       return selection.selectAll(".".concat(this.id)).data(function (d) {
         return [d].filter(_this2.filter());
       }, function (d) {
@@ -10715,9 +10729,9 @@ function internalNodeLabel(text) {
  */
 
 function branchLabel(text) {
-  return label(text).scaledX(function (d) {
-    return (d.v1.x - d.v0.x) / 2;
-  }); // const setX = obj => d=>{
+  var l = label(text);
+  l._isBranchLabel = true;
+  return l; // const setX = obj => d=>{
   //     // console.log((obj.scales().x(d.v1.x)-obj.scales().x(d.v0.x)/2));
   //     return (obj.scales().x(d.v1.x)-obj.scales().x(d.v0.x))/2
   // };
