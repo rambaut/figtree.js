@@ -11878,7 +11878,7 @@ var AxisBars = /*#__PURE__*/function (_Decoration) {
       }).attr("fill", function (d, i) {
         return i % 2 ? _this2._oddFill : _this2._evenFill;
       }) //relative to axis position
-      .attr("height", this.y() - this.figure().margins().top).attr("y", this.figure().margins().top);
+      .attr("height", this.y() - this.figure().margins().top).attr("y", -1 * (this.y() - this.figure().margins().top));
     }
   }]);
 
