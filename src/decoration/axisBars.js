@@ -86,8 +86,8 @@ class AxisBars extends Decoration{
             .attr("width",(d,i)=>this.scale(ticks[i+1])-this.scale(d))
             .attr("fill",(d,i)=>i%2?this._oddFill:this._evenFill)
             //relative to axis position
-            .attr("height",this.figure().scales.height-this.figure().margins().bottom)
-            .attr("y",-1*this.figure().scales.height+this.figure().margins().bottom)
+            .attr("height",this.y()-this.figure().margins().top)
+            .attr("y",this.figure().margins().top)
     }
 }
 
