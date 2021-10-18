@@ -7998,6 +7998,7 @@ function orderNodes(node, ordering) {
  * A private recursive function that calculates the height of each node (with the most
  * diverged tip from the root having height given by origin).
  */
+//TODO bug in node height when in observable
 
 
 function calculateHeights() {
@@ -11349,7 +11350,13 @@ var Axis = /*#__PURE__*/function (_Decoration) {
         this._hasBeenReversed = true;
       }
 
-      this._axis = this.d3Axis(this.scale()).ticks(this.ticks()).tickFormat(this.tickFormat()).tickSizeOuter(0); // console.log(this._usesFigureScale)
+      this._axis = this.d3Axis(this.scale()).tickFormat(this.tickFormat()).tickSizeOuter(0); // console.log(this._usesFigureScale)
+
+      if (Array.isArray(this.ticks())) {
+        this._axis.tickValues(this.ticks());
+      } else {
+        this._axis.ticks(this.ticks());
+      }
 
       return {
         length: length,
@@ -11404,7 +11411,7 @@ var Axis = /*#__PURE__*/function (_Decoration) {
     key: "ticks",
     value: function ticks(d) {
       if (d) {
-        this._ticks = d;
+        this._ = ticksd;
         return this;
       } else {
         return this._ticks;
@@ -12097,7 +12104,8 @@ var RoughCircleBauble = /*#__PURE__*/function (_AbstractNodeBauble) {
 
       if (selection) {
         this.selection = selection;
-      }
+      } //TODO make radius a function that can take the data
+
 
       var newPaths = toConsumableArray(roughFactory.circle(0, 0, this._radius, this._roughSettings).childNodes).map(function (d) {
         return d.getAttribute("d");

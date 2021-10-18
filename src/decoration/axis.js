@@ -109,9 +109,15 @@ class Axis extends Decoration {
             this._hasBeenReversed=true;
         }
          this._axis = this.d3Axis(this.scale())
-            .ticks(this.ticks()).tickFormat(this.tickFormat())
+
+             .tickFormat(this.tickFormat())
              .tickSizeOuter(0);
         // console.log(this._usesFigureScale)
+        if (Array.isArray(this.ticks())){
+            this._axis.tickValues(this.ticks())
+        }else{
+            this._axis.ticks(this.ticks())
+        }
 
         return {length,axis:this._axis}
     }
@@ -167,7 +173,7 @@ class Axis extends Decoration {
      */
     ticks(d){
         if(d){
-            this._ticks=d;
+            this._=ticksd;
             return this;
         }else{
             return this._ticks;

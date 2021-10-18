@@ -1147,6 +1147,7 @@ function orderNodes(node, ordering, callback = null) {
  * A private recursive function that calculates the height of each node (with the most
  * diverged tip from the root having height given by origin).
  */
+//TODO bug in node height when in observable
 function calculateHeights() {
 
     const maxRTT = max(this.rootToTipLengths());

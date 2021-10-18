@@ -90,6 +90,7 @@ export class RoughCircleBauble extends AbstractNodeBauble {
         if(selection){
             this.selection=selection;
         }
+        //TODO make radius a function that can take the data
         const newPaths = [...roughFactory.circle(0, 0, this._radius,this._roughSettings).childNodes]
             .map(d => d.getAttribute("d")).reverse(); // this puts the "stroke" before the fill so if there is no fill we just never hit it below
         const pathNames = ["roughStroke","roughFill"] ;
