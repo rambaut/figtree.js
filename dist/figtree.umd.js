@@ -11413,7 +11413,7 @@
 	    key: "ticks",
 	    value: function ticks(d) {
 	      if (d) {
-	        this._ = ticksd;
+	        this._ticks = d;
 	        return this;
 	      } else {
 	        return this._ticks;
