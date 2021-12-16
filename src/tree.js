@@ -570,10 +570,10 @@ export class Tree {
             }
         }
         this._nodeMap.delete(node._id);
-        // else if(node.parent._children.length===1){
-        //     console.log("removing parent")
-        //     this.removeNode(node.parent); // if it's a tip then remove it's parent which is now degree two;
-        // }
+        if(node.parent._children.length===1){
+            console.log("removing parent")
+            this.removeNode(node.parent); // if it's a tip then remove it's parent which is now degree two;
+        }
         this.nodesUpdated = true;
     }
 
