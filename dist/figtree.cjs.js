@@ -7215,7 +7215,7 @@ var Tree = /*#__PURE__*/function () {
 
       this._nodeMap["delete"](node._id);
 
-      if (node.parent._children.length === 1) {
+      if (parent._children.length === 1) {
         console.log("removing parent");
         this.removeNode(node.parent); // if it's a tip then remove it's parent which is now degree two;
       }
