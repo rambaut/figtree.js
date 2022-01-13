@@ -443,7 +443,6 @@ function updateNodePositions(nodes) {
  * @param nodes
  */
 function updateBranchPositions(nodes){
-    console.log(nodes)
     this.branchManager.update(nodes);
 }
 function setUpScales(){

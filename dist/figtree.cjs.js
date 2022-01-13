@@ -8015,7 +8015,6 @@ function calculateHeights(tree) {
 
 
 function calculateLengths(tree) {
-  console.log(tree);
   tree.nodeList.forEach(function (node) {
     return node._length = node.parent ? node.parent.height - node.height : 0;
   });
@@ -9596,7 +9595,6 @@ function updateNodePositions(nodes) {
 
 
 function updateBranchPositions(nodes) {
-  console.log(nodes);
   this.branchManager.update(nodes);
 }
 

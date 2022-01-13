@@ -1161,7 +1161,6 @@ function calculateHeights(tree) {
  * A private recursive function that calculates the length of the branch below each node
  */
 function calculateLengths(tree){
-    console.log(tree)
     tree.nodeList.forEach((node)=> node._length =node.parent? node.parent.height- node.height:0);
     tree.lengthsKnown=true;
     tree.heightsKnown=false;
