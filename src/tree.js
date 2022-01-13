@@ -1148,23 +1148,23 @@ function orderNodes(node, ordering, callback = null) {
  * diverged tip from the root having height given by origin).
  */
 //TODO bug in node height when in observable
-function calculateHeights() {
+function calculateHeights(tree) {
 
-    const maxRTT = max(this.rootToTipLengths());
-    this.nodeList.forEach((node) => node._height =  maxRTT - this.rootToTipLength(node));
-    this.heightsKnown = true;
-    this.lengthsKnown=false;
+    const maxRTT = max(tree.rootToTipLengths());
+    tree.nodeList.forEach((node) => node._height =  maxRTT - tree.rootToTipLength(node));
+    tree.heightsKnown = true;
+    tree.lengthsKnown=false;
     // this.treeUpdateCallback();
 }
 
 /**
  * A private recursive function that calculates the length of the branch below each node
  */
-function calculateLengths(){
-
-    this.nodeList.forEach((node)=> node._length =node.parent? node.parent.height- node.height:0);
-    this.lengthsKnown=true;
-    this.heightsKnown=false;
+function calculateLengths(tree){
+    console.log(tree)
+    tree.nodeList.forEach((node)=> node._length =node.parent? node.parent.height- node.height:0);
+    tree.lengthsKnown=true;
+    tree.heightsKnown=false;
     // this.treeUpdateCallback();
 
 }
@@ -1358,7 +1358,7 @@ class Node{
     }
     get height() {
         if(!this._tree.heightsKnown){
-            calculateHeights.call(this._tree);
+            calculateHeights(this._tree);
         }
         return this._height;
     }
@@ -1371,7 +1371,7 @@ class Node{
                 return 0
             }
         }else{
-            calculateLengths().call(this._tree);
+            calculateLengths(this._tree);
             return this.divergence;
         }
     }

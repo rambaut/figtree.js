@@ -443,7 +443,8 @@ function updateNodePositions(nodes) {
  * @param nodes
  */
 function updateBranchPositions(nodes){
-    this.branchManager.update(nodes.filter(n=>n[this.id].x));
+    console.log(nodes)
+    this.branchManager.update(nodes);
 }
 function setUpScales(){
 

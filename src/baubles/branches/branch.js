@@ -166,7 +166,7 @@ export function branchPathGenerator({scales,curve,id}) {
         const branchLine = line()
             .x((v) => v.x)
             .y((v) => v.y)
-            .curve(_curve);
+            .curve(curve);
         const parent = node.parent;
         return branchLine(
             [{

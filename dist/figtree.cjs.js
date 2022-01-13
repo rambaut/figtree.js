@@ -8001,27 +8001,26 @@ function orderNodes(node, ordering) {
 //TODO bug in node height when in observable
 
 
-function calculateHeights() {
-  var _this5 = this;
-
-  var maxRTT = max(this.rootToTipLengths());
-  this.nodeList.forEach(function (node) {
-    return node._height = maxRTT - _this5.rootToTipLength(node);
+function calculateHeights(tree) {
+  var maxRTT = max(tree.rootToTipLengths());
+  tree.nodeList.forEach(function (node) {
+    return node._height = maxRTT - tree.rootToTipLength(node);
   });
-  this.heightsKnown = true;
-  this.lengthsKnown = false; // this.treeUpdateCallback();
+  tree.heightsKnown = true;
+  tree.lengthsKnown = false; // this.treeUpdateCallback();
 }
 /**
  * A private recursive function that calculates the length of the branch below each node
  */
 
 
-function calculateLengths() {
-  this.nodeList.forEach(function (node) {
+function calculateLengths(tree) {
+  console.log(tree);
+  tree.nodeList.forEach(function (node) {
     return node._length = node.parent ? node.parent.height - node.height : 0;
   });
-  this.lengthsKnown = true;
-  this.heightsKnown = false; // this.treeUpdateCallback();
+  tree.lengthsKnown = true;
+  tree.heightsKnown = false; // this.treeUpdateCallback();
 }
 /**
  * A private recursive function that uses the Fitch algorithm to assign
@@ -8206,7 +8205,7 @@ var Node = /*#__PURE__*/function () {
     key: "height",
     get: function get() {
       if (!this._tree.heightsKnown) {
-        calculateHeights.call(this._tree);
+        calculateHeights(this._tree);
       }
 
       return this._height;
@@ -8225,7 +8224,7 @@ var Node = /*#__PURE__*/function () {
           return 0;
         }
       } else {
-        calculateLengths().call(this._tree);
+        calculateLengths(this._tree);
         return this.divergence;
       }
     }
@@ -8262,14 +8261,14 @@ var Node = /*#__PURE__*/function () {
   }, {
     key: "children",
     get: function get() {
-      var _this6 = this;
+      var _this5 = this;
 
       if (this._children === null) {
         return null;
       }
 
       return this._children.map(function (childId) {
-        return _this6._tree.getNode(childId);
+        return _this5._tree.getNode(childId);
       });
     }
   }, {
@@ -9597,15 +9596,12 @@ function updateNodePositions(nodes) {
 
 
 function updateBranchPositions(nodes) {
-  var _this5 = this;
-
-  this.branchManager.update(nodes.filter(function (n) {
-    return n[_this5.id].x;
-  }));
+  console.log(nodes);
+  this.branchManager.update(nodes);
 }
 
 function setUpScales() {
-  var _this6 = this;
+  var _this5 = this;
 
   var width, height;
 
@@ -9623,10 +9619,10 @@ function setUpScales() {
 
   if (this._calculateScales) {
     var xdomain = extent(this.verticesForScales.map(function (n) {
-      return n[_this6.id].x;
+      return n[_this5.id].x;
     }));
     var ydomain = extent(this.verticesForScales.map(function (n) {
-      return n[_this6.id].y;
+      return n[_this5.id].y;
     }));
     var xScale = this.settings.xScale.scale().domain(xdomain).range([0, width - this._margins.right - this._margins.left]);
     var yScale = this.settings.yScale.scale().domain(ydomain).range([height - this._margins.bottom - this._margins.top, 0]); //flipped
@@ -9639,11 +9635,11 @@ function setUpScales() {
     };
   } else {
     var _xdomain = extent(this.verticesForScales.map(function (n) {
-      return n[_this6.id].x;
+      return n[_this5.id].x;
     }));
 
     var _ydomain = extent(this.verticesForScales.map(function (n) {
-      return n[_this6.id].y;
+      return n[_this5.id].y;
     }));
 
     var _xScale = this.settings.xScale.scale().domain(_xdomain).range(_xdomain);
@@ -10295,10 +10291,10 @@ var Branch = /*#__PURE__*/function (_Bauble) {
   }, {
     key: "curve",
     value: function curve() {
-      var _curve2 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+      var _curve = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
-      if (_curve2) {
-        this._curve = _curve2;
+      if (_curve) {
+        this._curve = _curve;
         return this;
       } else {
         return this._curve;
@@ -10504,11 +10500,271 @@ function rectangularLayout(figtree) {
   traverse(tree.root);
 }
 
+var _marked = /*#__PURE__*/regenerator.mark(pseudoRerootPreorder);
+
 function _createForOfIteratorHelper$5(o, allowArrayLike) { var it; if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (it = _unsupportedIterableToArray$6(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
 
 function _unsupportedIterableToArray$6(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray$6(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray$6(o, minLen); }
 
 function _arrayLikeToArray$6(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+
+function getRelatives(node) {
+  return [node.parent && node.parent].concat(node.children && node.children).filter(function (n) {
+    return n;
+  });
+}
+
+function pseudoRerootPreorder(node) {
+  var visited,
+      traverse,
+      _args2 = arguments;
+  return regenerator.wrap(function pseudoRerootPreorder$(_context2) {
+    while (1) {
+      switch (_context2.prev = _context2.next) {
+        case 0:
+          visited = _args2.length > 1 && _args2[1] !== undefined ? _args2[1] : [];
+          traverse = /*#__PURE__*/regenerator.mark(function traverse(node) {
+            var relatives, pseudoChildren, _iterator, _step, child;
+
+            return regenerator.wrap(function traverse$(_context) {
+              while (1) {
+                switch (_context.prev = _context.next) {
+                  case 0:
+                    visited.push(node);
+                    _context.next = 3;
+                    return node;
+
+                  case 3:
+                    relatives = [node.parent && node.parent].concat(node.children && node.children).filter(function (n) {
+                      return n;
+                    }); // to remove null
+
+                    pseudoChildren = relatives.filter(function (n) {
+                      return !visited.includes(n);
+                    });
+
+                    if (!pseudoChildren) {
+                      _context.next = 22;
+                      break;
+                    }
+
+                    _iterator = _createForOfIteratorHelper$5(pseudoChildren);
+                    _context.prev = 7;
+
+                    _iterator.s();
+
+                  case 9:
+                    if ((_step = _iterator.n()).done) {
+                      _context.next = 14;
+                      break;
+                    }
+
+                    child = _step.value;
+                    return _context.delegateYield(traverse(child), "t0", 12);
+
+                  case 12:
+                    _context.next = 9;
+                    break;
+
+                  case 14:
+                    _context.next = 19;
+                    break;
+
+                  case 16:
+                    _context.prev = 16;
+                    _context.t1 = _context["catch"](7);
+
+                    _iterator.e(_context.t1);
+
+                  case 19:
+                    _context.prev = 19;
+
+                    _iterator.f();
+
+                    return _context.finish(19);
+
+                  case 22:
+                  case "end":
+                    return _context.stop();
+                }
+              }
+            }, traverse, null, [[7, 16, 19, 22]]);
+          });
+          return _context2.delegateYield(traverse(node), "t0", 3);
+
+        case 3:
+        case "end":
+          return _context2.stop();
+      }
+    }
+  }, _marked);
+}
+
+function equalAngleLayout() {
+  var startNode = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+  var tipRank = [];
+
+  if (startNode) {
+    tipRank = toConsumableArray(pseudoRerootPreorder(startNode, [])).filter(function (n) {
+      return !n.children;
+    });
+  }
+
+  return function layout(figtree) {
+    var _marked2 = /*#__PURE__*/regenerator.mark(traverse);
+
+    var id = figtree.id;
+    var tree = figtree.tree();
+    startNode = startNode ? startNode : tree.rootNode;
+    tipRank = tipRank.length > 0 ? tipRank : toConsumableArray(pseudoRerootPreorder(startNode, [])).filter(function (n) {
+      return !n.children;
+    });
+    var numberOfTips = tree.externalNodes.length;
+    var rPerTip = 2 * Math.PI / numberOfTips;
+
+    var positionNode = function positionNode(node, x, y) {
+      node[id].x = 0;
+      node[id].y = 0;
+      var leftLabel = !!node.children;
+      var labelBelow = !!node.children && (!node.parent || node.parent.children[0] !== node);
+      node[id].x = x;
+      node[id].y = y;
+      node[id].classes = getClassesFromNode(node);
+      node[id].textLabel = {
+        labelBelow: labelBelow,
+        x: leftLabel ? "-6" : "12",
+        y: leftLabel ? labelBelow ? "-8" : "8" : "0",
+        alignmentBaseline: leftLabel ? labelBelow ? "bottom" : "hanging" : "middle",
+        textAnchor: leftLabel ? "end" : "start"
+      };
+    };
+
+    function traverse(node, start) {
+      var visited,
+          parent,
+          relatives,
+          _iterator2,
+          _step2,
+          relative,
+          allocation,
+          angle,
+          x,
+          y,
+          _args3 = arguments;
+
+      return regenerator.wrap(function traverse$(_context3) {
+        while (1) {
+          switch (_context3.prev = _context3.next) {
+            case 0:
+              visited = _args3.length > 2 && _args3[2] !== undefined ? _args3[2] : [];
+              parent = _args3.length > 3 && _args3[3] !== undefined ? _args3[3] : defineProperty({}, id, {
+                x: 0,
+                y: 0
+              });
+
+              if (!(node === startNode)) {
+                _context3.next = 6;
+                break;
+              }
+
+              positionNode(node, 0, 0);
+              _context3.next = 6;
+              return node;
+
+            case 6:
+              relatives = getRelatives(node).filter(function (n) {
+                return !visited.includes(n);
+              }); // Node order is not really want we want we need to see past the interal nodes to the tips
+
+              if (tipRank.length > 0) {
+                relatives = relatives.sort(function (a, b) {
+                  var aRank = min(toConsumableArray(pseudoRerootPreorder(a, [node])).filter(function (n) {
+                    return !n.children;
+                  }).map(function (n) {
+                    return tipRank.indexOf(n);
+                  }));
+                  var bRank = min(toConsumableArray(pseudoRerootPreorder(b, [node])).filter(function (n) {
+                    return !n.children;
+                  }).map(function (n) {
+                    return tipRank.indexOf(n);
+                  }));
+                  return bRank - aRank;
+                });
+              }
+
+              _iterator2 = _createForOfIteratorHelper$5(relatives);
+              _context3.prev = 9;
+
+              _iterator2.s();
+
+            case 11:
+              if ((_step2 = _iterator2.n()).done) {
+                _context3.next = 24;
+                break;
+              }
+
+              relative = _step2.value;
+              allocation = toConsumableArray(pseudoRerootPreorder(relative, [].concat(toConsumableArray(visited), toConsumableArray(relatives)))).filter(function (n) {
+                return !n.children;
+              }).length * rPerTip;
+              angle = (start + (start + allocation)) / 2;
+              x = Math.sin(angle) * Math.abs(node.height - relative.height) + parent[id].x;
+              y = Math.cos(angle) * Math.abs(node.height - relative.height) + parent[id].y;
+              positionNode(relative, x, y);
+              _context3.next = 20;
+              return relative;
+
+            case 20:
+              return _context3.delegateYield(traverse(relative, start, [node].concat(toConsumableArray(relatives)), relative), "t0", 21);
+
+            case 21:
+              start += allocation;
+
+            case 22:
+              _context3.next = 11;
+              break;
+
+            case 24:
+              _context3.next = 29;
+              break;
+
+            case 26:
+              _context3.prev = 26;
+              _context3.t1 = _context3["catch"](9);
+
+              _iterator2.e(_context3.t1);
+
+            case 29:
+              _context3.prev = 29;
+
+              _iterator2.f();
+
+              return _context3.finish(29);
+
+            case 32:
+            case "end":
+              return _context3.stop();
+          }
+        }
+      }, _marked2, null, [[9, 26, 29, 32]]);
+    }
+
+    return toConsumableArray(traverse(startNode, 0));
+  };
+}
+/**
+ * The equal angle layout. This function returns a layout function. It take and optional internal node, which if provided acts
+ * as the starting node and fixes the order nodes are visited. This means the tree not update. The root position will
+ * still change in response to rerooting.
+ * @param startingNode optional
+ * @return {function(*=): {vertices: *, edges: *}}
+ */
+
+function _createForOfIteratorHelper$6(o, allowArrayLike) { var it; if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (it = _unsupportedIterableToArray$7(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
+
+function _unsupportedIterableToArray$7(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray$7(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray$7(o, minLen); }
+
+function _arrayLikeToArray$7(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
 var rectangularZoomedLayout = function rectangularZoomedLayout(node) {
   return function (figtree) {
     var currentY = 0;
@@ -10525,7 +10781,7 @@ var rectangularZoomedLayout = function rectangularZoomedLayout(node) {
           if (node[id].collapsed) {
             yPos = currentY += 1;
           } else {
-            var _iterator = _createForOfIteratorHelper$5(node.children),
+            var _iterator = _createForOfIteratorHelper$6(node.children),
                 _step;
 
             try {
@@ -11897,11 +12153,11 @@ function axisBars() {
   return new AxisBars(axis);
 }
 
-function _createForOfIteratorHelper$6(o, allowArrayLike) { var it; if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (it = _unsupportedIterableToArray$7(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
+function _createForOfIteratorHelper$7(o, allowArrayLike) { var it; if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (it = _unsupportedIterableToArray$8(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
 
-function _unsupportedIterableToArray$7(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray$7(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray$7(o, minLen); }
+function _unsupportedIterableToArray$8(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray$8(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray$8(o, minLen); }
 
-function _arrayLikeToArray$7(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+function _arrayLikeToArray$8(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
 /**
  *
  * This layout highlights parts of the tree and compresses others. The layout factory takes a predicate function that is called
@@ -11929,7 +12185,7 @@ function rectangularHilightedLayout(predicate, compressionFactor) {
           if (node[id].collapsed) {
             yPos = currentY += 1;
           } else {
-            var _iterator = _createForOfIteratorHelper$6(node.children),
+            var _iterator = _createForOfIteratorHelper$7(node.children),
                 _step;
 
             try {
@@ -12808,6 +13064,7 @@ exports.branches = branches;
 exports.circle = circle;
 exports.coalescentEvent = coalescentEvent;
 exports.decimalToDate = decimalToDate;
+exports.equalAngleLayout = equalAngleLayout;
 exports.geographicLayout = geographicLayout;
 exports.internalNodeLabel = internalNodeLabel;
 exports.label = label;
