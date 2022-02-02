@@ -6033,6 +6033,9 @@ function constant$3(x) {
   };
 }
 
+var pi$1 = Math.PI;
+var tau$1 = 2 * pi$1;
+
 function Linear(context) {
   this._context = context;
 }
@@ -6178,6 +6181,41 @@ function curveHorizontal(context, x0, y0, x1, y1) {
 
 function linkHorizontal() {
   return link(curveHorizontal);
+}
+
+var circle = {
+  draw: function(context, size) {
+    var r = Math.sqrt(size / pi$1);
+    context.moveTo(r, 0);
+    context.arc(0, 0, r, 0, tau$1);
+  }
+};
+
+function symbol() {
+  var type = constant$3(circle),
+      size = constant$3(64),
+      context = null;
+
+  function symbol() {
+    var buffer;
+    if (!context) context = buffer = path();
+    type.apply(this, arguments).draw(context, +size.apply(this, arguments));
+    if (buffer) return context = null, buffer + "" || null;
+  }
+
+  symbol.type = function(_) {
+    return arguments.length ? (type = typeof _ === "function" ? _ : constant$3(_), symbol) : type;
+  };
+
+  symbol.size = function(_) {
+    return arguments.length ? (size = typeof _ === "function" ? _ : constant$3(+_), symbol) : size;
+  };
+
+  symbol.context = function(_) {
+    return arguments.length ? (context = _ == null ? null : _, symbol) : context;
+  };
+
+  return symbol;
 }
 
 function Step(context, t) {
@@ -10088,7 +10126,7 @@ var CircleBauble = /*#__PURE__*/function (_AbstractNodeBauble) {
  * @return {CircleBauble}
  */
 
-function circle() {
+function circle$1() {
   return new CircleBauble();
 }
 
@@ -13219,5 +13257,132 @@ function levelLayout(figtree) {
   });
 }
 
-export { Bauble, BaubleManager, Branch, CircleBauble, Decoration, FigTree, RectangularBauble, Tree, Type, axis$1 as axis, axisBars, branch, branchLabel, branches, circle, coalescentEvent, decimalToDate, equalAngleLayout, geographicLayout, internalNodeLabel, label, legend, levelLayout, nodeBackground, nodes, predicatedRootToTipLayout, rectangle, rectangularHilightedLayout, rectangularLayout, rectangularZoomedLayout, rootToTipLayout, roughBranch, roughCircle, scaleBar, textAnnotation, tipLabel, traitBar, transmissionLayout, trendLine };
+function _createSuper$f(Derived) { var hasNativeReflectConstruct = _isNativeReflectConstruct$f(); return function _createSuperInternal() { var Super = getPrototypeOf(Derived), result; if (hasNativeReflectConstruct) { var NewTarget = getPrototypeOf(this).constructor; result = Reflect.construct(Super, arguments, NewTarget); } else { result = Super.apply(this, arguments); } return possibleConstructorReturn(this, result); }; }
+
+function _isNativeReflectConstruct$f() { if (typeof Reflect === "undefined" || !Reflect.construct) return false; if (Reflect.construct.sham) return false; if (typeof Proxy === "function") return true; try { Date.prototype.toString.call(Reflect.construct(Date, [], function () {})); return true; } catch (e) { return false; } }
+/**
+ * The svgBauble class. Each vertex is assigned an svg in the svg.
+ */
+
+var SymbolBauble = /*#__PURE__*/function (_AbstractNodeBauble) {
+  inherits(SymbolBauble, _AbstractNodeBauble);
+
+  var _super = _createSuper$f(SymbolBauble);
+
+  /**
+   * The constructor.
+   * @param [settings.radius=6] - the radius of the circle
+   */
+  function SymbolBauble() {
+    var _this;
+
+    classCallCheck(this, SymbolBauble);
+
+    _this = _super.call(this);
+    _this._symbol = d3.symbolSquare;
+    _this._size = 575;
+    return _this;
+  }
+
+  createClass(SymbolBauble, [{
+    key: "symbol",
+    value: function symbol(s) {
+      if (s === null) {
+        return this._symbol;
+      } else {
+        this._manager = s;
+        return this;
+      }
+    }
+  }, {
+    key: "size",
+    value: function size(s) {
+      if (s === null) {
+        return this._size;
+      } else {
+        this._size = s;
+        return this;
+      }
+    }
+    /**
+     * A function that assigns cy,cx,and r attributes to a selection. (cx and cy are set to 0 each r is the settings radius
+     * plus the border.
+     * @param selection
+     */
+
+  }, {
+    key: "update",
+    value: function update() {
+      var _this2 = this;
+
+      var selection = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (selection == null && !this.selection) {
+        return;
+      }
+
+      if (selection) {
+        this.selection = selection;
+      }
+
+      return selection.selectAll(".".concat(this.id)).data(function (d) {
+        return [d];
+      }, function (d) {
+        return _this2.id;
+      }).join(function (enter) {
+        return enter.append("path").attr("class", "node-shape ".concat(_this2.id)).attr("d", symbol().size(_this2._size).type(_this2._symbol)).attrs(_this2._attrs).styles(_this2._styles).each(function (d, i, n) {
+          var element = select(n[i]);
+
+          var _loop = function _loop() {
+            var _Object$entries$_i = slicedToArray(_Object$entries[_i], 2),
+                key = _Object$entries$_i[0],
+                func = _Object$entries$_i[1];
+
+            element.on(key, function (d, i, n) {
+              return func(d, i, n);
+            });
+          };
+
+          for (var _i = 0, _Object$entries = Object.entries(_this2._interactions); _i < _Object$entries.length; _i++) {
+            _loop();
+          }
+        });
+      }, function (update) {
+        return update.call(function (update) {
+          return update.transition(function (d) {
+            return "u".concat(uuid_1.v4());
+          }).duration(_this2.transitions().transitionDuration).ease(_this2.transitions().transitionEase).attrs(_this2._attrs).styles(_this2._styles).each(function (d, i, n) {
+            var element = select(n[i]);
+
+            var _loop2 = function _loop2() {
+              var _Object$entries2$_i = slicedToArray(_Object$entries2[_i2], 2),
+                  key = _Object$entries2$_i[0],
+                  func = _Object$entries2$_i[1];
+
+              element.on(key, function (d, i, n) {
+                return func(d, i, n);
+              });
+            };
+
+            for (var _i2 = 0, _Object$entries2 = Object.entries(_this2._interactions); _i2 < _Object$entries2.length; _i2++) {
+              _loop2();
+            }
+          });
+        });
+      });
+    }
+  }]);
+
+  return SymbolBauble;
+}(AbstractNodeBauble);
+/**
+ * helper function returns a new instance of a circle bauble.
+ * @return {SymbolBauble}
+ */
+
+function symbolBauble() {
+  return new SymbolBauble();
+}
+
+export { Bauble, BaubleManager, Branch, CircleBauble, Decoration, FigTree, RectangularBauble, Tree, Type, axis$1 as axis, axisBars, branch, branchLabel, branches, circle$1 as circle, coalescentEvent, decimalToDate, equalAngleLayout, geographicLayout, internalNodeLabel, label, legend, levelLayout, nodeBackground, nodes, predicatedRootToTipLayout, rectangle, rectangularHilightedLayout, rectangularLayout, rectangularZoomedLayout, rootToTipLayout, roughBranch, roughCircle, scaleBar, symbolBauble, textAnnotation, tipLabel, traitBar, transmissionLayout, trendLine };
 //# sourceMappingURL=figtree.esm.js.map

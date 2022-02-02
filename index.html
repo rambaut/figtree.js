@@ -206,24 +206,23 @@
 
 
 <script type="module">
-    import {Tree,FigTree,rectangularLayout,transmissionLayout,levelLayout,branch,circle,tipLabel,internalNodeLabel} from "./dist/figtree.esm.js"
+    import {Tree,FigTree,rectangularLayout,transmissionLayout,levelLayout,branch,circle,symbolBauble,tipLabel,internalNodeLabel} from "./dist/figtree.esm.js"
 
 
     const newickString =
         '((virus1:0.1,virus2:0.12):0.04,((virus3:0.011,virus4:0.0087):0.15,(virus5:0.21,((virus6:0.45,virus7:0.4):0.02,(virus8:0.4,((virus9:0.04,virus10:0.03):0.6)#old-root:0.1):0.1):0.2):0.03):0.04)#root;';
-
+    
     const tree = Tree.parseNewick(newickString);
     const treeSVG = document.getElementById('phylogram_2');
     const margins ={ top: 10, bottom: 60, left: 10, right: 150};
     const branchSettings = branch().hilightOnHover().reRootOnClick().curve(d3.curveStepBefore);
     const figTree = new FigTree(treeSVG, margins,tree)
-                        .layout(levelLayout)
+                        .layout(rectangularLayout)
                         .nodes(
-                            circle()
-                                .filter(d=>{return d.id!=='old-root'})
-                                .attr("r",5)
-                                .hilightOnHover(10)
-                                .rotateOnClick(),
+                            symbolBauble(1000)
+                                .filter(d=>!d.children )
+                                .style('fill',`url(#maple-pattern)`),
+
                             tipLabel(d=>d.name),
                             circle()
                                 .filter(d=>{return d.id==='old-root'})
@@ -250,8 +249,8 @@
 
                         )
                             .nodeBackgrounds(
-                                circle()
-                                    .attr("r",7)
+                                // circle()
+                                //     .attr("r",7)
                             )
                             // .branches(branchSettings);
 
@@ -263,6 +262,28 @@
     d3.select(treeSVG)
         .select(".node-background#root")
         .attr("display", "none");
+
+
+       d3.xml("./data/man-svgrepo-com.svg").then(p=>{
+    //    d3.xml("https://s3.amazonaws.com/files.zevross.org/blog/d3_external_svgs/load_svg/leaves/maple_illustration.svg").then(p=>{
+        console.log(p);
+
+            d3.select(treeSVG).append('defs')
+            .append('pattern')
+            .attr('id', 'maple-pattern')
+            .attr('patternUnits', 'objectBoundingBox')
+            .attr('width', 50)
+            .attr('height', 100)
+            // Append svg to pattern
+            .append('svg')
+            .attr('x', 0)
+            .attr('y', 0)
+            .attr('width', 20)
+            .attr('height', 20)
+            .append(() => p.documentElement.cloneNode(true))
+            .attr("fill","black")
+        })
+
 
     // figTree.onClickNode({action:(vertex) => {
     //     tree.reroot(vertex.node, 1.0);
