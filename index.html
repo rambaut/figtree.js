@@ -206,7 +206,7 @@
 
 
 <script type="module">
-    import {Tree,FigTree,rectangularLayout,transmissionLayout,branch,circle,tipLabel,internalNodeLabel} from "./dist/figtree.esm.js"
+    import {Tree,FigTree,rectangularLayout,transmissionLayout,levelLayout,branch,circle,tipLabel,internalNodeLabel} from "./dist/figtree.esm.js"
 
 
     const newickString =
@@ -217,7 +217,7 @@
     const margins ={ top: 10, bottom: 60, left: 10, right: 150};
     const branchSettings = branch().hilightOnHover().reRootOnClick().curve(d3.curveStepBefore);
     const figTree = new FigTree(treeSVG, margins,tree)
-                        .layout(transmissionLayout)
+                        .layout(levelLayout)
                         .nodes(
                             circle()
                                 .filter(d=>{return d.id!=='old-root'})
@@ -253,7 +253,7 @@
                                 circle()
                                     .attr("r",7)
                             )
-                            .branches(branchSettings);
+                            // .branches(branchSettings);
 
     // figTree.onClickNode(layout.rotate());
 

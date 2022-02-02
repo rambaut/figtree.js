@@ -66,3 +66,7 @@ typings/
 package-lock.json
 Gruntfile.js
 test/graph.spec.js
+
+.DS_Store
+
+.idea/

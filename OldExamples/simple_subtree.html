@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FigTree Demo</title>
+    <!--<script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>-->
+    <style>
+        text {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 14pt;
+            font-weight: 300;
+        }
+
+        .branch .branch-path {
+            fill: none;
+            stroke: #541753;
+            stroke-width: 2px;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .branch .branch-path.hovered {
+            stroke-width: 4px;
+        }
+
+        .external-node .node-shape {
+            fill: #22b680;
+            /*stroke: rgb(255, 255, 255);*/
+            /*stroke-width: 1;*/
+        }
+
+        .external-node .node-shape.hovered {
+            stroke: rgb(0,0,0);
+            /*stroke-width: 1;*/
+        }
+        .external-node .node-shape.unselected {
+            fill: #22b680;
+            /*stroke: rgb(255, 255, 255);*/
+        }
+        .external-node .node-shape.selected {
+            fill: #edb23b;
+            /*stroke: rgb(0,0,0);*/
+        }
+
+        .internal-node .node-shape {
+            fill: #29c5ef;
+            /*stroke: rgb(255, 255, 255);*/
+            /*stroke-width: 1;*/
+        }
+        .internal-node .node-shape.hovered {
+            stroke: rgb(0,0,0);
+        }
+
+        #root .node-shape {
+            fill: #e31e58;
+            /*stroke: rgb(255, 255, 255);*/
+            /*stroke-width: 1;*/
+        }
+
+        .node-background {
+            fill: rgb(255, 255, 255);
+            /*stroke: rgb(255, 255, 255);*/
+            /*stroke-width: 1;*/
+        }
+
+        .node-label {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 14pt;
+            font-weight: 300;
+        }
+
+        .trend-line {
+            stroke: rgb(0,0,0);
+            stroke-width: 2px;
+            stroke-linecap: round;
+        }
+
+        .axis text {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 12pt;
+            font-weight: 300;
+        }
+
+        .axis-label text {
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 12pt;
+            font-weight: bold;
+        }
+
+        .node-label.support {
+            font-size: 10pt;
+        }
+
+        .branch-label.length {
+            /*display: none;*/
+            font-size: 8pt;
+        }
+
+        #tooltip {
+            background: #F6EECA;
+            border: 1px solid #005C68;
+            color: #005C68;
+            border-radius: 5px;
+            padding: 5px;
+            font-family: "helvetica-neue",  "helvetica",  "sans-serif";
+            font-size: 12pt;
+            font-weight: 300;
+        }
+    </style>
+</head>
+
+<body>
+<div id="tooltip" display="none" style="position: absolute; display: none;"></div>
+
+<div>
+    <figure>
+        <svg id="phylogram_1a"  width="600" height="500"></svg>
+        <svg id="tree"  width="600" height="500"></svg>
+    </figure>
+    <!--<button id="sort_up_button">Sort ascending</button>-->
+    <!--<button id="sort_down_button">Sort descending</button>-->
+    <!--<button id="rectangular_button">Draw rectangular</button>-->
+    <!--<button id="triangular_button">Draw triangular</button>-->
+</div>
+<!-- <script src ="dist/figtree.js"></script> -->
+<script type="module">
+    import {Tree,RectangularLayout,CircleBauble,FigTree}  from "..";
+    // import { RectangularLayout } from "./dist/figtree.js";
+    // import { CircleBauble } from "./dist/figtree.js";
+    // import { FigTree } from "./dist/figtree.js";
+
+    const newickString =
+        '((((((virus1:0.1,virus2:0.12)0.95:0.08,(virus3:0.011,virus4:0.0087)1.0:0.15)0.65:0.03,virus5:0.21)1.0:0.2,(virus6:0.45,virus7:0.4)0.51:0.02)1.0:0.1,virus8:0.4)1.0:0.1,(virus9:0.04,virus10:0.03)1.0:0.6);';
+
+    const tree = Tree.parseNewick(newickString, "probability");
+    const treeSVG = document.getElementById('phylogram_1a');
+
+    const layout = new RectangularLayout(tree);
+
+    const figTree = new FigTree(treeSVG, layout,
+        { top: 10, bottom: 60, left: 10, right: 150},
+        { hoverBorder: 2, backgroundBorder: 2,
+            baubles: [
+                new CircleBauble(),
+            ]
+        });
+    figTree.draw();
+    figTree.hilightInternalNodes();
+    figTree.onClickInternalNode(d=>console.log("clicked"));//layout.rotate());
+
+
+    figTree.onClickBranch(layout.reroot());
+
+    // figTree.addToolTip('#root', "The root node - represents the most recent<br>common ancestor of the whole tree");
+    // figTree.addToolTip('.internal-node .node-shape', "This is an internal node - it is the most recent<br>common ancestor of the viruses to the right" );
+    // figTree.addToolTip('.internal-node .node-label', "This is a support value - it gives the degree<br>of statistical support that the viruses to the<br>right cluster together");
+    // figTree.addToolTip('.external-node', "This is an external, leaf, or tip node - it represents<br>a sampled, sequenced virus");
+    // figTree.addToolTip('.branch', "This is a branch - it represents an<br>evolutionary lineage joining two nodes");
+    //
+    // document.getElementById('sort_up_button').onclick = function() {
+    //     tree.order(tree.root, false);
+    // };
+    // document.getElementById('sort_down_button').onclick = function() {
+    //     tree.order(tree.root, true);
+    // };
+    //
+    // document.getElementById('rectangular_button').onclick = function() {
+    //     figTree.branchCurve = d3.curveStepBefore;
+    // };
+    // document.getElementById('triangular_button').onclick = function() {
+    //     figTree.branchCurve = d3.curveNatural;
+    // };
+
+</script>
+<script type="module">
+    import {Tree,RectangularLayout,CircleBauble,FigTree}  from "..";
+    // import { RectangularLayout } from "./dist/figtree.js";
+    // import { CircleBauble } from "./dist/figtree.js";
+    // import { FigTree } from "./dist/figtree.js";
+
+    const nexusString =`        #NEXUS
+    begin taxa;
+    dimensions ntax=9;
+    taxlabels
+    'EBOV|BEN21853||COD|Nord-Kivu|Beni|2019-07-01'
+    'EBOV|BEN21987||COD|Nord-Kivu|Beni|2019-07-01'
+    'EBOV|BEN22431||COD|Nord-Kivu|Beni|2019-07-07'
+    'EBOV|BEN22591||COD|Nord-Kivu|Beni|2019-08-07'
+    'EBOV|BEN22635||COD|Nord-Kivu|Beni|2019-08-07'
+    'EBOV|BEN28240||COD|Nord-Kivu|Beni|2019-08-11'
+    'EBOV|BEN28293||COD|Nord-Kivu|Beni|2019-08-11'
+    'EBOV|BEN28321||COD|Nord-Kivu|Beni|2019-08-11'
+    'EBOV|MAN5909||COD|Nord-Kivu|Beni|2019-07-18'
+    ;
+    end;
+
+    begin trees;
+    tree tree_1 = [&R] ('EBOV|BEN22635||COD|Nord-Kivu|Beni|2019-08-07'[&!color=#808080]:0.282027,((('EBOV|BEN22591||COD|Nord-Kivu|Beni|2019-08-07'[&!color=#ff2b5d]:0.113802,'EBOV|BEN22431||COD|Nord-Kivu|Beni|2019-07-07':0.028871):0.034883,(('EBOV|BEN21987||COD|Nord-Kivu|Beni|2019-07-01':0.019091,'EBOV|BEN21853||COD|Nord-Kivu|Beni|2019-07-01':0.019091):0.015495,'EBOV|MAN5909||COD|Nord-Kivu|Beni|2019-07-18':0.081161):0.01273):0.071005,(('EBOV|BEN28240||COD|Nord-Kivu|Beni|2019-08-11'[&!rotate=true,!color=#2eff5f]:0.034875,'EBOV|BEN28321||COD|Nord-Kivu|Beni|2019-08-11'[&!rotate=true,!color=#2eff5f]:0.034875)[&!rotate=true,!color=#2eff5f]:0.031904,'EBOV|BEN28293||COD|Nord-Kivu|Beni|2019-08-11'[&!rotate=true,!color=#2eff5f]:0.066779)[&!rotate=true,!color=#2eff5f]:0.163869):0.062337);
+    end;
+
+    begin figtree;
+    set appearance.backgroundColorAttribute="Default";
+    set appearance.backgroundColour=#ffffff;
+    set appearance.branchColorAttribute="User selection";
+    set appearance.branchColorGradient=false;
+    set appearance.branchLineWidth=1.0;
+    set appearance.branchMinLineWidth=0.0;
+    set appearance.branchWidthAttribute="Fixed";
+    set appearance.foregroundColour=#000000;
+    set appearance.hilightingGradient=false;
+    set appearance.selectionColour=#2d3680;
+    set branchLabels.colorAttribute="User selection";
+    set branchLabels.displayAttribute="Branch times";
+    set branchLabels.fontName=".SF NS Text";
+    set branchLabels.fontSize=8;
+    set branchLabels.fontStyle=0;
+    set branchLabels.isShown=false;
+    set branchLabels.significantDigits=4;
+    set layout.expansion=0;
+    set layout.layoutType="RECTILINEAR";
+    set layout.zoom=0;
+    set legend.attribute=null;
+    set legend.fontSize=10.0;
+    set legend.isShown=false;
+    set legend.significantDigits=4;
+    set nodeBars.barWidth=4.0;
+    set nodeBars.displayAttribute=null;
+    set nodeBars.isShown=false;
+    set nodeLabels.colorAttribute="User selection";
+    set nodeLabels.displayAttribute="Node ages";
+    set nodeLabels.fontName=".SF NS Text";
+    set nodeLabels.fontSize=8;
+    set nodeLabels.fontStyle=0;
+    set nodeLabels.isShown=false;
+    set nodeLabels.significantDigits=4;
+    set nodeShapeExternal.colourAttribute="User selection";
+    set nodeShapeExternal.isShown=false;
+    set nodeShapeExternal.minSize=10.0;
+    set nodeShapeExternal.scaleType=Width;
+    set nodeShapeExternal.shapeType=Circle;
+    set nodeShapeExternal.size=4.0;
+    set nodeShapeExternal.sizeAttribute="Fixed";
+    set nodeShapeInternal.colourAttribute="User selection";
+    set nodeShapeInternal.isShown=false;
+    set nodeShapeInternal.minSize=10.0;
+    set nodeShapeInternal.scaleType=Width;
+    set nodeShapeInternal.shapeType=Circle;
+    set nodeShapeInternal.size=4.0;
+    set nodeShapeInternal.sizeAttribute="Fixed";
+    set polarLayout.alignTipLabels=false;
+    set polarLayout.angularRange=0;
+    set polarLayout.rootAngle=0;
+    set polarLayout.rootLength=100;
+    set polarLayout.showRoot=true;
+    set radialLayout.spread=0.0;
+    set rectilinearLayout.alignTipLabels=false;
+    set rectilinearLayout.curvature=0;
+    set rectilinearLayout.rootLength=100;
+    set scale.offsetAge=0.0;
+    set scale.rootAge=1.0;
+    set scale.scaleFactor=1.0;
+    set scale.scaleRoot=false;
+    set scaleAxis.automaticScale=true;
+    set scaleAxis.fontSize=8.0;
+    set scaleAxis.isShown=false;
+    set scaleAxis.lineWidth=1.0;
+    set scaleAxis.majorTicks=1.0;
+    set scaleAxis.minorTicks=0.5;
+    set scaleAxis.origin=0.0;
+    set scaleAxis.reverseAxis=false;
+    set scaleAxis.showGrid=true;
+    set scaleBar.automaticScale=true;
+    set scaleBar.fontSize=10.0;
+    set scaleBar.isShown=true;
+    set scaleBar.lineWidth=1.0;
+    set scaleBar.scaleRange=0.0;
+    set tipLabels.colorAttribute="User selection";
+    set tipLabels.displayAttribute="Names";
+    set tipLabels.fontName="Helvetica";
+    set tipLabels.fontSize=12;
+    set tipLabels.fontStyle=0;
+    set tipLabels.isShown=true;
+    set tipLabels.significantDigits=4;
+    set trees.order=false;
+    set trees.orderType="increasing";
+    set trees.rooting=false;
+    set trees.rootingType="User Selection";
+    set trees.transform=false;
+    set trees.transformType="cladogram";
+    end;`;
+
+
+
+
+    const tree = Tree.parseNexus(nexusString)[0];
+
+    const treeSVG = document.getElementById('tree');
+
+
+    const layout = new RectangularLayout(tree);
+
+    const figTree = new FigTree(treeSVG, layout,
+        { top: 10, bottom: 60, left: 10, right: 150},
+        { hoverBorder: 2, backgroundBorder: 2,
+            baubles: [
+                new CircleBauble(),
+            ]
+        });
+    figTree.draw();
+    figTree.hilightInternalNodes();
+    figTree.onClickInternalNode(d=>console.log("clicked"));//layout.rotate());
+    figTree.onClickBranch(layout.reroot());
+
+    // figTree.addToolTip('#root', "The root node - represents the most recent<br>common ancestor of the whole tree");
+    // figTree.addToolTip('.internal-node .node-shape', "This is an internal node - it is the most recent<br>common ancestor of the viruses to the right" );
+    // figTree.addToolTip('.internal-node .node-label', "This is a support value - it gives the degree<br>of statistical support that the viruses to the<br>right cluster together");
+    // figTree.addToolTip('.external-node', "This is an external, leaf, or tip node - it represents<br>a sampled, sequenced virus");
+    // figTree.addToolTip('.branch', "This is a branch - it represents an<br>evolutionary lineage joining two nodes");
+    //
+    // document.getElementById('sort_up_button').onclick = function() {
+    //     tree.order(tree.root, false);
+    // };
+    // document.getElementById('sort_down_button').onclick = function() {
+    //     tree.order(tree.root, true);
+    // };
+    //
+    // document.getElementById('rectangular_button').onclick = function() {
+    //     figTree.branchCurve = d3.curveStepBefore;
+    // };
+    // document.getElementById('triangular_button').onclick = function() {
+    //     figTree.branchCurve = d3.curveNatural;
+    // };
+
+</script>
+
+</body>
+
+</html>
