@@ -6,7 +6,7 @@ import uuid from "uuid"
 /**
  * The svgBauble class. Each vertex is assigned an svg in the svg.
  */
-export class SymbolBauble extends AbstractNodeBauble{
+export class Image extends AbstractNodeBauble{
 
 
     /**
@@ -16,15 +16,16 @@ export class SymbolBauble extends AbstractNodeBauble{
     constructor()
     {
         super();
-        this._symbol=d3.symbolSquare;
+        this.url="";
         this._size=575;
+        this._attrs={"height":20,"width":20}
     }
 
-    symbol(s){
+    url(s){
         if(s===null){
-            return this._symbol;
+            return this._attrs["xlink:href"];
         }else{
-            this._manager=s;
+            this._attrs["xlink:href"]=s;
             return this;
         }
     }
@@ -54,11 +55,11 @@ export class SymbolBauble extends AbstractNodeBauble{
             .data(d => [d],d=>this.id)
             .join(
                 enter => enter
-                    .append("path")
+                    .append("image")
                     .attr("class",`node-shape ${this.id}`)
-                    .attr("d", symbol().size(this._size).type(this._symbol))
                     .attrs(this._attrs)
                     .styles(this._styles)
+                    .attr("xlink:href", `${this._url}`)
                     .each((d,i,n)=>{
                         const element = select(n[i]);
                         for( const [key,func] of Object.entries(this._interactions)){
@@ -84,8 +85,8 @@ export class SymbolBauble extends AbstractNodeBauble{
  }
 /**
  * helper function returns a new instance of a circle bauble.
- * @return {SymbolBauble}
+ * @return {Image}
  */
-export function symbolBauble(){
-    return new SymbolBauble();
+export function image(){
+    return new Image();
 }

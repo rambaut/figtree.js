@@ -6037,9 +6037,6 @@ function constant$3(x) {
   };
 }
 
-var pi$1 = Math.PI;
-var tau$1 = 2 * pi$1;
-
 function Linear(context) {
   this._context = context;
 }
@@ -6185,41 +6182,6 @@ function curveHorizontal(context, x0, y0, x1, y1) {
 
 function linkHorizontal() {
   return link(curveHorizontal);
-}
-
-var circle = {
-  draw: function(context, size) {
-    var r = Math.sqrt(size / pi$1);
-    context.moveTo(r, 0);
-    context.arc(0, 0, r, 0, tau$1);
-  }
-};
-
-function symbol() {
-  var type = constant$3(circle),
-      size = constant$3(64),
-      context = null;
-
-  function symbol() {
-    var buffer;
-    if (!context) context = buffer = path();
-    type.apply(this, arguments).draw(context, +size.apply(this, arguments));
-    if (buffer) return context = null, buffer + "" || null;
-  }
-
-  symbol.type = function(_) {
-    return arguments.length ? (type = typeof _ === "function" ? _ : constant$3(_), symbol) : type;
-  };
-
-  symbol.size = function(_) {
-    return arguments.length ? (size = typeof _ === "function" ? _ : constant$3(+_), symbol) : size;
-  };
-
-  symbol.context = function(_) {
-    return arguments.length ? (context = _ == null ? null : _, symbol) : context;
-  };
-
-  return symbol;
 }
 
 function Step(context, t) {
@@ -10130,7 +10092,7 @@ var CircleBauble = /*#__PURE__*/function (_AbstractNodeBauble) {
  * @return {CircleBauble}
  */
 
-function circle$1() {
+function circle() {
   return new CircleBauble();
 }
 
@@ -13268,33 +13230,37 @@ function _isNativeReflectConstruct$f() { if (typeof Reflect === "undefined" || !
  * The svgBauble class. Each vertex is assigned an svg in the svg.
  */
 
-var SymbolBauble = /*#__PURE__*/function (_AbstractNodeBauble) {
-  inherits(SymbolBauble, _AbstractNodeBauble);
+var Image = /*#__PURE__*/function (_AbstractNodeBauble) {
+  inherits(Image, _AbstractNodeBauble);
 
-  var _super = _createSuper$f(SymbolBauble);
+  var _super = _createSuper$f(Image);
 
   /**
    * The constructor.
    * @param [settings.radius=6] - the radius of the circle
    */
-  function SymbolBauble() {
+  function Image() {
     var _this;
 
-    classCallCheck(this, SymbolBauble);
+    classCallCheck(this, Image);
 
     _this = _super.call(this);
-    _this._symbol = d3.symbolSquare;
+    _this.url = "";
     _this._size = 575;
+    _this._attrs = {
+      "height": 20,
+      "width": 20
+    };
     return _this;
   }
 
-  createClass(SymbolBauble, [{
-    key: "symbol",
-    value: function symbol(s) {
+  createClass(Image, [{
+    key: "url",
+    value: function url(s) {
       if (s === null) {
-        return this._symbol;
+        return this._attrs["xlink:href"];
       } else {
-        this._manager = s;
+        this._attrs["xlink:href"] = s;
         return this;
       }
     }
@@ -13334,7 +13300,7 @@ var SymbolBauble = /*#__PURE__*/function (_AbstractNodeBauble) {
       }, function (d) {
         return _this2.id;
       }).join(function (enter) {
-        return enter.append("path").attr("class", "node-shape ".concat(_this2.id)).attr("d", symbol().size(_this2._size).type(_this2._symbol)).attrs(_this2._attrs).styles(_this2._styles).each(function (d, i, n) {
+        return enter.append("image").attr("class", "node-shape ".concat(_this2.id)).attrs(_this2._attrs).styles(_this2._styles).attr("xlink:href", "".concat(_this2._url)).each(function (d, i, n) {
           var element = select(n[i]);
 
           var _loop = function _loop() {
@@ -13377,16 +13343,8 @@ var SymbolBauble = /*#__PURE__*/function (_AbstractNodeBauble) {
     }
   }]);
 
-  return SymbolBauble;
+  return Image;
 }(AbstractNodeBauble);
-/**
- * helper function returns a new instance of a circle bauble.
- * @return {SymbolBauble}
- */
-
-function symbolBauble() {
-  return new SymbolBauble();
-}
 
 exports.Bauble = Bauble;
 exports.BaubleManager = BaubleManager;
@@ -13394,6 +13352,7 @@ exports.Branch = Branch;
 exports.CircleBauble = CircleBauble;
 exports.Decoration = Decoration;
 exports.FigTree = FigTree;
+exports.Image = Image;
 exports.RectangularBauble = RectangularBauble;
 exports.Tree = Tree;
 exports.Type = Type;
@@ -13402,7 +13361,7 @@ exports.axisBars = axisBars;
 exports.branch = branch;
 exports.branchLabel = branchLabel;
 exports.branches = branches;
-exports.circle = circle$1;
+exports.circle = circle;
 exports.coalescentEvent = coalescentEvent;
 exports.decimalToDate = decimalToDate;
 exports.equalAngleLayout = equalAngleLayout;
@@ -13422,7 +13381,6 @@ exports.rootToTipLayout = rootToTipLayout;
 exports.roughBranch = roughBranch;
 exports.roughCircle = roughCircle;
 exports.scaleBar = scaleBar;
-exports.symbolBauble = symbolBauble;
 exports.textAnnotation = textAnnotation;
 exports.tipLabel = tipLabel;
 exports.traitBar = traitBar;

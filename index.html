@@ -202,6 +202,9 @@
         /*stroke: rgb(255, 255, 255);*/
         /*stroke-width: 1;*/
     }
+    image path {
+        stroke: "red";
+    }
 </style>
 
 
@@ -219,9 +222,14 @@
     const figTree = new FigTree(treeSVG, margins,tree)
                         .layout(rectangularLayout)
                         .nodes(
-                            symbolBauble(1000)
+                            symbolBauble()
                                 .filter(d=>!d.children )
-                                .style('fill',`url(#maple-pattern)`),
+                                .symbol("data/man-svgrepo-com.svg")
+                                .attr("width",50)
+                                .attr("height",100)
+                                .attr("x",-20)
+                                .attr("y",-50)
+                                ,
 
                             tipLabel(d=>d.name),
                             circle()
@@ -252,7 +260,7 @@
                                 // circle()
                                 //     .attr("r",7)
                             )
-                            // .branches(branchSettings);
+                            .branches(branchSettings);
 
     // figTree.onClickNode(layout.rotate());
 
@@ -263,26 +271,6 @@
         .select(".node-background#root")
         .attr("display", "none");
 
-
-       d3.xml("./data/man-svgrepo-com.svg").then(p=>{
-    //    d3.xml("https://s3.amazonaws.com/files.zevross.org/blog/d3_external_svgs/load_svg/leaves/maple_illustration.svg").then(p=>{
-        console.log(p);
-
-            d3.select(treeSVG).append('defs')
-            .append('pattern')
-            .attr('id', 'maple-pattern')
-            .attr('patternUnits', 'objectBoundingBox')
-            .attr('width', 50)
-            .attr('height', 100)
-            // Append svg to pattern
-            .append('svg')
-            .attr('x', 0)
-            .attr('y', 0)
-            .attr('width', 20)
-            .attr('height', 20)
-            .append(() => p.documentElement.cloneNode(true))
-            .attr("fill","black")
-        })
 
 
     // figTree.onClickNode({action:(vertex) => {
