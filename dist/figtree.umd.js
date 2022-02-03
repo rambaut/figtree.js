@@ -13232,19 +13232,19 @@
 	 * The svgBauble class. Each vertex is assigned an svg in the svg.
 	 */
 
-	var Image = /*#__PURE__*/function (_AbstractNodeBauble) {
-	  inherits(Image, _AbstractNodeBauble);
+	var ImageBauble = /*#__PURE__*/function (_AbstractNodeBauble) {
+	  inherits(ImageBauble, _AbstractNodeBauble);
 
-	  var _super = _createSuper$f(Image);
+	  var _super = _createSuper$f(ImageBauble);
 
 	  /**
 	   * The constructor.
 	   * @param [settings.radius=6] - the radius of the circle
 	   */
-	  function Image() {
+	  function ImageBauble() {
 	    var _this;
 
-	    classCallCheck(this, Image);
+	    classCallCheck(this, ImageBauble);
 
 	    _this = _super.call(this);
 	    _this.url = "";
@@ -13255,24 +13255,20 @@
 	    };
 	    return _this;
 	  }
+	  /**
+	   * a function to set the xlink:href
+	   * @param {string} s 
+	   * @returns 
+	   */
 
-	  createClass(Image, [{
-	    key: "url",
-	    value: function url(s) {
+
+	  createClass(ImageBauble, [{
+	    key: "path",
+	    value: function path(s) {
 	      if (s === null) {
 	        return this._attrs["xlink:href"];
 	      } else {
 	        this._attrs["xlink:href"] = s;
-	        return this;
-	      }
-	    }
-	  }, {
-	    key: "size",
-	    value: function size(s) {
-	      if (s === null) {
-	        return this._size;
-	      } else {
-	        this._size = s;
 	        return this;
 	      }
 	    }
@@ -13302,7 +13298,7 @@
 	      }, function (d) {
 	        return _this2.id;
 	      }).join(function (enter) {
-	        return enter.append("image").attr("class", "node-shape ".concat(_this2.id)).attrs(_this2._attrs).styles(_this2._styles).attr("xlink:href", "".concat(_this2._url)).each(function (d, i, n) {
+	        return enter.append("image").attr("class", "node-shape ".concat(_this2.id)).attrs(_this2._attrs).styles(_this2._styles).each(function (d, i, n) {
 	          var element = select(n[i]);
 
 	          var _loop = function _loop() {
@@ -13345,7 +13341,7 @@
 	    }
 	  }]);
 
-	  return Image;
+	  return ImageBauble;
 	}(AbstractNodeBauble);
 	/**
 	 * helper function returns a new instance of a circle bauble.
@@ -13353,7 +13349,7 @@
 	 */
 
 	function image() {
-	  return new Image();
+	  return new ImageBauble();
 	}
 
 	exports.Bauble = Bauble;

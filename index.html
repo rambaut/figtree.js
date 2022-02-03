@@ -209,7 +209,7 @@
 
 
 <script type="module">
-    import {Tree,FigTree,rectangularLayout,transmissionLayout,levelLayout,branch,circle,symbolBauble,tipLabel,internalNodeLabel} from "./dist/figtree.esm.js"
+    import {Tree,FigTree,rectangularLayout,transmissionLayout,levelLayout,branch,circle,image,tipLabel,internalNodeLabel} from "./dist/figtree.esm.js"
 
 
     const newickString =
@@ -222,14 +222,14 @@
     const figTree = new FigTree(treeSVG, margins,tree)
                         .layout(rectangularLayout)
                         .nodes(
-                            symbolBauble()
+                            image()
+                            .path("data/man-svgrepo-com.svg")
                                 .filter(d=>!d.children )
-                                .symbol("data/man-svgrepo-com.svg")
+                                
                                 .attr("width",50)
                                 .attr("height",100)
                                 .attr("x",-20)
-                                .attr("y",-50)
-                                ,
+                                .attr("y",-50),
 
                             tipLabel(d=>d.name),
                             circle()

@@ -6,34 +6,29 @@ import uuid from "uuid"
 /**
  * The svgBauble class. Each vertex is assigned an svg in the svg.
  */
-export class Image extends AbstractNodeBauble{
+export class ImageBauble extends AbstractNodeBauble{
 
 
     /**
      * The constructor.
      * @param [settings.radius=6] - the radius of the circle
      */
-    constructor()
-    {
+    constructor(){
         super();
         this.url="";
         this._size=575;
         this._attrs={"height":20,"width":20}
     }
-
-    url(s){
+    /**
+     * a function to set the xlink:href
+     * @param {string} s 
+     * @returns 
+     */
+    path(s){
         if(s===null){
             return this._attrs["xlink:href"];
         }else{
             this._attrs["xlink:href"]=s;
-            return this;
-        }
-    }
-    size(s){
-        if(s===null){
-            return this._size;
-        }else{
-            this._size=s;
             return this;
         }
     }
@@ -59,7 +54,6 @@ export class Image extends AbstractNodeBauble{
                     .attr("class",`node-shape ${this.id}`)
                     .attrs(this._attrs)
                     .styles(this._styles)
-                    .attr("xlink:href", `${this._url}`)
                     .each((d,i,n)=>{
                         const element = select(n[i]);
                         for( const [key,func] of Object.entries(this._interactions)){
@@ -82,11 +76,11 @@ export class Image extends AbstractNodeBauble{
                 );
     };
     
- }
+}
 /**
  * helper function returns a new instance of a circle bauble.
  * @return {Image}
  */
 export function image(){
-    return new Image();
+    return new ImageBauble();
 }
