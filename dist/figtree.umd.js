@@ -13347,6 +13347,14 @@
 
 	  return Image;
 	}(AbstractNodeBauble);
+	/**
+	 * helper function returns a new instance of a circle bauble.
+	 * @return {Image}
+	 */
+
+	function image() {
+	  return new Image();
+	}
 
 	exports.Bauble = Bauble;
 	exports.BaubleManager = BaubleManager;
@@ -13354,7 +13362,6 @@
 	exports.CircleBauble = CircleBauble;
 	exports.Decoration = Decoration;
 	exports.FigTree = FigTree;
-	exports.Image = Image;
 	exports.RectangularBauble = RectangularBauble;
 	exports.Tree = Tree;
 	exports.Type = Type;
@@ -13368,6 +13375,7 @@
 	exports.decimalToDate = decimalToDate;
 	exports.equalAngleLayout = equalAngleLayout;
 	exports.geographicLayout = geographicLayout;
+	exports.image = image;
 	exports.internalNodeLabel = internalNodeLabel;
 	exports.label = label;
 	exports.legend = legend;

@@ -13341,6 +13341,14 @@ var Image = /*#__PURE__*/function (_AbstractNodeBauble) {
 
   return Image;
 }(AbstractNodeBauble);
+/**
+ * helper function returns a new instance of a circle bauble.
+ * @return {Image}
+ */
 
-export { Bauble, BaubleManager, Branch, CircleBauble, Decoration, FigTree, Image, RectangularBauble, Tree, Type, axis$1 as axis, axisBars, branch, branchLabel, branches, circle, coalescentEvent, decimalToDate, equalAngleLayout, geographicLayout, internalNodeLabel, label, legend, levelLayout, nodeBackground, nodes, predicatedRootToTipLayout, rectangle, rectangularHilightedLayout, rectangularLayout, rectangularZoomedLayout, rootToTipLayout, roughBranch, roughCircle, scaleBar, textAnnotation, tipLabel, traitBar, transmissionLayout, trendLine };
+function image() {
+  return new Image();
+}
+
+export { Bauble, BaubleManager, Branch, CircleBauble, Decoration, FigTree, RectangularBauble, Tree, Type, axis$1 as axis, axisBars, branch, branchLabel, branches, circle, coalescentEvent, decimalToDate, equalAngleLayout, geographicLayout, image, internalNodeLabel, label, legend, levelLayout, nodeBackground, nodes, predicatedRootToTipLayout, rectangle, rectangularHilightedLayout, rectangularLayout, rectangularZoomedLayout, rootToTipLayout, roughBranch, roughCircle, scaleBar, textAnnotation, tipLabel, traitBar, transmissionLayout, trendLine };
 //# sourceMappingURL=figtree.esm.js.map

@@ -31,7 +31,7 @@ import{traitBar} from "./src/decoration/traitBar";
 import {geographicLayout} from"./src/layout/geographicLayout";
 import { transmissionLayout } from "./src/layout/transmissionlayout.f.js";
 import { levelLayout } from "./src/layout/levelLayout.f.js";
-import { Image } from "./src/baubles/nodes/imageBauble.js";
+import { image } from "./src/baubles/nodes/imageBauble.js";
 
 export{Tree,Type,FigTree,rectangularLayout,
 Bauble,CircleBauble,RectangularBauble,Branch,
@@ -42,4 +42,4 @@ internalNodeLabel,branchLabel,scaleBar,legend,
 rectangularHilightedLayout,rectangularZoomedLayout,
 equalAngleLayout,Decoration,axisBars,roughBranch,coalescentEvent,
 trendLine,textAnnotation,traitBar,geographicLayout,
-predicatedRootToTipLayout,Image};
+predicatedRootToTipLayout,image};
