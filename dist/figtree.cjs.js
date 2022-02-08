@@ -13350,6 +13350,71 @@ function image() {
   return new ImageBauble();
 }
 
+function _createForOfIteratorHelper$a(o, allowArrayLike) { var it; if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (it = _unsupportedIterableToArray$b(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it["return"] != null) it["return"](); } finally { if (didErr) throw err; } } }; }
+
+function _unsupportedIterableToArray$b(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray$b(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray$b(o, minLen); }
+
+function _arrayLikeToArray$b(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+function reverseNunoLayout(figtree) {
+  var currentX = 0;
+  var id = figtree.id;
+  var tree = figtree.tree();
+
+  var traverse = function traverse(node) {
+    var siblingPositions = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : [];
+    var myChildrenPositions = [];
+
+    if (!node[id]) {
+      console.log(node);
+    }
+
+    if (!node[id].ignore) {
+      var xPos;
+
+      if (node.children) {
+        if (node[id].collapsed) {
+          xPos = currentX += 1;
+        } else {
+          var _iterator = _createForOfIteratorHelper$a(node.children),
+              _step;
+
+          try {
+            for (_iterator.s(); !(_step = _iterator.n()).done;) {
+              var child = _step.value;
+              traverse(child, myChildrenPositions);
+            }
+          } catch (err) {
+            _iterator.e(err);
+          } finally {
+            _iterator.f();
+          }
+
+          xPos = mean(myChildrenPositions);
+        }
+      } else {
+        xPos = currentX += 1;
+        siblingPositions.push(currentX);
+      }
+
+      siblingPositions.push(xPos);
+      var leftLabel = !!node.children;
+      var labelBelow = !!node.children && (!node.parent || node.parent.children[0] !== node);
+      node[id].y = node.divergence;
+      node[id].x = xPos;
+      node[id].classes = getClassesFromNode(node);
+      node[id].textLabel = {
+        labelBelow: labelBelow,
+        x: leftLabel ? "-6" : "12",
+        y: leftLabel ? labelBelow ? "-8" : "8" : "0",
+        alignmentBaseline: leftLabel ? labelBelow ? "bottom" : "hanging" : "middle",
+        textAnchor: leftLabel ? "end" : "start"
+      };
+    }
+  };
+
+  traverse(tree.root);
+}
+
 exports.Bauble = Bauble;
 exports.BaubleManager = BaubleManager;
 exports.Branch = Branch;
@@ -13381,6 +13446,7 @@ exports.rectangle = rectangle;
 exports.rectangularHilightedLayout = rectangularHilightedLayout;
 exports.rectangularLayout = rectangularLayout;
 exports.rectangularZoomedLayout = rectangularZoomedLayout;
+exports.reverseNunoLayout = reverseNunoLayout;
 exports.rootToTipLayout = rootToTipLayout;
 exports.roughBranch = roughBranch;
 exports.roughCircle = roughCircle;

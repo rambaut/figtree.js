@@ -209,7 +209,7 @@
 
 
 <script type="module">
-    import {Tree,FigTree,rectangularLayout,transmissionLayout,levelLayout,branch,circle,image,tipLabel,internalNodeLabel} from "./dist/figtree.esm.js"
+    import {Tree,FigTree,rectangularLayout,reverseNunoLayout,transmissionLayout,levelLayout,branch,circle,image,tipLabel,internalNodeLabel} from "./dist/figtree.esm.js"
 
 
     const newickString =
@@ -220,7 +220,8 @@
     const margins ={ top: 10, bottom: 60, left: 10, right: 150};
     const branchSettings = branch().hilightOnHover().reRootOnClick().curve(d3.curveStepBefore);
     const figTree = new FigTree(treeSVG, margins,tree)
-                        .layout(rectangularLayout)
+                        // .layout(rectangularLayout)
+                        .layout(reverseNunoLayout)
                         .nodes(
                             image()
                             .path("data/man-svgrepo-com.svg")
