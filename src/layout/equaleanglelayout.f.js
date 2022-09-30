@@ -11,7 +11,7 @@ function * pseudoRerootPreorder(node, visited=[]) {
         yield node;
         const relatives = [(node.parent&&node.parent)].concat((node.children&&node.children)).filter(n=>n);// to remove null
         let pseudoChildren = relatives.filter(n => !visited.includes(n));
-        if (pseudoChildren) {
+        if (pseudoChildren.length>0) {
             for (const child of pseudoChildren) {
                 yield* traverse(child);
             }
@@ -25,7 +25,6 @@ function * pseudoRerootPreorder(node, visited=[]) {
 
 export function equalAngleLayout(startNode=null){
 
-
     let tipRank=[];
     if(startNode){
         tipRank=[...pseudoRerootPreorder(startNode,[])].filter(n=>!n.children)
@@ -35,7 +34,8 @@ export function equalAngleLayout(startNode=null){
         const id = figtree.id;
         const tree = figtree.tree();
 
-        startNode =startNode?startNode:tree.rootNode;
+        startNode =startNode?startNode:tree.root;
+
         tipRank=tipRank.length>0?tipRank:[...pseudoRerootPreorder(startNode,[])].filter(n=>!n.children);
 
         const numberOfTips= tree.externalNodes.length;
